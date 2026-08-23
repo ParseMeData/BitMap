@@ -1,5 +1,5 @@
 'use strict';
-/* ── MEMORY QUEST V1 ── desktop build ─────────────────────────────────
+/* ── MEMORY QUEST V2.0 ── desktop build ───────────────────────────────
    Walk the living map, collect every spark. The plate underneath you is
    one static GPU buffer that breathes on its own; the game layer is a
    few dozen instances streamed each frame. */

@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Memory Quest V1
+Name=Memory Quest V2.0
 GenericName=Lattice town builder
 Comment=Trace a real town and build it out of diamond glyphs
 Exec=/home/eden/Projects/memory-quest/play.sh

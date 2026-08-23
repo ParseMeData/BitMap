@@ -1,4 +1,4 @@
-# Memory Quest V1
+# Memory Quest V2.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V1 in the KDE launcher
+    ./play.sh          # or: Memory Quest V2.0 in the KDE launcher
 
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
@@ -15,6 +15,37 @@ the build tools came from there; what is new is that the plate starts
 **blank** rather than as The Mighty Haunt's printed sheet, so the town you
 build is the only thing on it. The printed map is still in `assets/` and one
 switch away — see *The plate: Map or Blank*.
+
+## Versions
+
+The folder carries no version; the tag does, and the name in the title,
+launcher and README follows it.
+
+    git tag -l -n1              # what versions exist
+    git checkout v1.0           # the fork from Haunt Quest, blank plate only
+
+**v1.0** — forked from Haunt Quest: blank plate, the dark tracing underlay,
+freeze-and-place.
+**v2.0** — creek terrain, the Glow slider, a larger walker.
+
+### The half that is not in the repo
+
+The source tree is the engine. The *town* — every shape, every marker, the
+frozen tracing picture, the blank-plate flag — lives in the browser profile
+the launcher uses, so a tag on its own is only half a version. `tools/`
+writes the other half to a file beside it:
+
+    ./play.sh --remote-debugging-port=9222 &
+    tools/snapshot.py save    snapshots/v2.0.json
+    tools/snapshot.py restore snapshots/v2.0.json
+
+`snapshots/v2.0.json` is the town as it stood at that tag, frozen picture and
+all. Restoring is destructive — it overwrites whatever the profile currently
+holds and reloads the page, so snapshot the live state first if it is ahead
+of the file.
+
+`tools/cdp.py` is what talks to the running page: a few dozen lines of
+WebSocket, because nothing else here needs a dependency.
 
 ## Controls
 

@@ -7,6 +7,9 @@
 let panelOpen = false;
 const HEAVY = new Set(['cols', 'bri', 'con']);   // these force a re-analysis
 
+/* the last field marks a row the plate does not have to be rebuilt for:
+   Glow is a uniform the frame loop already sets, so re-composing 112,982
+   cells to answer a slider drag would be pure waste */
 const ROWS = [
   ['cols', 'Detail',     40,  208, 4,   v => v | 0,        v => String(v | 0)],
   ['bri',  'Tone',      -35,   35, 5,   v => v / 100,      v => (v > 0 ? '+' : '') + (v * 100).toFixed(0)],
@@ -18,6 +21,7 @@ const ROWS = [
   ['scatter','Scatter',   0,  200, 10,  v => v / 100,      v => v.toFixed(1) + '×'],
   ['szv',  'Size var',    0,  200, 10,  v => v / 100,      v => v.toFixed(1) + '×'],
   ['cvar', 'Colour var',  0,  100, 5,   v => v / 100,      v => (v * 100).toFixed(0) + '%'],
+  ['glow', 'Glow',        0,  150, 5,   v => v / 100,      v => (v * 100).toFixed(0) + '%', true],
 ];
 const INKS = [['Full', -1], ['Bone', 0], ['Pink', 1], ['Aqua', 2], ['Gold', 3], ['Violet', 4]];
 
@@ -35,7 +39,7 @@ function queueRebuild(heavy){
 function buildPanel(){
   const body = $('#tbody');
   if (body.childElementCount) return;
-  for (const [key, label, min, max, step, toVal, fmtv] of ROWS){
+  for (const [key, label, min, max, step, toVal, fmtv, live] of ROWS){
     const row = document.createElement('div');
     row.className = 'prow';
     row.innerHTML = '<label>' + label + '</label>' +
@@ -47,9 +51,12 @@ function buildPanel(){
       T[key] = toVal(+inp.value);
       out.textContent = fmtv(T[key]);
       clearSel();
-      queueRebuild(HEAVY.has(key));
+      if (!live) queueRebuild(HEAVY.has(key));
     };
     row._sync = () => {
+      /* a T baked in before this row existed simply has no value for it —
+         fall back rather than writing NaN into the panel */
+      if (T[key] === undefined) T[key] = 1;   // Glow's own neutral, and every ×1 row's
       inp.value = key === 'cols' ? T[key] : Math.round(T[key] * 100);
       out.textContent = fmtv(T[key]);
     };

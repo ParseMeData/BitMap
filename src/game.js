@@ -23,7 +23,12 @@ const DPRCAP = +(Q.get('dpr') || (WALL ? 1.25 : 2));
 const SLEEP_AFTER = +(Q.get('sleep') || 25);               // seconds idle → drift again
 
 const defTune = () => ({cols: 176, bri: 0.25, con: 2, edge: 0, ink: -1,
-                        churn: 1, scatter: 0, szv: 0, cvar: 1, sat: 1.15, path: 1});
+                        churn: 1, scatter: 0, szv: 0, cvar: 1, sat: 1.15, path: 1,
+                        glow: 0.45});
+/* How big the walker is against a walk tile. It is the one thing on the
+   plate that is not terrain, so it carries its own scale rather than
+   inheriting the tile size the way sparks and rings do. */
+const WALKER = 1.35;
 let T = defTune();
 
 const PRESETS = [
@@ -501,6 +506,7 @@ function frame(now){
      you pull back to the overview */
   const ts = G.terr.tsz;
   const minW = 1 / z;                       // one screen pixel in world units
+  R.glow = T.glow === undefined ? 1 : T.glow;   // one uniform, every halo
   let m = 0;
   const g = RGBV.gold;
   if (WALL && !G.wake){
@@ -532,13 +538,14 @@ function frame(now){
   const bn = RGBV.bone, fl = RGBV.flare;
   const beat = 0.9 + 0.1 * Math.sin(t * 4);
   m = put(ENT, m, pxw, pyw + bob, fl[0]/255, fl[1]/255, fl[2]/255, 0.45,
-          Math.max(ts * 1.7, 26 * minW) * beat, 0, 0, 0, 2);
+          Math.max(ts * 1.7 * WALKER, 26 * WALKER * minW) * beat, 0, 0, 0, 2);
   m = put(ENT, m, pxw, pyw + bob, bn[0]/255, bn[1]/255, bn[2]/255, 1,
-          Math.max(ts * 0.42, 4.5 * minW), 0, 0, 0, 1);
+          Math.max(ts * 0.42 * WALKER, 4.5 * WALKER * minW), 0, 0, 0, 1);
   m = put(ENT, m, pxw, pyw + bob, fl[0]/255, fl[1]/255, fl[2]/255, 1,
-          Math.max(ts * 0.18, 2 * minW), 0, 0, 0, 1);
-  m = put(ENT, m, pxw + G.face[0] * ts * 0.34, pyw + bob + G.face[1] * ts * 0.34,
-          fl[0]/255, fl[1]/255, fl[2]/255, 0.9, Math.max(ts * 0.11, 1.5 * minW), 0, 0, 0, 1);
+          Math.max(ts * 0.18 * WALKER, 2 * WALKER * minW), 0, 0, 0, 1);
+  m = put(ENT, m, pxw + G.face[0] * ts * 0.34 * WALKER, pyw + bob + G.face[1] * ts * 0.34 * WALKER,
+          fl[0]/255, fl[1]/255, fl[2]/255, 0.9,
+          Math.max(ts * 0.11 * WALKER, 1.5 * WALKER * minW), 0, 0, 0, 1);
   /* a ring that only shows when you are zoomed out, so you can find yourself */
   if (z < G.fitW * 0.9)
     m = put(ENT, m, pxw, pyw + bob, fl[0]/255, fl[1]/255, fl[2]/255,

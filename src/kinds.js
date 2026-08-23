@@ -428,6 +428,48 @@ const Kinds = (() => {
     }
   }
 
+  /* ── CREEK ─────────────────────────────────────────────────────────────
+     A road's geometry carrying water. Everything about drawing one is the
+     road editor — a polyline whose segments bow, a width, a ring if you
+     want a moat — because the editor keys off the shape's *type*, not its
+     kind. What differs is what it is made of and what it means: it reads
+     as a channel with damp banks, and it is never a route. The walker
+     locks onto roads; a creek is something a road has to bridge.
+
+     The flow runs along the line rather than across it, so the highlight
+     travels with `u` — the distance down the creek — and the water reads
+     as moving rather than as a puddle stretched thin. */
+  function creek(s, cell, buf){
+    const half = Math.max(s.width / (2 * cell), 0.5);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const t = clamp(d / half, 0, 1);                  // 0 at the bank, 1 mid-stream
+      if (hash(u, v, s.seed) > 0.98) return;            // the faintest breaks
+      const swell = vnoise(u * 0.3, v * 0.5, s.seed + 5);
+      const wave = 0.5 + 0.5 * Math.sin(u * 0.5 + swell * 5.0);
+      /* a bank only exists once the channel is wide enough to have one */
+      const bank = t < 0.34 && half > 1.1;
+      const base = bank ? mixc(C.grassDim, C.water, t * 2.6)
+                        : mixc(C.water, C.deep, (1 - wave) * 0.5 * t);
+      const col = bank ? base : mixc(base, C.waterHi, wave * wave * 0.7);
+      const sz = bank ? 0.84 : 0.9 + t * 0.16;
+      buf.cell(x, y, col, (bank ? 0.5 + t * 0.3 : 0.6 + wave * 0.3) * fade, sz, 0,
+               (bank ? 0.4 + t * 0.25 : 0.48 + wave * 0.28) * fade, sz * 1.1,
+               !bank && wave > 0.74 ? 1 : 0,
+               0.14 + wave * 0.12, hash(u, v, s.seed + 9));
+    });
+    /* a ring creek is a moat, and wants an island for the same reason a
+       roundabout does — once there is an inside to it */
+    if (s.type === 'ring'){
+      const ri = s.r - s.width / 2;
+      if (ri > cell * 1.2){
+        const isle = sub(s, 'ellipse', s.x, s.y, ri * 1.9, ri * 1.9, 5);
+        isle.feather = 0;
+        grass(isle, cell, buf, {dens: 0.9});
+        if (ri > cell * 4) trees(isle, cell, buf, {occ: 0.45, under: false, variant: 'mixed'});
+      }
+    }
+  }
+
   /* ── BUILT ─────────────────────────────────────────────────────────────
      Blocks on a lot grid with the last row and column left as street. Each
      lot takes a form — shed, courtyard block, or tower — either picked for
@@ -560,6 +602,14 @@ const Kinds = (() => {
      walk: 1, stamp: 3, gen: grass,     swatch: '#5C9648'},
     {id: 'water',     label: 'Water',     layer: 'ground', types: AREA,
      walk: 0, stamp: 0, gen: water,     swatch: '#2E66B8'},
+    {id: 'creek',     label: 'Creek',     layer: 'ground', types: ['line', 'ring'],
+     walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
+     feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
+     /* creeks run into one another the way roads do, so a tributary is a
+        junction and not two channels with a hole punched where they meet.
+        It also means a road crossing a creek clears nothing: the road is
+        drawn over it and stamps last, which is exactly a bridge. */
+     connects: true},
     {id: 'trees',     label: 'Trees',     layer: 'trees',  types: AREA, variants: WOOD,
      walk: 1, stamp: 4, gen: trees,     swatch: '#2A6640'},
     {id: 'park',      label: 'Park',      layer: 'trees',  types: AREA, variants: WOOD,
@@ -583,6 +633,7 @@ const Kinds = (() => {
   const PALETTE = [
     {label: 'Grass',      kind: 'grass',     type: 'ellipse'},
     {label: 'Water',      kind: 'water',     type: 'ellipse'},
+    {label: 'Creek',      kind: 'creek',     type: 'line'},
     {label: 'Trees',      kind: 'trees',     type: 'ellipse'},
     {label: 'Park',       kind: 'park',      type: 'rect'},
     {label: 'Road',       kind: 'road',      type: 'line'},

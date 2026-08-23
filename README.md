@@ -25,7 +25,7 @@ switch away — see *The plate: Map or Blank*.
 | `Space` | recrystallise the map |
 | `Tab` (hold) | overview of the whole map |
 | wheel, `+` `-`, `0` | zoom / reset zoom |
-| `T` | tune panel &nbsp;·&nbsp; Plate: Map or Blank |
+| `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
 | `M` | map underlay to trace over |
 | drag / `Shift`+drag | move / turn the frozen map (in Place) |
@@ -92,7 +92,7 @@ gets arranged around, and it is the layer you land on when build mode opens:
 
     Roads       road · roundabout
     ───────────────────────────────
-    Ground      grass · water
+    Ground      grass · water · creek
     Trees       trees · park
     Buildings   buildings · houses
 
@@ -155,6 +155,30 @@ reaches any further out than Clear does. Roads are born with 1.2 cells of it, so
 *through* the terrain rather than being buried in it: it clears a gap either
 side of itself, all the way along, including around a roundabout. Set it to
 none and the terrain closes right up to the kerb.
+
+### Creek
+
+A **creek** is a road's geometry carrying water. Drawing one *is* the road
+editor — a polyline whose segments bow, a width, `Shift`-click to add a
+point, and a ring if you want a moat — because the editor keys off a shape's
+**type**, not its kind, so `types: ['line', 'ring']` inherits all of it for
+free.
+
+What differs is what it is made of and what it means. It reads as a channel
+with damp banks, and the flow runs *along* the line rather than across it —
+the highlight travels with the distance down the creek, so it reads as moving
+water rather than a puddle stretched thin. A ring creek is a moat, and grows
+an island the same way a roundabout does.
+
+And it is **never a route**. The walker locks onto roads, and a creek is
+something a road has to bridge: it declares `walk: 0`, so it blocks like
+water and stamps no `path` tiles at all. Measured — a creek laid across the
+map adds 382 cells and exactly zero route tiles.
+
+Creeks connect the way roads do, so a tributary is a junction rather than two
+channels with a hole punched where they meet. That also means a road crossing
+a creek clears nothing: the road draws over it and stamps last, which is
+already exactly a bridge.
 
 Roads never clear each other. Anything whose kind declares `connects` is
 invisible to every other connecting kind's margin, so a crossroads is a
@@ -404,6 +428,28 @@ walkable all the way round.
 `T` opens the panel. **Copy settings** puts a `let T = {...}` line on the
 clipboard — paste it over the `defTune()` return in `src/game.js` to bake a
 look in as the default.
+
+### Glow
+
+**Glow** is the opacity of every halo on the plate at once — the walker's, the
+sparks', the rings', a marker's — as one uniform the fragment shader applies
+to the halo branch. It defaults to 45%: the full-strength bloom reads as
+dramatic against a printed map and as *too* dramatic against a blank one.
+
+It is the one row in the panel that rebuilds nothing. Glow is a uniform the
+frame loop already sets every frame, so re-composing 112,982 cells to answer
+a slider drag would be pure waste — hence the `live` flag on its row.
+
+A `T` baked in with **Copy settings** before this row existed simply has no
+value for it, so the panel falls back rather than writing `NaN` into itself.
+
+### The walker
+
+The walker carries its own scale — `WALKER` in `src/game.js`, currently
+`1.35` — rather than inheriting the walk tile the way sparks and rings do. It
+is the one thing on the plate that is not terrain, and on a blank sheet with
+nothing around it, a sprite sized to the tile is too easy to lose. The
+screen-space floors scale with it, so it holds its size in the overview too.
 
 ### The plate: Map or Blank
 

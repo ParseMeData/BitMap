@@ -94,6 +94,7 @@ in vec2 v_auv;
 in vec4 v_col;
 in float v_glyph;
 uniform sampler2D u_tex;
+uniform float u_glow;   // opacity of every halo, from the tune panel
 out vec4 outColor;
 
 void main(){
@@ -102,7 +103,7 @@ void main(){
   float a;
   if (v_glyph < 0.5)      a = 1.0 - smoothstep(1.0 - aa, 1.0, d);                  // ◆
   else if (v_glyph < 1.5) a = 1.0 - smoothstep(0.16, 0.16 + aa, abs(d - 0.80));    // ◇
-  else if (v_glyph < 2.5) a = pow(max(0.0, 1.0 - d), 2.4);                         // halo
+  else if (v_glyph < 2.5) a = pow(max(0.0, 1.0 - d), 2.4) * u_glow;                // halo
   else                    a = texture(u_tex, v_auv).a;                             // marker
   a *= v_col.a;
   if (a < 0.004) discard;
@@ -151,7 +152,7 @@ class Renderer {
       throw new Error('link: ' + (gl.getProgramInfoLog(p) || '(no log)'));
     gl.useProgram(p);
     this.u = {};
-    for (const n of ['u_res', 'u_cam', 'u_time', 'u_burst', 'u_unit', 'u_atlas', 'u_tex'])
+    for (const n of ['u_res', 'u_cam', 'u_time', 'u_burst', 'u_unit', 'u_atlas', 'u_tex', 'u_glow'])
       this.u[n] = gl.getUniformLocation(p, n);
     gl.uniform1i(this.u.u_tex, 0);
     gl.uniform2f(this.u.u_atlas, 1, 1);
@@ -253,6 +254,7 @@ class Renderer {
     if (this.tex){ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.tex); }
     gl.uniform2f(this.u.u_res, w, h);
     gl.uniform1f(this.u.u_time, time);
+    gl.uniform1f(this.u.u_glow, this.glow === undefined ? 1 : this.glow);
     gl.clearColor(0.031, 0.031, 0.043, this.clearA === undefined ? 1 : this.clearA);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }

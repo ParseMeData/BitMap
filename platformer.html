@@ -2548,12 +2548,12 @@ addEventListener('mouseup', padUp);
 let hintT = setTimeout(() => hideHint(), 7000);
 let hideHint = function(){ clearTimeout(hintT); const h = $('#hint'); if (h) h.classList.add('gone'); };
 
-/* ── the route, when Memory Quest LE has one ──────────────────────────────────
+/* ── the route, when Memory Quest Low Effort has one ──────────────────────
    This page still runs on its own with the deck baked into it below — open
    it and nothing has changed. What is new is that it will take a deck from
    the town next door instead, when there is one to take.
 
-   Memory Quest LE hands the route over in two halves, and it has to, because
+   Memory Quest Low Effort hands the route over in two halves, and it has to, because
    the two halves are needed at different moments. The ORDER is a list of
    marker ids in localStorage, which is synchronous — so PLACE.length, and
    with it how many faces there are, is known before anything is built. The

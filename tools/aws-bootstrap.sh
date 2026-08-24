@@ -26,7 +26,7 @@ cat > /etc/profile.d/memory-quest-le.sh <<'MOTD'
 if [ ! -d "$HOME/memory-quest-le" ]; then
   cat <<'TXT'
 
-  Memory Quest LE dev box — two sign-ins to do once:
+  Memory Quest Low Effort dev box — two sign-ins to do once:
 
     gh auth login          # device code, paste it in a browser on your laptop
     gh repo clone ParseMeData/memory-quest-le

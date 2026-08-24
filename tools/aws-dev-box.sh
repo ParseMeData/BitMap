@@ -51,7 +51,7 @@ up)
         --output text 2>/dev/null)"
   if [ "$SG" = "None" ] || [ -z "$SG" ]; then
     SG="$("$AWS" ec2 create-security-group --region "$REGION" --group-name "$NAME" \
-          --description "Memory Quest LE dev box" --vpc-id "$VPC" --query GroupId --output text)"
+          --description "Memory Quest Low Effort dev box" --vpc-id "$VPC" --query GroupId --output text)"
   fi
   "$AWS" ec2 authorize-security-group-ingress --region "$REGION" --group-id "$SG" \
     --protocol tcp --port 22 --cidr "$MYIP/32" >/dev/null 2>&1 || true

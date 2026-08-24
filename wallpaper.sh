@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Memory Quest LE as a live desktop plate.
+# Memory Quest Low Effort as a live desktop plate.
 #
 # Plasma wallpapers cannot take input, so this is an overlay window pinned
 # below everything by a KWin rule — the same trick as the Typeset Earth

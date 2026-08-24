@@ -56,7 +56,7 @@ its argument parser takes nothing that would add one — so `snapshot.py` cannot
 attach to it, and whatever gets built in the plate is in no snapshot and no
 tag, and does not appear in the town you play. As of v5.0 the plate has never
 been started on this machine: there is no `~/.cache/memory-quest-le-wall`, and no
-Memory Quest LE rule in `~/.config/kwinrulesrc`.
+Memory Quest Low Effort rule in `~/.config/kwinrulesrc`.
 
 `platformer.html` here is a **copy** of the halftone platformer's shipped file
 plus a deck hook. Edits upstream do not propagate, and edits here do not go

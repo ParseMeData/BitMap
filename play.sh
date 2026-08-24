@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Memory Quest LE — launch in an app window with its own browser profile, so the
+# Memory Quest Low Effort — launch in an app window with its own browser profile, so the
 # game never inherits shields/extensions from your everyday browsing and never
 # serves a stale build out of that profile's cache.
 set -euo pipefail
@@ -27,7 +27,7 @@ done
 if [ -z "$BROWSER" ]; then
   # echo rather than a heredoc, so the refusal still reaches you on the kind of
   # broken PATH that is one plausible reason nothing above was found.
-  echo "no Chromium-family browser found — Memory Quest LE needs one of:" >&2
+  echo "no Chromium-family browser found — Memory Quest Low Effort needs one of:" >&2
   echo "  brave-browser brave-browser-stable brave chromium chromium-browser google-chrome-stable google-chrome" >&2
   echo "It will not fall back to another browser. --user-data-dir is what keeps the" >&2
   echo "town in $PROFILE," >&2

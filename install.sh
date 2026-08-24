@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Memory Quest LE — put the launcher entry and its icon where this desktop looks
+# Memory Quest Low Effort — put the launcher entry and its icon where this desktop looks
 # for them, from wherever the clone happens to sit.
 #
 # memory-quest-le.desktop is tracked as a template rather than as a working entry,
@@ -84,4 +84,4 @@ refresh
 
 echo "installed  $ENTRY"
 echo "installed  $ICON"
-echo "Memory Quest LE $VERSION  ·  runs $DIR/play.sh"
+echo "Memory Quest Low Effort $VERSION  ·  runs $DIR/play.sh"

@@ -58,6 +58,18 @@ const Build = (() => {
      actually drawn in, so it is the finest thing worth aiming at, and it
      contains the tile grid rather than competing with it. */
   const snapK = v => Math.round(v / cellSize()) * cellSize();
+  /* ── how finely a shape moves ───────────────────────────────────────────
+     A thing you PLACE moves in walk tiles: a bed half a tile out is a bed
+     you can never line up with the wall beside it. A thing you AIM moves in
+     lattice cells, because a cell is one diamond — it is the pixel of this
+     drawing, and a cut is only clean if it can be put on one. The wall it
+     has to land on is two cells thick, so a tile is four times too coarse to
+     trim with: every correction overshoots or undershoots and there is no
+     setting in between. */
+  const fine = s => !!(s && ((Kinds.by[s.kind] || {}).clears || s.kind === 'door'));
+  const quant = s => (fine(s) ? cellSize() : grid());
+  const snapQ = (v, q) => Math.round(v / q) * q;
+  const snapQS = (v, q) => Math.max(q, Math.round(v / q) * q);
   const WMAX = 5;                     // cells: past this a road stops being a line
   const snapW = v => {
     const c = cellSize();
@@ -250,7 +262,18 @@ const Build = (() => {
     if (!sel) return;
     const room = sel.label && mode === 'rooms' ? sel : null;
     const g = grid();
-    if (sel.type === 'line' || sel.type === 'ring')
+    if (fine(sel) && sel.type !== 'line' && sel.type !== 'ring'){
+      /* Trimming is not scaling. A cut you are dialling in wants one cell on
+         and one cell off, not fifteen percent of whatever it happens to be —
+         which on a small one is nothing and on a large one is a tile.
+
+         Two cells of size, because this grows from the middle and so moves
+         both edges: one cell off each side, which is what keeps them on the
+         cell grid the cut is aimed with. */
+      const c = cellSize(), d = (f > 1 ? 2 : -2) * c;
+      sel.w = clamp(sel.w + d, c, MAXSPAN());
+      sel.h = clamp(sel.h + d, c, MAXSPAN());
+    } else if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
     else {
       sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
@@ -269,9 +292,27 @@ const Build = (() => {
     syncUI();
   }
 
+  /* ── a cut lands on the grid it cuts ────────────────────────────────────
+     A lattice cell is removed when its CENTRE falls inside the cut, and cell
+     centres sit halfway between cell boundaries. So a cut whose own edges
+     land halfway too puts every centre along that edge exactly on the
+     boundary of the test — and whether each one is taken comes down to
+     floating point. That is the ragged edge: a wall cut a diamond too far in
+     one place and a diamond short in the next. Held to whole cells, every
+     centre is decisively in or decisively out. */
+  function alignFine(s){
+    if (!fine(s) || s.type === 'line' || s.type === 'ring') return;
+    const c = cellSize();
+    const x0 = Math.round((s.x - s.w / 2) / c) * c, x1 = Math.round((s.x + s.w / 2) / c) * c;
+    const y0 = Math.round((s.y - s.h / 2) / c) * c, y1 = Math.round((s.y + s.h / 2) / c) * c;
+    s.w = Math.max(c, x1 - x0); s.h = Math.max(c, y1 - y0);
+    s.x = (x0 + x1) / 2; s.y = (y0 + y1) / 2;
+  }
+
   /* a shape changed: only its own instances need regenerating */
   function changed(s){
     if (s){
+      alignFine(s);
       s._flat = null;                       // the curve may have moved
       const nb = reachBox(s), ob = s._bb || nb;
       s._buf = null;
@@ -411,6 +452,23 @@ const Build = (() => {
 
   /* ── selection overlay, drawn as entities so it needs no second shader ── */
   const FLARE = [1, 0.373, 0.635], IDLE = [0.42, 0.42, 0.5];
+  const AQUA = [0.47, 0.88, 0.85];
+  /* one mark per lattice cell the cut covers, thinned out rather than
+     truncated once there are more of them than are worth drawing */
+  function hatch(a, m, s, isSel){
+    const c = cellSize(), b = Kinds.geo.bbox(s);
+    const nx = Math.round((b[2] - b[0]) / c), ny = Math.round((b[3] - b[1]) / c);
+    let step = 1;
+    while (Math.ceil(nx / step) * Math.ceil(ny / step) > 420) step++;
+    const r = Math.max(1.1 / G.cam[2], c * 0.16);
+    for (let iy = 0; iy < ny; iy += step)
+      for (let ix = 0; ix < nx; ix += step){
+        const x = b[0] + (ix + 0.5) * c, y = b[1] + (iy + 0.5) * c;
+        if (!Kinds.geo.inside(s, x, y)) continue;
+        m = put(a, m, x, y, AQUA[0], AQUA[1], AQUA[2], isSel ? 0.5 : 0.28, r, 0, 0, 0, 1);
+      }
+    return m;
+  }
   const rotpt = (s, lx, ly) => {
     const c = Math.cos(s.rot || 0), sn = Math.sin(s.rot || 0);
     return {x: s.x + lx * c - ly * sn, y: s.y + lx * sn + ly * c};
@@ -474,7 +532,14 @@ const Build = (() => {
   }
   function outline(a, m, s, isSel){
     const px = 1 / G.cam[2];
-    const col = isSel ? FLARE : IDLE, al = isSel ? 0.85 : 0.3;
+    /* A demolisher draws nothing of its own — that is the whole idea — so
+       its outline is the only evidence it exists, and an outline alone says
+       where it is without saying what it takes. Every cell it covers gets a
+       mark, so what you are looking at is the diamonds that will go. */
+    const gap = !!isGap(s) && s.type !== 'line';
+    const col = gap ? AQUA : (isSel ? FLARE : IDLE);
+    const al = isSel ? 0.85 : (gap ? 0.5 : 0.3);
+    if (gap) m = hatch(a, m, s, isSel);
     const r = Math.max(2 * px, cellSize() * 0.15);
     const N = 44;
     const dot = (x, y) => { m = put(a, m, x, y, col[0], col[1], col[2], al, r, 0, 0, 0, 1); };
@@ -526,7 +591,6 @@ const Build = (() => {
                     Math.max(1.6 * px, grid() * 0.06), 0, 0, 0, 1);
           m = put(a, m, h.x, h.y, GOLD[0], GOLD[1], GOLD[2], 1, big * 1.2, 1, 0, 0, 1);
         } else if (h.kind === 'bend'){
-          const AQUA = [0.47, 0.88, 0.85];
           m = put(a, m, h.x, h.y, AQUA[0], AQUA[1], AQUA[2], 0.95, big * 0.85, 1, 0, 0, 1);
         } else if (h.kind === 'edge'){
           m = put(a, m, h.x, h.y, BONE[0], BONE[1], BONE[2], 0.95, big * 0.7, 0, 0, 0, 1);
@@ -553,6 +617,17 @@ const Build = (() => {
      is a quarter-tile ribbon you would have to hunt for. While the plan is
      what you are editing the whole room is the handle, because the room is
      the thing you are moving. */
+  /* the topmost plan shape under the pointer that is not the one already
+     selected — a door or a gap, never a room */
+  function planAt(p, not){
+    for (let i = G.shapes.length - 1; i >= 0; i--){
+      const s = G.shapes[i];
+      if (s === not || s.label || !editable(s)) continue;
+      if (near(s, p, GRAB())) return s;
+    }
+    return null;
+  }
+
   function grabbable(s, p){
     if (mode !== 'rooms' || !s.label) return near(s, p, GRAB());
     const b = Kinds.geo.bbox(s), t = GRAB();
@@ -606,27 +681,13 @@ const Build = (() => {
       }
       Markers.select(null);
       /* A door and a room's edge grip live in the same place — on the wall —
-         and the grips are checked first because they belong to what is
-         already selected. So a door on a selected room's wall could never be
-         picked up: the grip swallowed the click. The door is the smaller and
-         more specific of the two, so it wins the pointer, and the grips keep
-         the rest of the wall and all four corners. */
-      if (mode === 'rooms'){
-        let plan = null;
-        for (let i = G.shapes.length - 1; i >= 0; i--){
-          const s = G.shapes[i];
-          if (s.label || !editable(s)) continue;
-          if (near(s, p, GRAB())){ plan = s; break; }
-        }
-        if (plan){
-          sel = plan;
-          drag = {mode: 'move', s: plan, ox: p[0], oy: p[1]};
-          canvas.setPointerCapture(e.pointerId);
-          syncUI();
-          return;
-        }
-      }
-      if (sel && editable(sel)){
+         so one of them has to yield. The ROOM yields: a door is the smaller
+         and more specific thing, and the grips keep the rest of the wall and
+         all four corners. But only the room yields. A gap's own grips sit on
+         its own edges, and letting the body win there means a cut you can
+         move and never resize, which is most of the way to useless. */
+      const other = mode === 'rooms' ? planAt(p, sel) : null;
+      if (sel && editable(sel) && !(other && sel.label)){
         if (e.shiftKey && sel.type === 'line' && near(sel, p, GRAB())){
           addPoint(sel, p); return;
         }
@@ -636,6 +697,13 @@ const Build = (() => {
             canvas.setPointerCapture(e.pointerId);
             return;
           }
+      }
+      if (other){
+        sel = other;
+        drag = {mode: 'move', s: other, ox: p[0], oy: p[1]};
+        canvas.setPointerCapture(e.pointerId);
+        syncUI();
+        return;
       }
       let hit = null;
       for (let i = G.shapes.length - 1; i >= 0; i--){
@@ -656,8 +724,9 @@ const Build = (() => {
       if (!drag) return;
       const p = toWorld(e), s = drag.s, c = cellSize();
       if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); return; }
+      const q = quant(s);
       if (drag.mode === 'move'){
-        const dx = snapD(p[0] - drag.ox), dy = snapD(p[1] - drag.oy);
+        const dx = snapQ(p[0] - drag.ox, q), dy = snapQ(p[1] - drag.oy, q);
         if (!dx && !dy) return;
         moveBy(s, dx, dy);
         drag.ox += dx; drag.oy += dy;
@@ -690,8 +759,8 @@ const Build = (() => {
         if (tag.indexOf('w') >= 0) x0 = l[0];
         if (tag.indexOf('n') >= 0) y0 = l[1];
         if (tag.indexOf('s') >= 0) y1 = l[1];
-        const nw = clamp(snapS(Math.abs(x1 - x0)), grid(), MAXSPAN());
-        const nh = clamp(snapS(Math.abs(y1 - y0)), grid(), MAXSPAN());
+        const nw = clamp(snapQS(Math.abs(x1 - x0), q), q, MAXSPAN());
+        const nh = clamp(snapQS(Math.abs(y1 - y0), q), q, MAXSPAN());
         /* the size has been snapped, so the moving edge is put back at
            whatever that size makes it — the fixed one is never recomputed */
         if (tag.indexOf('e') >= 0) x1 = x0 + nw; else if (tag.indexOf('w') >= 0) x0 = x1 - nw;
@@ -1114,8 +1183,10 @@ const Build = (() => {
         ? 'no rooms yet · <b>O</b> types a list and lays one out'
         : (sel ? (sel.label
                     ? '<b>drag</b> the room · <b>corners</b> resize · the fit-out follows it'
-                    : '<b>' + (sel.kind === 'door' ? 'door' : 'wall gap') +
-                      '</b> · drag to move · <b>del</b> removes it')
+                    : sel.kind === 'door'
+                      ? '<b>door</b> · drag to move · <b>ends</b> stretch it · <b>del</b> removes it'
+                      : '<b>wall gap</b> · ' + cellsOf(sel) + ' · grips resize it by the cell · ' +
+                        '<b>[ ]</b> trims · <b>del</b> removes it')
                : '<b>' + rooms + ' rooms</b> · click one to move or resize it');
       /* A palace is laid out sealed, so how much of it the walker can
          actually get to is the number worth showing — otherwise "nothing
@@ -1265,6 +1336,9 @@ const Build = (() => {
           variant: s.variant || (k.variants ? k.variants[0] : 'mixed')
         });
       });
+    /* a cut drawn before cuts were held to the cell grid is corrected on
+       the way in, rather than waiting for someone to nudge it */
+    G.shapes.forEach(alignFine);
     if (adopt()) save();
   }
 
@@ -1286,6 +1360,12 @@ const Build = (() => {
     }
     return {n, total};
   }
+
+  /* a cut is measured in the unit it is edited in */
+  const cellsOf = s => {
+    const c = cellSize(), b = Kinds.geo.bbox(s);
+    return Math.round((b[2] - b[0]) / c) + '\u00d7' + Math.round((b[3] - b[1]) / c) + ' cells';
+  };
 
   const startLayer = () => (Kinds.layers.find(L => L.start) || Kinds.layers[0]).id;
 

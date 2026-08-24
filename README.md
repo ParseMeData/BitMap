@@ -622,6 +622,25 @@ are laid again for the shape it is now**. Make it bigger and the next slot
 appears and fills; make it smaller and the slot goes and takes its contents
 with it. Deleting a room deletes the room, not the four walls of one.
 
+Both plan tools snap to the **lattice cell**, not the walk tile — and go on
+snapping to it after they are placed: a gap and a door move and resize by the
+cell, and `[` `]` trims a gap by one cell a side rather than by a percentage.
+A trim you are dialling in wants one cell on and one cell off; fifteen per
+cent of whatever it happens to be is nothing on a small cut and a whole tile
+on a large one.
+
+A cut is held to whole cells, which is not tidiness. A lattice cell is removed
+when its **centre** falls inside the cut, and centres sit halfway between cell
+boundaries — so a cut whose own edges land halfway too puts every centre along
+that edge exactly on the boundary of the test, and whether each is taken comes
+down to floating point. That is a ragged edge: a diamond too far in one place
+and a diamond short in the next. On whole cells every centre is decisively in
+or out. A cut drawn before this was true is corrected on the way in.
+
+Because a gap draws nothing of its own, every cell it covers is marked while
+you are in Rooms — an outline says where it is, and the marks say what it
+takes.
+
 Both plan tools snap to the **lattice cell**, not the walk tile. The tile is
 the right quantum for a thing you *place* — a bed sits on tiles, and half-tile
 furniture is furniture you can never line up — and the wrong one for a thing

@@ -162,17 +162,32 @@ const Interior = (() => {
      sixteenth — enough to judge a room against, far too faint to draw on. */
   function overlay(a, m, cap){
     if (!stack.length || !Build.active() || !G.terr || WALL) return m;
-    const z = G.cam[2], ts = G.terr.tsz, step = ts * 4;
+    const z = G.cam[2], ts = G.terr.tsz;
+    /* Every fourth tile is enough to judge a room against and far too coarse
+       to aim a tool at, so while one is being aimed the grid comes down to
+       the tile — and only then, because a lattice this fine standing there
+       all the time is a sheet of graph paper you are trying to draw a house
+       on. It thins back out when the diamonds get too small to tell apart. */
+    const aim = Build.aiming();
+    let step = ts * (aim ? 1 : 4);
+    while (step * z < 7) step *= 2;
     const hw = VW / (2 * z), hh = VH / (2 * z);
     const x0 = Math.floor((G.cam[0] - hw) / step) * step;
     const y0 = Math.floor((G.cam[1] - hh) / step) * step;
     const x1 = G.cam[0] + hw, y1 = G.cam[1] + hh;
-    const r = Math.max(0.9 / z, ts * 0.045);
+    const r = Math.max(0.9 / z, ts * (aim ? 0.06 : 0.045));
+    const every = Math.max(1, Math.round(ts * 4 / step));
+    /* Resting, it is the colour of the page and nearly not there. Being
+       aimed at, it is aqua and plainly a tool — a grid you cannot see over
+       the floor you are aiming at is a grid that is not helping, and this
+       one is only up while a tool is armed. */
+    const c = aim ? [0.47, 0.88, 0.85] : [0.45, 0.45, 0.55];
     for (let y = y0; y <= y1; y += step)
       for (let x = x0; x <= x1; x += step){
         if (m > cap - 2) return m;
-        const big = Math.round(x / step) % 4 === 0 && Math.round(y / step) % 4 === 0;
-        m = put(a, m, x, y, 0.45, 0.45, 0.55, big ? 0.4 : 0.2,
+        const big = Math.round(x / step) % every === 0 && Math.round(y / step) % every === 0;
+        m = put(a, m, x, y, c[0], c[1], c[2],
+                big ? (aim ? 0.6 : 0.4) : (aim ? 0.3 : 0.2),
                 big ? r * 1.5 : r, 0, 0, 0, 1);
       }
     return m;

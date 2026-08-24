@@ -622,6 +622,25 @@ are laid again for the shape it is now**. Make it bigger and the next slot
 appears and fills; make it smaller and the slot goes and takes its contents
 with it. Deleting a room deletes the room, not the four walls of one.
 
+Both plan tools snap to the **lattice cell**, not the walk tile. The tile is
+the right quantum for a thing you *place* — a bed sits on tiles, and half-tile
+furniture is furniture you can never line up — and the wrong one for a thing
+you *aim*. A wall is two cells, half a tile, so a tool snapped to tiles cannot
+land on one of its faces at all. The cell is what everything here is drawn in,
+it is four times finer, and it contains the tile grid rather than competing
+with it.
+
+The rectangle is snapped **as you drag it**, not when you let go, so what is
+drawn under the pointer is what gets made. A preview that rounds differently
+from the thing it previews is a preview that lies, and *I cannot put it
+exactly where I want* is what that feels like from the other side.
+
+And while a tool is armed the register grid comes down from every fourth tile
+to every tile and turns aqua — plainly a tool rather than part of the page. A
+grid you cannot see over the floor you are aiming at is not helping; one that
+fine standing there permanently is graph paper you are trying to draw a house
+on. It thins back out when the dots get too close to tell apart.
+
 **Door** drags along a wall and cuts one there. The drag's long axis is the
 door and its short axis is only which wall you meant, so a sideways drag on a
 horizontal wall and a downward one on a vertical wall both do the obvious

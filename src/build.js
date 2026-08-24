@@ -48,6 +48,16 @@ const Build = (() => {
   const snapC = v => (Math.round(v / grid() - 0.5) + 0.5) * grid();   // onto tile centres
   const snapD = v => Math.round(v / grid()) * grid();                 // a whole-tile step
   const snapS = v => Math.max(grid(), Math.round(v / grid()) * grid());
+  /* ── the fine grid ──────────────────────────────────────────────────────
+     The walk tile is the right quantum for a thing you place: a bed sits on
+     tiles, and half-tile furniture would be furniture you could never line
+     up. It is the wrong quantum for a thing you aim. A wall is two lattice
+     cells — half a tile — so a tool snapped to tiles cannot land on one of
+     its faces, and a room resized before edges were kept on the grid can sit
+     on half-tiles itself. The lattice cell is what everything here is
+     actually drawn in, so it is the finest thing worth aiming at, and it
+     contains the tile grid rather than competing with it. */
+  const snapK = v => Math.round(v / cellSize()) * cellSize();
   const WMAX = 5;                     // cells: past this a road stops being a line
   const snapW = v => {
     const c = cellSize();
@@ -438,8 +448,13 @@ const Build = (() => {
     if (!on) return m;
     if (band){
       const px = 1 / G.cam[2], r = Math.max(2 * px, cellSize() * 0.16);
-      const x0 = Math.min(band.x0, band.x1), x1 = Math.max(band.x0, band.x1);
-      const y0 = Math.min(band.y0, band.y1), y1 = Math.max(band.y0, band.y1);
+      const c = cellSize();
+      let x0 = Math.min(band.x0, band.x1), x1 = Math.max(band.x0, band.x1);
+      let y0 = Math.min(band.y0, band.y1), y1 = Math.max(band.y0, band.y1);
+      if (band.shape !== 'line'){
+        if (x1 - x0 < c) x1 = x0 + c;
+        if (y1 - y0 < c) y1 = y0 + c;
+      }
       const n = 40;
       for (let j = 0; j <= n; j++){
         const t = j / n;
@@ -566,8 +581,12 @@ const Build = (() => {
          what it is FOR is a stretch, and a stretch is two corners. */
       if (armed && armed.band){
         const q = toWorld(e);
+        /* Snapped as it is taken, not as it is released, so what is drawn
+           under the pointer is what will be made. A preview that rounds
+           differently from the thing it previews is a preview that lies, and
+           "I cannot put it exactly where I want" is what that feels like. */
         band = {kind: armed.kind, shape: armed.shape || 'rect',
-                x0: q[0], y0: q[1], x1: q[0], y1: q[1]};
+                x0: snapK(q[0]), y0: snapK(q[1]), x1: snapK(q[0]), y1: snapK(q[1])};
         canvas.setPointerCapture(e.pointerId);
         return;
       }
@@ -633,7 +652,7 @@ const Build = (() => {
     });
 
     addEventListener('pointermove', e => {
-      if (band){ const q = toWorld(e); band.x1 = q[0]; band.y1 = q[1]; return; }
+      if (band){ const q = toWorld(e); band.x1 = snapK(q[0]); band.y1 = snapK(q[1]); return; }
       if (!drag) return;
       const p = toWorld(e), s = drag.s, c = cellSize();
       if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); return; }
@@ -705,25 +724,29 @@ const Build = (() => {
         const b = band;
         band = null; armed = null;
         document.body.classList.remove('arming');
-        const g = grid();
-        const w = Math.abs(b.x1 - b.x0), h = Math.abs(b.y1 - b.y0);
-        const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+        const c = cellSize();
+        /* the corners as dragged, in the order the geometry wants them */
+        let x0 = Math.min(b.x0, b.x1), x1 = Math.max(b.x0, b.x1);
+        let y0 = Math.min(b.y0, b.y1), y1 = Math.max(b.y0, b.y1);
         if (b.shape === 'line'){
           /* A door runs ALONG the wall it opens, so the drag's long axis is
-             the door and its short axis is only which wall you meant. It is
-             placed exactly where you dragged rather than snapped to a tile
-             centre: a wall an even number of tiles from the origin sits on
-             tile centres itself, and a door snapped off it opens half of a
-             doorway. */
-          const len = Math.max(g * 2, Math.round(Math.max(w, h) / g) * g);
-          const pts = w >= h ? [[cx - len / 2, cy], [cx + len / 2, cy]]
-                             : [[cx, cy - len / 2], [cx, cy + len / 2]];
+             the door and its short axis is only which wall you meant. */
+          const w = x1 - x0, h = y1 - y0;
+          const along = Math.max(w, h, grid());
+          const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+          const pts = w >= h ? [[cx - along / 2, cy], [cx + along / 2, cy]]
+                             : [[cx, cy - along / 2], [cx, cy + along / 2]];
           const s2 = make({kind: b.kind, type: 'line', pts, exact: true,
-                           width: cellSize() * 2, variant: 'swing'});
+                           width: c * 2, variant: 'swing'});
           if (s2){ sel = s2; changed(s2); }
         } else {
-          drop(b.kind, snapC(cx), snapC(cy),
-               Math.max(g, snapS(w)), Math.max(g, snapS(h)));
+          /* a hole has to be at least one cell across to be a hole */
+          if (x1 - x0 < c) x1 = x0 + c;
+          if (y1 - y0 < c) y1 = y0 + c;
+          const s2 = make({kind: b.kind, type: 'rect', exact: true,
+                           x: (x0 + x1) / 2, y: (y0 + y1) / 2,
+                           w: x1 - x0, h: y1 - y0});
+          if (s2){ sel = s2; changed(s2); }
         }
         syncUI();
         return;
@@ -1304,5 +1327,7 @@ const Build = (() => {
   }
   return {init, rebuild, stamp, overlay, setOn, mount, lay, refill, setMode,
           mode: () => mode, active: () => on,
+          /* a tool that is being aimed wants a grid fine enough to aim at */
+          aiming: () => !!(band || (armed && armed.band)),
           sync: syncUI, commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

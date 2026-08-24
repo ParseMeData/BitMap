@@ -217,6 +217,12 @@ const Basemap = (() => {
   /* ── search ── */
   async function find(q){
     if (!q || !q.trim()) return false;
+    /* A frozen picture is the most expensive thing in the profile — an hour of
+       positioning by hand, and the only copy of it once IndexedDB has it. This
+       used to thaw on the way past, which deleted it without ever using the
+       word, from a button that says Find. The button that means it is two
+       along and says Thaw, so searching somewhere else refuses instead. */
+    if (pic){ note('a picture is frozen — Thaw first to search somewhere else'); return false; }
     note('searching…');
     try {
       const r = await fetch(FIND + encodeURIComponent(q.trim()));
@@ -224,7 +230,7 @@ const Basemap = (() => {
       const j = await r.json();
       if (!j.length){ note('nothing found'); return false; }
       lat = +j[0].lat; lon = +j[0].lon;
-      thaw();                          // a new place means live tiles again
+      thaw();                          // only reachable now with nothing frozen
       clear();
       setShown(true);
       note((j[0].display_name || q).slice(0, 46));
@@ -417,8 +423,13 @@ const Basemap = (() => {
   }
   function setSrc(v){
     if (src === v) return;
+    /* Same trap as find(): the source only decides what the live tiles look
+       like, and a frozen picture covers them anyway — so changing it was
+       never worth the picture it silently took. syncUI() puts the selected
+       button back, because the click already moved it. */
+    if (pic){ note('a picture is frozen — Thaw first to change the source'); syncUI(); return; }
     src = v;
-    thaw();
+    thaw();                            // only reachable now with nothing frozen
     clear(); paint(); sync(); save(); syncUI();
   }
 

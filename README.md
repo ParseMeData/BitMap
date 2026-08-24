@@ -16,6 +16,10 @@ the build tools came from there; what is new is that the plate starts
 build is the only thing on it. The printed map is still in `assets/` and one
 switch away — see *The plate: Map or Blank*.
 
+`HANDOFF.md` is the orientation document: the shape of the whole thing, the
+decisions that are load-bearing, and how to work on it without breaking the
+town. Read that first; read this for how any single thing works.
+
 ## Versions
 
 The folder carries no version; the tag does, and the name in the title,

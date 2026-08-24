@@ -193,6 +193,21 @@ in the walk grid — it is a hole in what a blocker may block. The demolisher is
 both; a door only `clears`, because a door is a way through and stamps its own
 walkable ground. They were one flag and it made doors unwalkable.
 
+**On a quad, `quad` is the shape and `w`/`h` are its shadow.** A demolish area
+that has had a corner dragged carries four corners in its own local frame, and
+`w`/`h` are restated from their extent after every edit. Do not reverse that:
+half the file reads `w`/`h` — the size slider, the cell scan, every bbox test —
+so leaving them stale is a shape whose size nothing agrees on, and deriving the
+corners from them again is the rect you just stopped being. Every edit ends in
+`normQuad()`, which also re-centres the corners on the origin and moves the
+origin to match, because the rotate grip turns about that origin and a quad
+dragged off it turns about a point outside itself.
+
+**Fall and Feather are one weight arrived at two ways, so they multiply.**
+Feather keeps a demolish area's bite off its own rim; Fall says which rim the
+damage was coming from. Neither is a special case of the other, and adding them
+instead of multiplying gives damage outside the area.
+
 **Generated geometry is placed `exact`.** Snapping is for a shape being
 dragged. A shape's centre snaps to a tile *centre*, so a room an even number of
 tiles wide has its edges on tile centres — and anything derived from it by

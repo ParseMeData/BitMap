@@ -76,8 +76,37 @@ const Kinds = (() => {
     return !!(k && k.hollow) && s.type !== 'line' && s.type !== 'ring';
   };
 
+  /* ── a rect that stopped being one ─────────────────────────────────────
+     An area is described by a centre and a size, which is four corners you
+     are not allowed to move independently. `quad` is those four corners
+     said outright — nw, ne, se, sw, in the shape's OWN frame, so `rot`
+     still turns it, `x`/`y` still move it, and everything that reads a
+     shape's local coordinates goes on working without being told.
+
+     `w`/`h` are kept as the quad's own bounding box rather than left
+     stale, because they are what the size slider, the cell scan and every
+     bbox test read. The quad is the truth; w and h are its shadow. */
+  const box4 = s => { const hw = s.w / 2, hh = s.h / 2;
+    return [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]]; };
+  const corners = s => (s.quad && s.quad.length === 4) ? s.quad : box4(s);
+  /* signed distance to a four-sided polygon: positive inside, and in the
+     same world units geo.depth() answers in everywhere else, so a feather
+     measured in cells means the same thing on a dragged quad as on a rect */
+  function polyDepth(q, x, y){
+    let best = Infinity, inside = false;
+    for (let i = 0, j = 3; i < 4; j = i++){
+      const a = q[j], b = q[i];
+      best = Math.min(best, segDist(x, y, a, b));
+      if ((a[1] > y) !== (b[1] > y) &&
+          x < (b[0] - a[0]) * (y - a[1]) / ((b[1] - a[1]) || 1e-9) + a[0]) inside = !inside;
+    }
+    return inside ? best : -best;
+  }
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
   const geo = {
     flat: flatten,
+    corners,
     bbox(s){
       if (s.type === 'line'){
         let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -91,6 +120,16 @@ const Kinds = (() => {
       if (s.type === 'ring'){
         const R = s.r + s.width / 2;
         return [s.x - R, s.y - R, s.x + R, s.y + R];
+      }
+      if (s.quad){
+        const c = Math.cos(s.rot || 0), sn = Math.sin(s.rot || 0);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const q of s.quad){
+          const wx = s.x + q[0] * c - q[1] * sn, wy = s.y + q[0] * sn + q[1] * c;
+          x0 = Math.min(x0, wx); y0 = Math.min(y0, wy);
+          x1 = Math.max(x1, wx); y1 = Math.max(y1, wy);
+        }
+        return [x0, y0, x1, y1];
       }
       const hw = s.w / 2, hh = s.h / 2;
       let b;
@@ -136,7 +175,9 @@ const Kinds = (() => {
         return s.width / 2 - Math.abs(Math.hypot(x - s.x, y - s.y) - s.r);
       const l = geo.local(s, x, y);
       let d;
-      if (s.type === 'ellipse'){
+      if (s.quad){
+        d = polyDepth(s.quad, l[0], l[1]);
+      } else if (s.type === 'ellipse'){
         const u = l[0] / (s.w / 2 || 1), v = l[1] / (s.h / 2 || 1);
         d = (1 - Math.hypot(u, v)) * Math.min(s.w, s.h) / 2;
       } else d = Math.min(s.w / 2 - Math.abs(l[0]), s.h / 2 - Math.abs(l[1]));
@@ -152,6 +193,33 @@ const Kinds = (() => {
          band and it stays one wall thick — which is also how a wall is drawn
          on a plan, because it is how a wall is built. */
       return t / 2 - Math.abs(d);
+    },
+    /* ── which way the damage falls ──────────────────────────────────
+       An area's own Feather ramps its bite down at every rim at once, which
+       is a bruise: heaviest in the middle, gone all round. `fall` is the
+       other thing you want from a demolisher — the ruin heaviest along one
+       edge and the ground untouched along the opposite one, so a district
+       can be eaten into from the side it is being eaten from.
+
+       Measured along the axis joining the midpoints of the west and east
+       edges, which for a rect is simply its local x and for a dragged quad
+       leans with the corners. It is in the shape's own frame, so the
+       rotate grip aims it: turn the area and the fall turns with it, and a
+       half-turn is how you demolish from the other side.
+
+       0 keeps every area that has ever been saved behaving exactly as it
+       did — uniform, one weight everywhere — and 1 is the full ramp. */
+    fall(s, x, y){
+      const f = s.fall > 0 ? (s.fall > 1 ? 1 : s.fall) : 0;
+      if (!f) return 1;
+      const q = corners(s);
+      const a = mid(q[0], q[3]), b = mid(q[1], q[2]);
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const L = dx * dx + dy * dy;
+      if (!L) return 1;
+      const l = geo.local(s, x, y);
+      const u = clamp01(((l[0] - a[0]) * dx + (l[1] - a[1]) * dy) / L);
+      return 1 - f * (1 - u);
     },
     inside(s, x, y){ return geo.depth(s, x, y) > 0; },
     origin(s){ return s.type === 'line' ? s.pts[0] : [s.x, s.y]; },
@@ -319,7 +387,11 @@ const Kinds = (() => {
          it. A Feather of zero says hard-edged, exactly as it does anywhere
          else in this file. */
       const f = Math.max(0, m.feather || 0);
-      const w = f > 0 ? clamp01(d / cell / f) : 1;
+      /* the rim ramp and the directional one are the same weight arrived at
+         two ways, so they multiply rather than compete: Feather still keeps
+         the ruin off its own edges, and Fall decides which of those edges
+         the damage was coming from. */
+      const w = (f > 0 ? clamp01(d / cell / f) : 1) * geo.fall(m, x, y);
       if (w > RUIN.w){ RUIN.w = w; RUIN.m = m; }
     }
     return RUIN.m !== null;
@@ -389,10 +461,28 @@ const Kinds = (() => {
            — world coordinates would re-roll it under your hand. Keyed on the
            AREA's seed, so two areas over the same ground break it up
            differently. */
+        /* ── how the ruin arrives, rather than how much of it there is ──
+           Taken straight, the weight reads as a wedge: the damage starts at
+           a line you can see and deepens evenly, which looks like a ramp
+           laid over the ground instead of ground coming apart. Two things
+           fix that, and they are both about the END of the fall rather than
+           its middle.
+
+           Smoothstep first, so the weight leaves the untouched side flat
+           and arrives flat — there is no edge to the damage at either end,
+           only ground that is gradually more broken.
+
+           Then jitter runs ahead of scatter: it carries the same curve but
+           reaches twice as far by the far end, so the last diamonds still
+           standing are also the ones thrown furthest off their seats. That
+           is what makes the tail dissolve rather than stop — the field
+           thins and loosens at once, and there is no last row of neatly
+           seated diamonds to mark where the area finished. */
         let rjit = 0, rscat = 0, rseed = 0;
         if (mods && bitten(mods, wx, wy, cell)){
-          rscat = clamp(RUIN.m.scatter || 0, 0, 1) * RUIN.w;
-          rjit = Math.max(0, RUIN.m.jitter || 0) * RUIN.w;
+          const w = RUIN.w, e = w * w * (3 - 2 * w);
+          rscat = clamp(RUIN.m.scatter || 0, 0, 1) * e;
+          rjit = Math.max(0, RUIN.m.jitter || 0) * e * (1 + e);
           rseed = RUIN.m.seed | 0;
         }
         if (rscat > 0 && hash(u, v, rseed + 663) < rscat * 0.55) continue;
@@ -1143,15 +1233,18 @@ const Kinds = (() => {
        makes them the one you want in front of you while dialling it in.
 
        It draws nothing, so it is born already doing something: Feather at
-       the same 4 cells any area is born with, and enough Scatter to read as
-       broken the moment it lands. The swatch is the one the floor
+       the same 4 cells any area is born with, enough Scatter to read as
+       broken the moment it lands, and Fall at full — because the damage
+       coming from one side is what you almost always want, and dialling it
+       back to even is one slider, while never discovering it exists is
+       forever. The swatch is the one the floor
        registry's demolisher already carries — the palette gains a chip and
        not a colour, and the two tools that draw nothing look alike. */
     {id: 'demolish',  label: 'Demolish',  layer: 'roads',  types: AREA,
      /* never read: a modifier is skipped where the walk grid is stamped,
         because opening or blocking a tile is the one thing it must not do */
      walk: 1, stamp: 9, gen: nothing,   swatch: '#3A3A44',
-     modifies: true, jitter0: 0.35, scatter0: 0.5,
+     modifies: true, jitter0: 0.35, scatter0: 0.5, fall0: 1,
      pad0: 0, padFade0: 0, padBreak0: 0}
   ];
   /* what the palette offers: a kind plus the shape it starts as, so a

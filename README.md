@@ -387,6 +387,46 @@ Four controls take the cleanness off, and they do different things:
 All four are per shape and stack, so `grain 1/2 · jitter 0.8 · scatter 0.4`
 is a coarse, broken, hand-placed version of the same terrain.
 
+### Demolish
+
+The third thing the engine can do to a cell. An occluder takes the ground
+away; a cut removes it from the walk grid; a **demolish area** does neither.
+It is a statement *about* whatever it lies over: everything under it stays,
+roads included, and it comes out weathered instead of removed. Drag the area
+off and the terrain returns byte for byte, because nothing underneath was ever
+written to.
+
+It draws nothing of its own, so its outline and a mark on every cell it covers
+are the only evidence it is there. It runs its target's own **Jitter** and
+**Scatter** with its own values — the same two operations, asked for by
+somebody else, on a different salt so the damage does not agree cell for cell
+with the terrain's own break-up.
+
+**Fall** is which way the damage came from. At `even` the area bites at one
+weight everywhere and Feather ramps that down at every rim at once, which is a
+bruise: heaviest in the middle, gone all round. Turned up, the bite runs along
+the area instead — the ground at one edge is left at exactly the density it
+had, and the damage deepens across to the far edge. Which edge is which is the
+shape's own rotation, so the turn grip aims it and a half-turn eats from the
+other side.
+
+The ramp is not linear, and both departures are about the *end* of the fall
+rather than its middle. It is smoothstepped, so the damage leaves the
+untouched side flat and arrives flat — there is no line anywhere you can point
+at and call the start of it. And jitter runs ahead of scatter, reaching twice
+as far by the far end, so the last diamonds still standing are also the ones
+thrown furthest off their seats. The field thins and loosens at once, which is
+what makes the tail dissolve rather than stop.
+
+A demolish area is also the one shape on the plate whose **four corners move
+independently**. Everything else is a thing — a park, a room, a stand of trees
+— and a thing described by a centre and a size is a thing you can nudge, line
+up and resize predictably. A demolisher is not a thing, and the ground it is
+eating into does not run along the axes: drag any corner grip and it goes on
+its own, while an edge grip carries the two corners of its edge, which is the
+old stretch said in the only way a quad can say it. Switch it to Oval or Line
+and the corners are given back.
+
 **Mask** changes what the pattern is anchored to. Normally the pattern is
 addressed by where a cell sits *inside its shape*, so terrain travels with the
 shape when you drag it. With Mask on it is addressed by where the cell sits in

@@ -38,7 +38,7 @@ const Build = (() => {
   /* what a newly placed shape inherits. The sliders write here when nothing
      is selected, so you can dial in a look and then keep placing it. */
   const defs = {feather: 4, bright: 1, mask: false, variant: {},
-                grain: 1, scale: 1, jitter: 0, scatter: 0,
+                grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0,
                 pad: 0, padFade: 0.8, padBreak: 0.3};
   /* ── telling history what just happened ────────────────────────────────
      A gesture that has ended is a step you can walk back (hstep); anything
@@ -190,6 +190,7 @@ const Build = (() => {
                   something, or dropping it reads as a tool that is broken */
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
                scatter: k.scatter0 !== undefined ? k.scatter0 : defs.scatter,
+               fall: k.fall0 !== undefined ? k.fall0 : defs.fall,
                pad: k.pad0 !== undefined ? k.pad0 : defs.pad,
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
@@ -263,6 +264,7 @@ const Build = (() => {
                  bright: defs.bright * (k.bright0 || 1),
                  grain: 1, scale: 1,
                  jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
+                 fall: k.fall0 || 0,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
@@ -363,6 +365,10 @@ const Build = (() => {
   function retype(type){
     if (!sel || sel.type === type) return;
     if (!(Kinds.by[sel.kind].types || []).includes(type)) return;
+    /* An oval has no corners and a line is not an area, so a quad cannot
+       come along — and it must not lie in wait either, because coming back
+       to Rect would restore a shape you had stopped being able to see. */
+    sel.quad = null;
     defaults(sel, type);
     changed(sel);
     syncUI();
@@ -613,6 +619,47 @@ const Build = (() => {
     return {x: s.x + lx * c - ly * sn, y: s.y + lx * sn + ly * c};
   };
   const SCALE = ['nw', 'ne', 'se', 'sw', 'n', 'e', 's', 'w'];
+  const CORNERS = ['nw', 'ne', 'se', 'sw'];
+  /* ── four corners you can take hold of one at a time ───────────────────
+     Only the demolisher, and only while it is a rect. Everything else on
+     the plate is a thing — a park, a room, a stand of trees — and a thing
+     described by a centre and a size is a thing you can nudge, line up and
+     resize predictably; free corners would trade all of that away for a
+     freedom nobody wanted there. A demolisher is not a thing, it is a
+     statement about what lies under it, and the ground it is eating into
+     does not run along the axes. So the freedom goes exactly where it pays
+     and nowhere else.
+
+     Ovals and lines keep their own grips: a quad is corners, and neither of
+     those is described by any. */
+  const freeCorner = s => !!s && isMod(s) && s.type === 'rect';
+  /* Born from w/h the first time a corner is taken hold of, so a demolisher
+     is a plain rect until you make it something else — and every one saved
+     before this existed is still a plain rect on the way back in. */
+  const ensureQuad = s => {
+    if (!s.quad) s.quad = Kinds.geo.corners(s).map(q => [q[0], q[1]]);
+    return s.quad;
+  };
+  /* The quad is the truth and w/h are its shadow (see kinds.js), so every
+     edit ends here: re-centre the corners on the shape's own origin, move
+     the origin by as much in the world, and restate w/h as the extent. Skip
+     it and the rotate grip turns the area about a point that is no longer
+     inside it, and the size slider reads a size nothing has. */
+  function normQuad(s){
+    const q = s.quad;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of q){
+      x0 = Math.min(x0, c[0]); y0 = Math.min(y0, c[1]);
+      x1 = Math.max(x1, c[0]); y1 = Math.max(y1, c[1]);
+    }
+    const dx = (x0 + x1) / 2, dy = (y0 + y1) / 2;
+    for (const c of q){ c[0] -= dx; c[1] -= dy; }
+    const co = Math.cos(s.rot || 0), si = Math.sin(s.rot || 0);
+    s.x += dx * co - dy * si;
+    s.y += dx * si + dy * co;
+    s.w = Math.max(cellSize(), x1 - x0);
+    s.h = Math.max(cellSize(), y1 - y0);
+  }
   /* Every grip says what it does: corners scale, edge grips stretch one way,
      and the one standing off the top edge turns the shape. */
   /* where a segment's curve actually passes at the halfway mark: the point
@@ -641,6 +688,23 @@ const Build = (() => {
     }
     if (s.type === 'ring') return [{x: s.x + s.r, y: s.y, tag: 'rad', kind: 'corner'}];
     const hw = s.w / 2, hh = s.h / 2, out = [];
+    if (s.quad){
+      /* the grips leave the bounding box and go where the shape actually
+         is: a corner grip standing off the corner it moves is a grip you
+         aim at rather than point at */
+      const q = s.quad;
+      CORNERS.forEach((tag, i) => out.push(Object.assign(rotpt(s, q[i][0], q[i][1]),
+                                                         {tag, kind: 'corner'})));
+      /* an edge grip carries the two corners of its own edge, so a side
+         still moves as a side once the shape is no longer a rect */
+      [[0, 1, 'n'], [1, 2, 'e'], [2, 3, 's'], [3, 0, 'w']].forEach(([a, b, tag]) =>
+        out.push(Object.assign(rotpt(s, (q[a][0] + q[b][0]) / 2, (q[a][1] + q[b][1]) / 2),
+                               {tag, kind: 'edge'})));
+      const top = [(q[0][0] + q[1][0]) / 2, (q[0][1] + q[1][1]) / 2];
+      out.push(Object.assign(rotpt(s, top[0], top[1] - grid() * 1.4),
+                             {tag: 'rot', kind: 'rotate'}));
+      return out;
+    }
     for (const [lx, ly, tag] of [[-hw, -hh, 'nw'], [hw, -hh, 'ne'], [hw, hh, 'se'], [-hw, hh, 'sw']])
       out.push(Object.assign(rotpt(s, lx, ly), {tag, kind: 'corner'}));
     for (const [lx, ly, tag] of [[0, -hh, 'n'], [hw, 0, 'e'], [0, hh, 's'], [-hw, 0, 'w']])
@@ -719,6 +783,13 @@ const Build = (() => {
         const th = j / (N * 2) * 6.283185307;
         dot(s.x + Math.cos(th) * s.w / 2, s.y + Math.sin(th) * s.h / 2);
       }
+    } else if (s.quad){
+      const P = s.quad.map(c => rotpt(s, c[0], c[1]));
+      for (let i = 0, j = 3; i < 4; j = i++)
+        for (let k = 0; k <= N; k++){
+          const t = k / N;
+          dot(P[j].x + (P[i].x - P[j].x) * t, P[j].y + (P[i].y - P[j].y) * t);
+        }
     } else {
       const x0 = s.x - s.w / 2, x1 = s.x + s.w / 2, y0 = s.y - s.h / 2, y1 = s.y + s.h / 2;
       for (let j = 0; j <= N; j++){
@@ -733,7 +804,9 @@ const Build = (() => {
       for (const h of handles(s)){
         if (h.kind === 'rotate'){
           /* a stalk, so the turn grip reads as attached rather than floating */
-          const top = rotpt(s, 0, -s.h / 2);
+          const top = s.quad
+            ? rotpt(s, (s.quad[0][0] + s.quad[1][0]) / 2, (s.quad[0][1] + s.quad[1][1]) / 2)
+            : rotpt(s, 0, -s.h / 2);
           for (let i = 1; i <= 4; i++)
             m = put(a, m, top.x + (h.x - top.x) * i / 5, top.y + (h.y - top.y) * i / 5,
                     GOLD[0], GOLD[1], GOLD[2], 0.45,
@@ -894,6 +967,32 @@ const Build = (() => {
         s.rot = Math.round((Math.atan2(p[1] - s.y, p[0] - s.x) + Math.PI / 2) / step) * step;
       } else if (drag.mode === 'rad'){
         s.r = snapR(Math.hypot(p[0] - s.x, p[1] - s.y));
+      } else if (freeCorner(s) && SCALE.indexOf(drag.mode) >= 0){
+        /* ── a corner on its own ─────────────────────────────────────────
+           The stretch below holds the far EDGE still, which is the right
+           answer for a rect and has nothing to say here: on a quad the two
+           corners of an edge are not tied to each other, and holding one of
+           them still is the whole point. So a corner grip moves that corner
+           and nothing else, and an edge grip moves the two corners of its
+           edge — which is the old stretch, said in the only way a quad can
+           say it.
+
+           Worked in the shape's own frame, so a turned demolisher is still
+           dragged along its own sides; snapped to the same quantum every
+           other edit uses, so corners keep landing on the grid the cells
+           are on. */
+        const qd = ensureQuad(s);
+        const l = Kinds.geo.local(s, p[0], p[1]);
+        const lx = snapQ(l[0], q), ly = snapQ(l[1], q);
+        const tag = drag.mode, i = CORNERS.indexOf(tag);
+        if (i >= 0){ qd[i][0] = lx; qd[i][1] = ly; }
+        else {
+          const pair = tag === 'n' ? [0, 1] : tag === 's' ? [2, 3]
+                     : tag === 'w' ? [3, 0] : [1, 2];
+          const horiz = tag === 'e' || tag === 'w';
+          for (const j of pair) qd[j][horiz ? 0 : 1] = horiz ? lx : ly;
+        }
+        normQuad(s);
       } else if (SCALE.indexOf(drag.mode) >= 0){
         /* ── stretch from the side you took hold of ──────────────────────
            The far side stays where it is and the two sides joining them
@@ -1125,7 +1224,8 @@ const Build = (() => {
          [['size', 'Width', 1, 60, 1], ['feather', 'Feather', 0, 14, 1],
           ['bright', 'Bright', 40, 220, 5], ['grain', 'Grain', 1, 4, 1],
           ['scale', 'Scale', 40, 200, 5], ['jitter', 'Jitter', 0, 150, 5],
-          ['scatter', 'Scatter', 0, 100, 5], ['pad', 'Clear', 0, 60, 5],
+          ['scatter', 'Scatter', 0, 100, 5], ['fall', 'Fall', 0, 100, 5],
+          ['pad', 'Clear', 0, 60, 5],
           ['padFade', 'Fade', 0, 80, 5], ['padBreak', 'Break', 0, 100, 5]])
       $('#ktune').appendChild(slider(key, label, min, max, step));
     /* The same factory, the same two ranges the plate's own Bright and
@@ -1264,6 +1364,7 @@ const Build = (() => {
     if (key === 'scale')   return set('scale', v / 100);
     if (key === 'jitter')  return set('jitter', v / 100);
     if (key === 'scatter') return set('scatter', v / 100);
+    if (key === 'fall')    return set('fall', v / 100);
     if (key === 'pad')     return set('pad', v / 10);
     if (key === 'padFade')  return set('padFade', v / 10);
     if (key === 'padBreak') return set('padBreak', v / 100);
@@ -1271,8 +1372,16 @@ const Build = (() => {
     if (banded(sel)) sel.width = snapW(v * cellSize());
     else {
       const ratio = sel.h / Math.max(sel.w, 1);
+      const w0 = sel.w, h0 = sel.h;
       sel.w = clamp(snapS(v * grid()), grid(), MAXSPAN());
       sel.h = clamp(snapS(sel.w * ratio), grid(), MAXSPAN());
+      /* the quad IS the shape, so a size that moved without it would be a
+         size the shape does not have — scale the corners by the same two
+         factors and w/h stay the shadow they are meant to be */
+      if (sel.quad){
+        const fx = sel.w / Math.max(w0, 1), fy = sel.h / Math.max(h0, 1);
+        for (const c of sel.quad){ c[0] *= fx; c[1] *= fy; }
+      }
     }
     changed(sel);
   }
@@ -1327,6 +1436,9 @@ const Build = (() => {
       } else if (key === 'scatter'){
         const v = sel ? (sel.scatter || 0) : defs.scatter;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'solid', true, 0, 100);
+      } else if (key === 'fall'){
+        const v = sel ? (sel.fall || 0) : defs.fall;
+        r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'even', true, 0, 100);
       } else if (key === 'pad'){
         const v = sel ? (sel.pad || 0) : defs.pad;
         r._set(Math.round(v * 10), v ? v.toFixed(1) + ' cells' : 'none', true, 0, 60);
@@ -1592,6 +1704,7 @@ const Build = (() => {
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
+        fall: s.fall || 0, quad: s.quad || null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
         x: s.x, y: s.y, w: s.w, h: s.h, r: s.r, pts: s.pts, ctrl: s.ctrl, width: s.width
       }))));
@@ -1668,6 +1781,10 @@ const Build = (() => {
           bright: s.bright || 1, mask: !!s.mask,
           grain: s.grain || 1, scale: s.scale || 1,
           jitter: s.jitter || 0, scatter: s.scatter || 0,
+          /* absent on every shape saved before Fall existed, and 0 is what
+             those were doing — so an old town comes back unchanged */
+          fall: s.fall === undefined ? 0 : s.fall,
+          quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,

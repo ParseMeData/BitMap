@@ -45,13 +45,18 @@ you how many rooms the walker can actually reach.
 
     ~/Projects/memory-quest          this project
     ~/.cache/memory-quest            the browser profile — where the town lives
-    ~/.cache/memory-quest-wall       the wallpaper's own profile, its own town
+    ~/.cache/memory-quest-wall       the wallpaper's own profile, made the first
+                                     time `./wallpaper.sh start` runs
     ~/Projects/halftone-platformer   upstream for platformer.html; still its own project
     origin                           https://github.com/ParseMeData/memory-quest.git
 
-**There are two towns, not one.** `wallpaper.sh` runs on the second profile,
-and `snapshot.py` never attaches to it — so whatever gets built in the desktop
-plate is in no snapshot and no tag, and does not appear in the town you play.
+**The moment the desktop plate runs there are two towns, not one.**
+`wallpaper.sh` launches on that second profile and opens no debugging port —
+its argument parser takes nothing that would add one — so `snapshot.py` cannot
+attach to it, and whatever gets built in the plate is in no snapshot and no
+tag, and does not appear in the town you play. As of v5.0 the plate has never
+been started on this machine: there is no `~/.cache/memory-quest-wall`, and no
+Memory Quest rule in `~/.config/kwinrulesrc`.
 
 `platformer.html` here is a **copy** of the halftone platformer's shipped file
 plus a deck hook. Edits upstream do not propagate, and edits here do not go
@@ -88,7 +93,12 @@ to play. That is the obvious next thing to do.
 
 Every palace is also partly unreachable. Rooms have been resized and dragged
 away from their doors, which disconnects them; the fix is more doors or wall
-gaps, and the palette says how many rooms are joined while you work.
+gaps, and the palette says how many rooms are joined while you work. Every
+figure above was recomputed from `snapshots/v5.0.json` for this release except
+*reachable*, which is a flood fill that only exists in a running page: those
+ten numbers were measured at v4.6. No palace's shapes have changed a byte
+since and no reachability code was touched, but read them as a measurement
+with a date on it rather than as today's.
 
 ---
 
@@ -125,6 +135,8 @@ Storage, all under `hq.`:
 
     hq.shapes            the town
     hq.markers           the town's markers
+    hq.town              the town's name — a palace's name is not here, it is
+                         on its marker inside hq.markers
     hq.rooms.<uid>       one palace's plan
     hq.marks.<uid>       one palace's loci
     hq.order.<uid>       the room list that palace was typed from
@@ -132,8 +144,21 @@ Storage, all under `hq.`:
     hq.blank             printed map or blank plate
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
+    hq.lastError         the last runtime slip; nothing ever clears it
+    hq.loads             reload stamps, to catch a relaunch loop
+    hq.best              nothing here writes it — a leftover carried in the
+                         profile since the fork from Haunt Quest, and kept by
+                         `save` only because `save` takes every `hq.` key
     IndexedDB hq.loci    the locus pictures
     IndexedDB hq.basemap the frozen tracing picture
+    hq.basemap.img       the same frozen picture, when IndexedDB refused it
+
+The picture has two homes because the game runs from `file://`, which is an
+opaque origin Chrome may refuse IndexedDB to outright; on a profile where it
+did, that last key carries the whole picture as a data URL — the one in this
+tree is about 207 KB, and `stash()` says so and gives up rather than growing
+without limit. `hq.lastError` and
+`hq.loads` are diagnostics rather than town, which is why `save` drops them.
 
 ---
 
@@ -145,8 +170,11 @@ fresh pair of eyes will want to "simplify" something load-bearing.
 **Two registries, one editor.** `Kinds` holds a map registry and a floor
 registry and swaps between them with `Kinds.use(scope)`. Everything downstream
 reads `Kinds.list` / `.by` / `.layers` / `.palette` and never learns which it
-is looking at. Build mode is not told whether it is editing a town or a floor
-plan, because there is nothing it would do differently.
+is looking at. Build mode still never branches on the registry — the
+palette, the layer rows, the walk-grid stamp and saving all read `Kinds.*` and
+cannot tell. The single place it distinguishes the two is the word in a failed
+save, taken from the storage key rather than from the scope, because "could not
+save the town" while you are standing in a plan is a lie.
 
 **Hollowness lives in the geometry, not the drawing.** A wall kind declares
 `hollow`, and `geo.depth()` makes an area shape into a band. So a room is a
@@ -186,6 +214,40 @@ edge and three across a room is a wall — a room you can enter and not cross.
 The ring cannot be blocked by anything placed inside it, so the guarantee is
 structural. Found by a reachability check, not by looking.
 
+**Selection is inversion, and one rule carries all of it.** `.chip.sel,
+.btn.sel` was scoped to `#mapbar` until v5.0, so arming Door, Remove wall or
+Mask lit nothing — those buttons live in the palette. Nine buttons across
+`basemap.js` and `build.js` now hang off that one widened rule, and the two
+narrow rules it replaced went away when it landed: re-scoping it, or taking the
+`.btn` back off what now reads as a chip rule, takes the armed state from all
+of them at once. `#pgen` is the deliberate exception — gold rather than bone,
+because armed *there* means replace the plan you already have — and it holds
+against the widened rule on id specificity alone.
+
+**A failure that repeats at frame rate says so once, and the two latches are
+keyed differently on purpose.** A save runs on every drag frame and a throwing
+frame throws again next frame; unlimited, they wrote localStorage sixty times a
+second and rearmed the banner's timeout every time, leaving a sign that never
+faded and could not be dismissed. `hqStoreFail` latches on the *thing being
+saved* — the town, a plan, the markers, the room list, the palace name, the
+town name, the map settings — so one failing does not silence another, and `hqStoreOK` clears that
+key on the next good write, which is what lets a later failure speak again.
+`hqReport` latches on the *message*: the same one is counted and re-said once a
+second with its count, a different one is always said at once, because a new
+failure is the news. Collapse either into a throttle by the clock and the
+second fault hides behind the first.
+
+**The eight-second boot timeout cannot fire on a load that would have
+finished.** Once the map picture decodes, `boot()` is synchronous through to
+hiding the boot screen — the one async thing it starts, `Loci.init()`, never
+gates it — so a screen still up at eight seconds is a load that stopped, not a
+slow one. Two guards on the message are each one edit from being undone: it
+names `hq.lastError` only when that error's stamp is newer
+than this page load, because nothing ever clears that key and a restore skips
+it too; and it defers to anything `game.js` has already written into the boot
+screen, because `#fatal` covers the viewport and would otherwise hide the
+precise reason behind the vague one.
+
 **The platformer is unchanged in behaviour.** It plays its own deck when
 opened alone. The route is a *chain* — 0 into 1, 1 into 2 — rather than the
 built-in deck's disjoint pairs, so a run of n pictures is n−1 scenes and the
@@ -196,6 +258,44 @@ assumed. That is why the platformer can read the builder's localStorage *and*
 IndexedDB directly — no iframe, no postMessage, no build step. The order goes
 via localStorage because the page needs `PLACE.length` synchronously; the
 pictures stay in IndexedDB and are fetched before the faces load.
+
+**`attach()` never binds to the platformer unless you name it.** `P` opens
+`platformer.html` into the same profile, and both live under a directory named
+`memory-quest`, so the default match catches both on their *path* — neither
+title contains it — and first-listed-wins would let a restore write the town
+through the runner. It
+drops every `platformer.html` target unless the match string asks for one, and
+then prefers the page whose path ends `/index.html` — query and fragment taken
+off first, because the builder can be open as `?wallpaper` or carrying a hash.
+Both filters read like over-engineering and neither is. Every tool prints which
+page it actually got, which is the check that they held.
+
+**One snapshot keeps the Google Maps key.** The strip that guards every
+committed snapshot is turned off for the pre-restore backup, and that is not an
+oversight: the backup is gitignored, so nothing about it reaches a commit, and
+it is the only copy of what is about to be destroyed. Dropping the parameter to
+make the strip unconditional is the obvious tidy, and it turns the safety net
+into a second way to lose the key.
+
+**`play.sh` refuses rather than falling back.** It tries seven Chromium-family
+names and, finding none, exits saying so. The fallback it used to have —
+`firefox --kiosk`, then `xdg-open` — takes no `--user-data-dir` and answers no
+CDP, so a first run on a machine without Brave would have put the town in the
+everyday profile, where the tools can never reach it, silently and for good.
+Not starting is the better failure. The same list is repeated in
+`wallpaper.sh`; keep the two in step.
+
+**The launcher entry is generated, and the tracked file will not run if you
+copy it.** `memory-quest.desktop` holds `@DIR@`, `@VERSION@` and a header that
+stops being true the moment it is installed — so `install.sh` copies from
+`[Desktop Entry]` onward, leaving the explanation behind in the tracked file
+where it is still true, substitutes with `|` because a path is what is going
+in, and installs the icon under the theme name the entry asks for, so the only
+absolute path in the installed file is the one to `play.sh`. Copy the template
+by hand and you get a launcher that does not run, and the hand-kept second copy
+that used to rot between releases. It never touches `~/.config/kwinrulesrc`:
+the desktop plate is `wallpaper.sh`'s, and removing the launcher does not take
+it down.
 
 ---
 
@@ -218,16 +318,24 @@ directory afterwards. The live town has hours of work in it and a restore is
 destructive — `snapshot.py restore` makes the profile *become* the file,
 removing keys the file does not have.
 
-**Drive the running page over CDP.** `tools/cdp.py` is a few dozen lines of
+**Drive the running page over CDP.** `tools/cdp.py` is a hundred-odd lines of
 WebSocket with no dependencies; `p.js('...')` evaluates in the page. Both the
 builder and the platformer expose their state as globals (`G`, `Build`,
-`Kinds`, `Interior`, `Loci`, `Palace`, `Doors`; `game`, `st`, `PLACE`).
+`Kinds`, `Interior`, `Loci`, `Palace`, `Doors`; `game`, `st`, `PLACE`) — but
+`cdp.attach()` picks the builder on purpose, so the platformer's globals are
+reached only by asking for it: `cdp.attach(match='platformer')`.
 
 **Verify with a real screenshot.** `Page.captureScreenshot` over CDP. Counting
-instances proves geometry; only a picture proves it looks right. Two traps
-worth knowing: the camera follows the walker, so setting `G.camT` does nothing
-— move `G.x`/`G.y` instead; and the game pauses on blur, so a page driven from
-a terminal is usually paused (`G.paused = false` to override).
+instances proves geometry; only a picture proves it looks right. The camera
+follows the walker, so setting `G.camT[0]`/`[1]` does nothing — move
+`G.x`/`G.y` instead; the third component is the zoom target and is *not*
+overwritten, so `G.camT[2]` is how a shot is framed wider or tighter
+(`G.fitAll` the whole plate, `G.fitW` the reset). The game pauses on blur, so a
+page driven from a terminal is usually paused — come out of it through
+`togglePause()`, which hides `#pause` as well; clearing `G.paused` by hand
+restarts the frame loop and leaves the pause card over the whole viewport and
+in the shot. On the desktop plate neither blur nor `Esc` pauses, so a wallpaper
+page is never the paused case.
 
 **Snapshot before anything irreversible.**
 
@@ -244,8 +352,9 @@ first (gitignored), prints the live counts against the file's, and will not go
 on until the word `restore` is typed. `--yes` skips the question and never the
 backup, and with nothing at the prompt to answer it the command refuses rather
 than reading silence as agreement. One consequence worth holding on to: that
-backup is written through `save`, so it is key-stripped like any other
-snapshot, and restoring from one will not bring a Google Maps key back.
+backup is written through `save` with the strip turned *off*, so unlike a
+committed snapshot it keeps the Google Maps key, and restoring from one brings
+the key back with the town.
 
 **Measure the thing you changed.** Most of the real bugs in this project were
 found by counting — walkable versus reachable tiles, wall cells before and
@@ -263,7 +372,10 @@ entry at `~/.local/share/applications/memory-quest.desktop` is *generated* —
 template, so there is one file rather than two, and re-running it is what
 moves the launcher to a new tag. Each tag gets `snapshots/vX.Y.json` beside
 it, because the source tree is only half a version: the town lives in the
-browser profile.
+browser profile. `STYLE.md` is kept in step too, but as a different kind of
+surface: those others carry the tag, while `STYLE.md` carries the values — so
+a release that moves a palette token, a spacing or a corner is not finished
+until `STYLE.md` says the numbers the code does.
 
 **Branches are named for the version being worked toward**, so a branch and a
 tag never share a name — that makes the name ambiguous to git. Work happens on
@@ -281,15 +393,39 @@ thing that was measured, and the mistake that was made on the way.
   store. Nothing to play until markers are placed inside a palace and pictures
   attached (`Enter` on a locus with no picture opens the file picker).
 - **No palace is named.** The field at the head of the route panel names
-  whichever you are standing in; the name draws on the plan in diamonds.
+  whichever you are standing in, and the name goes to that palace's marker,
+  which is where a palace's name lives. It is drawn as text in the banner
+  overhead, not in diamonds on the plan — the only diamond type inside a
+  palace is each room's number and label.
 - **Every palace is partly unreachable.** Resizing a room moves it away from
-  its doors. More doors or wall gaps; the palette counts joined rooms.
+  its doors. More doors or wall gaps; the palette counts joined rooms, and
+  since v5.0 arming Door or Remove wall lights the button, so the two tools
+  this thread sends you to now say which one you are holding.
 - **A cut narrower than a tile looks open and is not walkable.** The drawing
   cuts at cell resolution and the walk grid opens at tile resolution. Not yet
   reconciled, and a real trap when trimming finely.
 - **The doors swing for the look only** — the walk grid is open whether the
   leaf is or not. Making a shut door actually block is a different feel and a
   bigger change.
-- **The `LATTICE-CONTRACT.md`** in the halftone project still lists the two
-  projects as separate. Its one undeferrable question — cell or tile? — has
-  been answered in practice here: authored on tiles, baked to cells.
+- **`body.mapping` outlives the map bar.** Only `setBar()` clears the class,
+  and `body.locus` hides `#mapbar` in CSS without going through it. Nothing
+  shows today — the bar is already closed by `Basemap.suspend()` on the way
+  into a palace, and `body.locus` hides the HUD anyway — but the class and the
+  bar can disagree, and the next `body.mapping` rule is what would surface it.
+- **A first-run note was proposed and left undecided.** Nothing writes one, so
+  a brand-new profile boots to the printed sheet with no word about what to do
+  with it. Left here so the next session can tell that from a decision against.
+- **`docs/LATTICE-CONTRACT.md`** in the halftone project pairs the platformer
+  with **Memory Atlas** at commit `b8abd14`, not with this project — it was
+  written before Memory Quest existed and has not been touched since, so
+  nothing in it has been reconciled against what was built here. Its one
+  undeferrable question is *what collides, the cell or the tile*: here the
+  drawing is authored on tiles and baked to cells, while collision has stayed
+  on the tile — answered for the picture, still open for the walk grid, which
+  is the cut-narrower-than-a-tile thread above.
+- **There is no LICENSE.** The repo is public, `platformer.html` is vendored
+  from another project, `assets/map.js` is The Mighty Haunt's printed sheet,
+  and the map bar credits OpenStreetMap, CARTO and Google on screen — so what
+  this tree may be reused under, and on what terms the vendored and bundled
+  art travel with it, is unstated — opened by the release that made the
+  project installable.

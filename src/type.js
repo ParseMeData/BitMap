@@ -170,6 +170,32 @@ const Type = (() => {
      letter above it and not of a finer or coarser stuff */
   const STEP = 1;
 
+  /* ── the shake ─────────────────────────────────────────────────────────
+     A heading can be knocked off its seat the way `kinds.js` knocks a
+     terrain cell off its own, and for the same reason it is done there: the
+     offset is a pure function of where the diamond sits, never of the
+     clock. A title that shimmered would be a second thing moving against
+     the lattice, which STYLE.md spends a paragraph forbidding — and it
+     would also mean a name looked different every time you glanced at it,
+     when the whole point of a name on a plan is that it is the same name.
+
+     The key is the square's own place in the string's letterform grid, so
+     each lit square keeps its offset as the heading is dragged, resized or
+     redrawn, and the seed is folded from the name, so two palaces are not
+     shaken into the same shape. `Kinds.hash` is asked for by name at call
+     time rather than captured, the way `build.js` asks for History: a
+     heading that does not shake is still a heading, but one that threw
+     would take the frame with it. */
+  const roll = (u, v, s) => (typeof Kinds !== 'undefined' && Kinds.hash
+    ? Kinds.hash(u, v, s) : 0.5);                 // no hash, no offset
+  function seedOf(str){
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = (Math.imul(h, 31) + str.charCodeAt(i)) | 0;
+    return h;
+  }
+
+  const clamp01 = v => (v < 0 ? 0 : (v > 1 ? 1 : v));
+
   const pick = t => TREATS[t] || TREATS.solid;
   const adv = tr => ADV + tr.track;
   /* how many instances one lit square costs under this treatment */
@@ -182,8 +208,13 @@ const Type = (() => {
   const height = px => H * px;
 
   /* `x` is the left edge and `y` the vertical middle, because a caption is
-     positioned against the thing it names, not against a baseline. */
-  function text(a, m, str, x, y, px, col, alpha, cap, treat){
+     positioned against the thing it names, not against a baseline.
+
+     `jit` and `seed` arrive only from `heading`, so working text — a room
+     label, a locus number — keeps standing exactly where it is put: the
+     shake is a heading's dress, the way a treatment and a border are, and
+     the reason those are confined to headings is the reason this is. */
+  function text(a, m, str, x, y, px, col, alpha, cap, treat, jit, seed){
     const tr = pick(treat);
     const s = String(str).toUpperCase();
     const top = y - (H - 1) * px / 2;
@@ -191,28 +222,44 @@ const Type = (() => {
     const hs = px * FAT * tr.fat;
     const step = adv(tr) * px;
     const need = per(tr);
+    /* the spread is a multiple of the pitch rather than of anything on
+       screen, so a name shakes by the same fraction of its own letterform
+       at every zoom and at every size a title is ever drawn at */
+    const amp = (jit || 0) * px, sd = seed || 0;
     for (let i = 0; i < s.length; i++){
       const g = F[s[i]];
       if (!g){ continue; }                     // a space, or something we cannot draw
       const gx = x + i * step;
+      /* where this letter starts in the string's own grid of letterform
+         pixels, rounded because a tracked advance is fractional and the
+         hash reads whole numbers */
+      const gu = Math.round(i * adv(tr));
       for (let r = 0; r < H; r++){
         const row = g[r];
         for (let c = 0; c < W; c++){
           if (row[c] !== '1') continue;
           if (cap !== undefined && m > cap - need - 1) return m;
           const dx = gx + c * px, dy = top + r * px;
-          /* behind first, so the core lands on top of its own halo and its
-             own echo rather than under them */
+          let jx = 0, jy = 0;
+          if (amp){
+            jx = (roll(gu + c, r, sd + 771) - 0.5) * amp;
+            jy = (roll(gu + c, r, sd + 772) - 0.5) * amp;
+          }
+          /* Behind first, so the core lands on top of its own halo and its
+             own echo rather than under them — and all three carry the one
+             offset, because a halo that wandered away from the square it
+             belongs to would read as a second, blurrier letter rather than
+             as one square struck out of true. */
           if (tr.halo)
             m = put(a, m, dx, dy, col[0], col[1], col[2],
-                    al * 0.55, hs * tr.halo, 0, 0, 0, 2);
+                    al * 0.55, hs * tr.halo, 0, jx, jy, 2);
           if (tr.echo)
             m = put(a, m, dx + tr.echo.dx * px, dy + tr.echo.dy * px,
                     col[0], col[1], col[2], al * tr.echo.alpha,
                     hs * (tr.echo.scale || 1),
-                    tr.echo.hollow ? 1 : 0, 0, 0, 1);
+                    tr.echo.hollow ? 1 : 0, jx, jy, 1);
           m = put(a, m, dx, dy, col[0], col[1], col[2], al, hs,
-                  tr.hollow ? 1 : 0, 0, 0, 1);
+                  tr.hollow ? 1 : 0, jx, jy, 1);
         }
       }
     }
@@ -287,28 +334,73 @@ const Type = (() => {
      laid out on that sits a gap wider on one side than the other. */
   const inkW = (str, tr) => (str.length ? (str.length - 1) * adv(tr) + (W - 1) : 0);
 
+  /* ── how bright ────────────────────────────────────────────────────────
+     The same curve the plate is lifted by, because a heading turned up and
+     a road turned up ought to feel like the same control: `Buf.cell` in
+     kinds.js multiplies the colour by b under a clamp and the coverage by
+     the gentler `ba`, so brightness reads WHITER first and only then more
+     opaque. This is not a colour: it scales the bone it is handed, and at
+     1.0 it hands back exactly what it was given.
+
+     The scalar is clamped, never the channels. Clamping each channel on its
+     own pins them at three different values of b — bone's red stops at
+     1.075, its green at 1.087, its blue at 1.124 — and between those the
+     warmth is squeezed out unevenly, which is a change of hue rather than a
+     lift, and above the last of them the heading is flatly #FFFFFF. The
+     plate can afford that clamp because a kind that gets lifted hard is a
+     saturated swatch where clipping reads as terrain, and the hardest-lifted
+     of them, road, is already white. Bone is the one ink where clipping
+     changes which of the ten colours you are looking at. So the scale stops
+     where the first channel would, and everything past it rides the coverage
+     curve below, which is what `ba` is already for. */
+  const lift = (col, b) => {
+    if (b === 1) return col;
+    const mx = Math.max(col[0], col[1], col[2]);
+    const s = mx > 0 ? Math.min(b, 1 / mx) : b;
+    return s === 1 ? col : [col[0] * s, col[1] * s, col[2] * s];
+  };
+  const liftA = (al, b) => clamp01(al * (b < 1 ? b : 1 + (b - 1) * 0.4));
+
   /* ── a heading ─────────────────────────────────────────────────────────
      Centred text in a treatment, with its border around it. The one entry
      point for a title, so that a title is the only thing that can wear
      either: room labels and locus numbers go through `text` and stay plain,
-     which is the whole reason working text still reads as working text. */
-  function heading(a, m, str, cx, cy, px, col, alpha, cap, treat, bd){
+     which is the whole reason working text still reads as working text.
+
+     Brightness and shake join the treatment and the border here for that
+     same reason, and both are applied to the border as well as to the
+     letters: the rule under a name is drawn out of the same diamonds at the
+     same pitch, so a rule that stayed put while its heading moved would
+     say the two were different materials. */
+  function heading(a, m, str, cx, cy, px, col, alpha, cap, treat, bd, bright, jit){
     const tr = pick(treat);
     const s = String(str).toUpperCase();
     const x = cx - width(s, px, treat) / 2;
     const y0 = cy - (H - 1) * px / 2;
-    const al = alpha === undefined ? 1 : alpha;
+    const b = bright === undefined ? 1 : bright;
+    const ink = lift(col, b);
+    const al = liftA(alpha === undefined ? 1 : alpha, b);
     const hs = px * FAT * tr.fat;
+    const amp = (jit || 0) * px, sd = seedOf(s);
     for (const seg of edges(bd, inkW(s, tr), H - 1)){
       const n = segN(seg);
       for (let i = seg[4]; i <= n; i++){
         if (cap !== undefined && m > cap - 2) return m;
-        m = put(a, m, x + (seg[0] + (seg[2] - seg[0]) * i / n) * px,
-                y0 + (seg[1] + (seg[3] - seg[1]) * i / n) * px,
-                col[0], col[1], col[2], al, hs, 0, 0, 0, 1);
+        /* the border's diamonds are keyed on where they sit in the same
+           letterform grid the letters are keyed on — which is outside the
+           ink, so a rule and a letter never draw the same number twice */
+        const bu = seg[0] + (seg[2] - seg[0]) * i / n;
+        const bv = seg[1] + (seg[3] - seg[1]) * i / n;
+        let jx = 0, jy = 0;
+        if (amp){
+          jx = (roll(Math.round(bu), Math.round(bv), sd + 771) - 0.5) * amp;
+          jy = (roll(Math.round(bu), Math.round(bv), sd + 772) - 0.5) * amp;
+        }
+        m = put(a, m, x + bu * px, y0 + bv * px,
+                ink[0], ink[1], ink[2], al, hs, 0, jx, jy, 1);
       }
     }
-    return text(a, m, s, x, cy, px, col, alpha, cap, treat);
+    return text(a, m, s, x, cy, px, ink, al, cap, treat, jit, sd);
   }
 
   /* what that heading costs, whole: the letters under their treatment plus

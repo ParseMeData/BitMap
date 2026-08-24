@@ -1076,11 +1076,29 @@ const Kinds = (() => {
      walk: 0, stamp: 4, gen: shelf,    swatch: '#7F5C3C', ...HARD},
     {id: 'plant',   label: 'Plant',   layer: 'fixt',   types: AREA, w0: 1, h0: 1,
      walk: 0, stamp: 4, gen: plant,    swatch: '#3E7A3A', ...HARD},
-    /* walls run into one another the way roads do, so a corner is a corner
-       and not two walls with a hole punched where they meet */
+    /* Walls do NOT run into one another the way roads do, although for a
+       long time they said they did. What `connects` protects is a kind
+       whose appetite reaches PAST its own edge: a road clears a margin
+       either side of itself, so two roads that crossed while occluding
+       would each punch a hole through the other and a crossroads would come
+       out with its middle missing. A wall clears nothing — `pad0` and
+       `feather0` are both zero above — so its outer limit in covered() is
+       exactly its own edge, and every cell it takes from the wall beneath
+       is a cell it lays down again itself, at the same world position on
+       the same lattice. Occluding therefore costs a wall nothing, and it
+       stops a party wall being emitted twice: rooms pack edge to edge and
+       share the whole band, and two draws of alpha a composite to a*(2-a),
+       which is why every shared wall read brighter than the rest.
+
+       Glazing is the one kind still named here, and for that argument in
+       reverse: glass is deliberately gappy — a quarter of its cells never
+       appear at all — so a window that took the wall's ground could not
+       fill what it took, and the opening would be a hole through to the
+       floor rather than a window in a wall. */
     {id: 'wall',    label: 'Wall',    layer: 'walls',  types: ['line', 'rect', 'ellipse', 'ring'],
      variants: ['plaster', 'brick', 'timber'], w0: 9, h0: 7, len0: 8,
-     walk: 0, stamp: 5, gen: wall,     swatch: '#E4E0D5', connects: true, hollow: true, ...HARD},
+     walk: 0, stamp: 5, gen: wall,     swatch: '#E4E0D5', connects: ['glazing'],
+     hollow: true, ...HARD},
     {id: 'glazing', label: 'Window',  layer: 'walls',  types: ['line', 'rect', 'ellipse', 'ring'],
      w0: 4, h0: 3, len0: 4,
      walk: 0, stamp: 5, gen: glazing,  swatch: '#85C7DB', connects: true, hollow: true, ...HARD},

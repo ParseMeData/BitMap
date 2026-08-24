@@ -84,7 +84,7 @@ const Interior = (() => {
     /* A palace with nothing in it is the one moment where "what rooms?" is
        always the right question, so the order box asks it without being
        sent for. A palace you have already built stays as you left it. */
-    if (typeof Palace !== 'undefined' && !G.shapes.length) Palace.show(mk.uid);
+    if (typeof Palace !== 'undefined' && !G.shapes.length) Palace.show();
     else if (typeof Palace !== 'undefined') Palace.close();
     return true;
   }
@@ -214,7 +214,13 @@ const Interior = (() => {
     return true;
   }
 
+  /* `at` is the palace's NAME, for the banner and the title; `uid` is the
+     palace's identity, for anything that has a key to build out of it.
+     They are both read off the same frame because there is only one frame
+     to read — which is what stops a caller keeping its own copy of either
+     and finding out later that it had gone stale. */
   return {init, enter, leave, prompt, overlay, has, target, rename,
           inside: () => stack.length > 0, depth: () => stack.length,
-          at: () => (stack.length ? stack[stack.length - 1].name : '')};
+          at: () => (stack.length ? stack[stack.length - 1].name : ''),
+          uid: () => (stack.length ? stack[stack.length - 1].uid : '')};
 })();

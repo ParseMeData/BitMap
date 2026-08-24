@@ -379,9 +379,18 @@ const Build = (() => {
     return !k || !k.clears || k.clears.indexOf(s.kind) >= 0;
   };
 
+  /* A kind says `true` to run into everything else that connects, or names
+     the kinds it runs into and nothing else. Both halves have to agree, so
+     naming is how a kind steps out of the arrangement without leaving it:
+     a wall no longer runs into another wall, because it can fill what it
+     takes and is better off occluding, but it still runs into glazing,
+     which cannot. */
+  const joins = (k, kind) => k.connects === true ||
+    (Array.isArray(k.connects) && k.connects.indexOf(kind) >= 0);
+
   function connects(a, b){
     const ka = Kinds.by[a.kind], kb = Kinds.by[b.kind];
-    return !!(ka && kb && ka.connects && kb.connects);
+    return !!(ka && kb && joins(ka, b.kind) && joins(kb, a.kind));
   }
 
   function rebuild(){
@@ -955,6 +964,13 @@ const Build = (() => {
       '<div class="plabel">Heading</div>' +
       '<div class="kfoot"><button class="btn" id="ktreat">Solid</button>' +
       '<button class="btn" id="kborder">No border</button></div>' +
+      /* The two sliders belong here rather than under Adjust for the reason
+         the buttons above them do: what they set is the one heading in
+         force, not the shape you are about to place — and here they are
+         reachable while the plan is being moved as well as while it is
+         being fitted out, which is when a title is most often being
+         looked at. */
+      '<div id="khtune"></div>' +
       '<div class="knote" id="khnote"></div>' +
       '<div class="kfoot one"><button class="btn" id="kclear">Clear all</button></div>' +
       '<div class="kstate" id="kstate"></div>' +
@@ -999,6 +1015,13 @@ const Build = (() => {
           ['scatter', 'Scatter', 0, 100, 5], ['pad', 'Clear', 0, 60, 5],
           ['padFade', 'Fade', 0, 80, 5], ['padBreak', 'Break', 0, 100, 5]])
       $('#ktune').appendChild(slider(key, label, min, max, step));
+    /* The same factory, the same two ranges the plate's own Bright and
+       Jitter use, so the heading is turned up in the units everything else
+       is turned up in. `h` on the key is what keeps them out of the shape
+       branches in applySlider and syncTune. */
+    for (const [key, label, min, max, step] of
+         [['hbright', 'Bright', 40, 220, 5], ['hjitter', 'Jitter', 0, 150, 5]])
+      $('#khtune').appendChild(slider(key, label, min, max, step));
     $('#kmask').onclick = () => {
       if (sel){ sel.mask = !sel.mask; defs.mask = sel.mask; changed(sel); }
       else { defs.mask = !defs.mask; syncUI(); }
@@ -1082,7 +1105,15 @@ const Build = (() => {
     inp.oninput = () => applySlider(key, +inp.value);
     /* a range fires `input` all the way along the drag and `change` when the
        thumb is let go, which is the gesture ending said out loud */
-    inp.onchange = () => hstep();
+    /* A shape's sliders have nothing to commit here — `changed()` already
+       saved the drawing on every frame. The heading's have: they are held
+       in memory while the thumb moves and written once when it stops, so a
+       drag is one localStorage write rather than one per frame. */
+    inp.onchange = () => {
+      if (typeof Palace !== 'undefined' && Palace.storeHeading &&
+          (key === 'hbright' || key === 'hjitter')) Palace.storeHeading();
+      hstep();
+    };
     row._set = (v, text, live, lo, hi) => {
       if (lo !== undefined){ inp.min = lo; inp.max = hi; }
       inp.value = v; out.textContent = text; inp.disabled = !live;
@@ -1097,6 +1128,18 @@ const Build = (() => {
     const set = (k, val) => {
       if (sel){ sel[k] = val; changed(sel); } else { defs[k] = val; syncUI(); }
     };
+    /* The heading's two go to Palace and stop there. They deliberately do
+       not touch `defs`: that object means "what the next shape you place is
+       born with", and a slider that meant one thing with a shape selected,
+       a second with none and a heading's dress as well would be three
+       controls sharing one label. Nothing needs rebuilding either — the
+       title is drawn into the entity stream every frame. */
+    if (key === 'hbright' || key === 'hjitter'){
+      if (typeof Palace === 'undefined') return;
+      if (key === 'hbright') Palace.setBright(v / 100);
+      else Palace.setJitter(v / 100);
+      return syncHead();
+    }
     if (key === 'feather') return set('feather', v);
     if (key === 'bright')  return set('bright', v / 100);
     if (key === 'grain')   return set('grain', v);
@@ -1162,7 +1205,7 @@ const Build = (() => {
         r._set(Math.round(v * 100), v.toFixed(2) + '\u00d7', true, 40, 200);
       } else if (key === 'jitter'){
         const v = sel ? (sel.jitter || 0) : defs.jitter;
-        r._set(Math.round(v * 100), v ? v.toFixed(2) + ' cell' : 'true', true, 0, 150);
+        r._set(Math.round(v * 100), v ? v.toFixed(2) + ' cell' : 'none', true, 0, 150);
       } else if (key === 'scatter'){
         const v = sel ? (sel.scatter || 0) : defs.scatter;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'solid', true, 0, 100);
@@ -1279,6 +1322,23 @@ const Build = (() => {
     const cap = s => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
     if (tb) tb.textContent = cap(h.treatment);
     if (bb) bb.textContent = h.border === 'none' ? 'No border' : cap(h.border);
+    /* Read in the same words the Adjust rows use for the same two things,
+       and the ranges come from Palace rather than from a second copy of
+       them here, so the clamp that guards a stored value and the ends of
+       the slider that sets it can never drift apart. */
+    document.querySelectorAll('#khtune .prow').forEach(r => {
+      const key = r.dataset.key;
+      if (key === 'hbright'){
+        const g = h.brightRange;
+        r._set(Math.round(h.bright * 100), h.bright.toFixed(2) + '\u00d7', true,
+               Math.round(g[0] * 100), Math.round(g[1] * 100));
+      } else {
+        const g = h.jitterRange;
+        r._set(Math.round(h.jitter * 100),
+               h.jitter ? h.jitter.toFixed(2) + ' pix' : 'none', true,
+               Math.round(g[0] * 100), Math.round(g[1] * 100));
+      }
+    });
   }
 
   function syncUI(){
@@ -1557,5 +1617,6 @@ const Build = (() => {
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),
-          sync: syncUI, commit: save, key: () => KEY, count: () => G.shapes.length};
+          sync: syncUI, head: syncHead,
+          commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

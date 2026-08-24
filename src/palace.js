@@ -24,6 +24,26 @@
    "yes, generate something". */
 
 const Palace = (() => {
+  /* ── which palace's list this is ───────────────────────────────────────
+     Asked for, never remembered. This used to be module state that only
+     `show(id)` ever wrote, and `show` is handed an id from exactly one of
+     its three callers — so opening an empty palace, walking into a
+     furnished one and pressing O filled the box with the FIRST palace's
+     rooms and wrote Generate's result back under its key while laying the
+     shapes into the second's. On a fresh load there was no id at all and
+     the first press wrote the bare key `hq.order.`.
+
+     `Interior` already carries the answer: the frame it pushes on the way
+     in holds the marker's uid, and nothing can be standing inside a palace
+     without one. Reading it there makes the stale case unreachable rather
+     than something to remember to avoid — and outside a palace it is the
+     empty string, which is not a palace and therefore has no list, so
+     `saved` and `store` say nothing rather than reaching for `hq.order.`. */
+  /* Named `here` rather than `at` because `titleAt`'s result is called
+     `at` twice below, and a module-wide name a function quietly shadows is
+     the kind of thing that reads correctly right up until it does not. */
+  const here = () => (typeof Interior !== 'undefined' && Interior.uid
+    ? Interior.uid() : '');
   const KEY = uid => 'hq.order.' + uid;
   const MINW = 7, MINH = 6, MARGIN = 2;          // tiles
   /* A room is the size of a room. Left to fill the plate, five of them come
@@ -31,7 +51,7 @@ const Palace = (() => {
      dropped in a car park — so they are capped and the block is centred in
      whatever is left over. */
   const MAXW = 15, MAXH = 12;
-  let open = false, armed = false, uid = '';
+  let open = false, armed = false;
 
   /* ── what a room is expected to hold ───────────────────────────────────
      Positions are fractions of the room's inside, so the same kit furnishes
@@ -301,19 +321,25 @@ const Palace = (() => {
   const parse = txt => String(txt || '').split('\n')
     .map(l => l.trim()).filter(Boolean).slice(0, 40);
   function saved(){
-    try { return localStorage.getItem(KEY(uid)) || ''; } catch (e){ return ''; }
+    const id = here();
+    if (!id) return '';
+    try { return localStorage.getItem(KEY(id)) || ''; } catch (e){ return ''; }
   }
   function store(txt){
+    const id = here();
+    if (!id) return;                       // no palace, so no list, so no key
     try {
-      if (txt.trim()) localStorage.setItem(KEY(uid), txt);
-      else localStorage.removeItem(KEY(uid));
+      if (txt.trim()) localStorage.setItem(KEY(id), txt);
+      else localStorage.removeItem(KEY(id));
       if (typeof hqStoreOK === 'function') hqStoreOK('this room list');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('this room list', e); }
   }
 
   /* ── the panel ── */
-  function show(id){
-    uid = id || uid;
+  /* It takes no argument any more: which palace this is comes from where
+     the walker is standing, and a caller that could name a different one
+     was the whole of the bug above. */
+  function show(){
     open = true; armed = false;
     const ta = $('#porder');
     if (ta) ta.value = saved() || 'hall\nbedroom\nbathroom\nkitchen\nstudy';
@@ -469,7 +495,7 @@ const Palace = (() => {
     if (m + Type.headCost(at.name, tr, bd) > cap){ tr = 'solid'; bd = 'none'; }
     if (m + Type.headCost(at.name, tr, bd) > cap) return m;
     return Type.heading(a, m, at.name, at.x, at.y, at.px,
-                        [0.93, 0.92, 0.89], at.alpha, cap, tr, bd);
+                        [0.93, 0.92, 0.89], at.alpha, cap, tr, bd, bright, jitter);
   }
 
   /* ── where the title goes ──────────────────────────────────────────────
@@ -589,8 +615,29 @@ const Palace = (() => {
      working text keeps reading as working text however the headings are
      set. The tables themselves are in `type.js`, beside the font, because
      they are the same kind of thing as the font. */
+  /* Brightness and shake are the same kind of thing as the treatment and
+     the border — how the one heading in force is dressed, not what any
+     shape is born with — so they are stored beside them, under the same
+     latch phrase, and read back by the same loader. They are deliberately
+     NOT `build.js`'s birth defaults: that object answers "what will the
+     next shape you place look like", and a slider that meant that with a
+     shape selected, something else with none, and a heading's dress on top
+     of both would be three controls wearing one label.
+
+     Brightness scales the bone the title is already drawn in and does not
+     introduce a colour; at 1 it is arithmetically the identity, which is
+     why the default is exactly 1 and not something near it. */
   const TREAT = 'hq.title.treat', BORD = 'hq.title.border';
-  let treat = 'solid', border = 'none';
+  const BRIGHT = 'hq.title.bright', JIT = 'hq.title.jitter';
+  const BMIN = 0.4, BMAX = 2.2, JMAX = 1.5;      // the plate's own two ranges
+  let treat = 'solid', border = 'none', bright = 1, jitter = 0;
+  /* A stored number is read the way a stored name is: checked rather than
+     trusted, because a key edited by hand or written by an older build is
+     the one that would otherwise draw nothing at all. */
+  const num = (raw, lo, hi, dflt) => {
+    const v = parseFloat(raw);
+    return isFinite(v) ? clampN(v, lo, hi) : dflt;
+  };
   function loadStyle(){
     try {
       const t = localStorage.getItem(TREAT), b = localStorage.getItem(BORD);
@@ -598,12 +645,16 @@ const Palace = (() => {
          retired should fall back to the plain one, not draw nothing */
       if (t && Type.hasTreatment(t)) treat = t;
       if (b && Type.hasBorder(b)) border = b;
+      bright = num(localStorage.getItem(BRIGHT), BMIN, BMAX, 1);
+      jitter = num(localStorage.getItem(JIT), 0, JMAX, 0);
     } catch (e){}
   }
   function storeStyle(){
     try {
       localStorage.setItem(TREAT, treat);
       localStorage.setItem(BORD, border);
+      localStorage.setItem(BRIGHT, String(bright));
+      localStorage.setItem(JIT, String(jitter));
       if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
   }
@@ -634,6 +685,19 @@ const Palace = (() => {
   function setBorder(name){
     if (!Type.hasBorder(name)) return border;
     border = name; storeStyle(); return border;
+  }
+  /* The two sliders set without storing, and `storeHeading` is the drop.
+     Same reason `storeOff` waits for pointerup: a range fires all the way
+     along the drag, and a write per frame is sixty a second — sixty that
+     all fail together if one does. The buttons above store as they go
+     because a press has no middle. */
+  function setBright(v){
+    bright = clampN(isFinite(v) ? +v : 1, BMIN, BMAX);
+    return bright;
+  }
+  function setJitter(v){
+    jitter = clampN(isFinite(v) ? +v : 0, 0, JMAX);
+    return jitter;
   }
   function resetTitle(){
     if (!off) return false;
@@ -789,18 +853,27 @@ const Palace = (() => {
     if (btn) btn.onclick = go;
     if (x) x.onclick = () => close();
     loadStyle();
+    /* `Build.init` runs before this one and drew the heading controls from
+       whatever was in memory, which at that point was the defaults — so the
+       palette is told to read them again now that the stored ones are.
+       Harmless when there is no palette yet; the two buttons and the two
+       sliders are the only things in it that read from here. */
+    if (typeof Build !== 'undefined' && Build.head) Build.head();
     loadOff();
     wireTitle();
   }
 
   return {init, show, close, sync, overlay, build, rename, named, refit,
           cycleTreatment, cycleBorder, setTreatment, setBorder, resetTitle,
+          setBright, setJitter, storeHeading: storeStyle,
           /* what a control that drives the cycle needs to draw itself: the
              two names in force, the two lists to choose from, and whether
              the title is somewhere the user put it */
-          heading: () => ({treatment: treat, border: border, moved: !!off}),
+          heading: () => ({treatment: treat, border: border, moved: !!off,
+                           bright: bright, jitter: jitter,
+                           brightRange: [BMIN, BMAX], jitterRange: [0, JMAX]}),
           treatments: () => Type.treatments, borders: () => Type.borders,
-          opened: () => open, at: () => uid,
+          opened: () => open, at: here,
           has: id => { try { return !!localStorage.getItem(KEY(id)); }
                        catch (e){ return false; } }};
 })();

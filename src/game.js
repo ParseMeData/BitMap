@@ -370,18 +370,37 @@ addEventListener('keydown', e => {
   keys.add(e.code);
   if (DIRS.some(d => d[0] === e.code)) wake();
   switch (e.code){
-    /* Enter is the door: it takes you into the marker you are standing by,
-       and Esc is the way back out of it — the panel first, since that is
-       the thing most obviously in front of you */
-    case 'Enter': case 'NumpadEnter': e.preventDefault(); Interior.enter(); break;
+    /* Enter opens whatever the marker you are standing by holds, and what
+       that is depends on where you are standing: out on the town a marker
+       is a door into a room, and inside one it is a locus holding the
+       picture of whatever stands there. Esc is the way back out, innermost
+       thing first — the preview, then the panel, then the room. */
+    case 'Enter': case 'NumpadEnter':
+      e.preventDefault();
+      if (Loci.opened()) Loci.close();
+      else if (Interior.inside()){
+        const mk = Interior.target();
+        if (mk) Loci.enter(mk);
+      }
+      else Interior.enter();
+      break;
     case 'Escape':
-      if (panelOpen) setPanel(false);
+      if (Loci.opened()) Loci.close();
+      else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
       else togglePause();
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
-    case 'KeyR': spawn(); scatterSparks(); break;
+    /* P plays the route: the loci you have written, in their order, handed
+       to the platformer as its deck */
+    case 'KeyP': if (!Loci.opened()) Loci.play(); break;
+    /* R deals a new round, except while you are looking at a locus, where
+       the only thing worth replacing is the picture */
+    case 'KeyR':
+      if (Loci.opened()) Loci.pick(Loci.at());
+      else { spawn(); scatterSparks(); }
+      break;
     case 'KeyF': case 'F11': e.preventDefault(); toggleFull(); break;
     case 'Tab': e.preventDefault(); break;
     case 'Equal': case 'NumpadAdd': zoomBy(1.25); break;
@@ -447,6 +466,16 @@ function frame(now){
   const [w, h] = R.resize(DPR());
   if (w !== VW || h !== VH){ VW = w; VH = h; refit(); }
   if (!G.terr){ R.begin(w, h, t); return; }
+
+  /* A locus preview is a look at one asset, not a layer over the world: the
+     world is not drawn behind it and nothing in it moves. It still breathes,
+     because the breathing is the shader's own and costs the frame loop
+     nothing to leave running. */
+  if (Loci.opened()){
+    R.begin(w, h, t);
+    Loci.draw();
+    return;
+  }
 
   const live = !G.paused && !document.hidden;
 
@@ -616,6 +645,9 @@ function boot(img){
   Build.init();
   Markers.init();
   Interior.init();
+  /* the picture store answers asynchronously; the palette and the rings
+     redraw themselves once it has said what is attached */
+  Loci.init().then(() => Build.sync());
   Basemap.init();
   applyPlate();
   spawn(); scatterSparks();

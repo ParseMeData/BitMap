@@ -736,6 +736,57 @@ const Build = (() => {
     }
   }
 
+  /* ── the route ──────────────────────────────────────────────────────────
+     The same list either way, because it is the same question at two
+     scales: out on the town it is the rooms you walk through in order, and
+     inside one it is the loci you walk past. The dot says whether the entry
+     holds anything yet — a plan, or a picture — because the run the
+     platformer plays is exactly the entries that do. */
+  function syncRoute(){
+    const panel = $('#route');
+    if (panel) panel.hidden = !on;
+    const box = $('#kroute'), lab = $('#krlabel'), note = $('#krnote');
+    if (!box || !on) return;
+    const inside = typeof Interior !== 'undefined' && Interior.inside();
+    const list = Markers.ordered();
+    lab.textContent = inside ? 'Loci' : 'Rooms';
+    box.innerHTML = '';
+    const sel = Markers.selected();
+    for (const m of list){
+      const row = document.createElement('div');
+      row.className = 'rrow' + (m === sel ? ' sel' : '');
+      const full = inside ? (typeof Loci !== 'undefined' && Loci.has(m.uid))
+                          : (typeof Interior !== 'undefined' && Interior.has(m.uid));
+      row.innerHTML =
+        '<span class="rn">' + (m.n || '') + '</span>' +
+        '<span class="rg"></span><span class="rname"></span>' +
+        '<span class="rdot' + (full ? '' : ' off') + '">●</span>' +
+        '<span class="rmv" data-d="-1">▲</span><span class="rmv" data-d="1">▼</span>';
+      row.querySelector('.rg').textContent = Markers.glyphs()[m.gi] || '◆';
+      row.querySelector('.rname').textContent =
+        (m.name || '').trim() || (inside ? 'unnamed locus' : 'unnamed room');
+      row.onclick = ev => {
+        const mv = ev.target.closest('.rmv');
+        if (mv){ ev.stopPropagation(); Markers.reorder(m, +mv.dataset.d); syncUI(); return; }
+        Markers.select(m); sel2(null); syncUI();
+      };
+      box.appendChild(row);
+    }
+    if (!note) return;
+    if (!list.length) note.textContent = inside ? 'no loci yet · place a marker'
+                                                : 'no rooms yet · place a marker';
+    else if (inside){
+      const n = list.filter(m => typeof Loci !== 'undefined' && Loci.has(m.uid)).length;
+      note.textContent = n + ' of ' + list.length + ' have a picture · enter opens one';
+      note.classList.toggle('warn', n < list.length);
+    } else {
+      const n = list.filter(m => typeof Interior !== 'undefined' && Interior.has(m.uid)).length;
+      note.textContent = n + ' of ' + list.length + ' have a plan · enter goes inside';
+      note.classList.toggle('warn', n < list.length);
+    }
+  }
+  const sel2 = s => { sel = s; };
+
   function syncUI(){
     if (!$('#palette') || !$('#klayers')) return;
     document.querySelectorAll('#klayers .krow').forEach(r => {
@@ -745,6 +796,7 @@ const Build = (() => {
     syncKinds();
     syncVariants();
     syncTune();
+    syncRoute();
     const allowed = sel ? (Kinds.by[sel.kind].types || []) : [];
     document.querySelectorAll('#kshapes .kchip').forEach(c => {
       c.classList.toggle('sel', !!sel && sel.type === c.dataset.shape);
@@ -869,5 +921,5 @@ const Build = (() => {
   }
 
   return {init, rebuild, stamp, overlay, setOn, mount, active: () => on,
-          commit: save, key: () => KEY, count: () => G.shapes.length};
+          sync: syncUI, commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

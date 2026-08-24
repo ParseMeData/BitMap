@@ -14,6 +14,10 @@ const Markers = (() => {
                 '⫫', '⇞', '⇬', '✦', '↬', '⏎', '➣',
                 '⤲', '⇑', '⇯', '⇭', '⤊', '⟰', '≛',
                 '✥'];
+  /* Cut from the same sheet but never offered in the palette: the order a
+     marker sits at is drawn beside it, and a memory palace is its order —
+     a plan where you cannot see it is a plan you cannot check. */
+  const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   const SIZE = 64, COLS = 8;
   /* Which markers are being pinned is one string, the way the shapes are —
      the town's, or the ones inside a building. */
@@ -21,7 +25,7 @@ const Markers = (() => {
   const TINT = [[0.47, 0.88, 0.85], [1, 0.76, 0.31], [1, 0.37, 0.64],
                 [0.93, 0.92, 0.89], [0.65, 0.55, 0.98]];
 
-  let glyphs = [], sel = null, armed = -1, nextId = 1;
+  let glyphs = [], sel = null, armed = -1, nextId = 1, digit0 = 0;
 
   /* Draw one glyph into a scratch cell and hand back its pixels, so a
      character the font cannot make — which comes back as tofu, not as
@@ -58,15 +62,19 @@ const Markers = (() => {
       keep.push(g);
     }
     glyphs = keep;
+    /* the digits go on the end, so a marker's saved `gi` still means the
+       glyph it always meant however many symbols the font dropped */
+    digit0 = keep.length;
+    const cells = keep.concat(DIGITS);
 
-    const rows = Math.max(1, Math.ceil(keep.length / COLS));
+    const rows = Math.max(1, Math.ceil(cells.length / COLS));
     const c = document.createElement('canvas');
     c.width = COLS * SIZE; c.height = rows * SIZE;
     const x = c.getContext('2d');
     x.font = px.font;
     x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#fff';
-    keep.forEach((g, i) => x.fillText(g, (i % COLS + 0.5) * SIZE,
-                                      Math.floor(i / COLS) * SIZE + SIZE / 2));
+    cells.forEach((g, i) => x.fillText(g, (i % COLS + 0.5) * SIZE,
+                                       Math.floor(i / COLS) * SIZE + SIZE / 2));
     return {canvas: c, cols: COLS, rows};
   }
 
@@ -85,13 +93,38 @@ const Markers = (() => {
   function place(x, y){
     if (armed < 0 || armed >= glyphs.length) return null;
     const m = {id: nextId++, uid: mint(), name: '', gi: armed, x: snap(x), y: snap(y),
-               size: grid() * 0.8, tint: 0};
+               size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
     G.markers.push(m);
+    sel = m;
+    renumber();
     sel = m;
     save();
     return m;
   }
   function rename(m, s){ m.name = String(s || '').slice(0, 40); save(); }
+
+  /* ── order ──────────────────────────────────────────────────────────────
+     A memory palace *is* its order: the loci have to be walked in the same
+     sequence every time or the method does not work. So the number is a
+     first-class property you set by hand, not something inferred from where
+     a marker happens to sit on the plan. It is kept dense and 1-based —
+     delete the third of five and you have four, not a gap at three. */
+  const ordered = () => (G.markers || []).slice().sort(
+    (a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
+  function renumber(){
+    ordered().forEach((m, i) => { m.n = i + 1; });
+  }
+  /* move one marker `d` places along the run, and close the hole behind it */
+  function reorder(m, d){
+    const list = ordered();
+    const i = list.indexOf(m);
+    const j = i + d;
+    if (i < 0 || j < 0 || j >= list.length) return false;
+    list.splice(j, 0, list.splice(i, 1)[0]);
+    list.forEach((x, k) => { x.n = k + 1; });
+    save();
+    return true;
+  }
   /* the nearest marker within reach of a point — what "the place you are
      standing by" means when you press Enter */
   function nearest(x, y, r){
@@ -116,28 +149,50 @@ const Markers = (() => {
     if (i < 0) return;
     G.markers.splice(i, 1);
     if (sel === m) sel = null;
+    renumber();
     save();
   }
   function cycleTint(m){ m.tint = (m.tint + 1) % TINT.length; save(); }
+
+  /* Whether a marker holds anything depends on what kind of place it is: out
+     on the town a marker opens into a room, and inside one it opens into the
+     picture of whatever stands at that spot. */
+  function filled(uid){
+    if (typeof Interior === 'undefined') return false;
+    if (Interior.inside()) return typeof Loci !== 'undefined' && Loci.has(uid);
+    return Interior.has(uid);
+  }
 
   /* ── drawn into the entity stream, so it costs no extra draw call ── */
   function draw(a, m, cap){
     if (!G.markers || !glyphs.length) return m;
     const z = G.cam[2], px = 1 / z;
     for (const k of G.markers){
-      if (m > cap - 4) break;
+      if (m > cap - 10) break;
       /* a marker holds a screen-space floor: it stays findable zoomed out */
       const r = Math.max(k.size, 11 * px);
       const c = TINT[k.tint % TINT.length];
       m = put(a, m, k.x, k.y, c[0], c[1], c[2], 0.32, r * 2.1, 0, 0, 0, 2);
       m = put(a, m, k.x, k.y, c[0], c[1], c[2], 1, r, 0, 0, 0, 3, k.gi);
-      /* a marker with something built inside it wears a ring, so a place you
-         can walk into looks different from a place that is only a note */
-      if (typeof Interior !== 'undefined' && Interior.has(k.uid))
+      /* a marker with something in it wears a ring, so a place you can open
+         looks different from a place that is only a note */
+      if (filled(k.uid))
         m = put(a, m, k.x, k.y, c[0], c[1], c[2], 0.5, r * 1.28, 1, 0, 0, 1);
+      /* and its number, standing off the corner where it cannot cover the
+         glyph — the order is the thing you are actually authoring */
+      if (k.n) m = number(a, m, k.n, k.x + r * 0.95, k.y - r * 0.95, r * 0.62, c);
       if (k === sel)
         m = put(a, m, k.x, k.y, 1, 0.37, 0.64, 0.9, r * 1.5, 1, 0, 0, 1);
     }
+    return m;
+  }
+  /* the digits of `v`, laid out left to right from a centred anchor */
+  function number(a, m, v, x, y, r, c){
+    const s = String(v | 0), w = r * 1.05;
+    let px = x - (s.length - 1) * w / 2;
+    for (let i = 0; i < s.length; i++, px += w)
+      m = put(a, m, px, y, c[0], c[1], c[2], 0.95, r, 0, 0, 0, 3,
+              digit0 + (s.charCodeAt(i) - 48));
     return m;
   }
 
@@ -167,7 +222,7 @@ const Markers = (() => {
   function save(){
     try {
       localStorage.setItem(KEY, JSON.stringify(G.markers.map(m =>
-        ({uid: m.uid, name: m.name || '', gi: m.gi, x: m.x, y: m.y,
+        ({uid: m.uid, name: m.name || '', n: m.n || 0, gi: m.gi, x: m.x, y: m.y,
           size: m.size, tint: m.tint}))));
     } catch (e){}
   }
@@ -182,8 +237,12 @@ const Markers = (() => {
            Mint one and write it straight back, so the plan built inside a
            marker today is still that marker's tomorrow. */
         if (!m.uid){ m = Object.assign({}, m, {uid: mint()}); minted = true; }
-        return Object.assign({id: nextId++, name: ''}, m);
+        return Object.assign({id: nextId++, name: '', n: 0}, m);
       });
+    /* markers saved before the order existed all carry 0; numbering them
+       gives the sequence they were placed in, which is the best guess there
+       is and is what you would reorder from anyway */
+    if (G.markers.some(m => !m.n)){ renumber(); minted = true; }
     if (minted) save();
   }
   /* swap which set of markers is pinned — see interior.js */
@@ -202,6 +261,7 @@ const Markers = (() => {
   }
 
   return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, nearest, mount,
+          ordered, reorder, renumber,
           armed: () => armed >= 0,
           disarm: () => { armed = -1; document.body.classList.remove('arming'); syncChips(); },
           select: m => { sel = m; },

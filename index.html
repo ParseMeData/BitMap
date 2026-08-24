@@ -11,6 +11,7 @@ if (location.search.indexOf('wallpaper') >= 0) document.title = 'Memory Quest Wa
 </script>
 <style>
 :root{--ground:#08080B;--bone:#EDEAE3;--dim:#5A5A66;--flare:#FF5FA2;--gold:#F2C14E;
+  --aqua:#79E0D8;
   --mono:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 /* every overlay below sets `display`, which outranks the browser's built-in
@@ -59,6 +60,8 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #toast{position:fixed;left:16px;bottom:14px;z-index:8;max-width:70ch;padding:9px 12px;
   background:rgba(8,8,11,.9);border:1px solid var(--flare);color:var(--flare);
   font:400 10px/1.5 var(--mono);letter-spacing:.06em;white-space:pre-wrap}
+/* a note is not a failure, and should not wear the failure's colour */
+#toast.soft{border-color:rgba(237,234,227,.3);color:var(--bone)}
 #fatalmsg{color:var(--bone);font-size:12px;letter-spacing:.04em;text-transform:none;
   max-width:80ch;white-space:pre-wrap;text-align:left;margin-top:12px}
 #pause h1{font-size:14px;letter-spacing:.5em;font-weight:400;margin-bottom:14px}
@@ -154,6 +157,40 @@ body.inside #msg{top:98px}
 body.wall #inside,body.wall #enterhint{display:none}
 #kmname{width:100%;background:#0D0D12;border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
+/* the route: the rooms in order, or the loci inside one — the order is the
+   thing being authored, so it gets a list rather than living on the plate */
+/* the route sits opposite the palette: one panel is the brush and the other
+   is the sequence, and the sequence is the half a memory palace is made of */
+#route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
+  overflow-y:auto;padding:12px;z-index:4;display:flex;flex-direction:column;gap:7px}
+#route::-webkit-scrollbar{width:6px}#route::-webkit-scrollbar-thumb{background:#26262f}
+body.tuning #route{display:none}
+#kroute{display:flex;flex-direction:column;gap:3px}
+.rrow{display:flex;align-items:center;gap:6px;padding:4px 5px;cursor:pointer;
+  border:1px solid rgba(237,234,227,.12);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim);transition:background .12s,color .12s}
+.rrow:hover{background:rgba(237,234,227,.08)}
+.rrow.sel{border-color:rgba(237,234,227,.5);color:var(--bone);background:rgba(237,234,227,.1)}
+.rrow .rn{width:15px;flex:none;text-align:right;color:var(--gold);
+  font-variant-numeric:tabular-nums}
+.rrow .rg{width:13px;flex:none;text-align:center;color:var(--bone);font-size:11px}
+.rrow .rname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  text-transform:none;letter-spacing:.04em}
+.rrow .rdot{flex:none;font-size:7px;color:var(--aqua)}
+.rrow .rdot.off{color:#2A2A33}
+.rrow .rmv{flex:none;padding:0 2px;font-size:8px;color:var(--bone);opacity:.5}
+.rrow .rmv:hover{opacity:1}
+.knote.warn{color:var(--gold)}
+/* the locus preview: a modal look at one asset, so the editor gets out of it */
+#locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
+  padding:9px 15px;display:flex;gap:13px;align-items:center;font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone);pointer-events:none}
+#locus b{color:var(--gold);font-weight:400;font-size:13px;letter-spacing:.1em;
+  font-variant-numeric:tabular-nums}
+#locus span{text-transform:none;letter-spacing:.06em;font-size:11px}
+#locus em{color:var(--dim);font-style:normal}
+body.locus #hud,body.locus #keys,body.locus #palette,body.locus #inside,
+body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route{display:none}
 body.placing #gl{cursor:move}
 body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}
@@ -196,11 +233,13 @@ body.arming,body.arming #gl{cursor:copy}
   <em>WASD</em> move &nbsp; <em>Shift</em> sprint<br>
   <em>Space</em> recrystallise &nbsp; <em>Tab</em> overview<br>
   <em>Wheel</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
-  <em>B</em> build &nbsp; <em>Enter</em> go inside a marker
+  <em>B</em> build &nbsp; <em>Enter</em> open a marker &nbsp; <em>P</em> play
 </div>
 
 <div id="inside" class="glass" hidden></div>
 <div id="enterhint" class="glass" hidden></div>
+<div id="locus" class="glass" hidden></div>
+<input id="lfile" type="file" accept="image/*" hidden>
 <div id="toast" hidden></div>
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
@@ -222,11 +261,19 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Drag</td><td>move the picture &nbsp;·&nbsp; Shift turns it, Ctrl holds 15°</td></tr>
     <tr><td>[ ]</td><td>size or width of the selection &nbsp;·&nbsp; Del removes it</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
-    <tr><td>Enter</td><td>go inside the marker you are standing by</td></tr>
-    <tr><td>R</td><td>new round</td></tr>
+    <tr><td>Enter</td><td>open the marker you are standing by &nbsp;·&nbsp; a room, or a locus</td></tr>
+    <tr><td>P</td><td>play the route in the platformer</td></tr>
+    <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
     <tr><td>F / F11</td><td>fullscreen</td></tr>
-    <tr><td>Esc</td><td>leave the interior &nbsp;·&nbsp; otherwise resume</td></tr>
+    <tr><td>Esc</td><td>close the locus &nbsp;·&nbsp; then the interior &nbsp;·&nbsp; then resume</td></tr>
   </table>
+</div>
+
+<div id="route" class="glass" hidden>
+  <div class="phead"><span>The <b id="krlabel">route</b></span></div>
+  <div id="kroute"></div>
+  <div class="knote" id="krnote"></div>
+  <div class="kfoot one"><button class="btn" id="kplay">Play the route</button></div>
 </div>
 
 <div id="tune" class="glass" hidden>
@@ -245,18 +292,27 @@ body.arming,body.arming #gl{cursor:copy}
 </div>
 
 <script>
-/* any runtime failure lands on screen rather than only in devtools */
-function hqReport(msg){
-  try { localStorage.setItem('hq.lastError', msg + '  ·  ' + new Date().toISOString()); } catch (err){}
+/* Something to say, in the banner you can ignore. Two callers and one of
+   them is not a bug: hqReport is for a runtime failure and keeps the last
+   one in storage to be found later, hqNote is for telling you why nothing
+   happened. Writing the second into the error slot would leave the next
+   person debugging a crash that never occurred. */
+function hqNote(msg, err){
   const f = document.getElementById('fatal');
   if (!f.hidden) return;              // a boot failure already owns the screen
-  /* a runtime slip is not a dead game: say so in a banner you can ignore,
-     never behind a full-screen sign claiming the browser lacks WebGL2 */
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.hidden = false;
+  t.classList.toggle('soft', !err);
   clearTimeout(t._h);
-  t._h = setTimeout(() => { t.hidden = true; }, 12000);
+  t._h = setTimeout(() => { t.hidden = true; }, err ? 12000 : 6000);
+}
+/* any runtime failure lands on screen rather than only in devtools */
+function hqReport(msg){
+  try { localStorage.setItem('hq.lastError', msg + '  ·  ' + new Date().toISOString()); } catch (err){}
+  /* a runtime slip is not a dead game: say so in a banner you can ignore,
+     never behind a full-screen sign claiming the browser lacks WebGL2 */
+  hqNote(msg, true);
 }
 addEventListener('error', e => hqReport(
   ((e.message || (e.error && e.error.message)) || 'error') + ' @ ' +
@@ -270,10 +326,10 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 39, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 40, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
-   'src/panel.js','src/build.js','src/markers.js','src/interior.js',
+   'src/panel.js','src/build.js','src/markers.js','src/loci.js','src/interior.js',
    'src/basemap.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');

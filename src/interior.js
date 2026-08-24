@@ -47,6 +47,8 @@ const Interior = (() => {
 
   const glyph = mk => (Markers.glyphs()[mk.gi] || '◆');
   const label = mk => (mk.name || '').trim() || glyph(mk);
+  const loaded = mk => typeof Loci !== 'undefined' && Loci.has(mk.uid);
+  const locus = mk => (mk.n ? mk.n + ' · ' : '') + label(mk);
 
   /* the marker the walker is standing on or beside */
   function target(){
@@ -129,7 +131,8 @@ const Interior = (() => {
     const el = $('#enterhint');
     if (!el || WALL) return;
     const mk = G.paused ? null : target();
-    const key = mk ? mk.uid + '|' + label(mk) + '|' + (has(mk.uid) ? 1 : 0) : '';
+    const key = mk ? mk.uid + '|' + label(mk) + '|' + (mk.n || 0) + '|' +
+                     (stack.length ? (loaded(mk) ? 1 : 0) : (has(mk.uid) ? 1 : 0)) : '';
     if (key === shown) return;
     shown = key;
     el.hidden = !mk;
@@ -138,7 +141,13 @@ const Interior = (() => {
     const e = document.createElement('em');
     e.textContent = 'Enter';
     const n = document.createElement('span');
-    n.textContent = (has(mk.uid) ? 'go inside ' : 'plan out ') + label(mk);
+    /* Enter always opens what the marker holds; what that is depends on
+       where you are standing. Out on the town a marker is a door into a
+       room. Inside one it is a locus, and what it holds is the picture of
+       whatever stands there — or the chance to say. */
+    n.textContent = stack.length
+      ? (loaded(mk) ? 'look at ' : 'add a picture to ') + locus(mk)
+      : (has(mk.uid) ? 'go inside ' : 'plan out ') + label(mk);
     el.append(e, n);
   }
 
@@ -166,7 +175,7 @@ const Interior = (() => {
   const has = uid => !!(uid && have[uid]);
   function init(){ survey(); banner(); }
 
-  return {init, enter, leave, prompt, overlay, has,
+  return {init, enter, leave, prompt, overlay, has, target,
           inside: () => stack.length > 0, depth: () => stack.length,
           at: () => (stack.length ? stack[stack.length - 1].name : '')};
 })();

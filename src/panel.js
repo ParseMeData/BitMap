@@ -130,5 +130,8 @@ function syncPanel(){
 function setPanel(open){
   panelOpen = open;
   $('#tune').hidden = !open;
+  /* the tune panel and the route want the same corner; tuning is the
+     transient one, so it takes the corner while it is up */
+  document.body.classList.toggle('tuning', !!open);
   if (open) syncPanel();
 }

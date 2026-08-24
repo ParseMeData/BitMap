@@ -29,6 +29,9 @@ freeze-and-place.
 **v2.0** — creek terrain, the Glow slider, a larger walker.
 **v3.0** — interiors: walk up to a marker, press `Enter`, and build that
 building's floor plan in the same editor.
+**v3.1** — loci: the markers inside a room are numbered places, each holding
+a picture of what stands there, and that ordered run is what the platformer
+plays. `platformer.html` joins the project.
 
 ### The half that is not in the repo
 
@@ -65,13 +68,14 @@ WebSocket, because nothing else here needs a dependency.
 | wheel, `+` `-`, `0` | zoom / reset zoom |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
-| `Enter` | go inside the marker you are standing by |
+| `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus |
+| `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
 | drag / `Shift`+drag | move / turn the frozen map (in Place) |
 | `Shift`+`Tab` | next layer (in build mode) |
-| `R` | new round |
 | `F` / `F11` | fullscreen |
-| `Esc` | leave the interior &nbsp;·&nbsp; otherwise pause |
+| `R` | new round &nbsp;·&nbsp; replaces the picture while a locus is open |
+| `Esc` | close the locus &nbsp;·&nbsp; then the interior &nbsp;·&nbsp; then pause |
 
 Clear every spark to finish a round; each round adds two more. Your best
 clear time is kept in the browser profile the launcher uses.
@@ -119,6 +123,10 @@ reach.
     src/build.js    build mode: shapes, dragging, walk-grid stamping
     src/markers.js  glyph markers, baked to one texture atlas
     src/interior.js going inside a marker: the stack, and the swap
+    src/loci.js     the numbered places inside a room, their pictures,
+                    the lattice preview, and the route the platformer plays
+    platformer.html the runner — the halftone platformer, which takes this
+                    route as its deck when there is one (see Playing it)
     src/basemap.js  the tracing underlay, live tiles and frozen picture
     src/game.js     state, input, camera, entities, frame loop
 
@@ -525,6 +533,75 @@ A marker with something built inside it wears a ring on the map, so a place
 you can walk into looks different from a place that is only a note. The plans
 live beside the town in the browser profile, under `hq.rooms.<marker>`, with
 `hq.rooms` as the index of which markers have one.
+
+## The route, and playing it
+
+A room's markers are its **loci**: numbered places, each holding a picture of
+whatever stands there. One is a hand statue, two is a sculpture of Roman
+faces, three is the television, four is the fireplace. That is the whole of
+the method — the order is fixed, and each place in it holds an image.
+
+Build mode shows **the route** in its own panel, opposite the palette. Out on
+the town it lists the rooms in order; inside one it lists that room's loci.
+`▲` and `▼` move an entry along the run, and the numbering stays dense and
+1-based — delete the third of five and you have four, not a gap at three. The
+number is drawn beside the marker on the plan, because a memory palace *is*
+its order and a plan where you cannot see it is a plan you cannot check.
+
+The order is set by hand rather than derived from where a marker happens to
+sit. That is not a shortcut not taken: the loci have to be walked in the same
+sequence every time or the method does not work, and a sequence inferred from
+geometry changes the moment you nudge something.
+
+`Enter` on a locus **opens** it. With a picture attached you get it rendered
+as lattice — which is not a thumbnail of the photograph but the thing the
+platformer will actually hand you, the same diamonds through the same tone
+pass, so what you are looking at *is* the level. With nothing attached yet it
+opens a file picker instead, because a locus with no picture is a locus you
+have not finished writing. `R` replaces the picture, `Esc` closes, and
+dropping an image on an open preview attaches it.
+
+So `Enter` means the same thing everywhere and what it opens depends on where
+you are standing: on the town a marker is a door into a room, and inside one
+it is a locus holding a picture.
+
+The pictures live in their own IndexedDB store, not in localStorage — a
+photograph is hundreds of kilobytes against a five megabyte budget shared
+with the whole town, and that failure would land on the town rather than on
+the picture that caused it. They are downscaled to a long edge of 1200 on the
+way in, which is more than anything downstream wants.
+
+### Playing it
+
+`P`, or **Play the route**, hands the run to `platformer.html`: every room in
+the town's order, and inside each one every locus in its own, flattened into
+the sequence of pictures you run through. One picture per face — a locus is
+somewhere you stand in front of and look at, not half of a pair.
+
+The platformer is the halftone platformer, unchanged: the picture is the
+level, thresholded into a static map, and the diamond runs and jumps and
+climbs over it. Open it on its own and it still plays its own deck. What is
+new is nine lines that take a deck from here when there is one.
+
+Those nine lines exist because of one measured fact: **every `file://` page
+in this browser shares a single origin**, so a second page can read this
+one's storage directly. No iframe, no message passing, no build step. The
+route is handed over in two halves because the two are wanted at different
+moments — the *order* goes to `hq.deck` in localStorage, which is synchronous,
+so the page knows how many faces there are before it builds anything; the
+*pictures* stay in IndexedDB and are fetched once, before the faces load.
+
+Only loci that actually have a picture are handed over. Quietly shipping a
+blank one would read as the platformer being broken rather than as a locus
+you had not finished.
+
+Upstream for the runner is `~/Projects/halftone-platformer`, which remains its
+own project; `platformer.html` here is its shipped artifact plus the deck
+hook. The two were always meant to converge — `docs/LATTICE-CONTRACT.md` over
+there records what they already share, and the one question it says cannot be
+deferred is whether a **cell** collides or a **tile** does. This is the answer
+in practice: a plan is authored on tiles and the pictures bake down to cells,
+which is exactly the resolution that document guessed at.
 
 ## Walking
 

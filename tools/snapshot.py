@@ -12,7 +12,10 @@ other half to a file beside it.
     tools/snapshot.py restore snapshots/v3.0.json
 
 The frozen picture is a data URL in IndexedDB and is carried in full, so a
-snapshot restores the traced map as well as what was built over it.
+snapshot restores the traced map as well as what was built over it. So are
+the locus pictures — the photographs of what stands at each place, which are
+the whole of what the platformer plays, and which nothing else would ever get
+back if they were left out.
 
 Interiors are one key per marker, named after an id only that marker has, so
 there is no fixed list of them to write down here. Everything under `hq.` is
@@ -46,6 +49,31 @@ READ_PIC = """(async () => {
   } catch (e){ return null; }
 })()"""
 
+READ_LOCI = """(async () => {
+  try {
+    const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.loci', 1);
+      r.onupgradeneeded = () => { try { r.result.createObjectStore('img'); } catch (e){} };
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
+    if (!d.objectStoreNames.contains('img')) return {};
+    return await new Promise((res, rej) => { const t = d.transaction('img', 'readonly');
+      const s = t.objectStore('img'), out = {};
+      const kq = s.getAllKeys(), vq = s.getAll();
+      t.oncomplete = () => { (kq.result || []).forEach((k, i) => { out[k] = vq.result[i]; }); res(out); };
+      t.onerror = () => rej(t.error); });
+  } catch (e){ return {}; }
+})()"""
+
+WRITE_LOCI = """(async (rows) => {
+  const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.loci', 1);
+    r.onupgradeneeded = () => { try { r.result.createObjectStore('img'); } catch (e){} };
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
+  return await new Promise((res, rej) => { const t = d.transaction('img', 'readwrite');
+    const s = t.objectStore('img');
+    s.clear();
+    for (const k in rows) s.put(rows[k], k);
+    t.oncomplete = () => res(Object.keys(rows).length); t.onerror = () => rej(t.error); });
+})"""
+
 WRITE_PIC = """(async (url) => {
   const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
     r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic'))
@@ -62,7 +90,8 @@ def save(path):
     keys = [k for k in p.js(LIST_KEYS) if k not in SKIP]
     state = {k: p.js(f'localStorage.getItem({json.dumps(k)})') for k in keys}
     pic = p.js(READ_PIC)
-    out = {'version': 2, 'localStorage': state, 'picture': pic}
+    loci = p.js(READ_LOCI) or {}
+    out = {'version': 3, 'localStorage': state, 'picture': pic, 'loci': loci}
     f = pathlib.Path(path)
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1))
@@ -70,8 +99,10 @@ def save(path):
     markers = json.loads(state.get('hq.markers') or '[]')
     rooms = [k for k in keys if k.startswith('hq.rooms.')]
     inside = sum(len(json.loads(state[k] or '[]')) for k in rooms)
+    lb = sum(len(v or '') for v in loci.values())
     print(f'saved {f}  ·  {len(shapes)} shapes, {len(markers)} markers, '
           f'{len(rooms)} interiors holding {inside} shapes, '
+          f'{len(loci)} locus pictures ({lb // 1024} KB), '
           f'picture {len(pic) if pic else 0} bytes, {f.stat().st_size} bytes total')
 
 
@@ -94,6 +125,9 @@ def restore(path):
     pic = data.get('picture')
     if pic:
         p.js(f'({WRITE_PIC})({json.dumps(pic)})')
+    # written whether or not the file has any: an empty set has to clear the
+    # store, or a locus the snapshot says is blank keeps yesterday's picture
+    p.js(f'({WRITE_LOCI})({json.dumps(data.get("loci") or {})})')
     p.call('Page.reload')
     print(f'restored {path} — the page is reloading')
 

@@ -82,6 +82,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 .plabel{color:var(--dim);font-size:9px;letter-spacing:.26em;text-transform:uppercase;margin-top:2px}
 .chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .chips.three{grid-template-columns:repeat(3,1fr)}
+.chips.two{grid-template-columns:repeat(2,1fr)}
 .chip,.btn{padding:7px 0;text-align:center;border:1px solid rgba(237,234,227,.22);cursor:pointer;
   font:400 9px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--bone);
   background:none;transition:background .12s,color .12s}
@@ -178,6 +179,9 @@ body.locus #palace{display:none}
   overflow-y:auto;padding:12px;z-index:4;display:flex;flex-direction:column;gap:7px}
 #route::-webkit-scrollbar{width:6px}#route::-webkit-scrollbar-thumb{background:#26262f}
 body.tuning #route{display:none}
+#kname{width:100%;background:#0D0D12;border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
+#kname::placeholder{color:#3A3A44}
 #kroute{display:flex;flex-direction:column;gap:3px}
 .rrow{display:flex;align-items:center;gap:6px;padding:4px 5px;cursor:pointer;
   border:1px solid rgba(237,234,227,.12);font-size:9px;letter-spacing:.1em;
@@ -204,6 +208,12 @@ body.tuning #route{display:none}
 #locus em{color:var(--dim);font-style:normal}
 body.locus #hud,body.locus #keys,body.locus #palette,body.locus #inside,
 body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route{display:none}
+/* while the plan is being moved, the tools that place things inside it are
+   not just disabled — they are gone, because the promise is that nothing
+   inside a room can be touched until the plan is settled.
+   !important because several of these panels are laid out by an id rule,
+   and an id beats a class however the class is written. */
+body.rooms .fitonly{display:none!important}
 body.placing #gl{cursor:move}
 body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}
@@ -275,6 +285,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>[ ]</td><td>size or width of the selection &nbsp;·&nbsp; Del removes it</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
     <tr><td>O</td><td>the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it</td></tr>
+    <tr><td>Rooms / Fit-out</td><td>move rooms and the furniture follows &nbsp;·&nbsp; or arrange what is inside them</td></tr>
     <tr><td>Enter</td><td>open the marker you are standing by &nbsp;·&nbsp; a room, or a locus</td></tr>
     <tr><td>P</td><td>play the route in the platformer</td></tr>
     <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
@@ -293,6 +304,7 @@ body.arming,body.arming #gl{cursor:copy}
 
 <div id="route" class="glass" hidden>
   <div class="phead"><span>The <b id="krlabel">route</b></span></div>
+  <input id="kname" type="text" spellcheck="false" placeholder="name this place">
   <div id="kroute"></div>
   <div class="knote" id="krnote"></div>
   <div class="kfoot one"><button class="btn" id="kplay">Play the route</button></div>
@@ -348,10 +360,10 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 41, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 42, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
-   'src/panel.js','src/build.js','src/markers.js','src/loci.js','src/palace.js',
+   'src/panel.js','src/type.js','src/build.js','src/markers.js','src/loci.js','src/palace.js',
    'src/interior.js','src/basemap.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');

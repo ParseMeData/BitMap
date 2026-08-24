@@ -38,34 +38,67 @@ const Palace = (() => {
      what covers what: a rug is on the floor layer and a table on the
      fittings layer, so the table stands on the rug whatever order they are
      written in here. */
+  /* Ordered by what the room most wants, with how many of each it will
+     take. A room is filled by walking this list into as many slots as the
+     room has, so the same kit furnishes a cupboard with one bed and a
+     ballroom with a bed, two wardrobes, a rug, two desks and the plants —
+     which is what "make it bigger and it fills up" has to mean if the
+     furniture is not simply going to be stretched. */
   const KIT = {
     bedroom:  {floor: 'boards', items: [
-      ['bed', 'double', 0.30, 0.40, 3, 4], ['shelf', 'wardrobe', 0.76, 0.18, 3, 1],
-      ['rug', 'plain', 0.62, 0.74, 4, 3], ['table', 'desk', 0.82, 0.72, 2, 2]]},
+      {k: 'bed', v: 'double', w: 3, h: 4, max: 1},
+      {k: 'shelf', v: 'wardrobe', w: 3, h: 1, max: 2},
+      {k: 'rug', v: 'plain', w: 4, h: 3, max: 1},
+      {k: 'table', v: 'desk', w: 3, h: 2, max: 1},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3},
+      {k: 'bed', v: 'single', w: 2, h: 4, max: 2}]},
     bathroom: {floor: 'tile', items: [
-      ['pool', '', 0.28, 0.32, 3, 2], ['counter', 'counter', 0.74, 0.18, 3, 1],
-      ['plant', '', 0.82, 0.80, 1, 1]]},
+      {k: 'pool', v: '', w: 3, h: 2, max: 1},
+      {k: 'counter', v: 'counter', w: 3, h: 1, max: 2},
+      {k: 'shelf', v: 'store', w: 2, h: 1, max: 2},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3}]},
     kitchen:  {floor: 'tile', items: [
-      ['counter', 'counter', 0.50, 0.16, 6, 1], ['counter', 'island', 0.46, 0.58, 4, 2],
-      ['shelf', 'store', 0.16, 0.76, 3, 1]]},
+      {k: 'counter', v: 'counter', w: 5, h: 1, max: 2},
+      {k: 'counter', v: 'island', w: 4, h: 2, max: 1},
+      {k: 'shelf', v: 'store', w: 3, h: 1, max: 3},
+      {k: 'table', v: 'dining', w: 4, h: 3, max: 1},
+      {k: 'plant', v: '', w: 1, h: 1, max: 2}]},
     dining:   {floor: 'boards', items: [
-      ['rug', 'medallion', 0.50, 0.50, 6, 5], ['table', 'dining', 0.50, 0.48, 5, 4],
-      ['shelf', 'store', 0.16, 0.18, 3, 1]]},
+      {k: 'table', v: 'dining', w: 5, h: 4, max: 1},
+      {k: 'rug', v: 'medallion', w: 5, h: 4, max: 1},
+      {k: 'shelf', v: 'store', w: 3, h: 1, max: 2},
+      {k: 'table', v: 'round', w: 4, h: 4, max: 1},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3}]},
     study:    {floor: 'boards', items: [
-      ['table', 'desk', 0.34, 0.38, 4, 3], ['shelf', 'books', 0.76, 0.18, 4, 1],
-      ['plant', '', 0.84, 0.80, 1, 1]]},
+      {k: 'table', v: 'desk', w: 4, h: 3, max: 2},
+      {k: 'shelf', v: 'books', w: 4, h: 1, max: 3},
+      {k: 'sofa', v: 'armchair', w: 2, h: 2, max: 1},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3}]},
     living:   {floor: 'boards', items: [
-      ['rug', 'medallion', 0.52, 0.58, 6, 4], ['sofa', 'sofa', 0.34, 0.26, 4, 2],
-      ['table', 'round', 0.56, 0.58, 4, 4], ['plant', '', 0.86, 0.82, 1, 1]]},
+      {k: 'sofa', v: 'sofa', w: 4, h: 2, max: 2},
+      {k: 'rug', v: 'medallion', w: 5, h: 4, max: 1},
+      {k: 'table', v: 'round', w: 4, h: 4, max: 1},
+      {k: 'sofa', v: 'armchair', w: 2, h: 2, max: 2},
+      {k: 'shelf', v: 'books', w: 4, h: 1, max: 2},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3}]},
     hall:     {floor: 'flags', items: [
-      ['plant', '', 0.50, 0.26, 1, 1], ['shelf', 'store', 0.18, 0.76, 3, 1]]},
+      {k: 'shelf', v: 'store', w: 3, h: 1, max: 2},
+      {k: 'plant', v: '', w: 1, h: 1, max: 4},
+      {k: 'rug', v: 'stripe', w: 3, h: 2, max: 1}]},
     library:  {floor: 'boards', items: [
-      ['shelf', 'books', 0.20, 0.20, 4, 1], ['shelf', 'books', 0.80, 0.20, 4, 1],
-      ['table', 'desk', 0.50, 0.68, 4, 3]]},
+      {k: 'shelf', v: 'books', w: 4, h: 1, max: 6},
+      {k: 'table', v: 'desk', w: 4, h: 3, max: 1},
+      {k: 'sofa', v: 'armchair', w: 2, h: 2, max: 2},
+      {k: 'rug', v: 'medallion', w: 4, h: 3, max: 1}]},
     garage:   {floor: 'flags', items: [
-      ['counter', 'bench', 0.50, 0.18, 5, 1], ['shelf', 'store', 0.18, 0.78, 3, 1]]},
-    plain:    {floor: 'boards', items: []}
+      {k: 'counter', v: 'bench', w: 5, h: 1, max: 2},
+      {k: 'shelf', v: 'store', w: 3, h: 1, max: 4}]},
+    plain:    {floor: 'boards', items: [
+      {k: 'rug', v: 'plain', w: 4, h: 3, max: 1},
+      {k: 'plant', v: '', w: 1, h: 1, max: 3},
+      {k: 'shelf', v: 'store', w: 3, h: 1, max: 2}]}
   };
+
   /* A name is a name, not a menu selection, so it is read rather than
      matched exactly: "master bedroom", "the ensuite" and "kids bed" all want
      the same furniture. Anything unrecognised is a plain room, which is a
@@ -146,21 +179,14 @@ const Palace = (() => {
          drew, so it is the one that gets to say so */
       out.push({kind: 'wall', type: 'rect', x: cx, y: cy,
                 w: g.rw * z, h: g.rh * z, width: wall,
-                variant: 'plaster', label: String(name).slice(0, 22), n: i + 1});
+                variant: 'plaster', label: String(name).slice(0, 22),
+                n: i + 1, room: i + 1});
       out.push({kind: 'floor', type: 'rect', x: cx, y: cy,
-                w: (g.rw - 1) * z, h: (g.rh - 1) * z, variant: kit.floor});
+                w: (g.rw - 1) * z, h: (g.rh - 1) * z, variant: kit.floor,
+                room: i + 1});
 
-      /* inside the walls, in tiles */
-      const iw = g.rw - 2, ih = g.rh - 2;
-      for (const [kind, variant, fx, fy, tw, th] of kit.items){
-        if (tw > iw || th > ih) continue;        // it does not fit; leave it out
-        const hw = tw / 2, hh = th / 2;
-        const px = clampN(x0 + 1 + fx * iw, x0 + 1 + hw, x0 + 1 + iw - hw);
-        const py = clampN(y0 + 1 + fy * ih, y0 + 1 + hh, y0 + 1 + ih - hh);
-        out.push({kind, type: kind === 'plant' || kind === 'pool' ? 'ellipse' : 'rect',
-                  x: px * z, y: py * z, w: tw * z, h: th * z,
-                  variant: variant || undefined});
-      }
+      for (const it of fill(kit, x0, y0, g.rw, g.rh))
+        out.push(Object.assign(it, {room: i + 1}));
     });
 
     /* a door between every consecutive pair, on the wall they share */
@@ -181,6 +207,75 @@ const Palace = (() => {
     Build.lay(out);
     return names.length;
   }
+  /* ── filling a room ────────────────────────────────────────────────────
+     The inside is cut into slots of about four tiles and the kit is walked
+     into them, in order, skipping anything that has hit its count or will
+     not fit the slot it has reached. So the amount of furniture is a
+     property of the room's size and nothing else — which is the whole point:
+     drag a wall out and the next slot appears and gets filled, drag it back
+     and the slot goes and takes its contents with it.
+
+     Slots rather than fractions because fractions scale furniture with the
+     room, and a bed in a hall-sized bedroom should be a bed with more floor
+     around it, not a bigger bed. */
+  const SLOT = 4;                                // tiles
+  function fill(kit, x0, y0, rw, rh){
+    const out = [], z = G.terr.tsz;
+    const iw = rw - 2, ih = rh - 2;              // inside the walls
+    if (iw < 1 || ih < 1) return out;
+    const cols = Math.max(1, Math.floor(iw / SLOT));
+    const rows = Math.max(1, Math.floor(ih / SLOT));
+    const sw = iw / cols, sh = ih / rows;
+    const used = kit.items.map(() => 0);
+    let cursor = 0;
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++){
+        let pick = -1;
+        for (let k = 0; k < kit.items.length; k++){
+          const i = (cursor + k) % kit.items.length, it = kit.items[i];
+          if (used[i] >= (it.max || 1)) continue;
+          if (it.w > Math.min(sw, iw) || it.h > Math.min(sh, ih)) continue;
+          pick = i; break;
+        }
+        if (pick < 0) continue;                  // nothing left that fits here
+        const it = kit.items[pick];
+        used[pick]++; cursor = pick + 1;
+        const cx = clampN(x0 + 1 + (c + 0.5) * sw,
+                          x0 + 1 + it.w / 2, x0 + 1 + iw - it.w / 2);
+        const cy = clampN(y0 + 1 + (r + 0.5) * sh,
+                          y0 + 1 + it.h / 2, y0 + 1 + ih - it.h / 2);
+        out.push({kind: it.k, type: it.k === 'plant' || it.k === 'pool' ? 'ellipse' : 'rect',
+                  x: cx * z, y: cy * z, w: it.w * z, h: it.h * z,
+                  variant: it.v || undefined});
+      }
+    return out;
+  }
+
+  /* ── a room that has been moved or resized ─────────────────────────────
+     Its contents are not dragged along with it; they are laid again for the
+     shape it is now. That is what makes the wall the handle for the whole
+     room rather than for four lines — and it is why the two edit layers
+     exist, because furniture you had arranged by hand would be thrown away
+     by the next nudge of a wall. In room-editing you move rooms and the
+     contents follow; in fitting-out the rooms are locked and the contents
+     are yours. */
+  function refit(wall){
+    if (!wall || !wall.label || !wall.room || !G.terr) return false;
+    const z = G.terr.tsz;
+    const b = Kinds.geo.bbox(wall);
+    const x0 = Math.round(b[0] / z), y0 = Math.round(b[1] / z);
+    const rw = Math.max(3, Math.round((b[2] - b[0]) / z));
+    const rh = Math.max(3, Math.round((b[3] - b[1]) / z));
+    const kit = KIT[kitFor(wall.label)] || KIT.plain;
+    const out = [{kind: 'floor', type: 'rect',
+                  x: (x0 + rw / 2) * z, y: (y0 + rh / 2) * z,
+                  w: (rw - 1) * z, h: (rh - 1) * z,
+                  variant: kit.floor, room: wall.room}];
+    for (const it of fill(kit, x0, y0, rw, rh)) out.push(Object.assign(it, {room: wall.room}));
+    Build.refill(wall.room, out);
+    return true;
+  }
+
   const clampN = (v, a, b) => (v < a ? a : (v > b ? b : v));
   const cellSizeGuess = () => (G.A ? G.A.cell : 8);
 
@@ -236,6 +331,8 @@ const Palace = (() => {
     if (G.shapes.length && !armed){ armed = true; sync(); return; }
     store(ta.value);
     build(names);
+    /* what you have just made is a plan, so that is the layer you land on */
+    Build.setMode('rooms');
     armed = false;
     close();
   }
@@ -244,44 +341,107 @@ const Palace = (() => {
      Read off the shapes themselves rather than a list kept beside them, so
      a room dragged somewhere else takes its name with it and a room deleted
      takes its name away. */
+  /* ── what the plan says about itself ───────────────────────────────────
+     Every word here is drawn in the diamond type: made of the same thing the
+     rooms are made of, breathing at the same rate, rather than a texture
+     laid over the top of them.
+
+     The NUMBER sits outside the room, above its top-left corner, the way a
+     number sits outside a room on a drawn plan — inside it, it lands on the
+     floor you are trying to arrange. The NAME sits inside at the top, and
+     only while it is big enough to read: pulled back far enough the letters
+     stop being letters, and what you want from across a palace is the order
+     anyway. */
+  const NUM_TILES = 1.5;                       // how tall a room number stands
+  const NAME_TILES = 1.0;
+  const LEGIBLE = 1.5;                         // device px per letterform pixel
+
   function overlay(a, m, cap){
     if (!G.shapes || !G.terr || WALL) return m;
-    const z = G.cam[2];
-    /* A name has to be readable at the zoom you plan at and still be a name
-       rather than a billboard at the zoom you furnish at, so it holds a
-       screen-space floor and a ceiling and only scales between them. */
-    const r = Math.min(Math.max(7 / z, G.terr.tsz * 0.2), 22 / z);
+    const z = G.cam[2], t = G.terr.tsz;
+    const hw = VW / (2 * z), hh = VH / (2 * z);
+    const vx0 = G.cam[0] - hw, vx1 = G.cam[0] + hw;
+    const vy0 = G.cam[1] - hh, vy1 = G.cam[1] + hh;
     const gold = [1, 0.76, 0.31], bone = [0.93, 0.92, 0.89];
-    for (const s of G.shapes){
-      if (!s.label || m > cap - 40) continue;
-      const b = Kinds.geo.bbox(s);
-      const w = b[2] - b[0], name = s.label.toUpperCase();
-      /* Pulled back far enough and the letters stop being letters, so at
-         that distance the room says its NUMBER instead — large, and in the
-         middle of the floor. Which is the right answer rather than a
-         fallback: from across the plan what you are reading is the order,
-         and up close what you want is which room you are standing in.
+    /* a number holds a screen-space floor so it stays a number from across
+       the whole plan, which is the distance you read the order at */
+    const npx = Math.max(t * NUM_TILES / 7, 2.4 / z);
+    let box = null;
 
-         The test is how big a character actually lands on the screen, not
-         whether the word fits inside the room. A fourteen-letter name fits
-         easily across a fifteen-tile room and is still seven pixels a
-         letter, which is a smudge with a word's shape. */
-      if (r * z < 15 || Markers.textWidth(name, r) > w * 0.92){
-        if (!s.n) continue;
-        const big = Math.min(w, b[3] - b[1]) * 0.30;
-        m = Markers.text(a, m, String(s.n),
-                         (b[0] + b[2]) / 2 - Markers.textWidth(String(s.n), big) / 2 + big * 0.03,
-                         (b[1] + b[3]) / 2, big, gold, 0.5, cap);
-        continue;
-      }
-      const y = b[1] + r * 1.5, x = b[0] + r * 1.2;
-      if (s.n) m = Markers.text(a, m, String(s.n), x, y, r, gold, 0.95, cap);
-      m = Markers.text(a, m, name,
-                       x + (s.n ? Markers.textWidth(String(s.n) + ' ', r) : 0),
-                       y, r, bone, 0.7, cap);
+    for (const s of G.shapes){
+      if (!s.label) continue;
+      const b = Kinds.geo.bbox(s);
+      box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]),
+                   Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b.slice();
+      if (b[2] < vx0 || b[0] > vx1 || b[3] < vy0 || b[1] > vy1) continue;
+      if (m > cap - 260) continue;
+      if (s.n)
+        m = Type.text(a, m, String(s.n), b[0] + t * 0.35,
+                      b[1] - Type.height(npx) * 0.62, npx, gold, 0.92, cap);
+      const name = s.label.toUpperCase();
+      let px = Math.min(t * NAME_TILES / 7,
+                        Type.pitchFor(name, (b[2] - b[0]) * 0.86));
+      if (px * z >= LEGIBLE)
+        m = Type.text(a, m, name, b[0] + t * 0.6,
+                      b[1] + t * 0.6 + Type.height(px) / 2, px, bone, 0.62, cap);
     }
+
+    /* and the name of the whole thing, over the top of it */
+    m = title(a, m, cap, box, z);
     return m;
   }
+
+  /* The palace's name inside one, the town's name outside — the same word in
+     the same type in the same place, because they are the same thing at two
+     scales: what is this that I am looking at. */
+  function title(a, m, cap, box, z){
+    const inside = typeof Interior !== 'undefined' && Interior.inside();
+    const name = (inside ? (Interior.at() || '') : townName()).trim();
+    if (!name || m > cap - 400) return m;
+    if (!box) box = built();
+    if (!box) return m;
+    const t = G.terr.tsz;
+    /* sized to the thing it names rather than to the screen, so it is part
+       of the drawing — but never so fine that it stops being readable */
+    let px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8));
+    px = Math.max(px, 2.2 / z);
+    /* A palace's name is a title block: it goes above the plan, clear of it,
+       the way a name goes at the top of a drawing. A town's name is a map
+       label, and a map label lies ACROSS the ground it names — put above the
+       town it would sit off the edge of everything you had drawn, which is
+       to say somewhere you would have to go looking for it. */
+    if (inside)
+      return Type.centred(a, m, name, (box[0] + box[2]) / 2,
+                          box[1] - Type.height(px) * 1.15, px,
+                          [0.93, 0.92, 0.89], 0.66, cap);
+    px = Math.min(px, Type.pitchFor(name, (box[2] - box[0]) * 0.62));
+    return Type.centred(a, m, name, (box[0] + box[2]) / 2, (box[1] + box[3]) / 2, px,
+                        [0.93, 0.92, 0.89], 0.38, cap);
+  }
+  /* everything that has been drawn, which is what a town's name goes over */
+  function built(){
+    let b = null;
+    for (const s of G.shapes){
+      const q = Kinds.geo.bbox(s);
+      b = b ? [Math.min(b[0], q[0]), Math.min(b[1], q[1]),
+               Math.max(b[2], q[2]), Math.max(b[3], q[3])] : q.slice();
+    }
+    return b;
+  }
+  const TOWN = 'hq.town';
+  const townName = () => { try { return localStorage.getItem(TOWN) || ''; }
+                           catch (e){ return ''; } };
+  /* The town is named in storage and a palace is named on its marker, which
+     is where each of them already lives — so the one field writes to
+     whichever of the two you are standing in. */
+  function rename(v){
+    const s = String(v || '').slice(0, 28);
+    if (typeof Interior !== 'undefined' && Interior.inside()) Interior.rename(s);
+    else { try { if (s) localStorage.setItem(TOWN, s); else localStorage.removeItem(TOWN); }
+           catch (e){} }
+  }
+  const named = () => (typeof Interior !== 'undefined' && Interior.inside())
+    ? (Interior.at() || '') : townName();
 
   function init(){
     const ta = $('#porder'), btn = $('#pgen'), x = $('#pclosep');
@@ -297,7 +457,7 @@ const Palace = (() => {
     if (x) x.onclick = () => close();
   }
 
-  return {init, show, close, sync, overlay, build,
+  return {init, show, close, sync, overlay, build, rename, named, refit,
           opened: () => open, at: () => uid,
           has: id => { try { return !!localStorage.getItem(KEY(id)); }
                        catch (e){ return false; } }};

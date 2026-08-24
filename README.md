@@ -133,8 +133,10 @@ reach.
     src/interior.js going inside a marker: the stack, and the swap
     src/loci.js     the numbered places inside a room, their pictures,
                     the lattice preview, and the route the platformer plays
-    src/palace.js   the room list, the layout it generates, and the names
-                    drawn on the plan
+    src/type.js     the diamond typeface: a letter is a 5x7 grid and every
+                    lit square is one more diamond in the same stream
+    src/palace.js   the room list, the layout it generates, the fit-out that
+                    follows a wall, and the names drawn on the plan
     platformer.html the runner — the halftone platformer, which takes this
                     route as its deck when there is one (see Playing it)
     src/basemap.js  the tracing underlay, live tiles and frozen picture
@@ -586,6 +588,63 @@ The list is kept per palace, so coming back shows what the place was built
 from. It opens itself on a palace with nothing in it yet, which is the one
 moment the answer is always yes. Generating over a plan that already exists
 asks twice.
+
+### Two edit layers
+
+Furniture arranged by hand would be thrown away by the next nudge of a wall,
+so the plan has to be settled before the fitting-out means anything. The
+palette opens on **Rooms** when there is a plan, and the two layers are
+exclusive:
+
+**Rooms** — the only things that answer the pointer are the room shells, and
+the whole room is the handle rather than the quarter-tile ribbon of its wall.
+Move one, resize one by its corners, and **its contents are laid again for
+the shape it is now**. Make it bigger and the next slot appears and fills;
+make it smaller and the slot goes and takes its contents with it. Deleting a
+room deletes the room, not the four walls of one.
+
+**Fit-out** — the shells are locked and everything inside them is yours: the
+layers, the kinds, the sliders, the markers, exactly as before.
+
+A room is filled by cutting its inside into slots of about four tiles and
+walking its kit into them, in order, skipping anything that has hit its count
+or will not fit. So the amount of furniture is a property of the room's size
+and nothing else. A bedroom at seven by six is a bed; at fifteen by twelve it
+is a bed, a wardrobe, a rug, a desk, a plant and a second bed; past twenty by
+sixteen it stops growing, because the kit says how many of each a bedroom
+takes and the answer is never twenty beds.
+
+Slots rather than fractions, because fractions scale the furniture with the
+room — and a bed in a hall-sized bedroom should be a bed with more floor
+around it, not a bigger bed.
+
+The contents are laid again on release, not on every frame of the drag:
+watching furniture flicker through every intermediate size is worse than
+seeing it settle once.
+
+### Words made of diamonds
+
+`src/type.js` is a five-by-seven typeface where every lit square is one
+diamond, emitted into the same instance stream as the roads and the walker.
+
+There was already a way to draw text here — the marker sheet, a font baked
+into a texture and cut a cell at a time — and it is the right way to draw a
+symbol nobody has to read from across the room. It is the wrong way to put a
+name on a plan: a textured glyph is a picture of a letter laid *over* the
+lattice, and at any distance it reads as a different material, because it is
+one. Written in diamonds a name is made of the town rather than printed on
+it, breathes at the same rate, and costs no texture and no draw call.
+
+It carries the room numbers — **outside** each room, above its top corner,
+where a number goes on a drawn plan rather than on the floor you are trying
+to arrange — the room names inside, the palace's name over its plan, and the
+town's name across the map.
+
+A palace's name is a title block and goes above the plan, clear of it. A
+town's name is a map label and lies *across* the ground it names: put above
+the town it would sit off the edge of everything you had drawn, which is to
+say somewhere you would have to go looking for it. The field at the head of
+the route panel names whichever of the two you are standing in.
 
 ## The route, and playing it
 

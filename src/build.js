@@ -17,6 +17,16 @@
 const Build = (() => {
   let on = false, sel = null, drag = null, armed = null, nextId = 1;
   let layer = 'roads', combined = null, lastKind = null;
+  /* ── the two edit layers ────────────────────────────────────────────────
+     ROOMS is the floor plan: the only things that answer the pointer are the
+     room shells, and moving or resizing one lays its contents again for the
+     shape it is now. FIT is everything inside them, with the shells locked.
+
+     They are exclusive on purpose. Furniture arranged by hand would be
+     thrown away by the next nudge of a wall, so the plan has to be settled
+     before the fitting-out means anything — and a wall you cannot grab by
+     accident is the other half of the same promise. */
+  let mode = 'fit';
   const vis = {};
   const seeVis = () => { for (const L of Kinds.layers) if (vis[L.id] === undefined) vis[L.id] = true; };
   seeVis();
@@ -56,7 +66,9 @@ const Build = (() => {
   const layerOf = s => (Kinds.by[s.kind] || {layer: 'ground'}).layer;
   const layerIndex = id => Kinds.layers.findIndex(L => L.id === id);
   const zOf = s => (Kinds.layers.find(L => L.id === layerOf(s)) || {z: 0}).z;
-  const editable = s => layerOf(s) === layer && vis[layerOf(s)];
+  const editable = s => mode === 'rooms'
+    ? !!s.label
+    : (!s.label && layerOf(s) === layer && vis[layerOf(s)]);
 
   /* ── model ── */
   function defaults(s, type){
@@ -131,9 +143,13 @@ const Build = (() => {
   function lay(list){
     G.shapes.length = 0;
     sel = null;
-    for (const d of list){
+    for (const d of list) make(d);
+    changed();
+    return G.shapes.length;
+  }
+  function make(d){
       const k = Kinds.by[d.kind];
-      if (!k) continue;
+      if (!k) return null;
       const type = d.type || (k.types || ['rect'])[0];
       const area = type !== 'line' && type !== 'ring';
       const s = {id: nextId++, kind: d.kind, type,
@@ -151,9 +167,19 @@ const Build = (() => {
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
-                 label: d.label || '', n: d.n || 0};
+                 label: d.label || '', n: d.n || 0, room: d.room || 0};
       G.shapes.push(s);
-    }
+      return s;
+  }
+
+  /* one room's contents, replaced. Everything else — the other rooms, the
+     shell this belongs to, anything drawn by hand outside it — is left
+     exactly where it is. */
+  function refill(room, list){
+    if (!room) return 0;
+    G.shapes = G.shapes.filter(s => s.room !== room || s.label);
+    for (const d of list) make(d);
+    if (sel && G.shapes.indexOf(sel) < 0) sel = null;
     changed();
     return G.shapes.length;
   }
@@ -161,7 +187,11 @@ const Build = (() => {
   function remove(s){
     const i = G.shapes.indexOf(s);
     if (i < 0) return;
-    G.shapes.splice(i, 1);
+    /* deleting a room deletes the room, not the four walls of one — leaving
+       its bed and its rug standing in the open would be a worse answer than
+       either taking them or refusing */
+    if (s.label && s.room) G.shapes = G.shapes.filter(x => x.room !== s.room);
+    else G.shapes.splice(i, 1);
     if (sel === s) sel = null;
     changed();
   }
@@ -182,6 +212,7 @@ const Build = (() => {
   /* [ and ] mean thickness on a route and size on an area */
   function scaleSel(f){
     if (!sel) return;
+    const room = sel.label && mode === 'rooms' ? sel : null;
     const g = grid();
     if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
@@ -190,6 +221,7 @@ const Build = (() => {
       sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
     }
     changed(sel);
+    if (room && typeof Palace !== 'undefined') Palace.refit(room);
   }
   const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 
@@ -423,6 +455,15 @@ const Build = (() => {
      test gets the same screen-space margin so thin shapes stay grabbable */
   const GRAB = () => 10 / G.cam[2];
   const near = (s, p, tol) => Kinds.geo.depth(s, p[0], p[1]) > -tol;
+  /* A room is hollow, so `near` would only find it by its wall band — which
+     is a quarter-tile ribbon you would have to hunt for. While the plan is
+     what you are editing the whole room is the handle, because the room is
+     the thing you are moving. */
+  function grabbable(s, p){
+    if (mode !== 'rooms' || !s.label) return near(s, p, GRAB());
+    const b = Kinds.geo.bbox(s), t = GRAB();
+    return p[0] >= b[0] - t && p[0] <= b[2] + t && p[1] >= b[1] - t && p[1] <= b[3] + t;
+  }
 
   /* shift-click a selected road to put a bend in it */
   function addPoint(s, p){
@@ -470,7 +511,7 @@ const Build = (() => {
       let hit = null;
       for (let i = G.shapes.length - 1; i >= 0; i--){
         const s = G.shapes[i];
-        if (editable(s) && near(s, p, GRAB())){ hit = s; break; }
+        if (editable(s) && grabbable(s, p)){ hit = s; break; }
       }
       sel = hit;
       if (hit){
@@ -523,7 +564,15 @@ const Build = (() => {
     });
 
     addEventListener('pointerup', e => {
-      if (drag){ drag = null; return; }
+      if (drag){
+        const s = drag.s;
+        drag = null;
+        /* on release, not on every move: laying a room's contents again is
+           the expensive half, and watching furniture flicker through every
+           intermediate size is worse than seeing it settle once */
+        if (s && s.label && mode === 'rooms' && typeof Palace !== 'undefined') Palace.refit(s);
+        return;
+      }
       if (!armed) return;
       const a = armed;
       armed = null;
@@ -564,19 +613,29 @@ const Build = (() => {
     const el = $('#palette');
     if (!el || el.childElementCount) return;
     el.innerHTML =
-      '<div class="plabel">Layer</div><div id="klayers"></div>' +
-      '<div class="plabel">Place</div><div id="kkinds" class="kgrid"></div>' +
-      '<div class="plabel">Shape</div><div id="kshapes" class="kgrid"></div>' +
-      '<div class="plabel" id="kvarlabel">Type</div><div id="kvariants" class="kgrid"></div>' +
-      '<div class="plabel">Adjust</div><div id="ktune"></div>' +
-      '<div class="kfoot"><button class="btn" id="kmask">Mask</button>' +
+      '<div class="plabel">Edit</div><div id="kmode" class="chips two"></div>' +
+      '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
+      '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
+      '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
+      '<div class="plabel fitonly" id="kvarlabel">Type</div>' +
+      '<div id="kvariants" class="kgrid fitonly"></div>' +
+      '<div class="plabel fitonly">Adjust</div><div id="ktune" class="fitonly"></div>' +
+      '<div class="kfoot fitonly"><button class="btn" id="kmask">Mask</button>' +
       '<button class="btn" id="kclearlayer">Clear layer</button></div>' +
-      '<div class="plabel">Markers</div><div id="kmarkers"></div>' +
-      '<input id="kmname" type="text" spellcheck="false" placeholder="name this place" hidden>' +
+      '<div class="plabel fitonly">Markers</div>' +
+      '<div id="kmarkers" class="fitonly"></div>' +
+      '<input id="kmname" class="fitonly" type="text" spellcheck="false" ' +
+      'placeholder="name this place" hidden>' +
       '<div class="kfoot one"><button class="btn" id="kclear">Clear all</button></div>' +
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
 
+    for (const [id, label] of [['rooms', 'Rooms'], ['fit', 'Fit-out']]){
+      const c = document.createElement('div');
+      c.className = 'chip'; c.textContent = label; c.dataset.mode = id;
+      c.onclick = () => setMode(id);
+      $('#kmode').appendChild(c);
+    }
     for (const L of Kinds.layers){
       const row = document.createElement('div');
       row.className = 'krow';
@@ -628,6 +687,13 @@ const Build = (() => {
     const nm = $('#kmname');
     nm.oninput = () => { const mk = Markers.selected(); if (mk) Markers.rename(mk, nm.value); };
     nm.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') nm.blur(); };
+    /* the field at the head of the route names whatever the route belongs
+       to — the town out here, the palace in there */
+    const tn = $('#kname');
+    if (tn){
+      tn.oninput = () => { if (typeof Palace !== 'undefined') Palace.rename(tn.value); };
+      tn.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') tn.blur(); };
+    }
     Markers.ui();
     syncUI();
   }
@@ -790,6 +856,11 @@ const Build = (() => {
     const inside = typeof Interior !== 'undefined' && Interior.inside();
     const list = Markers.ordered();
     lab.textContent = inside ? 'Loci' : 'Rooms';
+    const nm = $('#kname');
+    if (nm && typeof Palace !== 'undefined'){
+      nm.placeholder = inside ? 'name this palace' : 'name this town';
+      if (document.activeElement !== nm) nm.value = Palace.named();
+    }
     box.innerHTML = '';
     const sel = Markers.selected();
     for (const m of list){
@@ -828,7 +899,23 @@ const Build = (() => {
   const sel2 = s => { sel = s; };
 
   function syncUI(){
-    if (!$('#palette') || !$('#klayers')) return;
+    if (!$('#palette') || !$('#kmode')) return;
+    document.querySelectorAll('#kmode .chip').forEach(c =>
+      c.classList.toggle('sel', c.dataset.mode === mode));
+    document.body.classList.toggle('rooms', mode === 'rooms');
+    if (mode === 'rooms'){
+      const st0 = $('#kstate');
+      const rooms = G.shapes.filter(x => x.label).length;
+      if (st0) st0.innerHTML = !rooms
+        ? 'no rooms yet · <b>O</b> types a list and lays one out'
+        : (sel ? '<b>drag</b> the room · <b>corners</b> resize · the fit-out follows it'
+               : '<b>' + rooms + ' rooms</b> · click one to move or resize it');
+      const el0 = $('#kstat');
+      if (el0) el0.textContent = 'the furniture refits · fit-out is locked';
+      syncRoute();
+      return;
+    }
+    if (!$('#klayers')) return;
     document.querySelectorAll('#klayers .krow').forEach(r => {
       r.classList.toggle('sel', r.dataset.layer === layer);
       r.classList.toggle('off', !vis[r.dataset.layer]);
@@ -896,7 +983,7 @@ const Build = (() => {
     try {
       localStorage.setItem(KEY, JSON.stringify(G.shapes.map(s => ({
         kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, rot: s.rot || 0,
-        label: s.label || '', n: s.n || 0,
+        label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
@@ -927,7 +1014,7 @@ const Build = (() => {
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
           r: Math.min(s.r || cellSize(), RMAX * cellSize()),
-          label: s.label || '', n: s.n || 0,
+          label: s.label || '', n: s.n || 0, room: s.room || 0,
           variant: s.variant || (k.variants ? k.variants[0] : 'mixed')
         });
       });
@@ -950,6 +1037,9 @@ const Build = (() => {
     reui();
     rebuild();
     setLayer(startLayer());
+    /* a plan with rooms in it opens on the plan, because that is the layer
+       it was authored at; anything else opens on the tools */
+    setMode(G.shapes.some(x => x.label) ? 'rooms' : 'fit');
     if (typeof restampTerrain === 'function') restampTerrain();
   }
 
@@ -962,6 +1052,13 @@ const Build = (() => {
     setOn(false);
   }
 
-  return {init, rebuild, stamp, overlay, setOn, mount, lay, active: () => on,
+  function setMode(v){
+    mode = v === 'rooms' ? 'rooms' : 'fit';
+    sel = null; armed = null;
+    document.body.classList.toggle('rooms', mode === 'rooms');
+    syncUI();
+  }
+  return {init, rebuild, stamp, overlay, setOn, mount, lay, refill, setMode,
+          mode: () => mode, active: () => on,
           sync: syncUI, commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

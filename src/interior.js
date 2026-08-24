@@ -181,7 +181,24 @@ const Interior = (() => {
   const has = uid => !!(uid && have[uid]);
   function init(){ survey(); banner(); }
 
-  return {init, enter, leave, prompt, overlay, has, target,
+  /* The palace's name is the name of the marker you came in through, and
+     that marker is not mounted while you are inside it — the town's list is,
+     so the rename goes to storage and to the frame that is standing in for
+     it. One name, in the one place it already lived. */
+  function rename(v){
+    if (!stack.length) return false;
+    const f = stack[stack.length - 1];
+    f.name = String(v || '').slice(0, 28);
+    try {
+      const list = JSON.parse(localStorage.getItem(f.mkey) || '[]');
+      const mk = (Array.isArray(list) ? list : []).find(x => x && x.uid === f.uid);
+      if (mk){ mk.name = f.name; localStorage.setItem(f.mkey, JSON.stringify(list)); }
+    } catch (e){}
+    banner();
+    return true;
+  }
+
+  return {init, enter, leave, prompt, overlay, has, target, rename,
           inside: () => stack.length > 0, depth: () => stack.length,
           at: () => (stack.length ? stack[stack.length - 1].name : '')};
 })();

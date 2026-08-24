@@ -449,9 +449,9 @@ addEventListener('keydown', e => {
       break;
     case 'KeyF': case 'F11': e.preventDefault(); toggleFull(); break;
     case 'Tab': e.preventDefault(); break;
-    case 'Equal': case 'NumpadAdd': zoomBy(1.25); break;
-    case 'Minus': case 'NumpadSubtract': zoomBy(1 / 1.25); break;
-    case 'Digit0': G.camT[2] = G.fitW; break;
+    case 'Equal': case 'NumpadAdd': zoomBy(ZSTEP); break;
+    case 'Minus': case 'NumpadSubtract': zoomBy(1 / ZSTEP); break;
+    case 'Digit0': G.camT[2] = home(); break;
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
@@ -470,6 +470,23 @@ function drowse(){
   document.body.classList.add('drifting');
 }
 function zoomBy(f){ G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5); }
+/* ── the distance the town is worked at ─────────────────────────────────
+   `fitW` puts the plate's width across the viewport, which is close enough
+   that a district fills the screen and you cannot see what you are drawing
+   it next to. The distance this is actually built and walked at is four
+   notches out from there, and it is not somewhere you should have to arrive
+   at by hand every time: the game opens on it and `0` comes back to it.
+
+   Written as the notch to the fourth rather than as 0.4096, because the
+   number means "four presses of the zoom key" and it should go on meaning
+   that if the notch is ever retuned. Clamped by the same two limits zoomBy
+   uses, so home can never be somewhere the zoom keys cannot reach.
+
+   The zoom itself stays: build mode needs a close look at a corner, and TAB
+   still holds the whole plate. What changes is only where you start and
+   where you land — nobody has to zoom to be looking at the right thing. */
+const ZSTEP = 1.25;
+const home = () => clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5);
 function toggleFull(){
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(() => {});
@@ -669,7 +686,7 @@ function frame(now){
 function refit(){
   G.fitW = VW / G.W;
   G.fitAll = Math.min(VW / G.W, VH / G.H);
-  if (!G.cam[2] || G.cam[2] < 0.001){ G.cam[2] = G.camT[2] = G.fitW; }
+  if (!G.cam[2] || G.cam[2] < 0.001){ G.cam[2] = G.camT[2] = home(); }
   G.camT[2] = clamp(G.camT[2], G.fitAll * 0.85, G.fitW * 5);
 }
 
@@ -708,7 +725,7 @@ function boot(img){
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;
   refit();
-  G.cam[2] = G.camT[2] = G.fitW;
+  G.cam[2] = G.camT[2] = home();
   R.onrestored = () => {                     // rebuild what died with the context
     if (G.plate) R.batch('lattice', G.plate, R.gl.STATIC_DRAW);
     Build.rebuild();

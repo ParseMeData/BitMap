@@ -478,13 +478,46 @@ const Kinds = (() => {
            is what makes the tail dissolve rather than stop — the field
            thins and loosens at once, and there is no last row of neatly
            seated diamonds to mark where the area finished. */
-        let rjit = 0, rscat = 0, rseed = 0;
+        let rjit = 0, rscat = 0, rseed = 0, rgone = 0;
         if (mods && bitten(mods, wx, wy, cell)){
           const w = RUIN.w, e = w * w * (3 - 2 * w);
-          rscat = clamp(RUIN.m.scatter || 0, 0, 1) * e;
-          rjit = Math.max(0, RUIN.m.jitter || 0) * e * (1 + e);
+          const out = clamp(RUIN.m.out || 0, 0, 1);
           rseed = RUIN.m.seed | 0;
+          /* ── what the fall ends AT ──────────────────────────────────────
+             Scatter cannot answer this on its own, and deliberately: its
+             removal is held to 55% of the roll however far it is pushed,
+             because a scatter that could empty a cell outright is a hole,
+             and a hole is the one thing demolition here is not.
+
+             The end of a fall is the one place a hole IS the point — past
+             it there is no more shape, so there is nothing for bare plate
+             to read as a mistake against. Out is that, and only that: how
+             completely the far end has gone. At 0 the fall ends at whatever
+             Scatter and Jitter make of it, which is broken ground. Turned
+             up, the last stretch goes out entirely, and where that stretch
+             begins is what the slider moves — 1 - out in weight, so at full
+             the whole fall is spending itself and at a third only the last
+             of it does.
+
+             Squared off at three quarters of that stretch rather than at
+             its end, so the tail arrives at nothing BEFORE the rim and
+             holds there. A ramp that only reaches nothing in its final row
+             leaves one thinning fringe of diamonds along the edge, which
+             is a border, and a border is what a demolisher must not draw.
+
+             Everything else the word implies is here too, because a field
+             that only dropped cells would thin evenly and read as a
+             different density rather than as an ending: what survives
+             scatters harder, throws further, and dims on the way out. */
+          const t = out > 0 ? clamp01((e - (1 - out)) / out) : 0;
+          rgone = t > 0 ? Math.pow(clamp01(t / 0.75), 1.5) : 0;
+          rscat = clamp((RUIN.m.scatter || 0) * e + out * e * e * 0.6, 0, 1);
+          rjit = Math.max(0, RUIN.m.jitter || 0) * e * (1 + e) * (1 + out * e);
+          if (t > 0) fade *= 1 - 0.75 * t;
         }
+        /* the roll that can actually reach one, kept on its own salt so
+           turning Out up does not re-draw the rubble Scatter already made */
+        if (rgone > 0 && hash(u, v, rseed + 665) < rgone) continue;
         if (rscat > 0 && hash(u, v, rseed + 663) < rscat * 0.55) continue;
         let px = wx, py = wy;
         if (jit > 0 || scat > 0){

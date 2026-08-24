@@ -125,7 +125,7 @@ It asks you to type the word.
 | `Shift` | sprint |
 | `Space` | recrystallise the map |
 | `Tab` (hold) | overview of the whole map |
-| wheel, `+` `-`, `0` | zoom / reset zoom |
+| wheel, `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
@@ -410,6 +410,19 @@ had, and the damage deepens across to the far edge. Which edge is which is the
 shape's own rotation, so the turn grip aims it and a half-turn eats from the
 other side.
 
+**A demolisher is born aimed.** Which way the damage falls is the shape's own
+rotation, and *east, always* is the one starting answer that is wrong
+everywhere — an area laid along the top of the map to thin the town out at its
+edge is eating northward, and should not have to be turned by hand to say so.
+So a new one is aimed outward from the middle of the plate: drop it in the top
+of the map and it falls up, down the left and it falls left. The axis is
+whichever offset is larger *in proportion to the plate*, so a map half as wide
+as it is tall does not call almost everything on it top or bottom. It is only
+done at birth — re-aiming on every move would mean an area you had turned by
+hand snapped back the first time you nudged it, and the turn grip is meant to
+beat this. A quarter turn swaps `w` and `h` with it, so the footprint you
+dragged out is the footprint you get.
+
 The ramp is not linear, and both departures are about the *end* of the fall
 rather than its middle. It is smoothstepped, so the damage leaves the
 untouched side flat and arrives flat — there is no line anywhere you can point
@@ -417,6 +430,25 @@ at and call the start of it. And jitter runs ahead of scatter, reaching twice
 as far by the far end, so the last diamonds still standing are also the ones
 thrown furthest off their seats. The field thins and loosens at once, which is
 what makes the tail dissolve rather than stop.
+
+**Out** is what the far end ends *at*. Scatter cannot answer that on its own,
+and deliberately: its removal is held to 55% of the roll however far it is
+pushed, because a scatter that could empty a cell outright is a hole, and a
+hole is what demolition here is not. The end of a fall is the one place a hole
+*is* the point — past it there is no more shape, so there is nothing for bare
+plate to read as a mistake against.
+
+At `none` the fall ends at whatever Scatter and Jitter make of it, which is
+broken ground. Turned up, the last stretch goes out entirely, and the slider
+moves where that stretch begins: at a third only the tail of the fall spends
+itself, at full the whole fall is spending itself and the last quarter is bare.
+It arrives at nothing three quarters of the way through that stretch rather
+than in its final row, because a ramp that only empties at the very edge leaves
+a thinning fringe along it, and a fringe is a border — which is the one thing a
+demolisher must not draw. What survives on the way out scatters harder, throws
+further and dims, so the tail reads as an ending rather than as a second, lower
+density. With Fall at `even` there is no far end, so Out empties the area as a
+whole.
 
 A demolish area is also the one shape on the plate whose **four corners move
 independently**. Everything else is a thing — a park, a room, a stand of trees
@@ -1137,6 +1169,19 @@ Four query parameters shape it, all read in `src/game.js`:
 `wallpaper.sh` sets the first three, and `--fps` and `--dpr` are its flags for
 the middle two. `?sleep` has no flag; it takes its default unless you open the
 URL by hand.
+
+**The game opens at the distance the town is worked at.** `fitW` — the plate's
+width across the viewport — is close enough that one district fills the screen
+and you cannot see what you are drawing it beside. Four notches of the zoom key
+out from there is where the map is actually read, drawn and walked, so that is
+where the game opens and where `0` comes back to. It is written as the notch to
+the fourth rather than as a number, because it means *four presses of the zoom
+key* and should go on meaning that if the notch is ever retuned.
+
+The zoom itself stays where it was: build mode needs a close look at a corner,
+and holding `Tab` still frames the whole plate. What changed is only where you
+start and where you land, so nobody has to zoom to be looking at the right
+thing.
 
 **Drifting is the resting state.** With nobody steering, the camera crawls at
 a fixed world speed toward a reachable tile picked at random, arrives, picks

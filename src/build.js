@@ -38,7 +38,7 @@ const Build = (() => {
   /* what a newly placed shape inherits. The sliders write here when nothing
      is selected, so you can dial in a look and then keep placing it. */
   const defs = {feather: 4, bright: 1, mask: false, variant: {},
-                grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0,
+                grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0,
                 pad: 0, padFade: 0.8, padBreak: 0.3};
   /* ── telling history what just happened ────────────────────────────────
      A gesture that has ended is a step you can walk back (hstep); anything
@@ -173,6 +173,40 @@ const Build = (() => {
     return s;
   }
 
+  /* ── a demolisher is born aimed ────────────────────────────────────────
+     Fall runs along the shape's own +x, and the rotate grip is what points
+     that anywhere else. Which leaves the question of where it should point
+     the moment one lands, and 'east, always' is the one answer that is
+     wrong everywhere: a demolisher put along the top of the map to thin the
+     town out at its edge is eating northward, and it should not have to be
+     turned by hand to say so.
+
+     So it is aimed outward from the middle of the plate: an area sitting in
+     the top of the map falls up, one down the left falls left, and the axis
+     it is judged on is whichever offset is larger *in proportion to the
+     plate* — otherwise a map twice as tall as it is wide would call almost
+     everything on it top or bottom.
+
+     Only at birth. Re-aiming on every move would mean an area you had
+     turned by hand snapped back the first time you nudged it, and the whole
+     point of the rotate grip is that your answer beats this one.
+
+     A quarter turn is taken by swapping w and h as well, so the footprint
+     you dragged out is the footprint you get: the area is aimed, not
+     turned on its side. */
+  function aimFall(s){
+    if (!isMod(s) || !(s.fall > 0) || s.rot) return;
+    const W = G.W, H = G.H;
+    if (!W || !H) return;
+    const dx = (s.x - W / 2) / (W / 2), dy = (s.y - H / 2) / (H / 2);
+    if (Math.abs(dx) >= Math.abs(dy)){
+      s.rot = dx >= 0 ? 0 : Math.PI;                       // right, or left
+    } else {
+      s.rot = dy >= 0 ? Math.PI / 2 : -Math.PI / 2;        // down, or up
+      const t = s.w; s.w = s.h; s.h = t;
+    }
+  }
+
   function create(kind, type, wx, wy){
     const k = Kinds.by[kind];
     if (!k) return null;
@@ -191,6 +225,7 @@ const Build = (() => {
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
                scatter: k.scatter0 !== undefined ? k.scatter0 : defs.scatter,
                fall: k.fall0 !== undefined ? k.fall0 : defs.fall,
+               out: k.out0 !== undefined ? k.out0 : defs.out,
                pad: k.pad0 !== undefined ? k.pad0 : defs.pad,
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
@@ -198,6 +233,7 @@ const Build = (() => {
                variant: defs.variant[kind] || (k.variants ? k.variants[0] : 'mixed')};
     defaults(s, type);
     born(s, k, type, wx, wy);
+    aimFall(s);
     G.shapes.push(s);
     sel = s;
     layer = k.layer;
@@ -264,11 +300,12 @@ const Build = (() => {
                  bright: defs.bright * (k.bright0 || 1),
                  grain: 1, scale: 1,
                  jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
-                 fall: k.fall0 || 0,
+                 fall: k.fall0 || 0, out: k.out0 || 0,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
+      aimFall(s);
       G.shapes.push(s);
       return s;
   }
@@ -1225,7 +1262,7 @@ const Build = (() => {
           ['bright', 'Bright', 40, 220, 5], ['grain', 'Grain', 1, 4, 1],
           ['scale', 'Scale', 40, 200, 5], ['jitter', 'Jitter', 0, 150, 5],
           ['scatter', 'Scatter', 0, 100, 5], ['fall', 'Fall', 0, 100, 5],
-          ['pad', 'Clear', 0, 60, 5],
+          ['out', 'Out', 0, 100, 5], ['pad', 'Clear', 0, 60, 5],
           ['padFade', 'Fade', 0, 80, 5], ['padBreak', 'Break', 0, 100, 5]])
       $('#ktune').appendChild(slider(key, label, min, max, step));
     /* The same factory, the same two ranges the plate's own Bright and
@@ -1365,6 +1402,7 @@ const Build = (() => {
     if (key === 'jitter')  return set('jitter', v / 100);
     if (key === 'scatter') return set('scatter', v / 100);
     if (key === 'fall')    return set('fall', v / 100);
+    if (key === 'out')     return set('out', v / 100);
     if (key === 'pad')     return set('pad', v / 10);
     if (key === 'padFade')  return set('padFade', v / 10);
     if (key === 'padBreak') return set('padBreak', v / 100);
@@ -1439,6 +1477,9 @@ const Build = (() => {
       } else if (key === 'fall'){
         const v = sel ? (sel.fall || 0) : defs.fall;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'even', true, 0, 100);
+      } else if (key === 'out'){
+        const v = sel ? (sel.out || 0) : defs.out;
+        r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'none', true, 0, 100);
       } else if (key === 'pad'){
         const v = sel ? (sel.pad || 0) : defs.pad;
         r._set(Math.round(v * 10), v ? v.toFixed(1) + ' cells' : 'none', true, 0, 60);
@@ -1704,7 +1745,7 @@ const Build = (() => {
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
-        fall: s.fall || 0, quad: s.quad || null,
+        fall: s.fall || 0, out: s.out || 0, quad: s.quad || null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
         x: s.x, y: s.y, w: s.w, h: s.h, r: s.r, pts: s.pts, ctrl: s.ctrl, width: s.width
       }))));
@@ -1784,6 +1825,7 @@ const Build = (() => {
           /* absent on every shape saved before Fall existed, and 0 is what
              those were doing — so an old town comes back unchanged */
           fall: s.fall === undefined ? 0 : s.fall,
+          out: s.out === undefined ? 0 : s.out,
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,

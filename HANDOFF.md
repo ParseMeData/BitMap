@@ -193,6 +193,21 @@ in the walk grid — it is a hole in what a blocker may block. The demolisher is
 both; a door only `clears`, because a door is a way through and stamps its own
 walkable ground. They were one flag and it made doors unwalkable.
 
+**`home()` is not `fitW`, and putting it back would be a regression.** The
+opening zoom and `0` both land four notches of the zoom key out from `fitW`,
+because that is the distance the map is drawn and read at; `fitW` puts one
+district across the whole screen. It reads as an odd constant and it is not —
+`ZSTEP ** 4` is four presses of the key, and it is written that way so it stays
+four presses if the notch is retuned. `refit()` still only clamps `camT`, so a
+window that changes size keeps the zoom it had rather than being thrown home
+mid-drag.
+
+**Out is not more Scatter, and cannot be folded into it.** Scatter's removal is
+held to 55% of the roll on purpose — a scatter that empties a cell outright is
+a hole. Out rolls on its own salt and can reach one, because the end of a fall
+is the one place a hole is the point. Merging them would either put holes in
+every scattered field or make the tail unable to finish.
+
 **On a quad, `quad` is the shape and `w`/`h` are its shadow.** A demolish area
 that has had a corner dragged carries four corners in its own local frame, and
 `w`/`h` are restated from their extent after every edit. Do not reverse that:

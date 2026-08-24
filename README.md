@@ -222,6 +222,9 @@ stale.
                          that follows a wall, the names drawn on the plan
     src/doors.js         the one part of a plan that moves: leaves that swing
     src/basemap.js       the tracing underlay, live tiles and frozen picture
+    src/hud.js           the four ways in, drawn on the plate out of diamonds
+                         rather than in CSS: a hub and four rings, pinned to
+                         the screen and recomputed from the camera each frame
     src/game.js          state, input, camera, entities, frame loop
     platformer.html      the runner, which takes this route as its deck when
                          there is one (see Playing it). A vendored copy of

@@ -641,6 +641,7 @@ function frame(now){
   m = Interior.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
+  m = Hud.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);
   Interior.prompt();
   Basemap.sync();
@@ -690,6 +691,7 @@ function boot(img){
   Loci.init().then(() => Build.sync());
   Palace.init();
   Basemap.init();
+  Hud.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

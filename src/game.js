@@ -52,10 +52,9 @@ const G = {
   cam: [0, 0, 1], camT: [0, 0, 1], fitW: 1, fitAll: 1,
   x: 0, y: 0, fx: 0, fy: 0, tx: 0, ty: 0, face: [0, 1],
   stepT: 0, stepDur: 0.14, stepScale: 1, moving: false, bump: false, cool: 0,
-  reach: null, sparks: [], rings: [], total: 12, got: 0, round: 1, steps: 0, clock: 0,
+  reach: null, sparks: [], rings: [], total: 12, got: 0, round: 1, steps: 0,
   paused: false, over: false, burst: -1, pending: null, msg: '',
-  wake: !WALL, idleFor: 0, drift: null, nextBurst: 0,
-  best: +(localStorage.getItem('hq.best') || 0) || 0
+  wake: !WALL, idleFor: 0, drift: null, nextBurst: 0
 };
 
 const canvas = $('#gl');
@@ -219,7 +218,7 @@ function floodReach(){
 
 function scatterSparks(){
   if (!G.terr || !G.reach) return;
-  G.sparks.length = 0; G.got = 0; G.steps = 0; G.clock = 0; G.over = false; G.msg = '';
+  G.sparks.length = 0; G.got = 0; G.steps = 0; G.over = false; G.msg = '';
   if (!SPARKS){ G.total = 0; hud(true); return; }
   const t = G.terr, cand = [];
   for (let y = 0; y < t.th; y++)
@@ -370,9 +369,7 @@ function arrive(){
   hud(true);
   if (G.got >= G.total){
     G.over = true;
-    const t = G.clock;
-    if (!G.best || t < G.best){ G.best = t; localStorage.setItem('hq.best', String(t)); }
-    G.msg = 'ROUND ' + G.round + ' CLEAR · ' + fmt(t);
+    G.msg = 'ROUND ' + G.round + ' CLEAR';
     recrystallise();
     setTimeout(() => { G.round++; G.total = Math.min(24, 12 + (G.round - 1) * 2); scatterSparks(); }, 2600);
   }
@@ -449,7 +446,7 @@ canvas.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.pow(1.14
 function wake(){
   G.idleFor = 0;
   if (G.wake) return;
-  G.wake = true; G.clock = 0; G.steps = 0;
+  G.wake = true; G.steps = 0;
   document.body.classList.remove('drifting');
 }
 function drowse(){
@@ -471,21 +468,18 @@ function togglePause(force){
    not ask for. */
 $('#pause').addEventListener('pointerdown', e => { e.preventDefault(); togglePause(false); });
 
-/* ── HUD ── */
-const fmt = t => {
-  const m = (t / 60) | 0, s = t - m * 60;
-  return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1);
-};
-let hudClock = -1, lastMsg = null;
+/* ── HUD ──────────────────────────────────────────────────────────────
+   No clock. This began as a game you raced, and it is now a place you draw
+   — a running timer over a floor plan is the game asking you to hurry over
+   work that is not timed, which is worse than useless: it is wrong about
+   what you are doing. */
+let lastMsg = null;
 function hud(force){
   if (force){
     $('#hsparks').textContent = SPARKS ? G.got + '/' + G.total : '\u2014';
     $('#hround').textContent = String(G.round);
     $('#hsteps').textContent = String(G.steps);
-    $('#hbest').textContent = G.best ? fmt(G.best) : '—';
   }
-  const c = Math.floor(G.clock * 10);
-  if (c !== hudClock){ hudClock = c; $('#htime').textContent = fmt(G.clock); }
   if (G.msg !== lastMsg){ lastMsg = G.msg; $('#msg').textContent = G.msg; }
 }
 
@@ -526,7 +520,6 @@ function frame(now){
   }
 
   if (live){
-    G.clock += G.over ? 0 : dt;
     /* held keys walk continuously; shift is a sprint */
     G.stepDur = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 0.085 : 0.14;
     if (G.moving){

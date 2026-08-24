@@ -651,11 +651,37 @@ const Build = (() => {
       } else if (drag.mode === 'rad'){
         s.r = snapR(Math.hypot(p[0] - s.x, p[1] - s.y));
       } else if (SCALE.indexOf(drag.mode) >= 0){
+        /* ── stretch from the side you took hold of ──────────────────────
+           The far side stays where it is and the two sides joining them
+           follow. Resizing about the centre — which is what this did — means
+           every drag moves the whole shape, so lining a wall up with the one
+           opposite is a drag, a look, a drag back and a look again. Holding
+           the far edge still is what makes a room something you can nudge
+           into place rather than negotiate with.
+
+           Worked in the shape's own frame so a turned shape stretches along
+           its own axes, and the centre is then moved by that offset rotated
+           back into the world — the anchor is an edge, not a point, and an
+           edge only stays put if the centre moves with the size. */
         const l = Kinds.geo.local(s, p[0], p[1]);
-        if (drag.mode !== 'n' && drag.mode !== 's')
-          s.w = clamp(snapS(Math.abs(l[0]) * 2), grid(), MAXSPAN());
-        if (drag.mode !== 'e' && drag.mode !== 'w')
-          s.h = clamp(snapS(Math.abs(l[1]) * 2), grid(), MAXSPAN());
+        const tag = drag.mode;
+        const hw = s.w / 2, hh = s.h / 2;
+        let x0 = -hw, x1 = hw, y0 = -hh, y1 = hh;
+        if (tag.indexOf('e') >= 0) x1 = l[0];
+        if (tag.indexOf('w') >= 0) x0 = l[0];
+        if (tag.indexOf('n') >= 0) y0 = l[1];
+        if (tag.indexOf('s') >= 0) y1 = l[1];
+        const nw = clamp(snapS(Math.abs(x1 - x0)), grid(), MAXSPAN());
+        const nh = clamp(snapS(Math.abs(y1 - y0)), grid(), MAXSPAN());
+        /* the size has been snapped, so the moving edge is put back at
+           whatever that size makes it — the fixed one is never recomputed */
+        if (tag.indexOf('e') >= 0) x1 = x0 + nw; else if (tag.indexOf('w') >= 0) x0 = x1 - nw;
+        if (tag.indexOf('s') >= 0) y1 = y0 + nh; else if (tag.indexOf('n') >= 0) y0 = y1 - nh;
+        const dx = (x0 + x1) / 2, dy = (y0 + y1) / 2;
+        const co = Math.cos(s.rot || 0), si = Math.sin(s.rot || 0);
+        s.x += dx * co - dy * si;
+        s.y += dx * si + dy * co;
+        s.w = nw; s.h = nh;
       } else if (drag.mode.charAt(0) === 'b'){
         /* Figma's bend: you drag the point the curve passes through, and the
            control point is worked back out from it. Drag it near the straight

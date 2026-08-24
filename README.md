@@ -83,8 +83,12 @@ WebSocket, because nothing else here needs a dependency.
 | `Esc` | back &nbsp;·&nbsp; the locus, the room list, the panel, the interior, the run |
 | click | resume, while paused |
 
-Clear every spark to finish a round; each round adds two more. Your best
-clear time is kept in the browser profile the launcher uses.
+Clear every spark to finish a round; each round adds two more.
+
+**There is no clock.** This began as a game you raced and it is now a place
+you draw, and a running timer over a floor plan is the game asking you to
+hurry over work that is not timed — which is worse than useless, it is wrong
+about what you are doing.
 
 **Sparks are off by default.** The round is the game this started as and it is
 in the way of the one it is becoming — twelve gold diamonds scattered over a
@@ -182,7 +186,14 @@ Shapes stay live: drag the body to move one, the grips to transform it, `[`
 and `]` for size (or width, on a road), `Del` to remove. Every grip says what
 it does — **flare corners** scale, **bone edge grips** stretch one axis, and
 the **gold ring** standing off the top edge turns the shape, held to 15° so a
-district still lines up with something. A line's grips are its bends; a ring's
+district still lines up with something.
+
+A grip **stretches from the side you took hold of**: the far side stays where
+it is and the two sides joining them follow. Resizing about the centre means
+every drag moves the whole shape, so lining a wall up with the one opposite
+is a drag, a look, a drag back and a look again. It is worked in the shape's
+own frame, so a turned shape stretches along its own axes — the far edge of
+one turned 30° holds to within a thousandth of a tile. A line's grips are its bends; a ring's
 grip is its radius. The panel spells out what the selection can be made to do.
 
 Rotation turns the pattern with the shape. With **Mask** on it does the

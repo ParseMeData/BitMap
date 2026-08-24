@@ -16,9 +16,9 @@ set -euo pipefail
 
 REGION="${MQ_REGION:-ap-southeast-2}"          # Sydney: closest to Myrtleford
 TYPE="${MQ_TYPE:-t4g.medium}"                  # 2 vCPU / 4 GB ARM, ~US$0.05/hr
-NAME="memory-quest-dev"
+NAME="memory-quest-le-dev"
 KEY="$HOME/.ssh/${NAME}.pem"
-REPO="ParseMeData/memory-quest"
+REPO="ParseMeData/memory-quest-le"
 AWS="${AWS:-$HOME/.local/bin/aws}"
 say(){ printf '\n\033[1m%s\033[0m\n' "$*"; }
 
@@ -51,7 +51,7 @@ up)
         --output text 2>/dev/null)"
   if [ "$SG" = "None" ] || [ -z "$SG" ]; then
     SG="$("$AWS" ec2 create-security-group --region "$REGION" --group-name "$NAME" \
-          --description "Memory Quest dev box" --vpc-id "$VPC" --query GroupId --output text)"
+          --description "Memory Quest LE dev box" --vpc-id "$VPC" --query GroupId --output text)"
   fi
   "$AWS" ec2 authorize-security-group-ingress --region "$REGION" --group-id "$SG" \
     --protocol tcp --port 22 --cidr "$MYIP/32" >/dev/null 2>&1 || true
@@ -80,7 +80,7 @@ up)
 tunnel)
   IP="$(pubip)"
   say "ssh -> $IP, forwarding localhost:8080"
-  echo "Once in:  cd memory-quest && python3 -m http.server 8080"
+  echo "Once in:  cd memory-quest-le && python3 -m http.server 8080"
   echo "Then open http://localhost:8080/index.html in Brave here."
   exec ssh -i "$KEY" -L 8080:localhost:8080 -o StrictHostKeyChecking=accept-new "ubuntu@$IP"
   ;;

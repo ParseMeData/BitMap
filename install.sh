@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Memory Quest — put the launcher entry and its icon where this desktop looks
+# Memory Quest LE — put the launcher entry and its icon where this desktop looks
 # for them, from wherever the clone happens to sit.
 #
-# memory-quest.desktop is tracked as a template rather than as a working entry,
+# memory-quest-le.desktop is tracked as a template rather than as a working entry,
 # because its only machine-specific strings — the path to play.sh and the
 # version in the name — used to be hand-kept in a second copy under
 # ~/.local/share/applications, and that copy silently rotted between releases.
@@ -17,13 +17,13 @@
 set -euo pipefail
 
 # Resolve our own directory rather than assume one: the clone is not always at
-# ~/Projects/memory-quest, since tools/aws-dev-box.sh stands one up on a box.
+# ~/Projects/memory-quest-le, since tools/aws-dev-box.sh stands one up on a box.
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 APPS="$DATA/applications"
-ENTRY="$APPS/memory-quest.desktop"
-ICON="$DATA/icons/hicolor/256x256/apps/memory-quest.png"
+ENTRY="$APPS/memory-quest-le.desktop"
+ICON="$DATA/icons/hicolor/256x256/apps/memory-quest-le.png"
 
 usage(){ cat <<USAGE
 usage: install.sh [--remove]
@@ -63,7 +63,7 @@ esac
 VERSION="$(git -C "$DIR" describe --tags --abbrev=0 2>/dev/null || true)"
 [ -n "$VERSION" ] || VERSION="dev"
 
-# Tags are named v5.0 and every surface that shows a version says V5.0 — the
+# Tags are named v6.0 and every surface that shows a version says V6.0 — the
 # window title, the README heading. The launcher is read beside them, so it
 # gets the same capital rather than the raw tag name.
 case "$VERSION" in v[0-9]*) VERSION="V${VERSION#v}" ;; esac
@@ -73,7 +73,7 @@ case "$VERSION" in v[0-9]*) VERSION="V${VERSION#v}" ;; esac
 # moment it is installed — so the copy starts at the group header and the
 # explanation stays behind in the tracked file where it is true.
 mkdir -p "$APPS"
-sed -n '/^\[Desktop Entry\]/,$p' "$DIR/memory-quest.desktop" \
+sed -n '/^\[Desktop Entry\]/,$p' "$DIR/memory-quest-le.desktop" \
   | sed -e "s|@DIR@|$DIR|g" -e "s|@VERSION@|$VERSION|g" > "$ENTRY"
 
 # Installed under the theme name the entry asks for, so the entry carries no
@@ -84,4 +84,4 @@ refresh
 
 echo "installed  $ENTRY"
 echo "installed  $ICON"
-echo "Memory Quest $VERSION  ·  runs $DIR/play.sh"
+echo "Memory Quest LE $VERSION  ·  runs $DIR/play.sh"

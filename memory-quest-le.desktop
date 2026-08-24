@@ -3,11 +3,11 @@
 # version has to be tracked here.
 [Desktop Entry]
 Type=Application
-Name=Memory Quest @VERSION@
+Name=Memory Quest LE @VERSION@
 GenericName=Lattice town builder
 Comment=Trace a real town, build it out of diamond glyphs, and plan the insides
 Exec=@DIR@/play.sh
-Icon=memory-quest
+Icon=memory-quest-le
 Terminal=false
 Categories=Game;ArcadeGame;
 StartupNotify=true

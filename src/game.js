@@ -80,7 +80,7 @@ function fatal(e){
   const why = probe
     ? 'WebGL2 works in this browser, so the context was refused for this window.\n' +
       'That usually means a stale instance is still holding the profile — close\n' +
-      'every Memory Quest window and relaunch.'
+      'every Memory Quest LE window and relaunch.'
     : 'This browser could not create a WebGL2 context at all.';
   const loop = loads.length > 3
     ? '\n\nThis page has loaded ' + loads.length + ' times in the last minute — something\n' +
@@ -90,7 +90,7 @@ function fatal(e){
   f.hidden = false;
   $('#fatalhead').textContent = head;
   $('#fatalmsg').textContent = why + loop + '\n\n' + (e && (e.message || e));
-  document.title = 'Memory Quest — ' + head;
+  document.title = 'Memory Quest LE — ' + head;
 }
 
 const ENTMAX = 8192;
@@ -716,7 +716,7 @@ function boot(img){
   $('#boot').hidden = true;
   buildPanel();
   if (WALL){
-    document.title = 'Memory Quest Wallpaper';     // the KWin rule matches this
+    document.title = 'Memory Quest LE Wallpaper';     // the KWin rule matches this
     document.body.classList.add('wall', 'drifting');
     G.nextBurst = 6;
   }

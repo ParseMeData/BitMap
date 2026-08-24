@@ -1,4 +1,4 @@
-# Memory Quest V5.0
+# Memory Quest LE V6.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,10 +7,10 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V5.0 in the KDE launcher
+    ./play.sh          # or: Memory Quest LE V6.0 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
-the current tag into the tracked `memory-quest.desktop` template, writes the
+the current tag into the tracked `memory-quest-le.desktop` template, writes the
 result under `~/.local/share/applications`, and installs `assets/icon.png`
 beside it as the theme icon the entry asks for. `./install.sh --remove` takes
 both out again — but not the desktop plate's KWin rule, which is
@@ -190,7 +190,7 @@ stale.
                          finds, on the profile the town lives in
     wallpaper.sh         the same page as a live desktop plate
     install.sh           the launcher entry and its icon, in and out again
-    memory-quest.desktop the launcher entry, tracked as a template —
+    memory-quest-le.desktop the launcher entry, tracked as a template —
                          install.sh fills in this clone's path and the tag
     index.html           page, HUD, overlays, panels, the ten colour tokens,
                          and the script loader
@@ -1079,7 +1079,7 @@ to reconfigure. Every other rule in `~/.config/kwinrulesrc` is preserved byte
 for byte, which is the whole reason the file is edited by hand rather than
 with `kwriteconfig6`.
 
-It runs on **its own browser profile**, `~/.cache/memory-quest-wall`, so the
+It runs on **its own browser profile**, `~/.cache/memory-quest-le-wall`, so the
 plate is a second town rather than a second window onto the first one. Nothing
 you build in the plate reaches the town you play, and nothing snapshots it.
 
@@ -1198,7 +1198,7 @@ answer.
 
 **"graphics context refused"** — WebGL2 works in this browser, so it was
 refused for *this window*. That almost always means a stale instance is still
-holding the profile: close every Memory Quest window and relaunch. `fatal()`
+holding the profile: close every Memory Quest LE window and relaunch. `fatal()`
 in `src/game.js` probes a fresh canvas before choosing between the two
 headings, because *no WebGL2* is almost never true on a machine that had it a
 minute ago.

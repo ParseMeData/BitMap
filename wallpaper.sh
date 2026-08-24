@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Memory Quest as a live desktop plate.
+# Memory Quest LE as a live desktop plate.
 #
 # Plasma wallpapers cannot take input, so this is an overlay window pinned
 # below everything by a KWin rule — the same trick as the Typeset Earth
@@ -7,7 +7,7 @@
 # own; click it and walk, and it hands control back.
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROFILE="${XDG_CACHE_HOME:-$HOME/.cache}/memory-quest-wall"
+PROFILE="${XDG_CACHE_HOME:-$HOME/.cache}/memory-quest-le-wall"
 FPS=30
 DPR=1.25
 

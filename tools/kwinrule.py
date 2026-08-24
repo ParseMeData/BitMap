@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install or remove the Memory Quest wallpaper rule in ~/.config/kwinrulesrc.
+"""Install or remove the Memory Quest LE wallpaper rule in ~/.config/kwinrulesrc.
 
 Written by hand rather than with kwriteconfig6 because the [General] rules list
 needs a read-modify-write, and kwriteconfig6 cannot delete a group at all.
@@ -8,8 +8,8 @@ Other rules in the file (Typeset Earth, etc.) are preserved byte for byte.
 import os, sys, uuid
 
 PATH = os.path.expanduser('~/.config/kwinrulesrc')
-DESC = 'Memory Quest wallpaper'
-TITLE = '^Memory Quest Wallpaper$'
+DESC = 'Memory Quest LE wallpaper'
+TITLE = '^Memory Quest LE Wallpaper$'
 
 RULE = """Description={desc}
 below=true

@@ -43,20 +43,20 @@ you how many rooms the walker can actually reach.
 
 ## Where things are
 
-    ~/Projects/memory-quest          this project
-    ~/.cache/memory-quest            the browser profile — where the town lives
-    ~/.cache/memory-quest-wall       the wallpaper's own profile, made the first
+    ~/Projects/memory-quest-le          this project
+    ~/.cache/memory-quest-le            the browser profile — where the town lives
+    ~/.cache/memory-quest-le-wall       the wallpaper's own profile, made the first
                                      time `./wallpaper.sh start` runs
     ~/Projects/halftone-platformer   upstream for platformer.html; still its own project
-    origin                           https://github.com/ParseMeData/memory-quest.git
+    origin                           https://github.com/ParseMeData/memory-quest-le.git
 
 **The moment the desktop plate runs there are two towns, not one.**
 `wallpaper.sh` launches on that second profile and opens no debugging port —
 its argument parser takes nothing that would add one — so `snapshot.py` cannot
 attach to it, and whatever gets built in the plate is in no snapshot and no
 tag, and does not appear in the town you play. As of v5.0 the plate has never
-been started on this machine: there is no `~/.cache/memory-quest-wall`, and no
-Memory Quest rule in `~/.config/kwinrulesrc`.
+been started on this machine: there is no `~/.cache/memory-quest-le-wall`, and no
+Memory Quest LE rule in `~/.config/kwinrulesrc`.
 
 `platformer.html` here is a **copy** of the halftone platformer's shipped file
 plus a deck hook. Edits upstream do not propagate, and edits here do not go
@@ -261,7 +261,7 @@ pictures stay in IndexedDB and are fetched before the faces load.
 
 **`attach()` never binds to the platformer unless you name it.** `P` opens
 `platformer.html` into the same profile, and both live under a directory named
-`memory-quest`, so the default match catches both on their *path* — neither
+`memory-quest-le`, so the default match catches both on their *path* — neither
 title contains it — and first-listed-wins would let a restore write the town
 through the runner. It
 drops every `platformer.html` target unless the match string asks for one, and
@@ -286,7 +286,7 @@ Not starting is the better failure. The same list is repeated in
 `wallpaper.sh`; keep the two in step.
 
 **The launcher entry is generated, and the tracked file will not run if you
-copy it.** `memory-quest.desktop` holds `@DIR@`, `@VERSION@` and a header that
+copy it.** `memory-quest-le.desktop` holds `@DIR@`, `@VERSION@` and a header that
 stops being true the moment it is installed — so `install.sh` copies from
 `[Desktop Entry]` onward, leaving the explanation behind in the tracked file
 where it is still true, substitutes with `|` because a path is what is going
@@ -367,7 +367,7 @@ have been found by looking.
 
 **Versioning.** The folder carries no version; the git tag does, and the name
 in the title, the launcher entry and the README follows it. The installed
-entry at `~/.local/share/applications/memory-quest.desktop` is *generated* —
+entry at `~/.local/share/applications/memory-quest-le.desktop` is *generated* —
 `./install.sh` fills the clone's path and `git describe` into the tracked
 template, so there is one file rather than two, and re-running it is what
 moves the launcher to a new tag. Each tag gets `snapshots/vX.Y.json` beside

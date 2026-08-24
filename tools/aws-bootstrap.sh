@@ -22,18 +22,18 @@ echo "deb [arch=arm64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gp
 apt-get update -y && apt-get install -y gh
 
 # What to do on first login, printed where it cannot be missed.
-cat > /etc/profile.d/memory-quest.sh <<'MOTD'
-if [ ! -d "$HOME/memory-quest" ]; then
+cat > /etc/profile.d/memory-quest-le.sh <<'MOTD'
+if [ ! -d "$HOME/memory-quest-le" ]; then
   cat <<'TXT'
 
-  Memory Quest dev box — two sign-ins to do once:
+  Memory Quest LE dev box — two sign-ins to do once:
 
     gh auth login          # device code, paste it in a browser on your laptop
-    gh repo clone ParseMeData/memory-quest
+    gh repo clone ParseMeData/memory-quest-le
     claude                 # prints a URL; open it on your laptop to sign in
 
   Then, to see the game:
-    cd memory-quest && python3 -m http.server 8080
+    cd memory-quest-le && python3 -m http.server 8080
     ...and open http://localhost:8080/index.html on your laptop, through the
     tunnel. The plate starts blank there: it is a new browser origin, so
     restore the town into it once with tools/snapshot.py.

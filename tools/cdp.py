@@ -95,7 +95,7 @@ class Page:
         return res.get('result', {}).get('value')
 
 
-def attach(match='memory-quest', port=9222):
+def attach(match='memory-quest-le', port=9222):
     try:
         listed = targets(port)
     except OSError as e:

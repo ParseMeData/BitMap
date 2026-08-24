@@ -208,7 +208,8 @@ const Interior = (() => {
       const list = JSON.parse(localStorage.getItem(f.mkey) || '[]');
       const mk = (Array.isArray(list) ? list : []).find(x => x && x.uid === f.uid);
       if (mk){ mk.name = f.name; localStorage.setItem(f.mkey, JSON.stringify(list)); }
-    } catch (e){}
+      if (typeof hqStoreOK === 'function') hqStoreOK('this palace name');
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('this palace name', e); }
     banner();
     return true;
   }

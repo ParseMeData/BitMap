@@ -6,8 +6,11 @@
    and will be there next frame, which is why it lives in one static buffer
    the CPU never touches. A leaf is the exception — it is the one part of a
    floor plan that is supposed to move — so it is drawn per frame in the
-   entity stream alongside the walker, and what stays in the plate is the arc
-   it travels through. A drawing shows the sweep; the door does the swinging.
+   entity stream alongside the walker, and what stays in the plate is only
+   the threshold and the two jambs — the parts that are built. No arc is
+   drawn (see the end of door() in src/kinds.js): a plan puts the sweep in
+   because a plan cannot move, and a quarter-circle standing under a leaf
+   that does move is a diagram of a door laid over a door.
 
    Opening is not a trigger with a state machine behind it. Each door holds
    one number, how open it is, and eases toward whether the walker is close

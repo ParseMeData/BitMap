@@ -307,7 +307,8 @@ const Palace = (() => {
     try {
       if (txt.trim()) localStorage.setItem(KEY(uid), txt);
       else localStorage.removeItem(KEY(uid));
-    } catch (e){}
+      if (typeof hqStoreOK === 'function') hqStoreOK('this room list');
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('this room list', e); }
   }
 
   /* ── the panel ── */
@@ -499,8 +500,9 @@ const Palace = (() => {
   function rename(v){
     const s = String(v || '').slice(0, 28);
     if (typeof Interior !== 'undefined' && Interior.inside()) Interior.rename(s);
-    else { try { if (s) localStorage.setItem(TOWN, s); else localStorage.removeItem(TOWN); }
-           catch (e){} }
+    else { try { if (s) localStorage.setItem(TOWN, s); else localStorage.removeItem(TOWN);
+                 if (typeof hqStoreOK === 'function') hqStoreOK('the town name'); }
+           catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the town name', e); } }
   }
   const named = () => (typeof Interior !== 'undefined' && Interior.inside())
     ? (Interior.at() || '') : townName();

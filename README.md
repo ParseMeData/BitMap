@@ -9,6 +9,13 @@ routes you drew.
 
     ./play.sh          # or: Memory Quest V4.6 in the KDE launcher
 
+`./install.sh` puts that launcher entry there: it fills this clone's path and
+the current tag into the tracked `memory-quest.desktop` template, writes the
+result under `~/.local/share/applications`, and installs `assets/icon.png`
+beside it as the theme icon the entry asks for. `./install.sh --remove` takes
+both out again — but not the desktop plate's KWin rule, which is
+`./wallpaper.sh uninstall`.
+
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
 the build tools came from there; what is new is that the plate starts
@@ -60,13 +67,16 @@ own is only half a version. `tools/` writes the other half to a file beside
 it:
 
     ./play.sh --remote-debugging-port=9222 &
-    tools/snapshot.py save    snapshots/v4.6.json
-    tools/snapshot.py restore snapshots/v4.6.json
+    tools/snapshot.py save    snapshots/<tag>.json
+    tools/snapshot.py restore snapshots/<tag>.json
 
-`snapshots/v4.6.json` is the town as it stood at that tag, frozen picture and
-all. Restoring is destructive — the profile *becomes* the file, so a room
-built since the snapshot is removed rather than left behind, and the page
-reloads. Snapshot the live state first if it is ahead of the file.
+`snapshots/<tag>.json` is the town as it stood at that tag, frozen picture and
+all — one file per tag, all of them in `snapshots/`. Restoring is destructive
+— the profile *becomes* the file, so a room built since the snapshot is
+removed rather than left behind, and the page reloads. So a restore saves the
+live profile to `snapshots/.pre-restore-<UTC>.json` first, prints what is live
+against what is in the file, and waits for the word `restore` to be typed;
+`--yes` skips the question and never the backup.
 
 Every `hq.` key is taken rather than a list written down in the tool, because
 an interior is one key per marker named after an id only that marker has, and
@@ -74,6 +84,31 @@ there is no fixed set of them.
 
 `tools/cdp.py` is what talks to the running page: a few dozen lines of
 WebSocket, because nothing else here needs a dependency.
+
+### The dev box
+
+`tools/aws-dev-box.sh` stands up an EC2 box with the repo and Claude Code on
+it. It holds the engine, and deliberately not the town: the town is in a
+*browser* profile, and the browser stays on your machine. So the box serves
+`index.html` to a port that only exists inside an SSH tunnel, and you play it
+at `http://localhost:8080` in the browser you already have.
+
+    tools/aws-dev-box.sh up       # key, security group, instance
+    tools/aws-dev-box.sh tunnel   # ssh in, forwarding 8080 → the box
+    tools/aws-dev-box.sh ip       # the current public address
+    tools/aws-dev-box.sh stop     # stop paying for compute
+    tools/aws-dev-box.sh start    # bring it back, on a new address
+    tools/aws-dev-box.sh destroy  # instance, group and key, gone
+
+`$MQ_REGION` defaults to `ap-southeast-2` — Sydney, the closest region to the
+town being traced — and `$MQ_TYPE` to `t4g.medium`, two ARM vCPUs at about
+five US cents an hour. Port 8080 is never opened in the security group; only
+22 is, and only to the address you ran `up` from.
+
+**`stop` is not `destroy`.** Stopping ends the compute charge and keeps the
+30 GB disk, which is still billed; only `destroy` ends the billing, and it
+takes the disk with it, so anything on the box that was not pushed is gone.
+It asks you to type the word.
 
 ## Controls
 
@@ -140,30 +175,67 @@ reach.
 
 ## Layout
 
-    index.html      page, HUD, overlays, tune panel markup
-    assets/map.js   the map, inlined as a data URI (keeps getImageData
-                    working from file:// — a plain <img> would taint it)
-    assets/map.webp the same art as a file, for reference
-    src/render.js   WebGL2 instanced SDF renderer
-    src/lattice.js  map → lattice: analyse (tone, sharpen, sobel) then
-                    compose (pick faces + colour), and terrain classification
-    src/kinds.js    the art style as components: noise, geometry, the cell
-                    emitter, the palette, and one generator per terrain kind
-    src/panel.js    tune panel, and the Map/Blank plate switch
-    src/build.js    build mode: shapes, dragging, walk-grid stamping
-    src/markers.js  glyph markers, baked to one texture atlas
-    src/interior.js going inside a marker: the stack, and the swap
-    src/loci.js     the numbered places inside a room, their pictures,
-                    the lattice preview, and the route the platformer plays
-    src/type.js     the diamond typeface: a letter is a 5x7 grid and every
-                    lit square is one more diamond in the same stream
-    src/palace.js   the room list, the layout it generates, the fit-out that
-                    follows a wall, and the names drawn on the plan
-    src/doors.js    the one part of a plan that moves: leaves that swing
-    platformer.html the runner — the halftone platformer, which takes this
-                    route as its deck when there is one (see Playing it)
-    src/basemap.js  the tracing underlay, live tiles and frozen picture
-    src/game.js     state, input, camera, entities, frame loop
+What is in the tree, and what each thing is for. This is the one list —
+nothing else here repeats it, because a second copy is a copy that goes
+stale.
+
+    play.sh              launches it: the first Chromium-family browser it
+                         finds, on the profile the town lives in
+    wallpaper.sh         the same page as a live desktop plate
+    install.sh           the launcher entry and its icon, in and out again
+    memory-quest.desktop the launcher entry, tracked as a template —
+                         install.sh fills in this clone's path and the tag
+    index.html           page, HUD, overlays, panels, the ten colour tokens,
+                         and the script loader
+    assets/map.js        the map, inlined as a data URI (keeps getImageData
+                         working from file:// — a plain <img> would taint it)
+    assets/map.webp      the same art as a file, for reference
+    assets/icon.png      the launcher icon, 256×256
+    src/render.js        WebGL2 instanced SDF renderer
+    src/lattice.js       picture → lattice: analyse (tone, sharpen, sobel)
+                         then compose (pick faces + colour), and terrain
+                         classification — the printed map, a traced photo
+                         and a locus picture all come through it
+    src/kinds.js         the art style as components: noise, geometry, the
+                         cell emitter, and one generator per kind, in TWO
+                         registries — the town's and the interior's, swapped
+                         by Kinds.use(scope)
+    src/panel.js         the tune panel, the Map/Blank plate switch, and the
+                         Sparks switch
+    src/build.js         build mode: shapes, dragging, walk-grid stamping,
+                         and the two exclusive edit layers, Rooms and Fit-out
+    src/markers.js       glyph markers, baked to one texture atlas
+    src/interior.js      going inside a marker: the stack, and the swap
+    src/loci.js          the numbered places inside a room, their pictures,
+                         the lattice preview, and the route the platformer
+                         plays
+    src/type.js          the diamond typeface: a letter is a 5x7 grid and
+                         every lit square is one more diamond in the stream
+    src/palace.js        the room list, the layout it generates, the fit-out
+                         that follows a wall, the names drawn on the plan
+    src/doors.js         the one part of a plan that moves: leaves that swing
+    src/basemap.js       the tracing underlay, live tiles and frozen picture
+    src/game.js          state, input, camera, entities, frame loop
+    platformer.html      the runner, which takes this route as its deck when
+                         there is one (see Playing it). A vendored copy of
+                         halftone-platformer.html from
+                         ~/Projects/halftone-platformer, pinned at that
+                         project's commit d8c6494; the only local change is
+                         the route hook — 125 lines added and 6 removed
+                         against upstream, nine of the additions being the
+                         note that records this. The command that prints the
+                         diff is in an HTML comment after the file's <title>.
+    tools/cdp.py         a few dozen lines of WebSocket — what talks to the
+                         running page
+    tools/snapshot.py    the town, out to a file and back in again
+    tools/kwinrule.py    the KWin rule the desktop plate is pinned by
+    tools/aws-dev-box.sh the EC2 box: up, tunnel, ip, stop, start, destroy —
+                         tools/aws-bootstrap.sh is what it runs on first boot
+    snapshots/           the other half of every tag, one <tag>.json each
+    STYLE.md             the look, written down: the ten tokens, the type,
+                         the square corner
+    HANDOFF.md           the shape of the whole, and the decisions that
+                         would be got wrong
 
 `analyse` is the expensive half (~40 ms) and only re-runs when Detail, Tone or
 Contrast move; `compose` is ~10 ms and runs on every recrystallisation, hidden
@@ -471,7 +543,10 @@ each request is for the centre of the tile the grid wants, which comes back
 as exactly that square. Nothing outside `tileURL()` and `find()` knows where
 the imagery came from. If a key is refused the bar says so, since a sheet of
 failed tiles otherwise just looks like an empty map. Keep the usage light and
-leave the attribution in place.
+leave the attribution in place: the credit line beside the bar reads
+`© OpenStreetMap` for OSM's tiles, `© OpenStreetMap · © CARTO` for the dark
+ones and `© Google` for Google's, and becomes `frozen picture` once there are
+no live tiles left to credit.
 
 The underlay is DOM rather than GL: a sheet of `<img>` tiles — or one frozen
 picture — behind a canvas that clears transparent while tracing. The game
@@ -563,12 +638,12 @@ which is a pillar.
 it.** Walls and glazing connect to one another the way roads do, so a corner
 is a corner; a door does not, so drawing one across a wall run opens it, in
 the drawing and in the walk grid at once. What it leaves behind is a
-threshold, two jambs, and the leaf and the arc it sweeps — drawn outside the
-shape on purpose, because that sweep is most of what makes a plan read as a
-plan. A door reaches a whole tile either side when it opens the walk grid:
-everything snaps to tile centres and a wall's own band is half a tile thick,
-and a door that looks right but silently does nothing is a far worse failure
-than a doorway one tile deep.
+threshold, two jambs, and the leaf — the leaf drawn outside the shape on
+purpose, because a door swinging clear of the wall is most of what makes a
+plan read as a plan. A door reaches a whole tile either side when it opens
+the walk grid: everything snaps to tile centres and a wall's own band is half
+a tile thick, and a door that looks right but silently does nothing is a far
+worse failure than a doorway one tile deep.
 
 Stamping order is what makes a plan behave, the same way it makes a bridge
 work outdoors. The floor goes down first and carries you; furniture and walls
@@ -581,8 +656,11 @@ edit rather than only when one was stranded.
 
 A marker with something built inside it wears a ring on the map, so a place
 you can walk into looks different from a place that is only a note. The plans
-live beside the town in the browser profile, under `hq.rooms.<marker>`, with
-`hq.rooms` as the index of which markers have one.
+live beside the town in the browser profile, under `hq.rooms.<marker>`. Which
+markers have one is read off the plans themselves rather than kept in an index
+beside them: an index has to be written at exactly the right moment and is
+wrong if it is not, so closing the window while you are still inside a room
+would lose the ring from a room that exists.
 
 ## Typing a palace
 
@@ -645,18 +723,25 @@ shells, the doors and the wall gaps. Any of the three can be picked up,
 dragged and deleted; a door and a room's edge grip live in the same place, on
 the wall, and the door wins the pointer because it is the smaller and more
 specific of the two — the grips keep the rest of the wall and all four
-corners. and the whole room is the handle rather than the quarter-tile
-ribbon of its wall. Move one, resize one by its corners, and **its contents
+corners, and the whole room is the handle rather than the quarter-tile ribbon
+of its wall. Move one, resize one by its corners, and **its contents
 are laid again for the shape it is now**. Make it bigger and the next slot
 appears and fills; make it smaller and the slot goes and takes its contents
 with it. Deleting a room deletes the room, not the four walls of one.
 
-Both plan tools snap to the **lattice cell**, not the walk tile — and go on
-snapping to it after they are placed: a gap and a door move and resize by the
-cell, and `[` `]` trims a gap by one cell a side rather than by a percentage.
-A trim you are dialling in wants one cell on and one cell off; fifteen per
-cent of whatever it happens to be is nothing on a small cut and a whole tile
-on a large one.
+Both plan tools snap to the **lattice cell**, not the walk tile. The tile is
+the right quantum for a thing you *place* — a bed sits on tiles, and half-tile
+furniture is furniture you can never line up — and the wrong one for a thing
+you *aim*. A wall is two cells, half a tile, so a tool snapped to tiles cannot
+land on one of its faces at all. The cell is what everything here is drawn in,
+it is four times finer, and it contains the tile grid rather than competing
+with it.
+
+They go on snapping to it after they are placed: a gap and a door move and
+resize by the cell, and `[` `]` trims a gap by one cell a side rather than by
+a percentage. A trim you are dialling in wants one cell on and one cell off;
+fifteen per cent of whatever it happens to be is nothing on a small cut and a
+whole tile on a large one.
 
 A cut is held to whole cells, which is not tidiness. A lattice cell is removed
 when its **centre** falls inside the cut, and centres sit halfway between cell
@@ -669,14 +754,6 @@ or out. A cut drawn before this was true is corrected on the way in.
 Because a gap draws nothing of its own, every cell it covers is marked while
 you are in Rooms — an outline says where it is, and the marks say what it
 takes.
-
-Both plan tools snap to the **lattice cell**, not the walk tile. The tile is
-the right quantum for a thing you *place* — a bed sits on tiles, and half-tile
-furniture is furniture you can never line up — and the wrong one for a thing
-you *aim*. A wall is two cells, half a tile, so a tool snapped to tiles cannot
-land on one of its faces at all. The cell is what everything here is drawn in,
-it is four times finer, and it contains the tile grid rather than competing
-with it.
 
 The rectangle is snapped **as you drag it**, not when you let go, so what is
 drawn under the pointer is what gets made. A preview that rounds differently
@@ -933,7 +1010,7 @@ is the level, thresholded into a static map that is the only thing collision
 reads. Open it on its own and it still plays its own deck. What is new is the
 deck hook and the chain.
 
-Those nine lines exist because of one measured fact: **every `file://` page
+That hook exists because of one measured fact: **every `file://` page
 in this browser shares a single origin**, so a second page can read this
 one's storage directly. No iframe, no message passing, no build step. The
 route is handed over in two halves because the two are wanted at different
@@ -973,6 +1050,51 @@ be the thing dismissed first.
 
 With nothing left to go back from, `Esc` opens the reference — which is the
 same screen, and says on it how to leave.
+
+## The desktop plate
+
+The game doubles as a live wallpaper. `./wallpaper.sh start` puts it there,
+`stop` takes it down, `restart` does both, and `uninstall` stops it and takes
+the KWin rule out with it.
+
+    ./wallpaper.sh start [--fps N] [--dpr X]
+
+It is a **window**, not a wallpaper, and it has to be: a Plasma wallpaper
+takes no input at all, and the whole point is that you can click it and walk.
+So it is an ordinary browser window pinned below everything by a KWin rule,
+which `tools/kwinrule.py install` writes and `remove` takes away — the same
+trick as the Typeset Earth overlay already on this machine. `start` writes
+that rule — or refreshes the one already there, keeping its id — and asks KWin
+to reconfigure. Every other rule in `~/.config/kwinrulesrc` is preserved byte
+for byte, which is the whole reason the file is edited by hand rather than
+with `kwriteconfig6`.
+
+It runs on **its own browser profile**, `~/.cache/memory-quest-wall`, so the
+plate is a second town rather than a second window onto the first one. Nothing
+you build in the plate reaches the town you play, and nothing snapshots it.
+
+Four query parameters shape it, all read in `src/game.js`:
+
+    ?wallpaper   the mode itself: no HUD, no pause-on-blur (a background
+                 window is never focused), and the drift
+    ?fps=N       frame cap. 30 under ?wallpaper, uncapped without it; 0 is
+                 uncapped either way
+    ?dpr=X       render scale cap. 1.25 under ?wallpaper against 2 without —
+                 the plate is the cheapest thing on the iGPU that it can be
+    ?sleep=S     seconds of idle before it drowses again — 25, and only
+                 ever consulted under ?wallpaper
+
+`wallpaper.sh` sets the first three, and `--fps` and `--dpr` are its flags for
+the middle two. `?sleep` has no flag; it takes its default unless you open the
+URL by hand.
+
+**Drifting is the resting state.** With nobody steering, the camera crawls at
+a fixed world speed toward a reachable tile picked at random, arrives, picks
+another, and recrystallises the plate every twelve to nineteen seconds. Press
+a movement key and it **wakes**: the camera goes back to following the walker
+and the hint at the bottom fades out. Stop steering for `?sleep` seconds and
+it drowses back into the drift on its own, which is the only reason the hint
+is there to read again.
 
 ## Walking
 
@@ -1055,8 +1177,37 @@ Note `Edges` defaults to 0, matching the phone build, where the edge multiplier
 was zero and the sobel pass never contributed. Raise it for a harder, more
 drawn-looking map.
 
-## If the page ever shows "this build needs WebGL2"
+## If the page will not start
 
-That is almost always a stale script in the browser cache, not a missing
-capability. Hard-reload with `Ctrl+Shift+R`. Script URLs carry a `?v=` stamp to
-prevent it; bump it in `index.html` after editing sources.
+Three screens can come up in place of the plate, and they are three different
+faults.
+
+**"this build needs WebGL2"** — the browser could not make a WebGL2 context at
+all. That is the rare one, and the only one where the browser is really the
+answer.
+
+**"graphics context refused"** — WebGL2 works in this browser, so it was
+refused for *this window*. That almost always means a stale instance is still
+holding the profile: close every Memory Quest window and relaunch. `fatal()`
+in `src/game.js` probes a fresh canvas before choosing between the two
+headings, because *no WebGL2* is almost never true on a machine that had it a
+minute ago.
+
+Either of those adds a line when the page has loaded more than three times in
+the last minute, because that is a relaunch loop and closing the windows is
+the only thing that ends it. The load times are kept in `hq.loads`.
+
+**"the lattice never finished building"** — the boot screen was still up eight
+seconds after the loader ran. `boot()` is synchronous once the map picture
+decodes, so that is a load which stopped rather than one which is slow, and
+without the timeout *building the lattice…* would sit there for good. The
+screen shows `hq.lastError` — the last runtime failure the page recorded, with
+the time it happened — or says plainly that nothing was recorded.
+
+`hq.lastError` is readable at any time, from devtools or over CDP, and is
+worth looking at before anything else.
+
+**There is no `?v=` stamp to bump.** Every script URL carries
+`?cb=<BUILD>.<now>`, so the URL is different on every single load and a
+browser that has cached an older build cannot serve it back. A stale script is
+not what any of these three are.

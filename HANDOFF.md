@@ -45,7 +45,13 @@ you how many rooms the walker can actually reach.
 
     ~/Projects/memory-quest          this project
     ~/.cache/memory-quest            the browser profile — where the town lives
+    ~/.cache/memory-quest-wall       the wallpaper's own profile, its own town
     ~/Projects/halftone-platformer   upstream for platformer.html; still its own project
+    origin                           https://github.com/ParseMeData/memory-quest.git
+
+**There are two towns, not one.** `wallpaper.sh` runs on the second profile,
+and `snapshot.py` never attaches to it — so whatever gets built in the desktop
+plate is in no snapshot and no tag, and does not appear in the town you play.
 
 `platformer.html` here is a **copy** of the halftone platformer's shipped file
 plus a deck hook. Edits upstream do not propagate, and edits here do not go
@@ -58,9 +64,12 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ## State at v4.6
 
-    master   63bf71c   v4.6
-    v4.7     63bf71c   the working branch, currently level with master
-    tags     v1.0 v2.0 v3.0 v4.0 v4.2 v4.4 v4.6
+Where the branches and the tags actually stand is a thing to read, not a thing
+to write down — a transcript of it is wrong by the next commit, and wrong in a
+way nobody notices:
+
+    git branch -v        # every branch, its head and what that commit says
+    git tag -l           # every version that exists
 
 The town: 39 shapes, 5 markers, all five with a floor plan inside them, on a
 blank plate over the frozen Myrtleford underlay. Sparks are off.
@@ -101,27 +110,16 @@ to trim with.
 
 ## Layout
 
-    index.html      page, HUD, overlays, panels, the script loader (bump BUILD
-                    when adding a file — it is the cache buster)
-    assets/map.js   the printed map, inlined as a data URI
-    src/render.js   WebGL2 instanced SDF renderer — three draw calls
-    src/lattice.js  picture → lattice (analyse, compose) and terrain classification
-    src/kinds.js    every terrain and fitting, as generators; TWO registries
-    src/type.js     the diamond typeface — a letter is 5×7 and every lit square
-                    is one more diamond in the same stream
-    src/panel.js    the tune panel, plate switch, sparks switch
-    src/build.js    build mode: shapes, dragging, the two edit layers, stamping
-    src/markers.js  glyph markers, baked to the one texture atlas
-    src/loci.js     the numbered places, their pictures, the lattice preview,
-                    and the route handed to the platformer
-    src/palace.js   the room list, the layout it generates, the fit-out that
-                    follows a wall, the names drawn on the plan
-    src/doors.js    the one part of a plan that moves
-    src/interior.js going inside a marker: the stack, and the swap
-    src/basemap.js  the tracing underlay, live tiles and frozen picture
-    src/game.js     state, input, camera, entities, frame loop
-    platformer.html the runner
-    tools/          cdp.py, snapshot.py, kwinrule.py, shot helpers
+**The file table is in `README.md`, under *Layout*, and it is the only one.**
+This document carried a second copy and the second copy went stale, which is
+what a second copy does.
+
+One thing about it that the listing cannot say: **adding a source file means
+adding it to the loader list** in `index.html`, which is a literal array of
+paths executed in that order. `BUILD` on the line beside it is *not* the cache
+buster — `Date.now()` in the same string is, on every load, so a stale script
+cannot be served back at all. `BUILD` is a stamp, published as
+`window.HQ_BUILD`, so a page driven over CDP can say which build it is.
 
 Storage, all under `hq.`:
 
@@ -204,9 +202,16 @@ pictures stay in IndexedDB and are fetched before the faces load.
 ## Working on it
 
 **Never test against the live town.** Launch a throwaway on its own profile
-and port:
+*and* port, and then point the tools at that port as well:
 
     XDG_CACHE_HOME=/tmp/scratch ./play.sh --remote-debugging-port=9223
+    MQ_PORT=9223 tools/snapshot.py save /tmp/scratch/before.json
+
+The second line is the half that is easy to forget and expensive to forget:
+**without the port override the tools attach to 9222, which is the live
+town.** The separate profile protects nothing on its own, because the port is
+what decides which page is being driven. `--port 9223` says the same thing if
+you would rather say it once per command than export it.
 
 Seed it by writing `hq.*` keys, do the destructive thing there, delete the
 directory afterwards. The live town has hours of work in it and a restore is
@@ -224,8 +229,23 @@ worth knowing: the camera follows the walker, so setting `G.camT` does nothing
 — move `G.x`/`G.y` instead; and the game pauses on blur, so a page driven from
 a terminal is usually paused (`G.paused = false` to override).
 
-**Snapshot before anything irreversible.** `tools/snapshot.py save
-snapshots/<name>.json` takes every `hq.` key plus both IndexedDB stores.
+**Snapshot before anything irreversible.**
+
+    tools/snapshot.py save    snapshots/<name>.json [--port N]
+    tools/snapshot.py restore snapshots/<name>.json [--port N] [--yes]
+
+`save` takes every `hq.` key plus both IndexedDB stores, minus `hq.lastError`
+and `hq.loads`, and blanks the Google Maps key out of `hq.basemap` on the way
+past — snapshots are committed beside a tag, and a billable key that reaches a
+commit cannot be taken back out of the history it is in.
+
+`restore` writes the profile as it stands to `snapshots/.pre-restore-<UTC>.json`
+first (gitignored), prints the live counts against the file's, and will not go
+on until the word `restore` is typed. `--yes` skips the question and never the
+backup, and with nothing at the prompt to answer it the command refuses rather
+than reading silence as agreement. One consequence worth holding on to: that
+backup is written through `save`, so it is key-stripped like any other
+snapshot, and restoring from one will not bring a Google Maps key back.
 
 **Measure the thing you changed.** Most of the real bugs in this project were
 found by counting — walkable versus reachable tiles, wall cells before and
@@ -237,10 +257,13 @@ have been found by looking.
 ## Conventions
 
 **Versioning.** The folder carries no version; the git tag does, and the name
-in the title, the launcher entry and the README follows it — including the
-installed copy at `~/.local/share/applications/memory-quest.desktop`, which is
-updated by hand. Each tag gets `snapshots/vX.Y.json` beside it, because the
-source tree is only half a version: the town lives in the browser profile.
+in the title, the launcher entry and the README follows it. The installed
+entry at `~/.local/share/applications/memory-quest.desktop` is *generated* —
+`./install.sh` fills the clone's path and `git describe` into the tracked
+template, so there is one file rather than two, and re-running it is what
+moves the launcher to a new tag. Each tag gets `snapshots/vX.Y.json` beside
+it, because the source tree is only half a version: the town lives in the
+browser profile.
 
 **Branches are named for the version being worked toward**, so a branch and a
 tag never share a name — that makes the name ambiguous to git. Work happens on

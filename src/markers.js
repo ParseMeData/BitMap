@@ -81,7 +81,7 @@ const Markers = (() => {
   }
 
   /* ── model ── */
-  const grid = () => (G.terr ? G.terr.tsz : 12);
+  const grid = () => (G.terr ? G.terr.tsz : (G.A ? G.A.cell : 8) * 4);  // build.js:47 is the other copy
   const snap = v => (Math.round(v / grid() - 0.5) + 0.5) * grid();
 
   /* A marker's place in the array is not an identity: delete one above it
@@ -243,7 +243,8 @@ const Markers = (() => {
       localStorage.setItem(KEY, JSON.stringify(G.markers.map(m =>
         ({uid: m.uid, name: m.name || '', n: m.n || 0, gi: m.gi, x: m.x, y: m.y,
           size: m.size, tint: m.tint}))));
-    } catch (e){}
+      if (typeof hqStoreOK === 'function') hqStoreOK('the markers');
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the markers', e); }
   }
   function load(){
     let raw = [];

@@ -1291,6 +1291,9 @@ const Build = (() => {
 
   /* ── persistence ── */
   function save(){
+    /* One save() serves both scopes, so the word has to follow the key or it
+       tells you the town would not keep when you are standing in a plan. */
+    const what = KEY === 'hq.shapes' ? 'the town' : 'this plan';
     try {
       localStorage.setItem(KEY, JSON.stringify(G.shapes.map(s => ({
         kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, rot: s.rot || 0,
@@ -1300,7 +1303,8 @@ const Build = (() => {
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
         x: s.x, y: s.y, w: s.w, h: s.h, r: s.r, pts: s.pts, ctrl: s.ctrl, width: s.width
       }))));
-    } catch (e){}
+      if (typeof hqStoreOK === 'function') hqStoreOK(what);
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail(what, e); }
   }
   /* ── palaces built before a room owned its contents ────────────────────
      A plan whose shapes do not say which room they are in is a plan where

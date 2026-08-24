@@ -412,7 +412,11 @@ addEventListener('keydown', e => {
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
-      else togglePause(true);                 // nothing to go back from: the reference
+      /* On the desktop plate #pause is display:none, and the only way out of
+         a pause is a pointerdown on that hidden element — so pausing there
+         is a door that locks behind you. Same guard, same reason, as the
+         blur handler below. */
+      else if (!WALL) togglePause(true);      // nothing to go back from: the reference
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;

@@ -323,6 +323,10 @@ const Basemap = (() => {
         setShown(true);
         note(file.name.slice(0, 40) + ' · drag to place');
       };
+      /* the file read fine and the browser still would not decode it — a
+         screenshot in a format this build has no decoder for looks exactly
+         like a drop that did nothing at all unless it says so */
+      im.onerror = () => note('that image would not open');
       im.src = fr.result;
     };
     fr.onerror = () => note('could not read that file');
@@ -398,6 +402,9 @@ const Basemap = (() => {
     barOpen = v;
     const bar = $('#mapbar');
     if (bar) bar.hidden = !v;
+    /* the bar stands where other chrome does, so the page has to know it is
+       open to get out of its way */
+    document.body.classList.toggle('mapping', barOpen);
     syncUI();
   }
   function setShown(v){
@@ -557,7 +564,12 @@ const Basemap = (() => {
 
   function save(){
     try { localStorage.setItem(KEY, JSON.stringify({shown, lat, lon, z, dim, scale,
-      src, gkey, gtype, place, placing})); } catch (e){}
+      src, gkey, gtype, place, placing}));
+      if (typeof hqStoreOK === 'function') hqStoreOK('the map settings'); }
+    /* this try holds the settings blob, not the picture — stash() reports on
+       the picture itself, and naming it here sent you to free the very thing
+       that had not failed */
+    catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the map settings', e); }
     /* the picture itself only goes back to storage when it has actually
        changed — every drag calls save(), and a bake is megabytes */
     if (picURL !== save._done){ save._done = picURL; if (picURL) stash(picURL); }

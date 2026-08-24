@@ -78,7 +78,7 @@ function buildPanel(){
   ph.className = 'plabel'; ph.textContent = 'Plate';
   body.appendChild(ph);
   const plate = document.createElement('div');
-  plate.className = 'chips'; plate.style.gridTemplateColumns = 'repeat(2,1fr)';
+  plate.className = 'chips two';
   for (const [name, v] of [['Map', false], ['Blank', true]]){
     const c = document.createElement('div');
     c.className = 'chip'; c.textContent = name; c.dataset.blank = v ? '1' : '0';
@@ -93,7 +93,7 @@ function buildPanel(){
   sh.className = 'plabel'; sh.textContent = 'Sparks';
   body.appendChild(sh);
   const spk = document.createElement('div');
-  spk.className = 'chips'; spk.style.gridTemplateColumns = 'repeat(2,1fr)';
+  spk.className = 'chips two';
   for (const [name, v] of [['Off', false], ['On', true]]){
     const c = document.createElement('div');
     c.className = 'chip'; c.textContent = name; c.dataset.spark = v ? '1' : '0';

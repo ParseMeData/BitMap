@@ -4,6 +4,9 @@ No third-party module is needed and none is installed: this speaks just enough
 WebSocket to drive a page. Launch the game with a debugging port first:
 
     ./play.sh --remote-debugging-port=9222
+
+A throwaway profile is launched on a *different* port and reached with
+`attach(port=...)`, so driving one is never quietly driving the live town.
 """
 import base64, json, os, socket, struct, urllib.request
 
@@ -69,9 +72,10 @@ class WS:
 
 
 class Page:
-    def __init__(self, ws_url):
+    def __init__(self, ws_url, url=''):
         self.ws = WS(ws_url)
         self.id = 0
+        self.url = url          # which page this turned out to be, so a caller can say so
 
     def call(self, method, **params):
         self.id += 1
@@ -92,9 +96,28 @@ class Page:
 
 
 def attach(match='memory-quest', port=9222):
-    for t in targets(port):
-        if t.get('type') == 'page' and (match in t.get('url', '')
-                                        or match in t.get('title', '').lower()):
-            return Page(t['webSocketDebuggerUrl'])
-    raise SystemExit('no matching page. Is it running with --remote-debugging-port='
-                     + str(port) + '?')
+    try:
+        listed = targets(port)
+    except OSError as e:
+        # By far the commonest way this fails is the browser having been started
+        # without the flag, and a urllib traceback does not say so.
+        raise SystemExit(f'nothing answering on port {port} ({e}). Start the game '
+                         f'with --remote-debugging-port={port}.')
+    pages = [t for t in listed
+             if t.get('type') == 'page' and (match in t.get('url', '')
+                                             or match in t.get('title', '').lower())]
+    # `P` opens the platformer into the same profile, and both pages match, so
+    # taking the first one binds to whichever the browser happens to list first
+    # — which for a snapshot restore means writing the town through the runner.
+    # The platformer is only attached to when the caller names it.
+    if 'platformer' not in match:
+        pages = [t for t in pages if 'platformer.html' not in t.get('url', '')]
+    if not pages:
+        raise SystemExit(f'no page matching {match!r} on port {port}. Is it running '
+                         f'with --remote-debugging-port={port}?')
+    # The builder can be open as `?wallpaper` or carry a hash, so the query and
+    # fragment come off before asking whether this is the builder's own page.
+    t = next((t for t in pages
+              if t.get('url', '').split('?')[0].split('#')[0].endswith('/index.html')),
+             pages[0])
+    return Page(t['webSocketDebuggerUrl'], t.get('url', ''))

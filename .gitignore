@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# a restore saves the profile as it stands first; that backup is the live
+# town, not a version of it, and belongs to the machine it was taken on
+snapshots/.pre-restore-*.json

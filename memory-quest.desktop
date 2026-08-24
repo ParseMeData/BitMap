@@ -1,10 +1,13 @@
+# A template, not a working entry: install.sh substitutes the two placeholders
+# below on its way to ~/.local/share/applications, so no one machine's path or
+# version has to be tracked here.
 [Desktop Entry]
 Type=Application
-Name=Memory Quest V4.6
+Name=Memory Quest @VERSION@
 GenericName=Lattice town builder
 Comment=Trace a real town, build it out of diamond glyphs, and plan the insides
-Exec=/home/eden/Projects/memory-quest/play.sh
-Icon=/home/eden/Projects/memory-quest/assets/icon.png
+Exec=@DIR@/play.sh
+Icon=memory-quest
 Terminal=false
 Categories=Game;ArcadeGame;
 StartupNotify=true

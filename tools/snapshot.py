@@ -9,7 +9,14 @@ other half to a file beside it.
 
     ./play.sh --remote-debugging-port=9222 &
     tools/snapshot.py save snapshots/v3.0.json
-    tools/snapshot.py restore snapshots/v3.0.json
+    tools/snapshot.py restore snapshots/v3.0.json [--yes]
+
+`--port`, defaulting to `$MQ_PORT` then 9222, is how a throwaway profile on its
+own port is worked on instead of the live town. A restore makes the profile
+*become* the file, so it saves the profile as it stands to
+`snapshots/.pre-restore-<UTC>.json` first, then shows what is live against what
+is in the file and waits for the word `restore` to be typed. `--yes` skips the
+question, never the backup.
 
 The frozen picture is a data URL in IndexedDB and is carried in full, so a
 snapshot restores the traced map as well as what was built over it. So are
@@ -22,12 +29,22 @@ there is no fixed list of them to write down here. Everything under `hq.` is
 taken instead, minus the few keys that are scratch rather than state — which
 also means a kind of state added later is carried without touching this file.
 """
-import json, pathlib, sys
+import argparse, json, os, pathlib, sys
+from datetime import datetime, timezone
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import cdp
 
 SKIP = {'hq.lastError', 'hq.loads'}          # diagnostics, not the town
+# One *field* is dropped as well, in save(): the Google Maps key inside
+# hq.basemap. Snapshots are committed beside the tag, and a billable key that
+# reaches a commit cannot be taken back out of the history it is in.
+
+# The live town is on 9222; a throwaway profile is launched on another port
+# precisely so a destructive test cannot reach the live one, and that only holds
+# if the tools can be pointed at it too.
+PORT = int(os.environ.get('MQ_PORT', 9222))
+SNAPS = pathlib.Path(__file__).resolve().parent.parent / 'snapshots'
 
 LIST_KEYS = """(() => {
   const out = [];
@@ -80,35 +97,100 @@ WRITE_PIC = """(async (url) => {
       r.result.createObjectStore('pic'); };
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
   return await new Promise((res, rej) => { const t = d.transaction('pic', 'readwrite');
-    t.objectStore('pic').put(url, 'img');
+    const s = t.objectStore('pic');
+    // A snapshot with no frozen picture has to leave the profile with no frozen
+    // picture, or a restore is a merge again: putting the null back would store
+    // a row that basemap.js reads as a picture it has.
+    if (url === null) s.delete('img'); else s.put(url, 'img');
     t.oncomplete = () => res(true); t.onerror = () => rej(t.error); });
 })"""
 
 
-def save(path):
-    p = cdp.attach()
+def counts(snap):
+    """→ (shapes, markers, interiors, locus pictures) for a snapshot dict.
+
+    Both sides of the restore question are read through this, so the live
+    profile and the file on disk are counted by the same code.
+    """
+    ls = snap.get('localStorage') or {}
+    return (len(json.loads(ls.get('hq.shapes') or '[]')),
+            len(json.loads(ls.get('hq.markers') or '[]')),
+            len([k for k in ls if k.startswith('hq.rooms.')]),
+            len(snap.get('loci') or {}))
+
+
+def save(path, page=None, port=PORT, strip=True):
+    """Write the profile to `path`; returns the snapshot dict it wrote.
+
+    `page` is for a caller that has already attached — restore takes its own
+    backup down the same connection rather than opening a second one.
+    """
+    p = page or cdp.attach(port=port)
+    if page is None:
+        print(f'attached to {p.url}')
     keys = [k for k in p.js(LIST_KEYS) if k not in SKIP]
     state = {k: p.js(f'localStorage.getItem({json.dumps(k)})') for k in keys}
+    # See SKIP: the key is billable and a snapshot is a committed file. The
+    # pre-restore backup is neither — it is gitignored, and it is the only
+    # copy of what is about to be destroyed, so it keeps the key.
+    if strip and state.get('hq.basemap'):
+        try:
+            bm = json.loads(state['hq.basemap'])
+            # valid JSON that is not an object has no .get, and AttributeError
+            # is not a ValueError — basemap.js only ever writes a dict, but a
+            # hand-edited key should not be able to abort a save
+            if isinstance(bm, dict) and bm.get('gkey'):
+                bm['gkey'] = ''
+                state['hq.basemap'] = json.dumps(bm)
+                print('stripped the Google Maps key from hq.basemap')
+        except ValueError:
+            pass        # not JSON: leave it exactly as the page had it
     pic = p.js(READ_PIC)
     loci = p.js(READ_LOCI) or {}
     out = {'version': 3, 'localStorage': state, 'picture': pic, 'loci': loci}
     f = pathlib.Path(path)
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1))
-    shapes = json.loads(state.get('hq.shapes') or '[]')
-    markers = json.loads(state.get('hq.markers') or '[]')
-    rooms = [k for k in keys if k.startswith('hq.rooms.')]
-    inside = sum(len(json.loads(state[k] or '[]')) for k in rooms)
+    shapes, markers, rooms, pics = counts(out)
+    inside = sum(len(json.loads(state[k] or '[]'))
+                 for k in keys if k.startswith('hq.rooms.'))
     lb = sum(len(v or '') for v in loci.values())
-    print(f'saved {f}  ·  {len(shapes)} shapes, {len(markers)} markers, '
-          f'{len(rooms)} interiors holding {inside} shapes, '
-          f'{len(loci)} locus pictures ({lb // 1024} KB), '
+    print(f'saved {f}  ·  {shapes} shapes, {markers} markers, '
+          f'{rooms} interiors holding {inside} shapes, '
+          f'{pics} locus pictures ({lb // 1024} KB), '
           f'picture {len(pic) if pic else 0} bytes, {f.stat().st_size} bytes total')
+    return out
 
 
-def restore(path):
+def confirm(live, data, path):
+    """Show the profile against the file, and make the word be typed."""
+    for label, c in (('live', counts(live)), ('file', counts(data))):
+        print(f'  {label}  {c[0]:>4} shapes  {c[1]:>3} markers  '
+              f'{c[2]:>3} interiors  {c[3]:>3} locus pictures')
+    print(f'{path} would replace the live profile, removing whatever it does '
+          'not have.')
+    try:
+        typed = input('type restore to go ahead: ').strip()
+    except EOFError:
+        # Nothing is reading the prompt, so nothing has agreed to it either.
+        sys.exit('not a terminal — pass --yes if this is really what you want.')
+    if typed != 'restore':
+        sys.exit('nothing restored.')
+
+
+def restore(path, port=PORT, yes=False):
     data = json.loads(pathlib.Path(path).read_text())
-    p = cdp.attach()
+    p = cdp.attach(port=port)
+    print(f'attached to {p.url}')
+    # The profile is gone a moment from now, so it is written out first — and
+    # that same save is the live side of the counts confirm() asks about. The
+    # name is stamped at run time; there is no meaningful UTC "now" at import.
+    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    # Beside the tagged snapshots rather than beside the shell's cwd, so a
+    # backup is always somewhere the next session knows to look.
+    live = save(str(SNAPS / f'.pre-restore-{stamp}.json'), page=p, strip=False)
+    if not yes:
+        confirm(live, data, path)
     saved = data.get('localStorage') or {}
     # A restore is the profile *becoming* the file, not the file being merged
     # into it: an interior built since the snapshot has no key in it, and
@@ -122,9 +204,10 @@ def restore(path):
             p.js(f'localStorage.removeItem({json.dumps(k)})')
         else:
             p.js(f'localStorage.setItem({json.dumps(k)}, {json.dumps(v)})')
-    pic = data.get('picture')
-    if pic:
-        p.js(f'({WRITE_PIC})({json.dumps(pic)})')
+    # Written whether or not the file has a picture, for the same reason the
+    # loci are: a snapshot taken with no underlay has to clear the one that is
+    # there, or the profile keeps a traced map the file says was removed.
+    p.js(f'({WRITE_PIC})({json.dumps(data.get("picture"))})')
     # written whether or not the file has any: an empty set has to clear the
     # store, or a locus the snapshot says is blank keeps yesterday's picture
     p.js(f'({WRITE_LOCI})({json.dumps(data.get("loci") or {})})')
@@ -133,6 +216,16 @@ def restore(path):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3 or sys.argv[1] not in ('save', 'restore'):
-        sys.exit(__doc__)
-    (save if sys.argv[1] == 'save' else restore)(sys.argv[2])
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('action', choices=('save', 'restore'))
+    ap.add_argument('path')
+    ap.add_argument('--port', type=int, default=PORT,
+                    help=f'debugging port to attach to (default {PORT}, $MQ_PORT)')
+    ap.add_argument('--yes', action='store_true',
+                    help='restore without being asked to type the word')
+    a = ap.parse_args()
+    if a.action == 'save':
+        save(a.path, port=a.port)
+    else:
+        restore(a.path, port=a.port, yes=a.yes)

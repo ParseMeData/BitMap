@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
 <title>Memory Quest V4.6</title>
+<!-- a Chromium app-mode window takes its window and taskbar icon from the
+     page favicon, so without this the window wears the browser's own -->
+<link rel="icon" href="assets/icon.png">
 <script>
 /* name the window before it maps, so the KWin wallpaper rule matches it
    the moment it appears rather than a frame later */
@@ -37,7 +40,6 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #mapbar input[type=range]{width:74px;accent-color:var(--flare);height:14px}
 #mapbar label{display:flex;align-items:center;gap:5px}
 #mapbar .btn{padding:5px 9px}
-#mapbar .btn.sel{background:var(--bone);color:var(--ground)}
 #mapbar .mapsrc{display:flex;gap:4px}
 #mapbar #mapkey{width:150px}
 #mapnote{color:var(--dim);max-width:26ch;overflow:hidden;text-overflow:ellipsis;
@@ -45,11 +47,23 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #mapcred{color:var(--faint);text-transform:none;letter-spacing:.02em;font-size:8.5px}
 .glass{background:rgba(8,8,11,.72);border:1px solid rgba(237,234,227,.18);
   backdrop-filter:blur(12px) saturate(1.05)}
+/* every panel that scrolls wears the same bar. The two text areas were left
+   out and fell back to the browser's own, which is a bright bar in a --well
+   trough — the one place a light scrollbar shows against a dark ground. */
+#tune::-webkit-scrollbar,#palette::-webkit-scrollbar,#route::-webkit-scrollbar,
+#porder::-webkit-scrollbar,#pjson::-webkit-scrollbar{width:6px}
+#tune::-webkit-scrollbar-thumb,#palette::-webkit-scrollbar-thumb,
+#route::-webkit-scrollbar-thumb,#porder::-webkit-scrollbar-thumb,
+#pjson::-webkit-scrollbar-thumb{background:var(--thumb)}
 #hud{position:fixed;left:16px;top:14px;padding:10px 14px;display:flex;gap:18px;
   font-size:10px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
 #hud b{color:var(--dim);font-weight:400;margin-right:6px}
 #hud span{font-variant-numeric:tabular-nums}
 #hsparks{color:var(--gold)}
+/* the map bar is centred in the same top lane as the HUD and runs to about
+   1260px wide, so below roughly 1400px the two collide and the bar wraps
+   down onto #msg. While it is open, the HUD is the one that gives way. */
+body.mapping #hud{display:none}
 #msg{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:3;
   font-size:12px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;
   text-shadow:0 0 18px rgba(242,193,78,.5);pointer-events:none}
@@ -67,6 +81,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #toast.soft{border-color:rgba(237,234,227,.3);color:var(--bone)}
 #fatalmsg{color:var(--bone);font-size:12px;letter-spacing:.04em;text-transform:none;
   max-width:80ch;white-space:pre-wrap;text-align:left;margin-top:12px}
+#fatalhint{color:var(--dim);font-size:10px;margin-top:14px;display:block}
 #pause h1{font-size:14px;letter-spacing:.5em;font-weight:400;margin-bottom:4px}
 #presume{color:var(--gold);font-size:9.5px;letter-spacing:.28em;margin-bottom:14px}
 #pause{cursor:pointer}
@@ -75,10 +90,14 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #pause td:first-child{color:var(--bone);text-align:right}
 #tune{position:fixed;right:16px;top:14px;width:330px;max-height:calc(100vh - 28px);
   overflow-y:auto;padding:14px;z-index:4;display:flex;flex-direction:column;gap:9px}
-#tune::-webkit-scrollbar{width:6px}#tune::-webkit-scrollbar-thumb{background:var(--thumb)}
 .phead{display:flex;justify-content:space-between;align-items:center;
   letter-spacing:.26em;font-size:10px;text-transform:uppercase}
 .phead b{color:var(--flare);font-weight:400}
+.pbtns{display:flex;gap:6px}
+/* the tune panel's head buttons are the only ones with words either side of
+   them, so they carry the side padding the chip grid does not need */
+#tune .phead .btn{padding:7px 10px}
+#tbody{display:flex;flex-direction:column;gap:9px}
 .prow{display:flex;align-items:center;gap:10px}
 .prow label{width:74px;flex:none;color:var(--dim);font-size:9px;letter-spacing:.18em;
   text-transform:uppercase}
@@ -92,7 +111,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
   font:400 9px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--bone);
   background:none;transition:background .12s,color .12s}
 .chip:hover,.btn:hover{background:rgba(237,234,227,.12)}
-.chip.sel{background:var(--bone);color:var(--ground)}
+.chip.sel,.btn.sel{background:var(--bone);color:var(--ground)}
 .pfoot{display:grid;grid-template-columns:1fr 1.4fr;gap:6px}
 /* wallpaper duty: no chrome at all, and a hint that only shows while drifting */
 body.wall #hud,body.wall #keys,body.wall #pause,body.wall #msg{display:none}
@@ -104,7 +123,10 @@ body.wall:not(.drifting) #wallhint{opacity:0}
 /* build mode: layers, the kind palette, and the map cursor that goes with it */
 #palette{position:fixed;left:16px;bottom:14px;z-index:4;width:214px;padding:12px;
   display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 28px);overflow-y:auto}
-#palette::-webkit-scrollbar{width:6px}#palette::-webkit-scrollbar-thumb{background:var(--thumb)}
+/* the room list opens in the same corner and is taller than what is left of
+   the palette below it, so the two overlap; the list is what you are working
+   in while it is open */
+body.ordering #palette{display:none}
 #klayers{display:flex;flex-direction:column;gap:4px}
 .krow{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 9px;
   border:1px solid rgba(237,234,227,.14);cursor:pointer;font-size:9.5px;letter-spacing:.18em;
@@ -175,18 +197,20 @@ body.wall #inside,body.wall #enterhint{display:none}
 #porder{background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
   font:400 11px/1.65 var(--mono);padding:7px 8px;letter-spacing:.04em;resize:vertical;
   min-height:96px;width:100%}
-#porder::placeholder{color:var(--faint)}
 #pgen.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
 body.locus #palace{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
 #route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
   overflow-y:auto;padding:12px;z-index:4;display:flex;flex-direction:column;gap:7px}
-#route::-webkit-scrollbar{width:6px}#route::-webkit-scrollbar-thumb{background:var(--thumb)}
 body.tuning #route{display:none}
 #kname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
-#kname::placeholder{color:var(--faint)}
+/* every field the user types into, in one colour: #kname and #kmname hold the
+   same words and are on screen together in build mode, so two greys read as
+   two different kinds of field */
+#porder::placeholder,#kname::placeholder,#kmname::placeholder,
+#mapbar input[type=text]::placeholder{color:var(--faint)}
 #kroute{display:flex;flex-direction:column;gap:3px}
 .rrow{display:flex;align-items:center;gap:6px;padding:4px 5px;cursor:pointer;
   border:1px solid rgba(237,234,227,.12);font-size:9px;letter-spacing:.1em;
@@ -222,7 +246,6 @@ body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route{displ
 body.rooms .fitonly{display:none!important}
 body:not(.rooms) .roomonly{display:none!important}
 body.placing #gl{cursor:move}
-body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}
 body.arming,body.arming #gl{cursor:copy}
 #pjson{width:100%;height:56px;background:var(--well);color:var(--bone);
@@ -272,7 +295,7 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
 <div id="boot">building the lattice…</div>
-<div id="fatal" hidden><span id="fatalhead"></span><br><span id="fatalmsg"></span><span style="color:var(--dim);font-size:10px;margin-top:14px;display:block">if this is a stale build, hard-reload with ctrl+shift+R</span></div>
+<div id="fatal" hidden><span id="fatalhead"></span><span id="fatalmsg"></span><span id="fatalhint">if this is a stale build, hard-reload with ctrl+shift+R</span></div>
 
 <div id="pause" hidden>
   <h1>Paused</h1>
@@ -318,12 +341,12 @@ body.arming,body.arming #gl{cursor:copy}
 
 <div id="tune" class="glass" hidden>
   <div class="phead"><span>Tune <b>lattice</b></span>
-    <span style="display:flex;gap:6px">
-      <button class="btn" id="premix" style="padding:7px 10px">Remix</button>
-      <button class="btn" id="pclose" style="padding:7px 10px">✕</button>
+    <span class="pbtns">
+      <button class="btn" id="premix">Remix</button>
+      <button class="btn" id="pclose">✕</button>
     </span>
   </div>
-  <div id="tbody" style="display:flex;flex-direction:column;gap:9px"></div>
+  <div id="tbody"></div>
   <div class="pfoot">
     <button class="btn" id="preset">Reset</button>
     <button class="btn" id="pcopy">Copy settings</button>
@@ -349,11 +372,35 @@ function hqNote(msg, err){
 }
 /* any runtime failure lands on screen rather than only in devtools */
 function hqReport(msg){
-  try { localStorage.setItem('hq.lastError', msg + '  ·  ' + new Date().toISOString()); } catch (err){}
+  /* A frame that throws throws again next frame, and every report rearmed the
+     banner's timeout — so one slip wrote storage sixty times a second and left
+     a banner that never faded and could not be dismissed. The same message is
+     counted and said once a second instead; a different one is always said at
+     once, because a new failure is the news. */
+  const now = Date.now();
+  if (msg === hqReport._msg && now - hqReport._last < 1000){ hqReport._n++; return; }
+  const line = msg === hqReport._msg && hqReport._n ? msg + ' x' + (hqReport._n + 1) : msg;
+  hqReport._msg = msg; hqReport._last = now; hqReport._n = 0;
+  try { localStorage.setItem('hq.lastError', line + '  ·  ' + new Date().toISOString()); } catch (err){}
   /* a runtime slip is not a dead game: say so in a banner you can ignore,
      never behind a full-screen sign claiming the browser lacks WebGL2 */
-  hqNote(msg, true);
+  hqNote(line, true);
 }
+hqReport._msg = ''; hqReport._last = 0; hqReport._n = 0;
+/* A save runs on every drag frame, so a save that fails fails on every one of
+   them and only the first is worth saying. Latch per thing being saved — the
+   town and a plan fail separately — and go quiet again once it writes. */
+const hqStoreLatched = new Set();
+function hqStoreFail(what, err){
+  if (hqStoreLatched.has(what)) return;
+  hqStoreLatched.add(what);
+  /* a full store is the one failure with something to do about it, and the
+     traced underlay is far the largest thing this game keeps */
+  hqNote(err && err.name === 'QuotaExceededError'
+    ? 'could not save ' + what + ' — browser storage is full. Freeing the traced underlay makes room.'
+    : 'could not save ' + what + ' — ' + ((err && err.message) || err), true);
+}
+function hqStoreOK(what){ hqStoreLatched.delete(what); }
 addEventListener('error', e => hqReport(
   ((e.message || (e.error && e.error.message)) || 'error') + ' @ ' +
   (e.filename || '').split('/').pop() + ':' + e.lineno));
@@ -377,15 +424,42 @@ addEventListener('unhandledrejection', e => hqReport(
       el.src = src + cb;
       el.async = false;
       el.onerror = function(){
-        var f = document.getElementById('fatal');
-        f.hidden = false;
-        f.firstChild.textContent = 'could not load ' + src;
+        document.getElementById('fatal').hidden = false;
+        document.getElementById('fatalhead').textContent = 'could not load ' + src;
         document.getElementById('fatalmsg').textContent =
-          'The game files are not where the page expects them. Run it from its own\n' +
-          'folder — ~/Projects/memory-quest — with ./play.sh';
+          'The game files are not where the page expects them.\n' +
+          'Run it from the folder it was cloned into, with ./play.sh';
       };
       document.body.appendChild(el);
     });
+  /* boot() is fully synchronous once the map picture decodes, so a boot screen
+     still up eight seconds later is a load that stopped rather than one that is
+     slow — and with nothing watching, "building the lattice…" sits there for
+     good. Whatever threw on the way is already in storage; say that instead. */
+  var T0 = new Date().toISOString();          // see the freshness test below
+  var BOOT0 = (document.getElementById('boot') || {}).textContent;
+  setTimeout(function(){
+    var b = document.getElementById('boot'), f = document.getElementById('fatal');
+    if (b.hidden || !f.hidden) return;          // it booted, or has already said why
+    /* hq.lastError is kept to be found later and nothing ever clears it — not
+       even a restore, which skips it — so a banner-level slip from days ago
+       would otherwise be named as the cause of today's hang. Both stamps come
+       from toISOString(), and same-format UTC strings sort as they read. */
+    var last = '';
+    try {
+      var v = localStorage.getItem('hq.lastError') || '';
+      var at = v.split('  \u00b7  ').pop();   // the stamp is last; a message may hold anything
+      if (at && at >= T0) last = v;
+    } catch (err){}
+    /* the boot screen may already carry a better answer than this one —
+       game.js writes the real reason into it and leaves it up — and #fatal
+       covers the whole viewport, so firing would otherwise hide the more
+       precise message behind the vaguer one */
+    var said = b.textContent && b.textContent !== BOOT0 ? b.textContent : '';
+    f.hidden = false;
+    document.getElementById('fatalhead').textContent = 'the lattice never finished building';
+    document.getElementById('fatalmsg').textContent = said || last || 'No error was recorded.';
+  }, 8000);
 })();
 </script>
 </body>

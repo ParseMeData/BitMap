@@ -108,6 +108,43 @@ const Build = (() => {
   /* A gap belongs to the plan, not to the fit-out: it is a statement about
      where a wall is not, and walls are what the plan is made of. */
   const isGap = s => (Kinds.by[s.kind] || {}).cuts;
+  /* ── the third verb ─────────────────────────────────────────────────────
+     A modifier is a statement ABOUT the shapes it lies over rather than a
+     shape of its own. It draws nothing, stamps nothing and takes nothing:
+     what it changes is how what is already there comes out. Everything that
+     follows from that is spelled out where it is enforced — the occluder
+     list, the walk grid, and the per-shape gathering in rebuild(). */
+  const isMod = s => !!(Kinds.by[s.kind] || {}).modifies;
+  /* ── a line whose ends are anchors ──────────────────────────────────────
+     A river is one line bent in many places with its two ends staying put,
+     which is the whole difference between it and a chain of creek segments.
+     It is enforced by emitting the two ends as anchors rather than as
+     points: they are still drawn, because an end you cannot see is an end
+     you will keep trying to grab, but the hit test skips them, so there is
+     nothing there to take hold of.
+
+     The lock has a way off, because a river you can never re-anchor is a
+     river you have to delete and draw again. It is held on the SELECTION and
+     not on the shape: nothing about it is saved and nothing survives
+     clicking elsewhere, since an end that stayed unlocked between sessions
+     would be a lock that protects you right up until you forget you undid
+     it. */
+  let freeSel = null;
+  const anchorKind = s => !!(Kinds.by[s.kind] || {}).anchored;
+  /* One predicate for 'could this shape have anchors', so the control that
+     offers the unlock and the code that honours it cannot disagree about
+     which shapes it applies to. */
+  const anchorable = s => !!s && s.type === 'line' && anchorKind(s);
+  /* The unlock is held on the selection, so it has to die with the
+     selection — otherwise a river unlocked, left, and come back to is still
+     unlocked, which is the lock protecting you right up until you have
+     forgotten you undid it. Dropped here, when the selection is seen to have
+     moved on, rather than at each of the five places a selection is
+     assigned: a sixth can be added later without knowing to clear it. */
+  const anchored = s => {
+    if (freeSel && freeSel !== sel) freeSel = null;
+    return anchorable(s) && freeSel !== s;
+  };
   /* What the plan is made of: the rooms, the holes knocked in them, and the
      ways between them. All three are edited at plan level and none of them
      is furniture. */
@@ -149,7 +186,10 @@ const Build = (() => {
                feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                bright: defs.bright * (k.bright0 || 1),
                grain: defs.grain, scale: defs.scale,
-               jitter: defs.jitter, scatter: defs.scatter,
+               /* a kind that draws nothing has to be born already doing
+                  something, or dropping it reads as a tool that is broken */
+               jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
+               scatter: k.scatter0 !== undefined ? k.scatter0 : defs.scatter,
                pad: k.pad0 !== undefined ? k.pad0 : defs.pad,
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
@@ -170,6 +210,9 @@ const Build = (() => {
     if (type === 'line'){
       const d = g * (k.len0 ? k.len0 / 2 : 5);
       s.pts = [[snapC(wx - d), snapC(wy)], [snapC(wx + d), snapC(wy)]];
+      /* and how wide, for the same reason it can say how long: a river born
+         two cells across is a ditch with the wrong name on it */
+      if (k.width0) s.width = snapW(cellSize() * k.width0);
     } else {
       s.x = snapC(wx); s.y = snapC(wy);
       if (k.w0){ s.w = snapS(g * k.w0); s.h = snapS(g * (k.h0 || k.w0)); }
@@ -218,7 +261,8 @@ const Build = (() => {
                  ctrl: null,
                  feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
-                 grain: 1, scale: 1, jitter: 0, scatter: 0,
+                 grain: 1, scale: 1,
+                 jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
@@ -258,6 +302,7 @@ const Build = (() => {
     if (s.label && s.room) G.shapes = G.shapes.filter(x => x.room !== s.room);
     else G.shapes.splice(i, 1);
     if (sel === s) sel = null;
+    if (freeSel === s) freeSel = null;
     changed();
   }
 
@@ -376,7 +421,13 @@ const Build = (() => {
      with a hole punched where they meet. */
   const takes = (o, s) => {
     const k = Kinds.by[o.kind];
-    return !k || !k.clears || k.clears.indexOf(s.kind) >= 0;
+    if (!k) return true;
+    /* A modifier takes no ground from anything, ever. Occlusion is how a
+       cell is made not to exist, and a demolish area that occluded would be
+       a delete tool wearing the wrong name — the terrain under it has to
+       survive, roads included, or none of the rest of it means anything. */
+    if (k.modifies) return false;
+    return !k.clears || k.clears.indexOf(s.kind) >= 0;
   };
 
   /* A kind says `true` to run into everything else that connects, or names
@@ -411,6 +462,44 @@ const Build = (() => {
       if (mine.length || had) s._buf = null;     // the hole may have moved
       s._cut = mine.length ? mine : null;
     }
+    /* ── what has been demolished, and over which shapes ──────────────────
+       The parallel of the cut list above, and deliberately not the same
+       thing. A cut names the kinds it takes ground from; a demolish area
+       names nothing, because there is nothing it cannot weather — roads
+       included, and roads are the case that had to be checked, since a road
+       reaches this loop through scan() like every other kind and takes the
+       modifiers off the shape the same way. And it is matched by bbox rather
+       than by z, because what it acts on is whatever it lies over, not what
+       happens to be drawn beneath it.
+
+       Cache invalidation is the whole difficulty, and it is answered in two
+       halves. The geometric half is already done: changed() clears the
+       buffer of every shape whose reach meets the moved shape's OLD or NEW
+       footprint, and a demolish area is a shape like any other to that loop,
+       so a drag invalidates both what it has left and what it has arrived
+       over. What changed() never sees is a rebuild it was not the cause of —
+       hiding the layer this area sits on drops it out of `order` entirely,
+       and every shape it was weathering would keep its ruined buffer for
+       ever. So the set that was in force last time is remembered, and a
+       shape whose set has changed at all gives its buffer up.
+
+       Remembered as a key rather than by the "any cut at all" test the block
+       above uses, because that test rebuilds its subjects on every single
+       rebuild — which is right for a wall gap and ruinous for this, where
+       one area covers a district and a rebuild runs on every frame of every
+       drag. The key is exact: order is stable, so a swap of one area for
+       another shows up even though the count did not move. */
+    const mods = order.filter(isMod);
+    const modOf = new Array(order.length);
+    for (let i = 0; i < order.length; i++){
+      const s = order[i];
+      const m = (!mods.length || isMod(s)) ? null
+        : mods.filter(x => bbHit(box[i], reachBox(x)));
+      modOf[i] = m && m.length ? m : null;
+      const key = modOf[i] ? modOf[i].map(x => x.id).join(',') : '';
+      if (key !== (s._modKey || '')) s._buf = null;
+      s._modKey = key;
+    }
     let n = 0;
     for (let i = 0; i < order.length; i++){
       const s = order[i];
@@ -423,7 +512,7 @@ const Build = (() => {
         for (let j = i + 1; j < order.length; j++)
           if (bbHit(box[i], box[j]) && !connects(s, order[j]) && takes(order[j], s))
             occ.push(order[j]);
-        s._buf = Kinds.build(s, cellSize(), occ);
+        s._buf = Kinds.build(s, cellSize(), occ, modOf[i]);
       }
       s._bb = box[i];
       n += s._buf.length;
@@ -454,6 +543,12 @@ const Build = (() => {
       for (const s of G.shapes){
         if (s.kind !== k.id) continue;
         if (k.cuts) continue;                       // a cut lays nothing down
+        /* Nor does a modifier, and for a sharper reason: a demolish area
+           over a road has to leave that road walkable. Blocking would make
+           the ruin a wall, opening it would make it a bridge over the water
+           it was dragged across, and both are it deciding something it was
+           never asked about. It says nothing here at all. */
+        if (k.modifies) continue;
         const cut = cuts.filter(c => Kinds.by[c.kind].clears.indexOf(k.id) >= 0);
         /* A route thinner than a walk tile would stamp a dotted line of
            walkable tiles, so a band stamps by distance with half a tile of
@@ -530,7 +625,14 @@ const Build = (() => {
   }
   function handles(s){
     if (s.type === 'line'){
-      const out = s.pts.map((p, i) => ({x: p[0], y: p[1], tag: 'p' + i, kind: 'point'}));
+      /* The anchors are still SHOWN — an end you cannot see is an end you
+         will keep trying to grab — they are simply not targets. What happens
+         if you try is that the pointer goes straight past them into the body
+         and the whole river moves, which is the one thing moving an end was
+         never meant to mean. */
+      const lock = anchored(s), last = s.pts.length - 1;
+      const out = s.pts.map((p, i) => ({x: p[0], y: p[1], tag: 'p' + i,
+        kind: lock && (i === 0 || i === last) ? 'anchor' : 'point'}));
       for (let i = 0; i < s.pts.length - 1; i++){
         const m = bendAt(s, i);
         out.push({x: m[0], y: m[1], tag: 'b' + i, kind: 'bend'});
@@ -580,10 +682,13 @@ const Build = (() => {
        its outline is the only evidence it exists, and an outline alone says
        where it is without saying what it takes. Every cell it covers gets a
        mark, so what you are looking at is the diamonds that will go. */
-    const gap = !!isGap(s) && s.type !== 'line';
-    const col = gap ? AQUA : (isSel ? FLARE : IDLE);
-    const al = isSel ? 0.85 : (gap ? 0.5 : 0.3);
-    if (gap) m = hatch(a, m, s, isSel);
+    /* The demolish area is the same case as the wall gap and gets the same
+       treatment: it puts no diamonds of its own on the plate, so a mark on
+       every cell it covers is the only way to see what it has hold of. */
+    const bare = (!!isGap(s) || isMod(s)) && s.type !== 'line';
+    const col = bare ? AQUA : (isSel ? FLARE : IDLE);
+    const al = isSel ? 0.85 : (bare ? 0.5 : 0.3);
+    if (bare) m = hatch(a, m, s, isSel);
     const r = Math.max(2 * px, cellSize() * 0.15);
     const N = 44;
     const dot = (x, y) => { m = put(a, m, x, y, col[0], col[1], col[2], al, r, 0, 0, 0, 1); };
@@ -636,7 +741,7 @@ const Build = (() => {
           m = put(a, m, h.x, h.y, GOLD[0], GOLD[1], GOLD[2], 1, big * 1.2, 1, 0, 0, 1);
         } else if (h.kind === 'bend'){
           m = put(a, m, h.x, h.y, AQUA[0], AQUA[1], AQUA[2], 0.95, big * 0.85, 1, 0, 0, 1);
-        } else if (h.kind === 'edge'){
+        } else if (h.kind === 'edge' || h.kind === 'anchor'){
           m = put(a, m, h.x, h.y, BONE[0], BONE[1], BONE[2], 0.95, big * 0.7, 0, 0, 0, 1);
         } else {
           m = put(a, m, h.x, h.y, FLARE[0], FLARE[1], FLARE[2], 1, big, 0, 0, 0, 1);
@@ -735,12 +840,14 @@ const Build = (() => {
         if (e.shiftKey && sel.type === 'line' && near(sel, p, GRAB())){
           addPoint(sel, p); return;
         }
-        for (const h of handles(sel))
+        for (const h of handles(sel)){
+          if (h.kind === 'anchor') continue;      // shown, never taken
           if (Math.hypot(h.x - p[0], h.y - p[1]) < hr){
             drag = {mode: h.tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
             canvas.setPointerCapture(e.pointerId);
             return;
           }
+        }
       }
       if (other){
         sel = other;
@@ -945,6 +1052,12 @@ const Build = (() => {
       '<div class="plabel fitonly">Adjust</div><div id="ktune" class="fitonly"></div>' +
       '<div class="kfoot fitonly"><button class="btn" id="kmask">Mask</button>' +
       '<button class="btn" id="kclearlayer">Clear layer</button></div>' +
+      /* Only ever shown with an anchored line selected, because it is the
+         one control here that is about a single shape rather than about what
+         you are placing next — and a button carrying its own state as its
+         label is how the two heading cycles already read. */
+      '<div class="kfoot one fitonly" id="kendsrow" hidden>' +
+      '<button class="btn" id="kends">Ends anchored</button></div>' +
       '<div class="plabel fitonly">Markers</div>' +
       '<div id="kmarkers" class="fitonly"></div>' +
       '<input id="kmname" class="fitonly" type="text" spellcheck="false" ' +
@@ -1022,6 +1135,11 @@ const Build = (() => {
     for (const [key, label, min, max, step] of
          [['hbright', 'Bright', 40, 220, 5], ['hjitter', 'Jitter', 0, 150, 5]])
       $('#khtune').appendChild(slider(key, label, min, max, step));
+    $('#kends').onclick = () => {
+      if (!anchorable(sel)) return;
+      freeSel = freeSel === sel ? null : sel;
+      syncUI();
+    };
     $('#kmask').onclick = () => {
       if (sel){ sel.mask = !sel.mask; defs.mask = sel.mask; changed(sel); }
       else { defs.mask = !defs.mask; syncUI(); }
@@ -1230,6 +1348,16 @@ const Build = (() => {
     });
     const mk = $('#kmask');
     if (mk) mk.classList.toggle('sel', sel ? !!sel.mask : defs.mask);
+    /* Inverted while the ends are FREE, because inversion means armed
+       everywhere else in this palette and free is the state that is doing
+       something you would want to be reminded of. */
+    const er = $('#kendsrow'), eb = $('#kends');
+    if (er) er.hidden = !anchorable(sel);
+    if (eb && anchorable(sel)){
+      const free = !anchored(sel);
+      eb.textContent = free ? 'Ends free' : 'Ends anchored';
+      eb.classList.toggle('sel', free);
+    }
   }
 
   /* the kind chips belong to the active layer, so the palette only ever
@@ -1410,6 +1538,10 @@ const Build = (() => {
           '<b>Enter</b> goes inside · <b>del</b> removes';
       else if (!sel)
         st.innerHTML = 'nothing selected · click a shape, or drag one out of Place';
+      else if (sel.type === 'line' && anchored(sel))
+        st.innerHTML = '<b>one line</b> · <b>shift-click</b> adds a point · ' +
+          '<b>◇ aqua</b> bends the segment · <b>ends anchored</b> · drag the body to ' +
+          'move the whole river';
       else if (sel.type === 'line')
         st.innerHTML = '<b>drag</b> body · <b>ends</b> move · <b>◇ aqua</b> bends the segment · ' +
           '<b>shift-click</b> adds a point · <b>[ ]</b> width';
@@ -1478,7 +1610,7 @@ const Build = (() => {
      layer and edit mode are where you left them, because being thrown back
      to Rooms and the first layer on every undo is its own small loss. */
   function reload(){
-    sel = null; drag = null; armed = null; band = null;
+    sel = null; drag = null; armed = null; band = null; freeSel = null;
     document.body.classList.remove('arming');
     load();
     rebuild();
@@ -1585,7 +1717,7 @@ const Build = (() => {
     Kinds.use(scope);
     KEY = key;
     seeVis();
-    sel = null; drag = null; armed = null; lastKind = null;
+    sel = null; drag = null; armed = null; lastKind = null; freeSel = null;
     document.body.classList.remove('arming');
     Markers.disarm();
     load();

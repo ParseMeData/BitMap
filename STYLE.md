@@ -138,7 +138,13 @@ chip in the palette, and the key its terrain is generated around
 
     grass     #5C9648      water     #2E66B8      creek     #3E7FBF
     trees     #2A6640      park      #7BB86F      road      #FFFFFF
-    buildings #B7B0A5      houses    #C9A488
+    buildings #B7B0A5      houses    #C9A488      river     #3E7FBF
+    demolish  #3A3A44
+
+River shares creek's swatch deliberately — the swatch is the key a kind's
+terrain is generated around, and a river is generated around exactly creek's.
+Demolish shares the remove-wall grey for the same reason the floor's does: a
+tool that draws nothing of its own should not arrive wearing a colour.
 
 **Inside a building**
 

@@ -286,6 +286,45 @@ const Kinds = (() => {
     return false;
   }
 
+  /* ── what has been demolished ──────────────────────────────────────────
+     A demolish area is the third thing this engine can do to a cell, and it
+     is neither of the other two. An occluder TAKES the ground: the cell is
+     never drawn, and what was under it is gone while the occluder is there.
+     A cut REMOVES ground from the walk grid. A modifier does neither — it
+     leaves every cell exactly where it is, owned by exactly the shape that
+     owned it, and only changes the answer this file gives when it is asked
+     to draw one. Nothing is written back to the shape underneath, which is
+     the whole guarantee: take the area away and the next pass reads the
+     same stored fields it always read, so the terrain returns byte for byte.
+
+     Overlapping areas do not compound. The deepest bite wins outright,
+     because two stacked scatters multiply into a hole, and a hole is the
+     one thing demolition here is deliberately not.
+
+     The answer comes back on a scratch record rather than a fresh object,
+     because it is asked once per lattice cell of every shape a demolish
+     area lies over — up to MAX_CELLS of them in a single pass — and an
+     allocation there is a frame's worth of garbage for every drag frame. */
+  const RUIN = {m: null, w: 0};
+  function bitten(mods, x, y, cell){
+    RUIN.m = null; RUIN.w = 0;
+    for (let i = 0; i < mods.length; i++){
+      const m = mods[i];
+      const d = geo.depth(m, x, y);
+      if (d <= 0) continue;
+      /* the area's own Feather, read by the same arithmetic scan() reads a
+         shape's own with: depth in cells over feather in cells, clamped. It
+         ramps the damage down to nothing at the rim, which is what stops the
+         ruin being a stamped-out circle with untouched terrain hard against
+         it. A Feather of zero says hard-edged, exactly as it does anywhere
+         else in this file. */
+      const f = Math.max(0, m.feather || 0);
+      const w = f > 0 ? clamp01(d / cell / f) : 1;
+      if (w > RUIN.w){ RUIN.w = w; RUIN.m = m; }
+    }
+    return RUIN.m !== null;
+  }
+
   const MAX_CELLS = 26000;          // one pass's ceiling, so a big drag can't stall a frame
   function scan(s, cell, fn){
     const bb = geo.bbox(s), o = geo.origin(s);
@@ -295,6 +334,11 @@ const Kinds = (() => {
     const ov = s.mask ? 0 : Math.round(o[1] / cell);
     const fth = Math.max(0, s.feather || 0);
     const occ = s._occ;
+    /* The demolish areas lying over this shape, hung on it for the duration
+       of its generator exactly the way its occluders are — so every kind
+       written against scan() gets them without being handed a second list,
+       and a kind that never heard of demolition still weathers. */
+    const mods = s._mod;
     /* Grain drops the resolution: sample every nth cell and the pattern is
        addressed at that coarser pitch too, so the whole thing reads as a
        lower-resolution print rather than a thinned-out one. The size the
@@ -332,11 +376,36 @@ const Kinds = (() => {
            what is left is knocked off its seat. Jitter only does the second
            half of that, for an edge that is ragged but still solid. */
         if (scat > 0 && hash(u, v, s.seed + 773) < scat * 0.55) continue;
+        /* ── the same two operations, asked for by somebody else ─────────
+           A demolish area drives Scatter and Jitter through the arithmetic
+           immediately above, with its OWN slider values and its own weight,
+           so the two words mean one thing in this file rather than two.
+           What differs is only the salt, because the ruin has to be a
+           different draw from the terrain's own break-up or the two would
+           agree cell for cell and the damage would be invisible.
+
+           Keyed on the TARGET's (u, v), so the rubble belongs to the ground
+           it is made of and holds still while the area is dragged across it
+           — world coordinates would re-roll it under your hand. Keyed on the
+           AREA's seed, so two areas over the same ground break it up
+           differently. */
+        let rjit = 0, rscat = 0, rseed = 0;
+        if (mods && bitten(mods, wx, wy, cell)){
+          rscat = clamp(RUIN.m.scatter || 0, 0, 1) * RUIN.w;
+          rjit = Math.max(0, RUIN.m.jitter || 0) * RUIN.w;
+          rseed = RUIN.m.seed | 0;
+        }
+        if (rscat > 0 && hash(u, v, rseed + 663) < rscat * 0.55) continue;
         let px = wx, py = wy;
         if (jit > 0 || scat > 0){
           const spread = (jit + scat * 1.6) * cell * grain;
           px += (hash(u, v, s.seed + 771) - 0.5) * spread;
           py += (hash(u, v, s.seed + 772) - 0.5) * spread;
+        }
+        if (rjit > 0 || rscat > 0){
+          const spread = (rjit + rscat * 1.6) * cell * grain;
+          px += (hash(u, v, rseed + 661) - 0.5) * spread;
+          py += (hash(u, v, rseed + 662) - 0.5) * spread;
         }
         fn(px, py, u, v, d / cell, fade);
       }
@@ -347,7 +416,7 @@ const Kinds = (() => {
   const sub = (s, type, x, y, w, h, salt) =>
     ({type, x, y, w, h, r: w / 2, width: w, pts: [[x, y]],
       seed: (s.seed + salt) | 0, mask: s.mask, feather: s.feather,
-      rot: s.rot, _occ: s._occ});
+      rot: s.rot, _occ: s._occ, _mod: s._mod});
 
   /* ── GROUND ────────────────────────────────────────────────────────────
      Dense and low resolution on purpose: diamonds a little wider than
@@ -1005,6 +1074,37 @@ const Kinds = (() => {
         It also means a road crossing a creek clears nothing: the road is
         drawn over it and stamps last, which is exactly a bridge. */
      connects: true},
+    /* ── one river, not thirteen creeks ────────────────────────────────
+       Drawn out of the same generator as the creek and out of the same
+       water, because a river IS a creek here — nothing about what it is
+       made of differs, and giving it a second generator would be two
+       materials for one substance. What differs is how it is EDITED, and
+       that is why it is a kind of its own rather than a variant of creek:
+       a variant is a look everywhere else in this file, and a river is not
+       a look. Its own id is also what makes it additive — a creek drawn
+       before this existed is untouched by it, and the two sit in one town.
+
+       `anchored` is the whole of it: the two ends are grips build mode
+       shows and refuses to take, so the line is shaped from the inside by
+       bending it in as many places as you like while its mouth and its head
+       stay where you put them.
+
+       Born long, and born wide enough to read as a river rather than a
+       ditch with the wrong name on it. `connects` for the reason the creek
+       has it: a creek running into a river is a confluence rather than two
+       channels with a hole punched where they meet, and a road crossing it
+       clears nothing and stamps last, which is exactly a bridge. */
+    {id: 'river',     label: 'River',     layer: 'ground', types: ['line'],
+     /* creek's swatch, not water's, and not one of its own: the swatch is
+        the key a kind's terrain is generated around, and a river's terrain
+        is generated around exactly creek's. The two chips matching is the
+        truth about them — one substance at two scales — and it is what
+        keeps them apart from Water's stiller, deeper blue on the same
+        layer. */
+     walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
+     len0: 16, width0: 4, anchored: true,
+     feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
+     connects: true},
     {id: 'trees',     label: 'Trees',     layer: 'trees',  types: AREA, variants: WOOD,
      walk: 1, stamp: 4, gen: trees,     swatch: '#2A6640'},
     {id: 'park',      label: 'Park',      layer: 'trees',  types: AREA, variants: WOOD,
@@ -1018,7 +1118,41 @@ const Kinds = (() => {
      walk: 0, stamp: 1, gen: buildings, swatch: '#B7B0A5'},
     {id: 'houses',    label: 'Houses',    layer: 'built',  types: AREA,
      variants: ['mixed', 'detached', 'terraced'],
-     walk: 0, stamp: 2, gen: houses,    swatch: '#C9A488'}
+     walk: 0, stamp: 2, gen: houses,    swatch: '#C9A488'},
+    /* ── the demolish area ─────────────────────────────────────────────
+       Not deletion and not occlusion: a MODIFIER, and the engine's third
+       verb. `Remove wall` in the floor registry is the wrong model to copy
+       from — it declares `cuts` and `clears`, which is to say it takes
+       ground away and leaves a hole, and a hole is exactly what nobody
+       asked for out here. Everything under a demolish area stays, roads
+       included; it comes out weathered instead of removed, and moving the
+       area off puts it back untouched because nothing under it was ever
+       written to.
+
+       `modifies` is the flag, and it does three separate jobs, all of them
+       in build.js: the area is kept out of every occluder list (taking
+       ground is deletion by another name), it lays nothing in the walk
+       grid (a ruined road is still a road you walk down), and it is
+       gathered against every shape whose footprint it meets — by bbox
+       rather than by z, since what it acts on is whatever it lies over.
+
+       On the roads layer because a modifier reaches every layer whatever
+       its own, so the only thing its layer decides is where you find it and
+       what you can have selected beside it — and roads are both the layer
+       build mode opens on and the hardest thing it has to weather, which
+       makes them the one you want in front of you while dialling it in.
+
+       It draws nothing, so it is born already doing something: Feather at
+       the same 4 cells any area is born with, and enough Scatter to read as
+       broken the moment it lands. The swatch is the one the floor
+       registry's demolisher already carries — the palette gains a chip and
+       not a colour, and the two tools that draw nothing look alike. */
+    {id: 'demolish',  label: 'Demolish',  layer: 'roads',  types: AREA,
+     /* never read: a modifier is skipped where the walk grid is stamped,
+        because opening or blocking a tile is the one thing it must not do */
+     walk: 1, stamp: 9, gen: nothing,   swatch: '#3A3A44',
+     modifies: true, jitter0: 0.35, scatter0: 0.5,
+     pad0: 0, padFade0: 0, padBreak0: 0}
   ];
   /* what the palette offers: a kind plus the shape it starts as, so a
      roundabout is one chip rather than a mode you have to know about */
@@ -1026,12 +1160,14 @@ const Kinds = (() => {
     {label: 'Grass',      kind: 'grass',     type: 'ellipse'},
     {label: 'Water',      kind: 'water',     type: 'ellipse'},
     {label: 'Creek',      kind: 'creek',     type: 'line'},
+    {label: 'River',      kind: 'river',     type: 'line'},
     {label: 'Trees',      kind: 'trees',     type: 'ellipse'},
     {label: 'Park',       kind: 'park',      type: 'rect'},
     {label: 'Road',       kind: 'road',      type: 'line'},
     {label: 'Roundabout', kind: 'road',      type: 'ring'},
     {label: 'Buildings',  kind: 'buildings', type: 'rect'},
-    {label: 'Houses',     kind: 'houses',    type: 'rect'}
+    {label: 'Houses',     kind: 'houses',    type: 'rect'},
+    {label: 'Demolish',   kind: 'demolish',  type: 'rect'}
   ];
 
   /* ── the floor registry ────────────────────────────────────────────────
@@ -1167,14 +1303,19 @@ const Kinds = (() => {
   let scope = 'map';
 
   /* one shape → its instances, detached from the growable backing store */
-  function build(s, cell, occ){
+  function build(s, cell, occ, mod){
     const k = REG[scope].by[s.kind];
     /* diamonds grow with the grain so a coarser sample still covers, and
        Scale is the "font size" on top of that */
     const buf = new Buf(s.bright, (s.scale || 1) * Math.max(1, Math.round(s.grain || 1)));
     s._occ = occ && occ.length ? occ : null;
+    /* The same lifetime as the occluders and for the same reason: it exists
+       while this shape is being generated and nowhere else. Nothing about
+       the demolition is ever a stored field of the shape it weathers. */
+    s._mod = mod && mod.length ? mod : null;
     if (k) k.gen(s, cell, buf);
     s._occ = null;
+    s._mod = null;
     return buf.view().slice();
   }
 

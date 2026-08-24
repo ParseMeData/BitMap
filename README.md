@@ -1,4 +1,4 @@
-# Memory Quest V3.0
+# Memory Quest V4.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V3.0 in the KDE launcher
+    ./play.sh          # or: Memory Quest V4.0 in the KDE launcher
 
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
@@ -29,10 +29,10 @@ freeze-and-place.
 **v2.0** — creek terrain, the Glow slider, a larger walker.
 **v3.0** — interiors: walk up to a marker, press `Enter`, and build that
 building's floor plan in the same editor.
-**v3.1** — loci: the markers inside a room are numbered places, each holding
-a picture of what stands there. That ordered run is what the platformer
-plays — as a chain, each picture built out of the one before it.
-`platformer.html` joins the project.
+**v4.0** — loci, and the runner. The markers inside a room are numbered
+places, each holding a picture of what stands there; that ordered run is
+handed to `platformer.html`, which plays it as a chain — every picture built
+out of the diamonds carried from the one before it.
 
 ### The half that is not in the repo
 
@@ -43,10 +43,10 @@ own is only half a version. `tools/` writes the other half to a file beside
 it:
 
     ./play.sh --remote-debugging-port=9222 &
-    tools/snapshot.py save    snapshots/v3.0.json
-    tools/snapshot.py restore snapshots/v3.0.json
+    tools/snapshot.py save    snapshots/v4.0.json
+    tools/snapshot.py restore snapshots/v4.0.json
 
-`snapshots/v3.0.json` is the town as it stood at that tag, frozen picture and
+`snapshots/v4.0.json` is the town as it stood at that tag, frozen picture and
 all. Restoring is destructive — the profile *becomes* the file, so a room
 built since the snapshot is removed rather than left behind, and the page
 reloads. Snapshot the live state first if it is ahead of the file.

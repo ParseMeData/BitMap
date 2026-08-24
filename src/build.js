@@ -38,7 +38,7 @@ const Build = (() => {
   /* what a newly placed shape inherits. The sliders write here when nothing
      is selected, so you can dial in a look and then keep placing it. */
   const defs = {feather: 4, bright: 1, mask: false, variant: {},
-                grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0,
+                grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0, aim: null,
                 pad: 0, padFade: 0.8, padBreak: 0.3};
   /* ── telling history what just happened ────────────────────────────────
      A gesture that has ended is a step you can walk back (hstep); anything
@@ -195,16 +195,16 @@ const Build = (() => {
      you dragged out is the footprint you get: the area is aimed, not
      turned on its side. */
   function aimFall(s){
-    if (!isMod(s) || !(s.fall > 0) || s.rot) return;
+    if (!isMod(s) || !(s.fall > 0) || s.aim) return;
     const W = G.W, H = G.H;
     if (!W || !H) return;
+    /* Proportional to the plate, so a map half as wide as it is tall does
+       not call almost everything on it top or bottom. The marker goes on
+       the side that is kept, which is the side facing the middle of the
+       map — so the damage falls outward, away from the town. */
     const dx = (s.x - W / 2) / (W / 2), dy = (s.y - H / 2) / (H / 2);
-    if (Math.abs(dx) >= Math.abs(dy)){
-      s.rot = dx >= 0 ? 0 : Math.PI;                       // right, or left
-    } else {
-      s.rot = dy >= 0 ? Math.PI / 2 : -Math.PI / 2;        // down, or up
-      const t = s.w; s.w = s.h; s.h = t;
-    }
+    const L = Math.hypot(dx, dy);
+    s.aim = L < 1e-3 ? [-1, 0] : [-dx / L * s.fall, -dy / L * s.fall];
   }
 
   function create(kind, type, wx, wy){
@@ -225,7 +225,7 @@ const Build = (() => {
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
                scatter: k.scatter0 !== undefined ? k.scatter0 : defs.scatter,
                fall: k.fall0 !== undefined ? k.fall0 : defs.fall,
-               out: k.out0 !== undefined ? k.out0 : defs.out,
+               out: k.out0 !== undefined ? k.out0 : defs.out, aim: null,
                pad: k.pad0 !== undefined ? k.pad0 : defs.pad,
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
@@ -300,7 +300,7 @@ const Build = (() => {
                  bright: defs.bright * (k.bright0 || 1),
                  grain: 1, scale: 1,
                  jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
-                 fall: k.fall0 || 0, out: k.out0 || 0,
+                 fall: k.fall0 || 0, out: k.out0 || 0, aim: null,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
@@ -675,6 +675,33 @@ const Build = (() => {
      Ovals and lines keep their own grips: a quad is corners, and neither of
      those is described by any. */
   const freeCorner = s => !!s && isMod(s) && s.type === 'rect';
+  /* ── the fall, as one thing you point at ───────────────────────────────
+     Which way the damage falls and how hard were a rotate grip and a
+     slider, which is two controls for one gesture and neither of them the
+     gesture: you do not think "turn it a quarter and set it to 70", you
+     think "hold that corner and let the rest go".
+
+     So the marker. It sits on the side being KEPT, its distance from the
+     middle is how completely the opposite side gives way, and the middle
+     itself is no direction at all — which is `even`, and the same value
+     the slider has always written. The slider still works, on the same
+     number: it slides the marker along whatever line it is already on.
+
+     Only on a modifier, because Fall is the only thing reading it, and a
+     grip in the middle of a park that did nothing would be worse than no
+     grip at all. */
+  const aimable = s => !!s && isMod(s) && s.type !== 'line';
+  /* the marker's world position: normalised in the shape's own square, so
+     it holds its meaning when the shape is resized or turned */
+  /* Drawn at 85% of the way out, so full strength is a marker pressed
+     against the side rather than one buried under the corner grip that
+     lives there — the last sixth of the shape is left to the grips that
+     change its shape. */
+  const AIMR = 0.85;
+  function aimAt(s){
+    const A = s.aim || [-1, 0];
+    return rotpt(s, A[0] * s.w / 2 * AIMR, A[1] * s.h / 2 * AIMR);
+  }
   /* Born from w/h the first time a corner is taken hold of, so a demolisher
      is a plain rect until you make it something else — and every one saved
      before this existed is still a plain rect on the way back in. */
@@ -730,6 +757,7 @@ const Build = (() => {
     }
     if (s.type === 'ring') return [{x: s.x + s.r, y: s.y, tag: 'rad', kind: 'corner'}];
     const hw = s.w / 2, hh = s.h / 2, out = [];
+    const aim = () => { if (aimable(s)) out.push(Object.assign(aimAt(s), {tag: 'aim', kind: 'aim'})); };
     if (s.quad){
       /* the grips leave the bounding box and go where the shape actually
          is: a corner grip standing off the corner it moves is a grip you
@@ -745,6 +773,7 @@ const Build = (() => {
       const top = [(q[0][0] + q[1][0]) / 2, (q[0][1] + q[1][1]) / 2];
       out.push(Object.assign(rotpt(s, top[0], top[1] - grid() * 1.4),
                              {tag: 'rot', kind: 'rotate'}));
+      aim();
       return out;
     }
     for (const [lx, ly, tag] of [[-hw, -hh, 'nw'], [hw, -hh, 'ne'], [hw, hh, 'se'], [-hw, hh, 'sw']])
@@ -752,6 +781,7 @@ const Build = (() => {
     for (const [lx, ly, tag] of [[0, -hh, 'n'], [hw, 0, 'e'], [0, hh, 's'], [-hw, 0, 'w']])
       out.push(Object.assign(rotpt(s, lx, ly), {tag, kind: 'edge'}));
     out.push(Object.assign(rotpt(s, 0, -hh - grid() * 1.4), {tag: 'rot', kind: 'rotate'}));
+    aim();
     return out;
   }
   function overlay(a, m, cap){
@@ -854,6 +884,21 @@ const Build = (() => {
                     GOLD[0], GOLD[1], GOLD[2], 0.45,
                     Math.max(1.6 * px, grid() * 0.06), 0, 0, 0, 1);
           m = put(a, m, h.x, h.y, GOLD[0], GOLD[1], GOLD[2], 1, big * 1.2, 1, 0, 0, 1);
+        } else if (h.kind === 'aim'){
+          /* The fall drawn as what it is: the marker on the side being
+             kept, and a run of dots going the way the ground gives way,
+             brightening as it goes because that is what the ground does.
+             At `even` there is no direction to draw, so there is only the
+             marker, sitting in the middle where it says so. */
+          const A = s.aim || [-1, 0];
+          if (Math.hypot(A[0], A[1]) > 1e-3){
+            const far = rotpt(s, -A[0] * s.w / 2 * AIMR, -A[1] * s.h / 2 * AIMR);
+            for (const t of [0.3, 0.52, 0.74, 0.96])
+              m = put(a, m, h.x + (far.x - h.x) * t, h.y + (far.y - h.y) * t,
+                      AQUA[0], AQUA[1], AQUA[2], 0.2 + t * 0.5,
+                      Math.max(1.6 * px, grid() * 0.07), 0, 0, 0, 1);
+          }
+          m = put(a, m, h.x, h.y, AQUA[0], AQUA[1], AQUA[2], 1, big * 0.95, 0, 0, 0, 1);
         } else if (h.kind === 'bend'){
           m = put(a, m, h.x, h.y, AQUA[0], AQUA[1], AQUA[2], 0.95, big * 0.85, 1, 0, 0, 1);
         } else if (h.kind === 'edge' || h.kind === 'anchor'){
@@ -955,13 +1000,23 @@ const Build = (() => {
         if (e.shiftKey && sel.type === 'line' && near(sel, p, GRAB())){
           addPoint(sel, p); return;
         }
+        /* The NEAREST grip, not the first one listed. The radius is
+           generous on purpose — a grip is a few pixels of diamond and the
+           pointer should not have to be exact — but on a small shape that
+           radius holds two or three of them at once, and taking whichever
+           came first in the list meant the fall marker could not be picked
+           up at all beside the edge grip it sits in from. Nearest is what
+           the pointer was aiming at, whatever order they were built in. */
+        let best = null, bd = hr;
         for (const h of handles(sel)){
           if (h.kind === 'anchor') continue;      // shown, never taken
-          if (Math.hypot(h.x - p[0], h.y - p[1]) < hr){
-            drag = {mode: h.tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
-            canvas.setPointerCapture(e.pointerId);
-            return;
-          }
+          const d = Math.hypot(h.x - p[0], h.y - p[1]);
+          if (d < bd){ bd = d; best = h; }
+        }
+        if (best){
+          drag = {mode: best.tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
+          canvas.setPointerCapture(e.pointerId);
+          return;
         }
       }
       if (other){
@@ -1007,6 +1062,23 @@ const Build = (() => {
            shape turns over a pattern that stays where it is. */
         const step = Math.PI / 12;
         s.rot = Math.round((Math.atan2(p[1] - s.y, p[0] - s.x) + Math.PI / 2) / step) * step;
+      } else if (drag.mode === 'aim'){
+        /* Where the marker is put IS the fall: the direction is wherever it
+           sits from the middle, and how far out it sits is how completely
+           the far side gives way. Not snapped — this is an intensity, and
+           the grid has nothing to say about it.
+
+           `fall` is kept in step as the length of the same vector, because
+           it is what the slider shows and what a save carries. Two writers,
+           one value: whichever you reach for, the other follows. */
+        const l = Kinds.geo.local(s, p[0], p[1]);
+        let ax = l[0] / Math.max(s.w / 2 * AIMR, 1e-6);
+        let ay = l[1] / Math.max(s.h / 2 * AIMR, 1e-6);
+        const L = Math.hypot(ax, ay);
+        if (L > 1){ ax /= L; ay /= L; }
+        s.aim = [ax, ay];
+        s.fall = Math.min(1, L);
+        syncTune();
       } else if (drag.mode === 'rad'){
         s.r = snapR(Math.hypot(p[0] - s.x, p[1] - s.y));
       } else if (freeCorner(s) && SCALE.indexOf(drag.mode) >= 0){
@@ -1406,7 +1478,16 @@ const Build = (() => {
     if (key === 'scale')   return set('scale', v / 100);
     if (key === 'jitter')  return set('jitter', v / 100);
     if (key === 'scatter') return set('scatter', v / 100);
-    if (key === 'fall')    return set('fall', v / 100);
+    if (key === 'fall'){
+      /* the slider is the marker's distance from the middle, so moving it
+         moves the marker rather than meaning something beside it */
+      if (sel && aimable(sel)){
+        const A = sel.aim, L = A ? Math.hypot(A[0], A[1]) : 0;
+        const nx = L > 1e-6 ? A[0] / L : -1, ny = L > 1e-6 ? A[1] / L : 0;
+        sel.aim = [nx * (v / 100), ny * (v / 100)];
+      }
+      return set('fall', v / 100);
+    }
     if (key === 'out')     return set('out', v / 100);
     if (key === 'pad')     return set('pad', v / 10);
     if (key === 'padFade')  return set('padFade', v / 10);
@@ -1751,6 +1832,7 @@ const Build = (() => {
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
         fall: s.fall || 0, out: s.out || 0, quad: s.quad || null,
+        aim: s.aim ? [s.aim[0], s.aim[1]] : null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
         x: s.x, y: s.y, w: s.w, h: s.h, r: s.r, pts: s.pts, ctrl: s.ctrl, width: s.width
       }))));
@@ -1831,6 +1913,7 @@ const Build = (() => {
              those were doing — so an old town comes back unchanged */
           fall: s.fall === undefined ? 0 : s.fall,
           out: s.out === undefined ? 0 : s.out,
+          aim: (Array.isArray(s.aim) && s.aim.length === 2) ? [s.aim[0], s.aim[1]] : null,
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,

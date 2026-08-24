@@ -212,6 +212,34 @@ const Kinds = (() => {
     fall(s, x, y){
       const f = s.fall > 0 ? (s.fall > 1 ? 1 : s.fall) : 0;
       if (!f) return 1;
+      const A = s.aim;
+      if (A && (A[0] || A[1])){
+        /* ── aimed by the marker ────────────────────────────────────────
+           `aim` is where the marker sits, in a square that is the shape
+           whatever its proportions: -1 to 1 on each side, so the same
+           marker means the same fall on a long thin area and on a squat
+           one, and it survives the shape being resized.
+
+           The marker sits on the side that is KEPT, and the damage falls
+           away from it — which is what makes the control read the way it
+           does under the hand: you are not aiming the damage, you are
+           holding down the corner you want left alone, and everything
+           opposite it gives way. Its distance from the middle is how
+           hard: dead centre is no direction at all and the area bites at
+           one weight everywhere, which is `even`.
+
+           Measured from the marker's own line to the far corner of the
+           square, so the whole of the shape is spent whichever way the
+           marker points — a diagonal has further to run than a side, and
+           this is what stops it fading out early because of it. */
+        const l = geo.local(s, x, y);
+        const px = l[0] / Math.max(s.w / 2, 1e-6), py = l[1] / Math.max(s.h / 2, 1e-6);
+        const L = Math.hypot(A[0], A[1]) || 1;
+        const nx = A[0] / L, ny = A[1] / L;
+        const t = -(px * nx + py * ny);
+        const u = clamp01((t + L) / (Math.abs(nx) + Math.abs(ny) + L));
+        return 1 - f * (1 - u);
+      }
       const q = corners(s);
       const a = mid(q[0], q[3]), b = mid(q[1], q[2]);
       const dx = b[0] - a[0], dy = b[1] - a[1];

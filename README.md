@@ -406,22 +406,41 @@ with the terrain's own break-up.
 weight everywhere and Feather ramps that down at every rim at once, which is a
 bruise: heaviest in the middle, gone all round. Turned up, the bite runs along
 the area instead — the ground at one edge is left at exactly the density it
-had, and the damage deepens across to the far edge. Which edge is which is the
-shape's own rotation, so the turn grip aims it and a half-turn eats from the
-other side.
+had, and the damage deepens across to the far edge.
 
-**A demolisher is born aimed.** Which way the damage falls is the shape's own
-rotation, and *east, always* is the one starting answer that is wrong
-everywhere — an area laid along the top of the map to thin the town out at its
-edge is eating northward, and should not have to be turned by hand to say so.
-So a new one is aimed outward from the middle of the plate: drop it in the top
-of the map and it falls up, down the left and it falls left. The axis is
-whichever offset is larger *in proportion to the plate*, so a map half as wide
-as it is tall does not call almost everything on it top or bottom. It is only
-done at birth — re-aiming on every move would mean an area you had turned by
-hand snapped back the first time you nudged it, and the turn grip is meant to
-beat this. A quarter turn swaps `w` and `h` with it, so the footprint you
-dragged out is the footprint you get.
+**And you point at it.** Inside every demolish area there is an **aqua diamond
+marker**, and it sits on the side being *kept*. Everything opposite it gives
+way, in a run of dots the overlay draws so you can see which way that is. Its
+distance from the middle is how completely: pressed against a side, the far
+side is spent entirely; halfway out, half as much; and the middle itself is no
+direction at all, which is `even`.
+
+That is one gesture instead of two, and it is the gesture the work actually is
+— you are not turning a shape a quarter and setting a number to seventy, you
+are holding down the corner you want left alone. It moves in both axes at once,
+so a fall can run on the diagonal, which is something the turn grip never
+offered at any angle it would snap to. The **Fall** slider is the same number
+from the other end: it slides the marker along whatever line it is already on,
+so whichever you reach for, the other follows.
+
+The marker is normalised to the shape's own square — `-1` to `1` on each side —
+so it means the same thing on a long thin area as on a squat one, and it
+survives the shape being resized or turned. It is drawn at 85% of the way out,
+which leaves the last sixth of the shape to the grips that change its shape,
+and grips are picked by which is *nearest* the pointer rather than by which was
+listed first, so a marker pressed up against a side is still the thing you get
+when you aim at it.
+
+**A demolisher is born with its marker already placed.** *East, always* is the
+one starting answer that is wrong everywhere — an area laid along the top of the
+map to thin the town out at its edge is eating northward, and should not have to
+be aimed by hand to say so. So a new one puts its marker on the side facing the
+middle of the plate, and the damage falls outward: drop it in the top of the map
+and it falls up, down the left and it falls left, and a corner of the map gets
+the diagonal between. It is measured in proportion to the plate, so a map half
+as wide as it is tall does not call almost everything on it top or bottom, and
+it is only done at birth — an area you have aimed by hand must not snap back the
+first time you nudge it.
 
 The ramp is not linear, and both departures are about the *end* of the fall
 rather than its middle. It is smoothstepped, so the damage leaves the

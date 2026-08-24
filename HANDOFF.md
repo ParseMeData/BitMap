@@ -233,6 +233,21 @@ corners from them again is the rect you just stopped being. Every edit ends in
 origin to match, because the rotate grip turns about that origin and a quad
 dragged off it turns about a point outside itself.
 
+**The marker is the fall; `fall` is its length.** `aim` holds where the marker
+sits, normalised to the shape's own square, and `fall` is kept equal to how far
+that is from the middle — two writers (the grip and the slider), one value, and
+each keeps the other in step. Do not let them drift apart, and do not reach for
+`rot` to aim a fall: rotation turns the shape, which is a different question.
+An area saved before the marker existed has no `aim` at all and falls along its
+own local +x, which is what `rot` used to mean — that fallback is what keeps
+those areas pointing where they were left.
+
+**Grips are picked by nearest, not by first listed.** The hit radius is
+deliberately generous, and on a small shape it holds two or three grips at once.
+Taking the first in the list made the fall marker impossible to pick up beside
+the edge grip it sits in from. If a grip ever needs to win a tie outright, order
+is no longer the way to say so.
+
 **Fall and Feather are one weight arrived at two ways, so they multiply.**
 Feather keeps a demolish area's bite off its own rim; Fall says which rim the
 damage was coming from. Neither is a special case of the other, and adding them

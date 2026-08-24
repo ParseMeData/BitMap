@@ -12,6 +12,9 @@ if (location.search.indexOf('wallpaper') >= 0) document.title = 'Memory Quest Wa
 <style>
 :root{--ground:#08080B;--bone:#EDEAE3;--dim:#5A5A66;--flare:#FF5FA2;--gold:#F2C14E;
   --aqua:#79E0D8;
+  /* the quiet four: a ground you type into, the faintest thing still worth
+     reading, a scrollbar thumb, and a route dot with nothing behind it yet */
+  --well:#0D0D12;--faint:#3A3A44;--thumb:#26262F;--unlit:#2A2A33;
   --mono:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 /* every overlay below sets `display`, which outranks the browser's built-in
@@ -28,7 +31,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
   display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
   max-width:calc(100vw - 32px);gap:8px;padding:8px 10px;font-size:9.5px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-#mapbar input[type=text]{background:#0D0D12;border:1px solid rgba(237,234,227,.22);
+#mapbar input[type=text]{background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;width:190px;
   letter-spacing:.06em;text-transform:none}
 #mapbar input[type=range]{width:74px;accent-color:var(--flare);height:14px}
@@ -39,7 +42,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #mapbar #mapkey{width:150px}
 #mapnote{color:var(--dim);max-width:26ch;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;text-transform:none;letter-spacing:.04em}
-#mapcred{color:#3A3A44;text-transform:none;letter-spacing:.02em;font-size:8.5px}
+#mapcred{color:var(--faint);text-transform:none;letter-spacing:.02em;font-size:8.5px}
 .glass{background:rgba(8,8,11,.72);border:1px solid rgba(237,234,227,.18);
   backdrop-filter:blur(12px) saturate(1.05)}
 #hud{position:fixed;left:16px;top:14px;padding:10px 14px;display:flex;gap:18px;
@@ -56,7 +59,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #boot,#fatal,#pause{position:fixed;inset:0;display:grid;place-content:center;gap:10px;
   text-align:center;z-index:5;background:rgba(8,8,11,.86);letter-spacing:.28em;
   text-transform:uppercase;font-size:11px}
-#fatal{color:var(--flare);z-index:9;background:#08080B}
+#fatal{color:var(--flare);z-index:9;background:var(--ground)}
 #toast{position:fixed;left:16px;bottom:14px;z-index:8;max-width:70ch;padding:9px 12px;
   background:rgba(8,8,11,.9);border:1px solid var(--flare);color:var(--flare);
   font:400 10px/1.5 var(--mono);letter-spacing:.06em;white-space:pre-wrap}
@@ -72,7 +75,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #pause td:first-child{color:var(--bone);text-align:right}
 #tune{position:fixed;right:16px;top:14px;width:330px;max-height:calc(100vh - 28px);
   overflow-y:auto;padding:14px;z-index:4;display:flex;flex-direction:column;gap:9px}
-#tune::-webkit-scrollbar{width:6px}#tune::-webkit-scrollbar-thumb{background:#26262f}
+#tune::-webkit-scrollbar{width:6px}#tune::-webkit-scrollbar-thumb{background:var(--thumb)}
 .phead{display:flex;justify-content:space-between;align-items:center;
   letter-spacing:.26em;font-size:10px;text-transform:uppercase}
 .phead b{color:var(--flare);font-weight:400}
@@ -95,13 +98,13 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 body.wall #hud,body.wall #keys,body.wall #pause,body.wall #msg{display:none}
 body.wall #wallhint{display:block}
 #wallhint{display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
-  z-index:3;font-size:9px;letter-spacing:.26em;color:#3A3A44;text-transform:uppercase;
+  z-index:3;font-size:9px;letter-spacing:.26em;color:var(--faint);text-transform:uppercase;
   pointer-events:none;transition:opacity .6s}
 body.wall:not(.drifting) #wallhint{opacity:0}
 /* build mode: layers, the kind palette, and the map cursor that goes with it */
 #palette{position:fixed;left:16px;bottom:14px;z-index:4;width:214px;padding:12px;
   display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 28px);overflow-y:auto}
-#palette::-webkit-scrollbar{width:6px}#palette::-webkit-scrollbar-thumb{background:#26262f}
+#palette::-webkit-scrollbar{width:6px}#palette::-webkit-scrollbar-thumb{background:var(--thumb)}
 #klayers{display:flex;flex-direction:column;gap:4px}
 .krow{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:5px 9px;
   border:1px solid rgba(237,234,227,.14);cursor:pointer;font-size:9.5px;letter-spacing:.18em;
@@ -158,7 +161,7 @@ body.wall:not(.drifting) #wallhint{opacity:0}
 #enterhint em{color:var(--gold);font-style:normal}
 body.inside #msg{top:98px}
 body.wall #inside,body.wall #enterhint{display:none}
-#kmname{width:100%;background:#0D0D12;border:1px solid rgba(237,234,227,.22);
+#kmname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
 /* the route: the rooms in order, or the loci inside one — the order is the
    thing being authored, so it gets a list rather than living on the plate */
@@ -169,21 +172,21 @@ body.wall #inside,body.wall #enterhint{display:none}
   display:flex;flex-direction:column;gap:8px}
 #palace .phead{margin-bottom:1px}
 #palace .phead .btn{padding:4px 7px;font-size:8px}
-#porder{background:#0D0D12;border:1px solid rgba(237,234,227,.22);color:var(--bone);
+#porder{background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
   font:400 11px/1.65 var(--mono);padding:7px 8px;letter-spacing:.04em;resize:vertical;
   min-height:96px;width:100%}
-#porder::placeholder{color:#3A3A44}
+#porder::placeholder{color:var(--faint)}
 #pgen.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
 body.locus #palace{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
 #route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
   overflow-y:auto;padding:12px;z-index:4;display:flex;flex-direction:column;gap:7px}
-#route::-webkit-scrollbar{width:6px}#route::-webkit-scrollbar-thumb{background:#26262f}
+#route::-webkit-scrollbar{width:6px}#route::-webkit-scrollbar-thumb{background:var(--thumb)}
 body.tuning #route{display:none}
-#kname{width:100%;background:#0D0D12;border:1px solid rgba(237,234,227,.22);
+#kname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
-#kname::placeholder{color:#3A3A44}
+#kname::placeholder{color:var(--faint)}
 #kroute{display:flex;flex-direction:column;gap:3px}
 .rrow{display:flex;align-items:center;gap:6px;padding:4px 5px;cursor:pointer;
   border:1px solid rgba(237,234,227,.12);font-size:9px;letter-spacing:.1em;
@@ -196,7 +199,7 @@ body.tuning #route{display:none}
 .rrow .rname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   text-transform:none;letter-spacing:.04em}
 .rrow .rdot{flex:none;font-size:7px;color:var(--aqua)}
-.rrow .rdot.off{color:#2A2A33}
+.rrow .rdot.off{color:var(--unlit)}
 .rrow .rmv{flex:none;padding:0 2px;font-size:8px;color:var(--bone);opacity:.5}
 .rrow .rmv:hover{opacity:1}
 .knote.warn,.kstate.warn{color:var(--gold)}
@@ -222,7 +225,7 @@ body.placing #gl{cursor:move}
 body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}
 body.arming,body.arming #gl{cursor:copy}
-#pjson{width:100%;height:56px;background:#0D0D12;color:var(--bone);
+#pjson{width:100%;height:56px;background:var(--well);color:var(--bone);
   border:1px solid rgba(237,234,227,.22);font:9px/1.4 var(--mono);padding:6px}
 </style>
 </head>
@@ -269,7 +272,7 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
 <div id="boot">building the lattice…</div>
-<div id="fatal" hidden><span id="fatalhead"></span><br><span id="fatalmsg"></span><span style="color:#5A5A66;font-size:10px;margin-top:14px;display:block">if this is a stale build, hard-reload with ctrl+shift+R</span></div>
+<div id="fatal" hidden><span id="fatalhead"></span><br><span id="fatalmsg"></span><span style="color:var(--dim);font-size:10px;margin-top:14px;display:block">if this is a stale build, hard-reload with ctrl+shift+R</span></div>
 
 <div id="pause" hidden>
   <h1>Paused</h1>

@@ -20,6 +20,10 @@ switch away — see *The plate: Map or Blank*.
 decisions that are load-bearing, and how to work on it without breaking the
 town. Read that first; read this for how any single thing works.
 
+`STYLE.md` is the look, written down — the palette, the type, the square
+corner, and the rule that new work is flair on top of the plate rather than
+a change to it. Read that before changing anything you can see.
+
 ## Versions
 
 The folder carries no version; the tag does, and the name in the title,

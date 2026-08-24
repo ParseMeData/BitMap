@@ -1,8 +1,8 @@
 # Handoff
 
 Written 24 Aug 2026, at tag **v4.6**. Read `README.md` for how any single
-thing works; this is the shape of the whole and the things that are not
-obvious from the code.
+thing works, and `STYLE.md` before changing anything you can see; this is
+the shape of the whole and the things that are not obvious from the code.
 
 ---
 

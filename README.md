@@ -459,6 +459,24 @@ its own, while an edge grip carries the two corners of its edge, which is the
 old stretch said in the only way a quad can say it. Switch it to Oval or Line
 and the corners are given back.
 
+**What a dragged corner cuts off is gone.** The rectangle the quad sits in is
+still the footprint — dragging a corner in does not shrink what the demolisher
+has hold of, it declares that the wedge between the edge you dragged and the
+rectangle's corner is *not there any more*. No fall, no rubble, no surviving
+fringe: the cells are not drawn at all, and the selection marks that wedge
+along with the rest so nothing is taken without being shown.
+
+That is the only hard edge a demolisher can draw, and it is the whole reason
+the corners move. Everything else here is about ground coming apart gradually,
+because a straight line through terrain reads as a stencil. But a rect can only
+end a town along an axis, and a town does not end along an axis — it ends at a
+river, a ridge, a road on the diagonal. A dragged corner is how you say where,
+and the fall then handles the side that is meant to peter out rather than stop.
+
+It stays a modifier for all that: nothing is written back to the shapes
+underneath, so moving the area off brings every diamond back, and the walk grid
+is untouched — a road erased at the corner is still a road you can walk down.
+
 **Mask** changes what the pattern is anchored to. Normally the pattern is
 addressed by where a cell sits *inside its shape*, so terrain travels with the
 shape when you drag it. With Mask on it is addressed by where the cell sits in

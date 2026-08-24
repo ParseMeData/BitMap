@@ -221,6 +221,24 @@ const Kinds = (() => {
       const u = clamp01(((l[0] - a[0]) * dx + (l[1] - a[1]) * dy) / L);
       return 1 - f * (1 - u);
     },
+    /* ── what a dragged corner took ──────────────────────────────────
+       A quad is described by the rectangle it sits in — `w`/`h` are its
+       own extent — so dragging a corner inward leaves a wedge between the
+       edge you dragged and the rectangle's corner. That wedge is not a
+       part of the shape you decided against: it is the part you cut OFF,
+       and it goes outright. It is the only hard edge a demolisher can
+       draw, and drawing one is the whole reason the corners move: a rect
+       can only end the town along an axis, and a town does not.
+
+       Inside the rectangle, outside the quad. A plain rect has no such
+       region — the two are the same shape — so nothing that has never had
+       a corner dragged is touched by this. */
+    lost(s, x, y){
+      if (!s.quad) return false;
+      const l = geo.local(s, x, y);
+      if (Math.abs(l[0]) > s.w / 2 || Math.abs(l[1]) > s.h / 2) return false;
+      return polyDepth(s.quad, l[0], l[1]) <= 0;
+    },
     inside(s, x, y){ return geo.depth(s, x, y) > 0; },
     origin(s){ return s.type === 'line' ? s.pts[0] : [s.x, s.y]; },
     centre(s){
@@ -373,13 +391,35 @@ const Kinds = (() => {
      because it is asked once per lattice cell of every shape a demolish
      area lies over — up to MAX_CELLS of them in a single pass — and an
      allocation there is a frame's worth of garbage for every drag frame. */
-  const RUIN = {m: null, w: 0};
+  const RUIN = {m: null, w: 0, gone: false};
   function bitten(mods, x, y, cell){
-    RUIN.m = null; RUIN.w = 0;
+    RUIN.m = null; RUIN.w = 0; RUIN.gone = false;
     for (let i = 0; i < mods.length; i++){
       const m = mods[i];
-      const d = geo.depth(m, x, y);
-      if (d <= 0) continue;
+      let d;
+      if (m.quad){
+        /* the polygon IS the whole answer for these: a quad only ever
+           belongs to a modifier, which is never hollow and never an
+           ellipse, so this is what geo.depth would work out anyway —
+           done here so the wedge test below does not cost a second pass
+           over the same four edges. */
+        const l = geo.local(m, x, y);
+        d = polyDepth(m.quad, l[0], l[1]);
+        if (d <= 0){
+          /* outside the quad but still inside the rectangle it sits in:
+             the wedge the corner cut off, and nothing outweighs it —
+             there is no weight to compare, the ground is simply not
+             there any more. */
+          if (Math.abs(l[0]) <= m.w / 2 && Math.abs(l[1]) <= m.h / 2){
+            RUIN.gone = true; RUIN.m = m; RUIN.w = 1;
+            return true;
+          }
+          continue;
+        }
+      } else {
+        d = geo.depth(m, x, y);
+        if (d <= 0) continue;
+      }
       /* the area's own Feather, read by the same arithmetic scan() reads a
          shape's own with: depth in cells over feather in cells, clamped. It
          ramps the damage down to nothing at the rim, which is what stops the
@@ -480,6 +520,9 @@ const Kinds = (() => {
            seated diamonds to mark where the area finished. */
         let rjit = 0, rscat = 0, rseed = 0, rgone = 0;
         if (mods && bitten(mods, wx, wy, cell)){
+          /* the wedge a dragged corner cut off: no roll, no rubble, no
+             surviving fringe — the cell is not drawn */
+          if (RUIN.gone) continue;
           const w = RUIN.w, e = w * w * (3 - 2 * w);
           const out = clamp(RUIN.m.out || 0, 0, 1);
           rseed = RUIN.m.seed | 0;

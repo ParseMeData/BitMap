@@ -646,7 +646,11 @@ const Build = (() => {
     for (let iy = 0; iy < ny; iy += step)
       for (let ix = 0; ix < nx; ix += step){
         const x = b[0] + (ix + 0.5) * c, y = b[1] + (iy + 0.5) * c;
-        if (!Kinds.geo.inside(s, x, y)) continue;
+        /* the wedge a dragged corner cut off is marked too: it is taken
+           outright rather than weathered, and a tool that quietly takes
+           ground it does not mark is the one thing this overlay exists to
+           stop */
+        if (!Kinds.geo.inside(s, x, y) && !Kinds.geo.lost(s, x, y)) continue;
         m = put(a, m, x, y, AQUA[0], AQUA[1], AQUA[2], isSel ? 0.5 : 0.28, r, 0, 0, 0, 1);
       }
     return m;

@@ -403,12 +403,19 @@ addEventListener('keydown', e => {
       }
       else Interior.enter();
       break;
+    /* Esc is BACK, and only back. It used to close the pause as well, which
+       meant that pausing while inside a palace — and you pause by clicking
+       away, so this is the common case — left every press of it walking you
+       up a level behind a screen you could not see past. You came out at the
+       town before the menu went. A screen that owns the view has to be the
+       thing dismissed first, and it is dismissed by clicking it. */
     case 'Escape':
+      if (G.paused) break;                    // the pause owns the screen; click it
       if (Loci.opened()) Loci.close();
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
-      else togglePause();
+      else togglePause(true);                 // nothing to go back from: the reference
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
@@ -458,6 +465,11 @@ function togglePause(force){
   G.paused = force === true ? true : !G.paused;
   $('#pause').hidden = !G.paused;
 }
+/* Anywhere on it, because the click that brings the window back to the front
+   is the same click that should put you back in the game — asking for a
+   second one, aimed at something, is asking you to dismiss a screen you did
+   not ask for. */
+$('#pause').addEventListener('pointerdown', e => { e.preventDefault(); togglePause(false); });
 
 /* ── HUD ── */
 const fmt = t => {

@@ -80,7 +80,8 @@ WebSocket, because nothing else here needs a dependency.
 | `Shift`+`Tab` | next layer (in build mode) |
 | `F` / `F11` | fullscreen |
 | `R` | new round &nbsp;·&nbsp; replaces the picture while a locus is open |
-| `Esc` | close the locus &nbsp;·&nbsp; then the interior &nbsp;·&nbsp; then pause |
+| `Esc` | back &nbsp;·&nbsp; the locus, the room list, the panel, the interior, the run |
+| click | resume, while paused |
 
 Clear every spark to finish a round; each round adds two more. Your best
 clear time is kept in the browser profile the launcher uses.
@@ -783,6 +784,27 @@ there records what they already share, and the one question it says cannot be
 deferred is whether a **cell** collides or a **tile** does. This is the answer
 in practice: a plan is authored on tiles and the pictures bake down to cells,
 which is exactly the resolution that document guessed at.
+
+## Pausing
+
+The game pauses when the window loses focus, which means you pause it by
+clicking away — and that is the common case, not `Esc`.
+
+**A click anywhere resumes it.** The click that brings the window back to the
+front is the same click that should put you back in the game; asking for a
+second one, aimed at something, is asking you to dismiss a screen you never
+asked for.
+
+`Esc` is **back** and only back: the locus preview, then the room list, then
+the tune panel, then out of the interior — and in the platformer, out of the
+run and into the builder. It used to close the pause as well, and because you
+pause by clicking away that mattered: paused inside a palace, every press of
+`Esc` walked you up a level behind a screen you could not see past, and you
+arrived at the town before the menu went. A screen that owns the view has to
+be the thing dismissed first.
+
+With nothing left to go back from, `Esc` opens the reference — which is the
+same screen, and says on it how to leave.
 
 ## Walking
 

@@ -64,7 +64,9 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #toast.soft{border-color:rgba(237,234,227,.3);color:var(--bone)}
 #fatalmsg{color:var(--bone);font-size:12px;letter-spacing:.04em;text-transform:none;
   max-width:80ch;white-space:pre-wrap;text-align:left;margin-top:12px}
-#pause h1{font-size:14px;letter-spacing:.5em;font-weight:400;margin-bottom:14px}
+#pause h1{font-size:14px;letter-spacing:.5em;font-weight:400;margin-bottom:4px}
+#presume{color:var(--gold);font-size:9.5px;letter-spacing:.28em;margin-bottom:14px}
+#pause{cursor:pointer}
 #pause table{margin:0 auto;border-collapse:collapse;font-size:10px;letter-spacing:.18em;color:var(--dim)}
 #pause td{padding:3px 14px;text-align:left}
 #pause td:first-child{color:var(--bone);text-align:right}
@@ -272,6 +274,7 @@ body.arming,body.arming #gl{cursor:copy}
 
 <div id="pause" hidden>
   <h1>Paused</h1>
+  <div id="presume">click anywhere to resume</div>
   <table>
     <tr><td>WASD / Arrows</td><td>walk (hold)</td></tr>
     <tr><td>Shift</td><td>sprint</td></tr>
@@ -291,7 +294,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>P</td><td>play the route in the platformer</td></tr>
     <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
     <tr><td>F / F11</td><td>fullscreen</td></tr>
-    <tr><td>Esc</td><td>close the locus &nbsp;·&nbsp; then the interior &nbsp;·&nbsp; then resume</td></tr>
+    <tr><td>Esc</td><td>back &nbsp;·&nbsp; the locus, then the room list, then the interior</td></tr>
   </table>
 </div>
 

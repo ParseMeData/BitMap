@@ -1,4 +1,4 @@
-# Memory Quest V4.0
+# Memory Quest V4.2
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V4.0 in the KDE launcher
+    ./play.sh          # or: Memory Quest V4.2 in the KDE launcher
 
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
@@ -33,6 +33,9 @@ building's floor plan in the same editor.
 places, each holding a picture of what stands there; that ordered run is
 handed to `platformer.html`, which plays it as a chain — every picture built
 out of the diamonds carried from the one before it.
+**v4.2** — palaces you type rather than draw: a room list that lays itself
+out and refits as you move the walls, a wall demolisher, and words made of
+diamonds.
 
 ### The half that is not in the repo
 
@@ -596,15 +599,48 @@ so the plan has to be settled before the fitting-out means anything. The
 palette opens on **Rooms** when there is a plan, and the two layers are
 exclusive:
 
-**Rooms** — the only things that answer the pointer are the room shells, and
-the whole room is the handle rather than the quarter-tile ribbon of its wall.
-Move one, resize one by its corners, and **its contents are laid again for
-the shape it is now**. Make it bigger and the next slot appears and fills;
-make it smaller and the slot goes and takes its contents with it. Deleting a
-room deletes the room, not the four walls of one.
+**Rooms** — the only things that answer the pointer are the room shells and
+the wall gaps, and the whole room is the handle rather than the quarter-tile
+ribbon of its wall. Move one, resize one by its corners, and **its contents
+are laid again for the shape it is now**. Make it bigger and the next slot
+appears and fills; make it smaller and the slot goes and takes its contents
+with it. Deleting a room deletes the room, not the four walls of one.
+
+**Remove wall** drags a rectangle across a wall and takes that stretch of it
+out — the diamonds, and the block in the walk grid — so two rooms run into one
+another and you walk straight through. It touches nothing else: the floor,
+the furniture and the fittings on both sides stay exactly where they were.
+Measured rather than asserted — knocking one through cost 122 wall cells and
+gained 8 walkable tiles, with the furniture and floor counts unchanged to the
+cell.
+
+That is a shape rather than an edit to the wall, because a wall is one rect
+with four sides and *this stretch of it is not there* is not something a rect
+can say about itself. A kind can declare which kinds it `clears`, and a
+demolisher clears walls and glazing and nothing else — which is what keeps it
+from taking the bed with it. It stamps nothing of its own: it is a hole in
+what a blocker is allowed to block, because stamping something walkable over
+the top would open the bed too. And the cut lifts the wall's *occlusion* as
+well as its ink, or the hole the wall punched in the floor would still be
+there — an opening you can walk through but see the void through is not an
+opening.
 
 **Fit-out** — the shells are locked and everything inside them is yours: the
 layers, the kinds, the sliders, the markers, exactly as before.
+
+Furniture is kept one tile clear of the walls, so a lap of open floor runs
+right round the inside of every room. Not decoration: slots pack items nearly
+edge to edge, and three of them across the middle of a room is a wall — a
+room you can enter and not cross, which breaks the route the palace exists to
+be. It cost a reachability check to find: 679 tiles walkable and 430 of them
+reachable, with half the plan sealed off behind a row of kitchen counters. A
+ring cannot be blocked by anything placed inside it, so the guarantee is
+structural rather than something to keep re-testing.
+
+The floor runs the full width of the room, under the wall rather than up to
+its inner face. It costs nothing to draw — the wall is on a higher layer and
+covers it — and it is what leaves ground behind when a wall comes out,
+instead of a one-tile trench you cannot cross.
 
 A room is filled by cutting its inside into slots of about four tiles and
 walking its kit into them, in order, skipping anything that has hit its count
@@ -635,10 +671,17 @@ lattice, and at any distance it reads as a different material, because it is
 one. Written in diamonds a name is made of the town rather than printed on
 it, breathes at the same rate, and costs no texture and no draw call.
 
-It carries the room numbers — **outside** each room, above its top corner,
-where a number goes on a drawn plan rather than on the floor you are trying
-to arrange — the room names inside, the palace's name over its plan, and the
-town's name across the map.
+It carries each room's number and name — **outside** the room, on a wall with
+nothing built against it. Rooms in a generated palace are packed edge to
+edge, so most of a room's perimeter is somebody else's room, and a caption
+laid on one of those walls is written across the neighbour's floor. The four
+sides are tried in turn and the first clear one wins, which for a plan of any
+shape is always at least one, because a block has an outside. If every side
+is taken it goes back inside at the top — the worst of the options, and the
+only one always available.
+
+It also carries the palace's name over its plan and the town's name across
+the map.
 
 A palace's name is a title block and goes above the plan, clear of it. A
 town's name is a map label and lies *across* the ground it names: put above

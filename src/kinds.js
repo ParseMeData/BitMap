@@ -243,6 +243,17 @@ const Kinds = (() => {
   function covered(occ, x, y, cell, u, v){
     for (let i = 0; i < occ.length; i++){
       const o = occ[i];
+      /* A demolished stretch of wall does not take ground either. Removing
+         its diamonds is only half of it: the hole it punched in the floor
+         beneath would still be there, and an opening you can walk through
+         but can see the void through is not an opening, it is a bug with a
+         door in it. */
+      if (o._cut){
+        let gone = false;
+        for (let j = 0; j < o._cut.length; j++)
+          if (geo.inside(o._cut[j], x, y)){ gone = true; break; }
+        if (gone) continue;
+      }
       /* `pad` is the whole of the clearance, measured from the shape's edge:
          the terrain never gives up more ground than that. `padFade` spends
          part of that distance dithering the boundary instead of cutting it,
@@ -970,6 +981,9 @@ const Kinds = (() => {
     });
   }
 
+  /* a kind that is only a statement about other kinds draws nothing */
+  function nothing(){}
+
   /* ── the registry ────────────────────────────────────────────────────── */
   /* listed in the order you work through a plan, but drawn by `z`: the
      road network reads on top of everything, the way it does on the
@@ -1085,6 +1099,19 @@ const Kinds = (() => {
     {id: 'door',    label: 'Door',    layer: 'access', types: ['line'],
      variants: ['swing', 'double', 'slide', 'open'], len0: 2, walkTol: 1.05,
      walk: 2, stamp: 6, gen: door,     swatch: '#F2EDE2', ...HARD},
+    /* ── the demolisher ────────────────────────────────────────────────
+       Not terrain and not furniture: a hole in what a wall is allowed to be.
+       It draws nothing, stamps nothing, and takes ground only from the kinds
+       it names — so dragged across a room it removes the wall and leaves the
+       bed, the rug and the floor exactly where they were, and what you are
+       left with is two rooms that run into each other.
+
+       It has to be a shape rather than an edit to the wall because a wall is
+       one rect with four sides, and "this stretch of it is not there" is not
+       something a rect can say about itself. */
+    {id: 'gap',     label: 'Remove wall', layer: 'access', types: AREA,
+     w0: 4, h0: 4, walk: 1, stamp: 9, gen: nothing, swatch: '#3A3A44',
+     clears: ['wall', 'glazing'], ...HARD},
     {id: 'stairs',  label: 'Stairs',  layer: 'access', types: AREA, variants: ['up', 'down'],
      w0: 2, h0: 5,
      walk: 2, stamp: 6, gen: stairs,   swatch: '#C39A5C', ...HARD}

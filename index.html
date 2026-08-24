@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
-<title>Memory Quest V4.0</title>
+<title>Memory Quest V4.2</title>
 <script>
 /* name the window before it maps, so the KWin wallpaper rule matches it
    the moment it appears rather than a frame later */
@@ -214,6 +214,7 @@ body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route{displ
    !important because several of these panels are laid out by an id rule,
    and an id beats a class however the class is written. */
 body.rooms .fitonly{display:none!important}
+body:not(.rooms) .roomonly{display:none!important}
 body.placing #gl{cursor:move}
 body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}

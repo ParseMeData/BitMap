@@ -16,7 +16,7 @@
 
 const Build = (() => {
   let on = false, sel = null, drag = null, armed = null, nextId = 1;
-  let layer = 'roads', combined = null, lastKind = null;
+  let layer = 'roads', combined = null, lastKind = null, band = null;
   /* ── the two edit layers ────────────────────────────────────────────────
      ROOMS is the floor plan: the only things that answer the pointer are the
      room shells, and moving or resizing one lays its contents again for the
@@ -66,9 +66,12 @@ const Build = (() => {
   const layerOf = s => (Kinds.by[s.kind] || {layer: 'ground'}).layer;
   const layerIndex = id => Kinds.layers.findIndex(L => L.id === id);
   const zOf = s => (Kinds.layers.find(L => L.id === layerOf(s)) || {z: 0}).z;
+  /* A gap belongs to the plan, not to the fit-out: it is a statement about
+     where a wall is not, and walls are what the plan is made of. */
+  const isGap = s => (Kinds.by[s.kind] || {}).clears;
   const editable = s => mode === 'rooms'
-    ? !!s.label
-    : (!s.label && layerOf(s) === layer && vis[layerOf(s)]);
+    ? (!!s.label || !!isGap(s))
+    : (!s.label && !isGap(s) && layerOf(s) === layer && vis[layerOf(s)]);
 
   /* ── model ── */
   function defaults(s, type){
@@ -184,6 +187,16 @@ const Build = (() => {
     return G.shapes.length;
   }
 
+  /* a shape placed at a size somebody chose, rather than at the size its
+     kind is born with */
+  function drop(kind, x, y, w, h){
+    const s = make({kind, type: 'rect', x, y, w, h});
+    if (!s) return null;
+    sel = s;
+    changed(s);
+    return s;
+  }
+
   function remove(s){
     const i = G.shapes.indexOf(s);
     if (i < 0) return;
@@ -266,6 +279,11 @@ const Build = (() => {
   /* Roads run into one another. Nothing that connects ever clears anything
      else that connects, so a crossroads is a crossroads and not two roads
      with a hole punched where they meet. */
+  const takes = (o, s) => {
+    const k = Kinds.by[o.kind];
+    return !k || !k.clears || k.clears.indexOf(s.kind) >= 0;
+  };
+
   function connects(a, b){
     const ka = Kinds.by[a.kind], kb = Kinds.by[b.kind];
     return !!(ka && kb && ka.connects && kb.connects);
@@ -276,14 +294,31 @@ const Build = (() => {
     const order = G.shapes.filter(s => vis[layerOf(s)])
       .sort((a, b) => zOf(a) - zOf(b) || a.id - b.id);
     const box = order.map(s => reachBox(s));
+    /* what has been knocked through, and out of which shapes — hung on the
+       shape so the generators can see it without being handed a second list */
+    const cuts = order.filter(x => (Kinds.by[x.kind] || {}).clears);
+    for (let i = 0; i < order.length; i++){
+      const s = order[i], k = Kinds.by[s.kind];
+      const mine = k && !k.clears
+        ? cuts.filter(c => Kinds.by[c.kind].clears.indexOf(s.kind) >= 0 &&
+                           bbHit(box[i], reachBox(c)))
+        : [];
+      const had = s._cut ? s._cut.length : 0;
+      if (mine.length || had) s._buf = null;     // the hole may have moved
+      s._cut = mine.length ? mine : null;
+    }
     let n = 0;
     for (let i = 0; i < order.length; i++){
       const s = order[i];
       if (!s._buf){
-        /* everything drawn after this one takes the ground from it */
+        /* Everything drawn after this one takes the ground from it — unless
+           it is picky. A kind that declares `clears` takes ground from those
+           kinds and from nothing else, which is what lets a demolisher pass
+           straight through a room and remove only its walls. */
         const occ = [];
         for (let j = i + 1; j < order.length; j++)
-          if (bbHit(box[i], box[j]) && !connects(s, order[j])) occ.push(order[j]);
+          if (bbHit(box[i], box[j]) && !connects(s, order[j]) && takes(order[j], s))
+            occ.push(order[j]);
         s._buf = Kinds.build(s, cellSize(), occ);
       }
       s._bb = box[i];
@@ -301,20 +336,37 @@ const Build = (() => {
      Draw a road across a lake and you have built a bridge. */
   function stamp(t){
     const order = [...Kinds.list].sort((a, b) => a.stamp - b.stamp);
+    /* Whatever has been demolished. A cut is not a kind that stamps anything
+       of its own — it is a hole in what a blocker is allowed to block, which
+       is the only way to take a wall out of the walk grid without also
+       taking out the bed standing next to it. Stamping something walkable
+       over the top would open the bed too. */
+    const cuts = G.shapes.filter(x => (Kinds.by[x.kind] || {}).clears);
     for (const k of order)
       for (const s of G.shapes){
         if (s.kind !== k.id) continue;
+        if (k.clears) continue;                     // a cut lays nothing down
+        const cut = cuts.filter(c => Kinds.by[c.kind].clears.indexOf(k.id) >= 0);
         /* A route thinner than a walk tile would stamp a dotted line of
            walkable tiles, so a band stamps by distance with half a tile of
            tolerance. An area-shaped route is already wider than that, and
            the same tolerance on one would lay a walkable ring right through
            the wall around it — so it stamps exactly what it covers. */
         tiles(s, t, i => {
+          if (cut.length && demolished(cut, i, t)) return;
           if (k.walk === 0){ t.walk[i] = 0; t.path[i] = 0; }
           else { t.walk[i] = 1; if (k.walk === 2) t.path[i] = 1; }
         }, k.walk === 2 && banded(s) ? t.tsz * (k.walkTol || 0.62) : 0);
       }
   }
+  /* is this tile inside something that has been knocked through? */
+  function demolished(cut, i, t){
+    const tx = i % t.tw, ty = (i / t.tw) | 0;
+    const cx = (tx + 0.5) * t.tsz, cy = (ty + 0.5) * t.tsz;
+    for (const c of cut) if (Kinds.geo.inside(c, cx, cy)) return true;
+    return false;
+  }
+
   /* a tile counts as covered if its centre or any of its four shoulders is
      inside — a road thinner than a walk tile still has to be walkable */
   function tiles(s, t, fn, tol){
@@ -371,6 +423,20 @@ const Build = (() => {
   }
   function overlay(a, m, cap){
     if (!on) return m;
+    if (band){
+      const px = 1 / G.cam[2], r = Math.max(2 * px, cellSize() * 0.16);
+      const x0 = Math.min(band.x0, band.x1), x1 = Math.max(band.x0, band.x1);
+      const y0 = Math.min(band.y0, band.y1), y1 = Math.max(band.y0, band.y1);
+      const n = 40;
+      for (let j = 0; j <= n; j++){
+        const t = j / n;
+        for (const [px2, py2] of [[x0 + (x1 - x0) * t, y0], [x0 + (x1 - x0) * t, y1],
+                                  [x0, y0 + (y1 - y0) * t], [x1, y0 + (y1 - y0) * t]]){
+          if (m > cap - 2) return m;
+          m = put(a, m, px2, py2, 1, 0.373, 0.635, 0.9, r, 0, 0, 0, 1);
+        }
+      }
+    }
     for (const s of G.shapes){
       if (m > cap - 260) break;
       if (!editable(s) && s !== sel) continue;      // only the layer you are working on
@@ -482,7 +548,16 @@ const Build = (() => {
 
   function wire(){
     canvas.addEventListener('pointerdown', e => {
-      if (!on || e.button !== 0 || armed) return;
+      if (!on || e.button !== 0) return;
+      /* Some tools are dropped and some are drawn. A demolisher is drawn:
+         what it is FOR is a stretch, and a stretch is two corners. */
+      if (armed && armed.band){
+        const q = toWorld(e);
+        band = {kind: armed.kind, x0: q[0], y0: q[1], x1: q[0], y1: q[1]};
+        canvas.setPointerCapture(e.pointerId);
+        return;
+      }
+      if (armed) return;
       /* handles are small things to hit at low zoom; give them a target a
          pointer can actually land on */
       const p = toWorld(e), hr = 20 / G.cam[2];
@@ -523,6 +598,7 @@ const Build = (() => {
     });
 
     addEventListener('pointermove', e => {
+      if (band){ const q = toWorld(e); band.x1 = q[0]; band.y1 = q[1]; return; }
       if (!drag) return;
       const p = toWorld(e), s = drag.s, c = cellSize();
       if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); return; }
@@ -564,6 +640,17 @@ const Build = (() => {
     });
 
     addEventListener('pointerup', e => {
+      if (band){
+        const b = band;
+        band = null; armed = null;
+        document.body.classList.remove('arming');
+        const g = grid();
+        const w = Math.max(g, snapS(Math.abs(b.x1 - b.x0)));
+        const h = Math.max(g, snapS(Math.abs(b.y1 - b.y0)));
+        drop(b.kind, snapC((b.x0 + b.x1) / 2), snapC((b.y0 + b.y1) / 2), w, h);
+        syncUI();
+        return;
+      }
       if (drag){
         const s = drag.s;
         drag = null;
@@ -614,6 +701,10 @@ const Build = (() => {
     if (!el || el.childElementCount) return;
     el.innerHTML =
       '<div class="plabel">Edit</div><div id="kmode" class="chips two"></div>' +
+      '<div class="plabel roomonly">Walls</div>' +
+      '<div class="kfoot one roomonly"><button class="btn" id="kgap">Remove wall</button></div>' +
+      '<div class="knote roomonly">drag a rectangle across a wall &middot; ' +
+      'only walls go, everything else stays</div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
@@ -672,6 +763,12 @@ const Build = (() => {
     $('#kmask').onclick = () => {
       if (sel){ sel.mask = !sel.mask; defs.mask = sel.mask; changed(sel); }
       else { defs.mask = !defs.mask; syncUI(); }
+    };
+    const gp = $('#kgap');
+    if (gp) gp.onclick = () => {
+      armed = {kind: 'gap', type: 'rect', band: true};
+      document.body.classList.add('arming');
+      syncUI();
     };
     $('#kclear').onclick = () => {
       if (!G.shapes.length) return;
@@ -902,6 +999,8 @@ const Build = (() => {
     if (!$('#palette') || !$('#kmode')) return;
     document.querySelectorAll('#kmode .chip').forEach(c =>
       c.classList.toggle('sel', c.dataset.mode === mode));
+    const gp2 = $('#kgap');
+    if (gp2) gp2.classList.toggle('sel', !!(armed && armed.band));
     document.body.classList.toggle('rooms', mode === 'rooms');
     if (mode === 'rooms'){
       const st0 = $('#kstate');

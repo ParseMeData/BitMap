@@ -181,8 +181,13 @@ const Palace = (() => {
                 w: g.rw * z, h: g.rh * z, width: wall,
                 variant: 'plaster', label: String(name).slice(0, 22),
                 n: i + 1, room: i + 1});
+      /* The floor runs the FULL width of the room, under the wall rather
+         than up to its inner face. It costs nothing to draw — the wall is on
+         a higher layer and covers it — and it is what makes a demolished
+         wall leave ground behind instead of a one-tile trench you cannot
+         cross. */
       out.push({kind: 'floor', type: 'rect', x: cx, y: cy,
-                w: (g.rw - 1) * z, h: (g.rh - 1) * z, variant: kit.floor,
+                w: g.rw * z, h: g.rh * z, variant: kit.floor,
                 room: i + 1});
 
       for (const it of fill(kit, x0, y0, g.rw, g.rh))
@@ -219,9 +224,23 @@ const Palace = (() => {
      room, and a bed in a hall-sized bedroom should be a bed with more floor
      around it, not a bigger bed. */
   const SLOT = 4;                                // tiles
+  /* ── the walkway ───────────────────────────────────────────────────────
+     Furniture is kept one tile clear of the walls, so a lap of open floor
+     runs right round the inside of every room.
+
+     That is not decoration. Slots pack items nearly edge to edge, and three
+     of them across the middle of a room is a wall — a room you can enter and
+     not cross, which breaks the route the whole palace exists to be. It cost
+     a reachability check to find: 679 tiles walkable and 430 of them
+     reachable, with the top half of the plan sealed off behind a row of
+     kitchen counters. A ring cannot be blocked by anything placed inside it,
+     so the guarantee is structural rather than something to re-test. */
+  const RING = 1;
   function fill(kit, x0, y0, rw, rh){
     const out = [], z = G.terr.tsz;
-    const iw = rw - 2, ih = rh - 2;              // inside the walls
+    const pad = 1 + RING;                        // the wall, then the walkway
+    x0 += pad; y0 += pad;
+    const iw = rw - pad * 2, ih = rh - pad * 2;
     if (iw < 1 || ih < 1) return out;
     const cols = Math.max(1, Math.floor(iw / SLOT));
     const rows = Math.max(1, Math.floor(ih / SLOT));
@@ -240,10 +259,8 @@ const Palace = (() => {
         if (pick < 0) continue;                  // nothing left that fits here
         const it = kit.items[pick];
         used[pick]++; cursor = pick + 1;
-        const cx = clampN(x0 + 1 + (c + 0.5) * sw,
-                          x0 + 1 + it.w / 2, x0 + 1 + iw - it.w / 2);
-        const cy = clampN(y0 + 1 + (r + 0.5) * sh,
-                          y0 + 1 + it.h / 2, y0 + 1 + ih - it.h / 2);
+        const cx = clampN(x0 + (c + 0.5) * sw, x0 + it.w / 2, x0 + iw - it.w / 2);
+        const cy = clampN(y0 + (r + 0.5) * sh, y0 + it.h / 2, y0 + ih - it.h / 2);
         out.push({kind: it.k, type: it.k === 'plant' || it.k === 'pool' ? 'ellipse' : 'rect',
                   x: cx * z, y: cy * z, w: it.w * z, h: it.h * z,
                   variant: it.v || undefined});
@@ -269,7 +286,7 @@ const Palace = (() => {
     const kit = KIT[kitFor(wall.label)] || KIT.plain;
     const out = [{kind: 'floor', type: 'rect',
                   x: (x0 + rw / 2) * z, y: (y0 + rh / 2) * z,
-                  w: (rw - 1) * z, h: (rh - 1) * z,
+                  w: rw * z, h: rh * z,
                   variant: kit.floor, room: wall.room}];
     for (const it of fill(kit, x0, y0, rw, rh)) out.push(Object.assign(it, {room: wall.room}));
     Build.refill(wall.room, out);
@@ -352,9 +369,38 @@ const Palace = (() => {
      only while it is big enough to read: pulled back far enough the letters
      stop being letters, and what you want from across a palace is the order
      anyway. */
-  const NUM_TILES = 1.5;                       // how tall a room number stands
-  const NAME_TILES = 1.0;
+  const NUM_TILES = 1.6;                       // how tall a lone room number stands
+  const NAME_TILES = 0.9;
   const LEGIBLE = 1.5;                         // device px per letterform pixel
+
+  /* ── where a room's caption goes ───────────────────────────────────────
+     Outside it, on a wall that has nothing built against it.
+
+     Rooms in a generated palace are packed edge to edge, so most of a room's
+     perimeter is somebody else's room. A caption laid on one of those walls
+     is written across the neighbour's floor. So the four sides are tried in
+     turn and the first clear one wins — which for a plan of any shape is
+     always at least one side, because the block has an outside.
+
+     If every side is taken, the caption goes back inside at the top. That is
+     the worst of the options and the only one that is always available. */
+  const SIDES = ['top', 'bottom', 'left', 'right'];
+  function place(b, w, h, gap, others){
+    for (const side of SIDES){
+      let x, y;
+      if (side === 'top'){ x = (b[0] + b[2] - w) / 2; y = b[1] - gap - h / 2; }
+      else if (side === 'bottom'){ x = (b[0] + b[2] - w) / 2; y = b[3] + gap + h / 2; }
+      else if (side === 'left'){ x = b[0] - gap - w; y = (b[1] + b[3]) / 2; }
+      else { x = b[2] + gap; y = (b[1] + b[3]) / 2; }
+      const box = [x, y - h / 2, x + w, y + h / 2];
+      let clash = false;
+      for (const o of others){
+        if (box[0] < o[2] && o[0] < box[2] && box[1] < o[3] && o[1] < box[3]){ clash = true; break; }
+      }
+      if (!clash) return {x, y};
+    }
+    return {x: b[0] + gap, y: b[1] + gap + h / 2, inside: true};
+  }
 
   function overlay(a, m, cap){
     if (!G.shapes || !G.terr || WALL) return m;
@@ -363,27 +409,42 @@ const Palace = (() => {
     const vx0 = G.cam[0] - hw, vx1 = G.cam[0] + hw;
     const vy0 = G.cam[1] - hh, vy1 = G.cam[1] + hh;
     const gold = [1, 0.76, 0.31], bone = [0.93, 0.92, 0.89];
-    /* a number holds a screen-space floor so it stays a number from across
-       the whole plan, which is the distance you read the order at */
-    const npx = Math.max(t * NUM_TILES / 7, 2.4 / z);
-    let box = null;
 
+    /* every room, so a caption can be kept off every other one */
+    const rooms = [], boxes = [];
+    let box = null;
     for (const s of G.shapes){
       if (!s.label) continue;
       const b = Kinds.geo.bbox(s);
+      rooms.push(s); boxes.push(b);
       box = box ? [Math.min(box[0], b[0]), Math.min(box[1], b[1]),
                    Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b.slice();
-      if (b[2] < vx0 || b[0] > vx1 || b[3] < vy0 || b[1] > vy1) continue;
-      if (m > cap - 260) continue;
-      if (s.n)
-        m = Type.text(a, m, String(s.n), b[0] + t * 0.35,
-                      b[1] - Type.height(npx) * 0.62, npx, gold, 0.92, cap);
+    }
+
+    for (let i = 0; i < rooms.length; i++){
+      const s = rooms[i], b = boxes[i];
+      if (b[2] < vx0 - t * 3 || b[0] > vx1 + t * 3 ||
+          b[3] < vy0 - t * 3 || b[1] > vy1 + t * 3) continue;
+      if (m > cap - 300) continue;
+      const num = s.n ? String(s.n) : '';
       const name = s.label.toUpperCase();
-      let px = Math.min(t * NAME_TILES / 7,
-                        Type.pitchFor(name, (b[2] - b[0]) * 0.86));
-      if (px * z >= LEGIBLE)
-        m = Type.text(a, m, name, b[0] + t * 0.6,
-                      b[1] + t * 0.6 + Type.height(px) / 2, px, bone, 0.62, cap);
+      /* the caption is the number and the name together while the letters
+         are letters, and the number alone once they stop being */
+      const npx = t * NAME_TILES / 7;
+      const full = npx * z >= LEGIBLE;
+      const px = full ? npx : Math.max(t * NUM_TILES / 7, 2.6 / z);
+      const str = full ? (num ? num + ' ' + name : name) : num;
+      if (!str) continue;
+      const w = Type.width(str, px), h = Type.height(px);
+      const at = place(b, w, h, t * 0.55, boxes.filter((_, j) => j !== i));
+      if (num){
+        m = Type.text(a, m, num, at.x, at.y, px, gold, 0.95, cap);
+        if (full)
+          m = Type.text(a, m, name, at.x + Type.width(num + ' ', px), at.y, px,
+                        bone, at.inside ? 0.55 : 0.72, cap);
+      } else {
+        m = Type.text(a, m, name, at.x, at.y, px, bone, 0.72, cap);
+      }
     }
 
     /* and the name of the whole thing, over the top of it */

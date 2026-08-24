@@ -93,12 +93,19 @@ const Kinds = (() => {
         return [s.x - R, s.y - R, s.x + R, s.y + R];
       }
       const hw = s.w / 2, hh = s.h / 2;
+      let b;
       if (s.rot){
         const c = Math.abs(Math.cos(s.rot)), sn = Math.abs(Math.sin(s.rot));
-        return [s.x - (hw * c + hh * sn), s.y - (hw * sn + hh * c),
-                s.x + (hw * c + hh * sn), s.y + (hw * sn + hh * c)];
+        b = [s.x - (hw * c + hh * sn), s.y - (hw * sn + hh * c),
+             s.x + (hw * c + hh * sn), s.y + (hw * sn + hh * c)];
+      } else b = [s.x - hw, s.y - hh, s.x + hw, s.y + hh];
+      /* a hollow kind straddles its own edge, so half of its band is outside
+         the rect it is described by */
+      if (hollow(s)){
+        const e = (s.width || 0) / 2;
+        return [b[0] - e, b[1] - e, b[2] + e, b[3] + e];
       }
-      return [s.x - hw, s.y - hh, s.x + hw, s.y + hh];
+      return b;
     },
     /* a point in the shape's own frame, with any rotation taken back out */
     local(s, x, y){
@@ -135,8 +142,16 @@ const Kinds = (() => {
       } else d = Math.min(s.w / 2 - Math.abs(l[0]), s.h / 2 - Math.abs(l[1]));
       if (!hollow(s)) return d;
       const t = s.width || 0;
-      if (t * 2 >= Math.min(s.w, s.h)) return d;   // the band has closed up: a solid mass
-      return d <= t ? Math.min(d, t - d) : t - d;
+      if (t >= Math.min(s.w, s.h)) return d;       // the band has closed up: a solid mass
+      /* ── the wall straddles the line ──────────────────────────────────
+         A wall used to run inward from the rect that describes it, which is
+         fine for one room and wrong for two: rooms are packed edge to edge,
+         so where they meet each contributed its own full thickness and the
+         party wall came out twice as thick as the outside of the building.
+         Centred on the line instead, two rooms that meet contribute the SAME
+         band and it stays one wall thick — which is also how a wall is drawn
+         on a plan, because it is how a wall is built. */
+      return t / 2 - Math.abs(d);
     },
     inside(s, x, y){ return geo.depth(s, x, y) > 0; },
     origin(s){ return s.type === 'line' ? s.pts[0] : [s.x, s.y]; },
@@ -1096,9 +1111,16 @@ const Kinds = (() => {
        tile thick, so a door dropped a tile off the wall is a door that looks
        right and does nothing — and a silently shut door is a much worse
        failure than a doorway one tile deep. */
+    /* A door takes the wall out where it stands, the way the demolisher
+       does — it is a hole with a leaf drawn in it, not a panel laid over
+       one. `clears` keeps that appetite to walls and glazing, so a door
+       across a rug takes the wall and leaves the rug; and a cell of margin
+       means it still opens the whole wall when it is dropped a cell off the
+       line, which at this resolution is most of the time. */
     {id: 'door',    label: 'Door',    layer: 'access', types: ['line'],
      variants: ['swing', 'double', 'slide', 'open'], len0: 2, walkTol: 1.05,
-     walk: 2, stamp: 6, gen: door,     swatch: '#F2EDE2', ...HARD},
+     walk: 2, stamp: 6, gen: door,     swatch: '#F2EDE2',
+     clears: ['wall', 'glazing'], ...HARD, pad0: 1},
     /* ── the demolisher ────────────────────────────────────────────────
        Not terrain and not furniture: a hole in what a wall is allowed to be.
        It draws nothing, stamps nothing, and takes ground only from the kinds
@@ -1111,7 +1133,7 @@ const Kinds = (() => {
        something a rect can say about itself. */
     {id: 'gap',     label: 'Remove wall', layer: 'access', types: AREA,
      w0: 4, h0: 4, walk: 1, stamp: 9, gen: nothing, swatch: '#3A3A44',
-     clears: ['wall', 'glazing'], ...HARD},
+     clears: ['wall', 'glazing'], cuts: true, ...HARD},
     {id: 'stairs',  label: 'Stairs',  layer: 'access', types: AREA, variants: ['up', 'down'],
      w0: 2, h0: 5,
      walk: 2, stamp: 6, gen: stairs,   swatch: '#C39A5C', ...HARD}

@@ -529,6 +529,14 @@ floor plan is never drawn over the printed map — without writing that back,
 so the town's own setting is exactly where you left it on the way out. The
 tracing underlay is held down for the same reason and put back untouched.
 
+**A wall straddles the line it is drawn on**, half in and half out. It used to
+run inward from the rect that describes it, which is right for one room and
+wrong for two: rooms are packed edge to edge, so where they met each
+contributed its own full thickness and the party wall came out twice as thick
+as the outside of the building. Centred, two rooms that meet contribute the
+*same* band and it stays one wall thick — which is also how a wall is drawn on
+a plan, because it is how a wall is built.
+
 **Drag a rect out with the wall kind and you get a room** — four walls with an
 open middle. That hollowness lives in the geometry, not in the drawing, which
 is what makes it a room rather than a picture of one: the same `depth()` that
@@ -614,6 +622,12 @@ so the plan has to be settled before the fitting-out means anything. The
 palette opens on **Rooms** when there is a plan, and the two layers are
 exclusive:
 
+A room **takes its contents with it**. Dragging one moves everything in it by
+the same offset; only a change of *size* is a change of what fits, and only
+that lays the fit-out again. Refitting on every release meant a room nudged
+across the plan lost a bed you had moved half a tile — and a click that moved
+nothing at all did the same thing, which is the worst version of it.
+
 **Rooms** — the only things that answer the pointer are the plan: the room
 shells, the doors and the wall gaps. Any of the three can be picked up,
 dragged and deleted; a door and a room's edge grip live in the same place, on
@@ -663,7 +677,12 @@ grid you cannot see over the floor you are aiming at is not helping; one that
 fine standing there permanently is graph paper you are trying to draw a house
 on. It thins back out when the dots get too close to tell apart.
 
-**Door** drags along a wall and cuts one there. The drag's long axis is the
+**Door** drags along a wall and cuts one there. It takes the wall out where it
+stands, the way the demolisher does — a door is a hole with a leaf drawn in
+it, not a panel laid over one. Its appetite is limited to walls and glazing,
+so a door across a rug takes the wall and leaves the rug, and it carries a
+cell of margin so it still opens the whole wall when it is dropped a cell off
+the line, which at this resolution is most of the time. The drag's long axis is the
 door and its short axis is only which wall you meant, so a sideways drag on a
 horizontal wall and a downward one on a vertical wall both do the obvious
 thing. It is placed exactly where you dragged rather than snapped to a tile

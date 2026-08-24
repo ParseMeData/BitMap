@@ -90,7 +90,7 @@ const Build = (() => {
   const zOf = s => (Kinds.layers.find(L => L.id === layerOf(s)) || {z: 0}).z;
   /* A gap belongs to the plan, not to the fit-out: it is a statement about
      where a wall is not, and walls are what the plan is made of. */
-  const isGap = s => (Kinds.by[s.kind] || {}).clears;
+  const isGap = s => (Kinds.by[s.kind] || {}).cuts;
   /* What the plan is made of: the rooms, the holes knocked in them, and the
      ways between them. All three are edited at plan level and none of them
      is furniture. */
@@ -242,6 +242,20 @@ const Build = (() => {
     else G.shapes.splice(i, 1);
     if (sel === s) sel = null;
     changed();
+  }
+
+  /* ── a room takes its contents with it ─────────────────────────────────
+     Moving a room used to lay its fit-out again from scratch, which threw
+     away a bed you had nudged half a tile and, worse, did it on a click that
+     moved nothing at all. A room dragged across the plan is the same room:
+     everything in it comes along. Only a change of SIZE is a change of what
+     fits, and only that re-lays anything. */
+  function carry(wall, dx, dy){
+    for (const x of G.shapes){
+      if (x === wall || x.room !== wall.room) continue;
+      moveBy(x, dx, dy);
+      x._buf = null;
+    }
   }
 
   function moveBy(s, dx, dy){
@@ -404,12 +418,16 @@ const Build = (() => {
        of its own — it is a hole in what a blocker is allowed to block, which
        is the only way to take a wall out of the walk grid without also
        taking out the bed standing next to it. Stamping something walkable
-       over the top would open the bed too. */
-    const cuts = G.shapes.filter(x => (Kinds.by[x.kind] || {}).clears);
+       over the top would open the bed too.
+
+       `cuts` and not `clears`: a door also clears walls, but a door is a way
+       through and lays its own walkable ground. Only the demolisher is
+       purely subtractive. */
+    const cuts = G.shapes.filter(x => (Kinds.by[x.kind] || {}).cuts);
     for (const k of order)
       for (const s of G.shapes){
         if (s.kind !== k.id) continue;
-        if (k.clears) continue;                     // a cut lays nothing down
+        if (k.cuts) continue;                       // a cut lays nothing down
         const cut = cuts.filter(c => Kinds.by[c.kind].clears.indexOf(k.id) >= 0);
         /* A route thinner than a walk tile would stamp a dotted line of
            walkable tiles, so a band stamps by distance with half a tile of
@@ -693,7 +711,7 @@ const Build = (() => {
         }
         for (const h of handles(sel))
           if (Math.hypot(h.x - p[0], h.y - p[1]) < hr){
-            drag = {mode: h.tag, s: sel, ox: p[0], oy: p[1]};
+            drag = {mode: h.tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
             canvas.setPointerCapture(e.pointerId);
             return;
           }
@@ -713,7 +731,7 @@ const Build = (() => {
       sel = hit;
       if (hit){
         lastKind = hit.kind;
-        drag = {mode: 'move', s: hit, ox: p[0], oy: p[1]};
+        drag = {mode: 'move', s: hit, ox: p[0], oy: p[1], w0: hit.w, h0: hit.h};
         canvas.setPointerCapture(e.pointerId);
       }
       syncUI();
@@ -729,6 +747,7 @@ const Build = (() => {
         const dx = snapQ(p[0] - drag.ox, q), dy = snapQ(p[1] - drag.oy, q);
         if (!dx && !dy) return;
         moveBy(s, dx, dy);
+        if (s.label && mode === 'rooms') carry(s, dx, dy);
         drag.ox += dx; drag.oy += dy;
       } else if (drag.mode === 'rot'){
         /* free rotation, held to 15° so a district still lines up with
@@ -821,12 +840,18 @@ const Build = (() => {
         return;
       }
       if (drag){
-        const s = drag.s;
+        const s = drag.s, w0 = drag.w0, h0 = drag.h0;
         drag = null;
-        /* on release, not on every move: laying a room's contents again is
+        /* On release, not on every move: laying a room's contents again is
            the expensive half, and watching furniture flicker through every
-           intermediate size is worse than seeing it settle once */
-        if (s && s.label && mode === 'rooms' && typeof Palace !== 'undefined') Palace.refit(s);
+           intermediate size is worse than seeing it settle once.
+
+           And only when the size actually changed. A room that was moved
+           brought its contents with it, and a room that was merely clicked
+           has had nothing done to it at all — re-laying either is destroying
+           work to no purpose. */
+        if (s && s.label && mode === 'rooms' && typeof Palace !== 'undefined' &&
+            (s.w !== w0 || s.h !== h0)) Palace.refit(s);
         return;
       }
       if (!armed) return;

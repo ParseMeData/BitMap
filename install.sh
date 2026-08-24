@@ -63,9 +63,18 @@ esac
 VERSION="$(git -C "$DIR" describe --tags --abbrev=0 2>/dev/null || true)"
 [ -n "$VERSION" ] || VERSION="dev"
 
+# Tags are named v5.0 and every surface that shows a version says V5.0 — the
+# window title, the README heading. The launcher is read beside them, so it
+# gets the same capital rather than the raw tag name.
+case "$VERSION" in v[0-9]*) VERSION="V${VERSION#v}" ;; esac
+
 # Substituting with | rather than / because the directory going in is a path.
+# The template's header explains that it IS a template, which is false the
+# moment it is installed — so the copy starts at the group header and the
+# explanation stays behind in the tracked file where it is true.
 mkdir -p "$APPS"
-sed -e "s|@DIR@|$DIR|g" -e "s|@VERSION@|$VERSION|g" "$DIR/memory-quest.desktop" > "$ENTRY"
+sed -n '/^\[Desktop Entry\]/,$p' "$DIR/memory-quest.desktop" \
+  | sed -e "s|@DIR@|$DIR|g" -e "s|@VERSION@|$VERSION|g" > "$ENTRY"
 
 # Installed under the theme name the entry asks for, so the entry carries no
 # absolute path at all and the icon survives the clone being moved.

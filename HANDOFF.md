@@ -1,6 +1,6 @@
 # Handoff
 
-Written 24 Aug 2026, at tag **v4.6**. Read `README.md` for how any single
+Written 24 Aug 2026, at tag **v5.0**. Read `README.md` for how any single
 thing works, and `STYLE.md` before changing anything you can see; this is
 the shape of the whole and the things that are not obvious from the code.
 
@@ -62,7 +62,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## State at v4.6
+## State at v5.0
 
 Where the branches and the tags actually stand is a thing to read, not a thing
 to write down — a transcript of it is wrong by the next commit, and wrong in a

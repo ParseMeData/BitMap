@@ -1,4 +1,4 @@
-# Memory Quest V4.6
+# Memory Quest V5.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V4.6 in the KDE launcher
+    ./play.sh          # or: Memory Quest V5.0 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest.desktop` template, writes the
@@ -57,6 +57,13 @@ and a click to resume.
 **v4.6** — walls that meet share one wall, doors that take out the wall they
 stand in and swing away from you when you walk into them, and rooms that carry
 their contents rather than being laid again.
+**v5.0** — packaged: an install and uninstall path so the launcher is not a
+hand-kept copy of itself, the page wearing its own icon, saves that say so
+when they fail, Esc no longer freezing the desktop plate, the arming tools
+finally lighting up, a snapshot tool you can aim at a throwaway profile and
+that takes a backup before it destroys anything, and `STYLE.md` — the look
+written down, so the one thing that cannot be re-derived from the code stops
+depending on whoever last touched it.
 
 ### The half that is not in the repo
 

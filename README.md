@@ -600,12 +600,31 @@ so the plan has to be settled before the fitting-out means anything. The
 palette opens on **Rooms** when there is a plan, and the two layers are
 exclusive:
 
-**Rooms** — the only things that answer the pointer are the room shells and
-the wall gaps, and the whole room is the handle rather than the quarter-tile
+**Rooms** — the only things that answer the pointer are the plan: the room
+shells, the doors and the wall gaps. Any of the three can be picked up,
+dragged and deleted; a door and a room's edge grip live in the same place, on
+the wall, and the door wins the pointer because it is the smaller and more
+specific of the two — the grips keep the rest of the wall and all four
+corners. and the whole room is the handle rather than the quarter-tile
 ribbon of its wall. Move one, resize one by its corners, and **its contents
 are laid again for the shape it is now**. Make it bigger and the next slot
 appears and fills; make it smaller and the slot goes and takes its contents
 with it. Deleting a room deletes the room, not the four walls of one.
+
+**Door** drags along a wall and cuts one there. The drag's long axis is the
+door and its short axis is only which wall you meant, so a sideways drag on a
+horizontal wall and a downward one on a vertical wall both do the obvious
+thing. It is placed exactly where you dragged rather than snapped to a tile
+centre — a wall an even number of tiles from the origin sits on tile centres
+itself, and a door snapped off it opens half a doorway.
+
+Doors are **not** cut automatically when a palace is laid out. Where you get
+between two rooms is a route, and a route you did not choose is the wrong
+answer in a thing whose whole point is the route you did choose. Consecutive
+rooms always share a wall, so a door between them is one drag. A fresh palace
+is therefore a set of sealed rooms, and the panel says how many of them the
+walker can actually reach — otherwise *nothing happens when I walk into the
+next room* is a mystery rather than a list of doors still to cut.
 
 **Remove wall** drags a rectangle across a wall and takes that stretch of it
 out — the diamonds, and the block in the walk grid — so two rooms run into one

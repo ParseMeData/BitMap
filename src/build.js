@@ -69,9 +69,13 @@ const Build = (() => {
   /* A gap belongs to the plan, not to the fit-out: it is a statement about
      where a wall is not, and walls are what the plan is made of. */
   const isGap = s => (Kinds.by[s.kind] || {}).clears;
+  /* What the plan is made of: the rooms, the holes knocked in them, and the
+     ways between them. All three are edited at plan level and none of them
+     is furniture. */
+  const isPlan = s => !!s.label || !!isGap(s) || s.kind === 'door';
   const editable = s => mode === 'rooms'
-    ? (!!s.label || !!isGap(s))
-    : (!s.label && !isGap(s) && layerOf(s) === layer && vis[layerOf(s)]);
+    ? isPlan(s)
+    : (!isPlan(s) && layerOf(s) === layer && vis[layerOf(s)]);
 
   /* ── model ── */
   function defaults(s, type){
@@ -562,7 +566,8 @@ const Build = (() => {
          what it is FOR is a stretch, and a stretch is two corners. */
       if (armed && armed.band){
         const q = toWorld(e);
-        band = {kind: armed.kind, x0: q[0], y0: q[1], x1: q[0], y1: q[1]};
+        band = {kind: armed.kind, shape: armed.shape || 'rect',
+                x0: q[0], y0: q[1], x1: q[0], y1: q[1]};
         canvas.setPointerCapture(e.pointerId);
         return;
       }
@@ -581,6 +586,27 @@ const Build = (() => {
         syncUI(); return;
       }
       Markers.select(null);
+      /* A door and a room's edge grip live in the same place — on the wall —
+         and the grips are checked first because they belong to what is
+         already selected. So a door on a selected room's wall could never be
+         picked up: the grip swallowed the click. The door is the smaller and
+         more specific of the two, so it wins the pointer, and the grips keep
+         the rest of the wall and all four corners. */
+      if (mode === 'rooms'){
+        let plan = null;
+        for (let i = G.shapes.length - 1; i >= 0; i--){
+          const s = G.shapes[i];
+          if (s.label || !editable(s)) continue;
+          if (near(s, p, GRAB())){ plan = s; break; }
+        }
+        if (plan){
+          sel = plan;
+          drag = {mode: 'move', s: plan, ox: p[0], oy: p[1]};
+          canvas.setPointerCapture(e.pointerId);
+          syncUI();
+          return;
+        }
+      }
       if (sel && editable(sel)){
         if (e.shiftKey && sel.type === 'line' && near(sel, p, GRAB())){
           addPoint(sel, p); return;
@@ -654,9 +680,25 @@ const Build = (() => {
         band = null; armed = null;
         document.body.classList.remove('arming');
         const g = grid();
-        const w = Math.max(g, snapS(Math.abs(b.x1 - b.x0)));
-        const h = Math.max(g, snapS(Math.abs(b.y1 - b.y0)));
-        drop(b.kind, snapC((b.x0 + b.x1) / 2), snapC((b.y0 + b.y1) / 2), w, h);
+        const w = Math.abs(b.x1 - b.x0), h = Math.abs(b.y1 - b.y0);
+        const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+        if (b.shape === 'line'){
+          /* A door runs ALONG the wall it opens, so the drag's long axis is
+             the door and its short axis is only which wall you meant. It is
+             placed exactly where you dragged rather than snapped to a tile
+             centre: a wall an even number of tiles from the origin sits on
+             tile centres itself, and a door snapped off it opens half of a
+             doorway. */
+          const len = Math.max(g * 2, Math.round(Math.max(w, h) / g) * g);
+          const pts = w >= h ? [[cx - len / 2, cy], [cx + len / 2, cy]]
+                             : [[cx, cy - len / 2], [cx, cy + len / 2]];
+          const s2 = make({kind: b.kind, type: 'line', pts, exact: true,
+                           width: cellSize() * 2, variant: 'swing'});
+          if (s2){ sel = s2; changed(s2); }
+        } else {
+          drop(b.kind, snapC(cx), snapC(cy),
+               Math.max(g, snapS(w)), Math.max(g, snapS(h)));
+        }
         syncUI();
         return;
       }
@@ -711,9 +753,10 @@ const Build = (() => {
     el.innerHTML =
       '<div class="plabel">Edit</div><div id="kmode" class="chips two"></div>' +
       '<div class="plabel roomonly">Walls</div>' +
-      '<div class="kfoot one roomonly"><button class="btn" id="kgap">Remove wall</button></div>' +
-      '<div class="knote roomonly">drag a rectangle across a wall &middot; ' +
-      'only walls go, everything else stays</div>' +
+      '<div class="kfoot roomonly"><button class="btn" id="kdoor">Door</button>' +
+      '<button class="btn" id="kgap">Remove wall</button></div>' +
+      '<div class="knote roomonly">drag along a wall for a door, or a rectangle ' +
+      'across one to take it out &middot; either can be selected and deleted</div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
@@ -773,12 +816,15 @@ const Build = (() => {
       if (sel){ sel.mask = !sel.mask; defs.mask = sel.mask; changed(sel); }
       else { defs.mask = !defs.mask; syncUI(); }
     };
-    const gp = $('#kgap');
-    if (gp) gp.onclick = () => {
-      armed = {kind: 'gap', type: 'rect', band: true};
+    const arm = (kind, shape) => {
+      armed = {kind, band: true, shape};
       document.body.classList.add('arming');
       syncUI();
     };
+    const gp = $('#kgap');
+    if (gp) gp.onclick = () => arm('gap', 'rect');
+    const dr = $('#kdoor');
+    if (dr) dr.onclick = () => arm('door', 'line');
     $('#kclear').onclick = () => {
       if (!G.shapes.length) return;
       G.shapes.length = 0; sel = null; changed();
@@ -1008,18 +1054,30 @@ const Build = (() => {
     if (!$('#palette') || !$('#kmode')) return;
     document.querySelectorAll('#kmode .chip').forEach(c =>
       c.classList.toggle('sel', c.dataset.mode === mode));
-    const gp2 = $('#kgap');
-    if (gp2) gp2.classList.toggle('sel', !!(armed && armed.band));
+    const gp2 = $('#kgap'), dr2 = $('#kdoor');
+    if (gp2) gp2.classList.toggle('sel', !!(armed && armed.band && armed.kind === 'gap'));
+    if (dr2) dr2.classList.toggle('sel', !!(armed && armed.band && armed.kind === 'door'));
     document.body.classList.toggle('rooms', mode === 'rooms');
     if (mode === 'rooms'){
       const st0 = $('#kstate');
       const rooms = G.shapes.filter(x => x.label).length;
       if (st0) st0.innerHTML = !rooms
         ? 'no rooms yet · <b>O</b> types a list and lays one out'
-        : (sel ? '<b>drag</b> the room · <b>corners</b> resize · the fit-out follows it'
+        : (sel ? (sel.label
+                    ? '<b>drag</b> the room · <b>corners</b> resize · the fit-out follows it'
+                    : '<b>' + (sel.kind === 'door' ? 'door' : 'wall gap') +
+                      '</b> · drag to move · <b>del</b> removes it')
                : '<b>' + rooms + ' rooms</b> · click one to move or resize it');
+      /* A palace is laid out sealed, so how much of it the walker can
+         actually get to is the number worth showing — otherwise "nothing
+         happens when I walk into the next room" is a mystery instead of a
+         list of doors still to cut. */
       const el0 = $('#kstat');
-      if (el0) el0.textContent = 'the furniture refits · fit-out is locked';
+      const j = joined();
+      if (el0) el0.textContent = !j || !j.total ? 'the furniture refits · fit-out is locked'
+        : j.n >= j.total ? j.total + ' rooms · all joined'
+        : j.n + ' of ' + j.total + ' rooms joined · add doors to reach the rest';
+      if (el0) el0.classList.toggle('warn', !!(j && j.total && j.n < j.total));
       syncRoute();
       return;
     }
@@ -1159,6 +1217,25 @@ const Build = (() => {
         });
       });
     if (adopt()) save();
+  }
+
+  /* how many rooms the walker can actually get to from where it stands */
+  function joined(){
+    if (!G.terr || !G.reach) return null;
+    const t = G.terr, z = t.tsz;
+    let n = 0, total = 0;
+    for (const w of G.shapes){
+      if (!w.label) continue;
+      total++;
+      const b = Kinds.geo.bbox(w);
+      const x0 = Math.max(0, Math.floor(b[0] / z)), x1 = Math.min(t.tw - 1, Math.ceil(b[2] / z));
+      const y0 = Math.max(0, Math.floor(b[1] / z)), y1 = Math.min(t.th - 1, Math.ceil(b[3] / z));
+      let hit = false;
+      for (let y = y0; y <= y1 && !hit; y++)
+        for (let x = x0; x <= x1; x++) if (G.reach[y * t.tw + x]){ hit = true; break; }
+      if (hit) n++;
+    }
+    return {n, total};
   }
 
   const startLayer = () => (Kinds.layers.find(L => L.start) || Kinds.layers[0]).id;

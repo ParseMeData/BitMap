@@ -8,11 +8,15 @@
    away like anything else you drew by hand.
 
    The order is not a suggestion the layout is free to ignore. Rooms are
-   placed so that consecutive ones are always adjacent, and a door is cut
-   between each pair — the run boustrophedons along each row and turns at
-   the end of it, the way a plough does, so room five is next to room four
-   even when it starts a new row. That means the order you typed is a route
-   you can actually walk, which is the whole of what a memory palace is.
+   placed so that consecutive ones are always adjacent — the run boustrophedons
+   along each row and turns at the end of it, the way a plough does, so room
+   five is beside room four even when it starts a new row. Every pair in the
+   order therefore shares a wall, and a door between them is one drag.
+
+   Cutting those doors automatically is the one thing this deliberately does
+   not do. Where you get between two rooms is a route, and a route you did
+   not choose is the wrong answer in a thing whose whole point is the route
+   you did choose.
 
    The list is kept per palace, so coming back to one shows what it was
    built from rather than an empty box. It opens itself on a palace with
@@ -165,13 +169,11 @@ const Palace = (() => {
     const ox = MARGIN + Math.max(0, Math.floor((W - g.cols * g.rw) / 2));
     const oy = MARGIN + Math.max(0, Math.floor((H - g.rows * g.rh) / 2));
     const out = [];
-    const boxes = [];
 
     names.forEach((name, i) => {
       const {row, col} = cellOf(i, g.cols);
       const x0 = ox + col * g.rw, y0 = oy + row * g.rh;
       const cx = (x0 + g.rw / 2) * z, cy = (y0 + g.rh / 2) * z;
-      boxes.push({x0, y0, row, col, cx, cy});
       const kit = KIT[kitFor(name)] || KIT.plain;
 
       /* the shell, carrying the name and the place in the order — a room is
@@ -194,22 +196,15 @@ const Palace = (() => {
         out.push(Object.assign(it, {room: i + 1}));
     });
 
-    /* a door between every consecutive pair, on the wall they share */
-    for (let i = 0; i + 1 < boxes.length; i++){
-      const a = boxes[i], b = boxes[i + 1];
-      let p0, p1;
-      if (a.row === b.row){                      // side by side: the vertical wall
-        const x = (ox + Math.max(a.col, b.col) * g.rw) * z;
-        const y = a.cy;
-        p0 = [x, y - z]; p1 = [x, y + z];
-      } else {                                   // the turn: the horizontal wall
-        const y = (oy + Math.max(a.row, b.row) * g.rh) * z;
-        const x = a.cx;
-        p0 = [x - z, y]; p1 = [x + z, y];
-      }
-      out.push({kind: 'door', type: 'line', pts: [p0, p1], width: wall,
-                variant: 'swing', exact: true});
-    }
+    /* No doors. The layout decides where the rooms are; where you get
+       between them is a separate decision and belongs to you — a door cut
+       automatically at every join is a route you did not choose, in a thing
+       whose entire point is the route you did choose. The palette has a Door
+       tool beside the demolisher.
+
+       So a fresh palace is a set of sealed rooms, and the panel says how
+       many of them the walker can actually reach — otherwise "nothing
+       happens when I walk" is a mystery rather than a to-do list. */
     Build.lay(out);
     return names.length;
   }
@@ -345,7 +340,7 @@ const Palace = (() => {
       ? 'one room to a line · bedroom, bathroom, kitchen, study…'
       : (had && !armed)
         ? 'there is already a plan here — press again to replace it'
-        : 'doors are cut between them in this order';
+        : 'laid out in this order, each one beside the last · doors are yours';
   }
   function go(){
     const ta = $('#porder');

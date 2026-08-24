@@ -684,9 +684,23 @@ function frame(now){
 }
 
 function refit(){
+  /* ── a resting view stays resting when the window changes ──────────────
+     home() is worked out from the viewport, so a window that is resized —
+     or one that booted while it was still small, which is what a hidden or
+     just-restored window looks like for a frame — has a different one than
+     the zoom it is currently sitting at. Clamping alone would leave it at a
+     distance that was right for a viewport it no longer has.
+
+     So the resting view is re-derived, and ONLY the resting view: a zoom you
+     chose is yours, and being thrown back out to home in the middle of
+     working close on a corner because the window grew is worse than any
+     staleness. The test is exact equality with the old home, because that
+     is a value nothing but home() writes. */
+  const wasHome = Math.abs(G.camT[2] - home()) < 1e-6;
   G.fitW = VW / G.W;
   G.fitAll = Math.min(VW / G.W, VH / G.H);
   if (!G.cam[2] || G.cam[2] < 0.001){ G.cam[2] = G.camT[2] = home(); }
+  else if (wasHome) G.camT[2] = home();
   G.camT[2] = clamp(G.camT[2], G.fitAll * 0.85, G.fitW * 5);
 }
 

@@ -30,8 +30,9 @@ freeze-and-place.
 **v3.0** — interiors: walk up to a marker, press `Enter`, and build that
 building's floor plan in the same editor.
 **v3.1** — loci: the markers inside a room are numbered places, each holding
-a picture of what stands there, and that ordered run is what the platformer
-plays. `platformer.html` joins the project.
+a picture of what stands there. That ordered run is what the platformer
+plays — as a chain, each picture built out of the one before it.
+`platformer.html` joins the project.
 
 ### The half that is not in the repo
 
@@ -575,13 +576,39 @@ way in, which is more than anything downstream wants.
 
 `P`, or **Play the route**, hands the run to `platformer.html`: every room in
 the town's order, and inside each one every locus in its own, flattened into
-the sequence of pictures you run through. One picture per face — a locus is
-somewhere you stand in front of and look at, not half of a pair.
+the sequence of pictures you run through.
 
-The platformer is the halftone platformer, unchanged: the picture is the
-level, thresholded into a static map, and the diamond runs and jumps and
-climbs over it. Open it on its own and it still plays its own deck. What is
-new is nine lines that take a deck from here when there is one.
+What it plays is the platformer's own game, not a slideshow. Two pictures are
+on screen at once — the left one whole, the right one **empty**. Clusters of
+colour surface in the left one; the diamond runs and jumps and climbs to
+reach them, and carrying one over reveals a proportional share of the right.
+The left loses exactly what it gives, so **you are building the next picture
+out of the one you are standing on**, and the view pans steadily left as you
+do, from the source to what you have made of it. Emptying the source is the
+same event as completing the destination — there is no separate win condition
+that could drift out of step with it.
+
+The pictures are grouped as a **chain**, which is the one thing the route
+changes. The built-in deck is disjoint pairs — 0 and 1, then 2 and 3 —
+because it is two pictures that belong together. A route runs 0 into 1, then
+1 into 2, then 2 into 3: the picture you just finished building is the one
+you empty next, so the same diamonds carry all the way along the run. That is
+the walk through the palace, and it is why a route of n pictures is n−1
+scenes.
+
+Scenes advance **on completion**, not on the deck's timer, for the same
+reason — a route is a sequence you finish rather than a deck that drifts.
+After the last one it hands you back to the builder: closing this window if
+the builder opened it, because two builders sharing one profile is how you
+lose an edit.
+
+A route of one picture has nothing to carry into, so it is shown on its own
+with no game. Two is the minimum for a transfer.
+
+The platformer is otherwise the halftone platformer, unchanged: the picture
+is the level, thresholded into a static map that is the only thing collision
+reads. Open it on its own and it still plays its own deck. What is new is the
+deck hook and the chain.
 
 Those nine lines exist because of one measured fact: **every `file://` page
 in this browser shares a single origin**, so a second page can read this

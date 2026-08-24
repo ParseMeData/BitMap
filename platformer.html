@@ -1923,8 +1923,12 @@ const game = {
     if (q.revealed > 0) this.densDirty = true;
     const want = Math.round(q.revealed * q.mapOrder.length / q.rightTotal);
     while (q.mapRevealed < want) g.solid[q.mapOrder[q.mapRevealed++]] = 1;
-    if (q.revealed >= q.rightTotal) q.done = true;
+    /* showProgress writes the same line routeDone wants to write, so the
+       readout is painted first and the handover speaks last */
+    const finished = q.revealed >= q.rightTotal && !q.done;
+    if (finished) q.done = true;
     this.showProgress();
+    if (finished) routeDone();
   },
   /* A cluster has to be somewhere a body can actually get to. Most of the
      hand is its unlit interior, which the threshold never called ground, so a
@@ -2544,8 +2548,21 @@ let hideHint = function(){ clearTimeout(hintT); const h = $('#hint'); if (h) h.c
    page here shares one origin, which is the whole reason either half is
    readable from this document at all.
 
-   One picture per face: a locus is a place you stand in front of and look
-   at, not half of a pair. */
+   The route plays the game this page has always played, not a slideshow of
+   the pictures. Two panels: the left one whole, the right one empty, and you
+   carry the left across a cluster at a time until the right is built and the
+   view has panned from one to the other.
+
+   What differs from the built-in deck is how the pictures are grouped. That
+   deck is DISJOINT pairs — images 0,1 then 2,3 — because it is two pictures
+   that belong together. A route is a CHAIN: 0 into 1, then 1 into 2, then 2
+   into 3, so the picture you just finished building is the one you empty
+   next, and the diamonds carry all the way along the run. That is the walk
+   through the palace, and it is why a route of n pictures is n-1 scenes.
+
+   Scenes advance on completion rather than on a timer, for the same reason:
+   the run is a sequence you finish, not a deck that drifts. After the last
+   one it hands you back to the builder. */
 const MQ_KEY = 'hq.deck';
 function mqOrder(){
   try {
@@ -2575,6 +2592,9 @@ function mqFetch(uids, into){
   });
 }
 const MQ = mqOrder();
+/* one picture cannot be carried into anything, so a route of one is just a
+   picture — the chain needs two before there is a transfer to play */
+const CHAIN = !!(MQ && MQ.uids.length >= 2);
 
 /* ── the deck ────────────────────────────────────────────────────────────── */
 const BAKED = [
@@ -2589,11 +2609,11 @@ const BAKED = [
    fall down it. */
 /* the route if there is one, and the page's own deck if there is not */
 const PLACE = MQ ? MQ.uids.slice() : BAKED;
-const PANELS_BUILT = MQ ? 1 : 2;      /* filled in by tools/build.py */
+const PANELS_BUILT = (MQ && !CHAIN) ? 1 : 2;      /* filled in by tools/build.py */
 const PANELS = Math.max(1, Math.min(4,
   parseInt(QS.get('panels') || '', 10) || PANELS_BUILT || 1));
 const NIMG = PLACE.length;
-const N = Math.max(1, Math.ceil(NIMG / PANELS));
+const N = CHAIN ? Math.max(1, NIMG - 1) : Math.max(1, Math.ceil(NIMG / PANELS));
 const PAL = [RGBV.bone, RGBV.flare, RGBV.aqua, RGBV.gold, RGBV.violet];
 /* three inks rotate through the deck; the wrap never repeats a colour */
 const autoInk = k => (k === N - 1 && N % PAL.length === 1) ? PAL[1] : PAL[k % PAL.length];
@@ -2678,7 +2698,7 @@ const GUTTER = .88;             /* of each panel's width, so the two do not touc
 function composeScene(sIdx){
   const list = [];
   for (let i = 0; i < PANELS; i++){
-    const k = sIdx * PANELS + i;
+    const k = CHAIN ? sIdx + i : sIdx * PANELS + i;   // chain overlaps, deck does not
     if (k < NIMG && st.img[k]) list.push(st.img[k]);
   }
   if (!list.length) return null;
@@ -2707,6 +2727,8 @@ function recompose(){
 
 const loadedCount = () => st.src.reduce((a, s) => a + (s ? 1 : 0), 0);
 function nextIdx(k){              // next loaded face, skipping any that failed
+  /* a route runs to its end and stops; the deck is a loop */
+  if (CHAIN){ for (let j = k + 1; j < N; j++) if (st.src[j]) return j; return k; }
   for (let i = 1; i <= N; i++){ const j = (k + i) % N; if (st.src[j]) return j; }
   return k;
 }
@@ -2780,12 +2802,36 @@ const HOLD_AFTER_INPUT = 6;
 const nextCycle = () => 9000 + Math.random() * 4000;
 function scheduleAuto(){
   clearTimeout(autoT);
+  if (CHAIN) return;              // a route advances when you finish a picture
   if (panelOpen) return;          // hold the deck still while tuning
   autoT = setTimeout(() => {
     if (PLAY && game.idleSince < HOLD_AFTER_INPUT){ scheduleAuto(); return; }
     mergeNow();
   }, nextCycle());
 }
+/* ── the end of a picture, and the end of the run ──────────────────────────
+   The scene you just finished built the next one's left half, so moving on is
+   simply rendering the next scene — the diamonds you carried are already in
+   it. A beat first, because arriving and leaving in the same frame reads as a
+   glitch rather than as an ending.
+
+   After the last picture it goes back to the builder. If this window was
+   opened from there, going back means closing this one rather than loading a
+   second copy of the town over the top of the first — two builders sharing
+   one profile is how you lose an edit. */
+function routeDone(){
+  if (!CHAIN) return;
+  const k = st.cur, last = k >= N - 1;
+  const el = $('#prog');
+  if (el) el.innerHTML = '<span class="hot">&#9670;</span> ' +
+    (last ? 'THE ROUTE IS WALKED' : 'CARRIED &#183; ' + (k + 2) + ' OF ' + (N + 1));
+  setTimeout(() => {
+    if (!last){ renderFace(k + 1, 1.6); return; }
+    if (window.opener && !window.opener.closed){ window.close(); return; }
+    location.href = 'index.html';
+  }, last ? 2600 : 1800);
+}
+
 function mergeNow(){
   if (loadedCount() > 1) renderFace(nextIdx(st.cur));
   scheduleAuto();

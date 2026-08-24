@@ -1,4 +1,4 @@
-# Memory Quest V2.0
+# Memory Quest V3.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V2.0 in the KDE launcher
+    ./play.sh          # or: Memory Quest V3.0 in the KDE launcher
 
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
@@ -27,22 +27,29 @@ launcher and README follows it.
 **v1.0** — forked from Haunt Quest: blank plate, the dark tracing underlay,
 freeze-and-place.
 **v2.0** — creek terrain, the Glow slider, a larger walker.
+**v3.0** — interiors: walk up to a marker, press `Enter`, and build that
+building's floor plan in the same editor.
 
 ### The half that is not in the repo
 
 The source tree is the engine. The *town* — every shape, every marker, the
-frozen tracing picture, the blank-plate flag — lives in the browser profile
-the launcher uses, so a tag on its own is only half a version. `tools/`
-writes the other half to a file beside it:
+frozen tracing picture, the blank-plate flag, the floor plan inside every
+building — lives in the browser profile the launcher uses, so a tag on its
+own is only half a version. `tools/` writes the other half to a file beside
+it:
 
     ./play.sh --remote-debugging-port=9222 &
-    tools/snapshot.py save    snapshots/v2.0.json
-    tools/snapshot.py restore snapshots/v2.0.json
+    tools/snapshot.py save    snapshots/v3.0.json
+    tools/snapshot.py restore snapshots/v3.0.json
 
-`snapshots/v2.0.json` is the town as it stood at that tag, frozen picture and
-all. Restoring is destructive — it overwrites whatever the profile currently
-holds and reloads the page, so snapshot the live state first if it is ahead
-of the file.
+`snapshots/v3.0.json` is the town as it stood at that tag, frozen picture and
+all. Restoring is destructive — the profile *becomes* the file, so a room
+built since the snapshot is removed rather than left behind, and the page
+reloads. Snapshot the live state first if it is ahead of the file.
+
+Every `hq.` key is taken rather than a list written down in the tool, because
+an interior is one key per marker named after an id only that marker has, and
+there is no fixed set of them.
 
 `tools/cdp.py` is what talks to the running page: a few dozen lines of
 WebSocket, because nothing else here needs a dependency.
@@ -58,12 +65,13 @@ WebSocket, because nothing else here needs a dependency.
 | wheel, `+` `-`, `0` | zoom / reset zoom |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
+| `Enter` | go inside the marker you are standing by |
 | `M` | map underlay to trace over |
 | drag / `Shift`+drag | move / turn the frozen map (in Place) |
 | `Shift`+`Tab` | next layer (in build mode) |
 | `R` | new round |
 | `F` / `F11` | fullscreen |
-| `Esc` | pause |
+| `Esc` | leave the interior &nbsp;·&nbsp; otherwise pause |
 
 Clear every spark to finish a round; each round adds two more. Your best
 clear time is kept in the browser profile the launcher uses.
@@ -109,6 +117,9 @@ reach.
                     emitter, the palette, and one generator per terrain kind
     src/panel.js    tune panel, and the Map/Blank plate switch
     src/build.js    build mode: shapes, dragging, walk-grid stamping
+    src/markers.js  glyph markers, baked to one texture atlas
+    src/interior.js going inside a marker: the stack, and the swap
+    src/basemap.js  the tracing underlay, live tiles and frozen picture
     src/game.js     state, input, camera, entities, frame loop
 
 `analyse` is the expensive half (~40 ms) and only re-runs when Detail, Tone or
@@ -325,6 +336,16 @@ which is why terrain travels with its shape when you drag it instead of
 re-rolling under your hand. Shapes snap to the lattice grid for the same
 reason.
 
+There are two registries — the map's and the floor plan's — and `LIST`,
+`LAYERS` and `PALETTE` are the map's. A kind for indoors goes in `FLIST` and
+`FPALETTE` instead; everything downstream reads `Kinds.list`, `Kinds.by`,
+`Kinds.layers` and `Kinds.palette` and never learns which set it is looking
+at. `Kinds.use(scope)` is the whole of the swap. A few extra columns are
+available to either of them: `w0`/`h0`/`len0` say how big one of the thing is
+when it is born, because a district is a field of housing and a bed is one
+bed; `hollow` makes an area shape its own perimeter; `walkTol` widens what a
+route opens in the walk grid.
+
 ## Tracing a real place
 
 `M` opens the map bar. Type a town or an address, press Find, and a real map
@@ -432,6 +453,78 @@ sheet is built by drawing each glyph and comparing it against what this font
 renders for a codepoint that is definitely missing. Anything that matches, or
 comes out blank, is dropped before the sheet is laid out — the palette only
 ever offers glyphs that actually drew.
+
+Select one in build mode and a field appears under the palette to **name** it.
+The name is what the prompt and the banner call the place; unnamed, they fall
+back to its glyph. Every marker also carries an id of its own, minted once and
+saved with it, because its place in the array is not an identity — delete a
+marker above it and everything below shifts, and the floor plan hanging off it
+has to survive that. Markers saved before v3.0 have one minted on first load.
+
+## Going inside
+
+Walk up to a marker and press `Enter`. The plate becomes that building's
+**floor plan**, drawn in the same editor with a different set of kinds. `Esc`
+comes back out, to the tile you stepped in from and the round you were in the
+middle of.
+
+    Walls       wall · room · window
+    ─────────────────────────────────
+    Floor       floor · rug · water
+    Fittings    counter · table · bed · sofa · shelf · plant
+    Access      door · stairs
+
+Nothing is simulated twice. Inside is the same engine on a different set of
+shapes: the same lattice cells, the same walk grid, the same walker stepping
+between the same tiles. Three things swap and nothing else — which registry
+of kinds the palette is built from, which key the shapes are saved under, and
+which markers are pinned. Build mode is never told which of the two it is
+editing, because there is nothing it would do differently, and neither is the
+walker.
+
+Going in is a stack rather than a flag, so a marker *inside* a building is a
+door like any other and the way back out is however many doors you came
+through. The frame pushed on the way in holds the half of the world that is
+not in storage: where the walker was standing, where the camera was looking,
+the round in progress. The plate is forced blank while you are inside — a
+floor plan is never drawn over the printed map — without writing that back,
+so the town's own setting is exactly where you left it on the way out. The
+tracing underlay is held down for the same reason and put back untouched.
+
+**Drag a rect out with the wall kind and you get a room** — four walls with an
+open middle. That hollowness lives in the geometry, not in the drawing, which
+is what makes it a room rather than a picture of one: the same `depth()` that
+decides what a shape covers, which tiles it blocks the walker on, and where
+the pointer can pick it up. The floor inside is left alone by all three. The
+one slider is the wall's *thickness* there, with the size left to the grips
+and `[ ]`, because a room needs both and a district only ever needed one.
+Widen a wall past half the shape and the band closes up into a solid mass,
+which is a pillar.
+
+**A door is the one kind that takes ground from a wall instead of joining
+it.** Walls and glazing connect to one another the way roads do, so a corner
+is a corner; a door does not, so drawing one across a wall run opens it, in
+the drawing and in the walk grid at once. What it leaves behind is a
+threshold, two jambs, and the leaf and the arc it sweeps — drawn outside the
+shape on purpose, because that sweep is most of what makes a plan read as a
+plan. A door reaches a whole tile either side when it opens the walk grid:
+everything snaps to tile centres and a wall's own band is half a tile thick,
+and a door that looks right but silently does nothing is a far worse failure
+than a doorway one tile deep.
+
+Stamping order is what makes a plan behave, the same way it makes a bridge
+work outdoors. The floor goes down first and carries you; furniture and walls
+are laid over it and stop you; the door goes down last.
+
+Sparks scatter on the floor you have drawn, so a plan is somewhere to play as
+well as something to draw. An empty plan has nowhere to put any, and gains
+them as the rooms go in — which is why the round tops itself back up on every
+edit rather than only when one was stranded.
+
+A marker with something built inside it wears a ring on the map, so a place
+you can walk into looks different from a place that is only a note. The plans
+live beside the town in the browser profile, under `hq.rooms.<marker>`, with
+`hq.rooms` as the index of which markers have one.
 
 ## Walking
 

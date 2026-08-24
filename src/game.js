@@ -1,5 +1,5 @@
 'use strict';
-/* ── MEMORY QUEST V2.0 ── desktop build ───────────────────────────────
+/* ── MEMORY QUEST V3.0 ── desktop build ───────────────────────────────
    Walk the living map, collect every spark. The plate underneath you is
    one static GPU buffer that breathes on its own; the game layer is a
    few dozen instances streamed each frame. */
@@ -125,9 +125,12 @@ function applyPlate(){
   else { G.terrBase.walk.set(G.terrPrint.walk); G.terrBase.path.set(G.terrPrint.path); }
   restampTerrain();
 }
-function setBlank(v){
+/* `persist` is false when the plate is being forced rather than chosen —
+   going inside a building blanks it whatever the town is set to, and the
+   town's own setting has to still be there when you come back out. */
+function setBlank(v, persist){
   BLANK = !!v;
-  try { localStorage.setItem('hq.blank', BLANK ? '1' : '0'); } catch (e){}
+  if (persist !== false){ try { localStorage.setItem('hq.blank', BLANK ? '1' : '0'); } catch (e){} }
   compose();
   /* applyPlate restamps, and restamping already revalidates the round: a
      blank sheet has nowhere to stand and nothing to collect until a road is
@@ -254,9 +257,12 @@ function restampTerrain(){
 function revalidate(){
   if (!wAt(G.x, G.y)) rescue();
   floodReach();
-  const t = G.terr, before = G.sparks.length;
+  const t = G.terr;
   G.sparks = G.sparks.filter(s => G.reach[s.y * t.tw + s.x]);
-  if (G.sparks.length !== before) topUp();
+  /* always, not only when the edit stranded something: ground you have just
+     drawn is somewhere a spark can go, and on a plan you are drawing from
+     nothing that is the only way any of them ever get placed */
+  topUp();
   hud(true);
 }
 
@@ -280,9 +286,14 @@ function rescue(){
   G.moving = false; G.stepT = 1;
 }
 
+/* how many the round is meant to hold, which is not the same as how many
+   it managed to place — a plan with one room in it has nowhere to put
+   twelve, and gains them as the rooms go in */
+const roundTotal = () => Math.min(24, 12 + (G.round - 1) * 2);
+
 /* put back however many sparks the edit stranded */
 function topUp(){
-  const t = G.terr, want = G.total - G.got - G.sparks.length;
+  const t = G.terr, want = roundTotal() - G.got - G.sparks.length;
   if (want <= 0) return;
   const cand = [];
   for (let y = 0; y < t.th; y++)
@@ -359,7 +370,15 @@ addEventListener('keydown', e => {
   keys.add(e.code);
   if (DIRS.some(d => d[0] === e.code)) wake();
   switch (e.code){
-    case 'Escape': if (panelOpen) setPanel(false); else togglePause(); break;
+    /* Enter is the door: it takes you into the marker you are standing by,
+       and Esc is the way back out of it — the panel first, since that is
+       the thing most obviously in front of you */
+    case 'Enter': case 'NumpadEnter': e.preventDefault(); Interior.enter(); break;
+    case 'Escape':
+      if (panelOpen) setPanel(false);
+      else if (Interior.inside()) Interior.leave();
+      else togglePause();
+      break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
     case 'KeyR': spawn(); scatterSparks(); break;
@@ -551,8 +570,10 @@ function frame(now){
     m = put(ENT, m, pxw, pyw + bob, fl[0]/255, fl[1]/255, fl[2]/255,
             0.5 * (1 - z / (G.fitW * 0.9)), 16 * minW * beat, 1, 0, 0, 1);
 
+  m = Interior.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);
+  Interior.prompt();
   Basemap.sync();
 
   R.begin(w, h, t);
@@ -594,6 +615,7 @@ function boot(img){
   G.terrPrint = {walk: G.terr.walk.slice(), path: G.terr.path.slice()};
   Build.init();
   Markers.init();
+  Interior.init();
   Basemap.init();
   applyPlate();
   spawn(); scatterSparks();

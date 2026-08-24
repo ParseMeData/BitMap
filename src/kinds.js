@@ -20,6 +20,7 @@
 const Kinds = (() => {
   const clamp01 = v => v < 0 ? 0 : (v > 1 ? 1 : v);
   const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+  const mod = (a, b) => ((a % b) + b) % b;
 
   /* ── noise, keyed on shape-local cell coordinates ──────────────────────
      A cell's look is addressed by where it sits *inside its shape*, never
@@ -68,6 +69,13 @@ const Kinds = (() => {
     return out;
   }
 
+  /* a kind that is only its own perimeter, on an area shape. A line or a
+     ring is a band already, so hollowness has nothing to add there. */
+  const hollow = s => {
+    const k = REG[scope].by[s.kind];
+    return !!(k && k.hollow) && s.type !== 'line' && s.type !== 'ring';
+  };
+
   const geo = {
     flat: flatten,
     bbox(s){
@@ -100,7 +108,15 @@ const Kinds = (() => {
       return [dx * c - dy * sn, dx * sn + dy * c];
     },
     /* how deep inside the shape a point sits, in world units. <= 0 is out.
-       Kinds use it for borders: kerbs, shorelines, the fence of a park. */
+       Kinds use it for borders: kerbs, shorelines, the fence of a park.
+
+       A hollow kind — a wall, a run of glazing — is only its own perimeter,
+       so an area drawn with one is a band and the middle of it is *outside*
+       the shape. That belongs here rather than in the generator, because
+       everything else asks this one question: what the shape covers when it
+       takes ground from what is under it, which tiles it blocks the walker
+       on, and where the pointer can pick it up. A room is a room to all
+       three, and the floor inside it is left alone by all three. */
     depth(s, x, y){
       if (s.type === 'line'){
         const f = flatten(s);
@@ -112,11 +128,15 @@ const Kinds = (() => {
       if (s.type === 'ring')
         return s.width / 2 - Math.abs(Math.hypot(x - s.x, y - s.y) - s.r);
       const l = geo.local(s, x, y);
+      let d;
       if (s.type === 'ellipse'){
         const u = l[0] / (s.w / 2 || 1), v = l[1] / (s.h / 2 || 1);
-        return (1 - Math.hypot(u, v)) * Math.min(s.w, s.h) / 2;
-      }
-      return Math.min(s.w / 2 - Math.abs(l[0]), s.h / 2 - Math.abs(l[1]));
+        d = (1 - Math.hypot(u, v)) * Math.min(s.w, s.h) / 2;
+      } else d = Math.min(s.w / 2 - Math.abs(l[0]), s.h / 2 - Math.abs(l[1]));
+      if (!hollow(s)) return d;
+      const t = s.width || 0;
+      if (t * 2 >= Math.min(s.w, s.h)) return d;   // the band has closed up: a solid mass
+      return d <= t ? Math.min(d, t - d) : t - d;
     },
     inside(s, x, y){ return geo.depth(s, x, y) > 0; },
     origin(s){ return s.type === 'line' ? s.pts[0] : [s.x, s.y]; },
@@ -179,7 +199,20 @@ const Kinds = (() => {
     wall:    [0.70, 0.68, 0.63], wallDim: [0.28, 0.28, 0.33], win: [0.95, 0.82, 0.46],
     trim:    [0.95, 0.76, 0.31],
     house:   [0.80, 0.70, 0.60], roof:    [0.74, 0.36, 0.32], roofHi: [0.90, 0.52, 0.44],
-    door:    [0.30, 0.22, 0.20]
+    door:    [0.30, 0.22, 0.20],
+    /* indoors. A floor plan is drawn in a lighter register than the town —
+       plaster and paper rather than ink on a dark field — so the walls read
+       as the structure and everything else sits inside them. */
+    plaster: [0.90, 0.88, 0.83], plasterDim: [0.38, 0.37, 0.36],
+    brick:   [0.62, 0.36, 0.29],
+    board:   [0.60, 0.45, 0.31], boardHi: [0.80, 0.63, 0.44], boardDim: [0.38, 0.28, 0.19],
+    tileF:   [0.72, 0.71, 0.68], tileDim: [0.48, 0.48, 0.47], grout: [0.30, 0.30, 0.33],
+    rug:     [0.58, 0.22, 0.27], rugHi:   [0.88, 0.56, 0.40], rugDim: [0.28, 0.14, 0.22],
+    timber:  [0.50, 0.36, 0.24], timberHi:[0.76, 0.58, 0.36],
+    fabric:  [0.32, 0.39, 0.53], fabricHi:[0.55, 0.64, 0.80],
+    linen:   [0.90, 0.89, 0.85], metal:   [0.68, 0.70, 0.74],
+    glass:   [0.52, 0.78, 0.88], glassHi: [0.86, 0.96, 1.00],
+    pot:     [0.66, 0.38, 0.26]
   };
   const mixc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t,
                              a[2] + (b[2] - a[2]) * t];
@@ -242,7 +275,6 @@ const Kinds = (() => {
        diamonds are drawn at is scaled to match, back in build(). */
     const grain = Math.max(1, Math.round(s.grain || 1));
     const jit = Math.max(0, s.jitter || 0), scat = clamp(s.scatter || 0, 0, 1);
-    const mod = (a, b) => ((a % b) + b) % b;
     let n = 0;
     for (let ry = r0; ry <= r1; ry++){
       if (grain > 1 && mod(ry, grain)) continue;
@@ -584,12 +616,368 @@ const Kinds = (() => {
     });
   }
 
+  /* ── INTERIORS ─────────────────────────────────────────────────────────
+     Inside a building the same machinery draws a floor plan. Nothing about
+     the engine changes: these are kinds like any other, addressed by
+     shape-local cells, and a shape's *type* does the same work it does
+     outdoors — a line is a wall run the way a line is a road, a ring is a
+     curved wall the way a ring is a roundabout. What differs is the
+     material, and what it means to the walker: floors carry you, walls and
+     furniture stop you, and a door is the one thing that clears a wall
+     rather than joining it.
+
+     Furniture is drawn against the shape's own half-extents rather than a
+     lot grid, because a bed is one bed however big you drag it, not a field
+     of beds — which is exactly the difference between a district and a
+     piece of furniture. */
+
+  /* Where a cell sits across a band, 0 at the face and 1 down the middle.
+     A line and a ring are bands already; an area drawn with a hollow kind is
+     made into one by geo.depth, so the same measure works for all of them
+     and no generator has to know which it was handed. Widen a wall past half
+     the shape and the band closes up into a solid mass — a pillar. */
+  const band = (s, cell, d, w) => clamp(d / Math.max(w / (2 * cell), 0.5), 0, 1);
+  /* the shape's half-extents in cells — what furniture is laid out against */
+  const halfU = (s, cell) => Math.max(1, (s.w || cell * 8) / (2 * cell));
+  const halfV = (s, cell) => Math.max(1, (s.h || cell * 8) / (2 * cell));
+
+  /* ── FLOOR ─────────────────────────────────────────────────────────────
+     Boards run along the shape, in courses that break at staggered ends;
+     tile is a grid with grout; flags are a wobbled lattice, so no two are
+     the same size and the joints wander the way laid stone does. */
+  const flagU = (u, v, s) =>
+    Math.round((u + (vnoise(u * 0.15, v * 0.15, s.seed + 108) - 0.5) * 2.6) / 5);
+  const flagV = (u, v, s) =>
+    Math.round((v + (vnoise(u * 0.15, v * 0.15, s.seed + 109) - 0.5) * 2.6) / 4);
+  function floor(s, cell, buf){
+    const style = s.variant || 'boards';
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 101);
+      let col, a, sz;
+      if (style === 'tile'){
+        const iu = mod(u, 4), iv = mod(v, 4);
+        const t = hash(Math.floor(u / 4), Math.floor(v / 4), s.seed + 102);
+        if (iu === 0 || iv === 0){ col = C.grout; a = 0.5; sz = 0.78; }
+        else { col = shade(mixc(C.tileF, C.tileDim, t * 0.5), 0.9 + r * 0.22);
+               a = 0.62 + t * 0.2; sz = 0.98; }
+      } else if (style === 'flags'){
+        const joint = flagU(u, v, s) !== flagU(u + 1, v, s) ||
+                      flagV(u, v, s) !== flagV(u, v + 1, s);
+        const t = hash(flagU(u, v, s), flagV(u, v, s), s.seed + 103);
+        if (joint){ col = C.grout; a = 0.45; sz = 0.74; }
+        else { col = shade(mixc(C.tileDim, C.tileF, t * 0.8), 0.88 + r * 0.24);
+               a = 0.6 + t * 0.2; sz = 0.96; }
+      } else {
+        const row = Math.floor(v / 2);                       // a board is two cells deep
+        const off = (hash(row, 0, s.seed + 104) * 30) | 0;   // and the run breaks staggered
+        const t = hash(Math.floor((u + off) / 9), row, s.seed + 105);
+        const seam = mod(u + off, 9) === 0 || mod(v, 2) === 0;
+        const grain = vnoise(u * 0.55, v * 2.2, s.seed + 106);
+        col = seam ? shade(C.boardDim, 0.85 + r * 0.3)
+                   : mixc(C.board, C.boardHi, t * 0.55 + grain * 0.3);
+        a = seam ? 0.4 : 0.66 + t * 0.2;
+        sz = seam ? 0.76 : 0.98;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.82 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 107));
+    });
+  }
+
+  /* a rug is a field with a fringe and a border band round it, which is
+     what stops it reading as a second floor laid over the first */
+  function rug(s, cell, buf){
+    const style = s.variant || 'plain';
+    const hw = halfU(s, cell), hh = halfV(s, cell);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 111);
+      if (r > 0.97) return;
+      let col, a = 0.62, sz = 0.94;
+      if (d < 1.1){ col = shade(C.rugDim, 0.9 + r * 0.5); a = 0.66; sz = 0.8; }
+      else if (d < 2.4){ col = mixc(C.rugHi, C.rug, 0.3 + r * 0.5); a = 0.75; }
+      else {
+        const t = style === 'stripe' ? 0.5 + 0.5 * Math.sin(v * 0.9)
+                : style === 'medallion' ? clamp(1 - Math.hypot(u / hw, v / hh) * 1.5, 0, 1)
+                : vnoise(u * 0.32, v * 0.32, s.seed + 112);
+        col = mixc(C.rug, C.rugHi, t * 0.75);
+        a = 0.56 + t * 0.24;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.8 * fade, sz * 1.08, 0,
+               0.03, hash(u, v, s.seed + 113));
+    });
+  }
+
+  /* ── WALLS ─────────────────────────────────────────────────────────────
+     Drawn the way a plan draws them: a solid poché with its two faces
+     picked out darker, so a wall has an edge to it and rooms read as rooms
+     rather than as bands of white. */
+  function wall(s, cell, buf){
+    const mat = s.variant || 'plaster';
+    const w = s.width || cell * 2;
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const t = band(s, cell, d, w);
+      const r = hash(u, v, s.seed + 121);
+      const face = t < 0.42;                              // the drawn edge of the wall
+      let col, a, sz;
+      if (mat === 'brick'){
+        const bed = mod(v, 3) === 0, perp = mod(u + (mod(v, 6) < 3 ? 0 : 3), 6) === 0;
+        const joint = (bed || perp) && r > 0.35;
+        col = joint ? shade(C.plasterDim, 0.9 + r * 0.3) : shade(C.brick, 0.8 + r * 0.45);
+        a = joint ? 0.5 : 0.85; sz = joint ? 0.78 : 0.98;
+      } else if (mat === 'timber'){
+        const grain = vnoise(u * 0.9, v * 0.35, s.seed + 122);
+        col = mixc(C.timber, C.timberHi, grain * 0.7);
+        a = face ? 0.9 : 0.76 + grain * 0.16; sz = 0.96;
+      } else {
+        col = face ? shade(C.plasterDim, 0.9 + r * 0.4) : shade(C.plaster, 0.86 + r * 0.28);
+        a = face ? 0.92 : 0.76; sz = face ? 0.88 : 1.0;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.84 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 123));
+    });
+  }
+
+  /* glazing: the same band, mostly not there. Frames at both faces, a
+     mullion every six cells, and glass that catches the light between. */
+  function glazing(s, cell, buf){
+    const w = s.width || cell * 2;
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const t = band(s, cell, d, w);
+      const r = hash(u, v, s.seed + 131);
+      const frame = t < 0.34, mull = mod(u, 6) === 0 || mod(v, 6) === 0;
+      if (!frame && !mull && r > 0.74) return;
+      const col = frame || mull ? shade(C.plaster, 0.8 + r * 0.3)
+                                : mixc(C.glass, C.glassHi, r * 0.8);
+      const a = frame ? 0.9 : (mull ? 0.72 : 0.46 + r * 0.32);
+      const sz = frame ? 0.88 : (mull ? 0.84 : 0.7);
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.78 * fade, sz * 1.25,
+               !frame && !mull && r > 0.86 ? 1 : 0,
+               frame ? 0.02 : 0.08 + r * 0.06, hash(u, v, s.seed + 132));
+    });
+  }
+
+  /* ── ACCESS ────────────────────────────────────────────────────────────
+     A door is the one kind that takes ground from a wall instead of joining
+     it, so drawing one across a wall run opens it. What it leaves behind is
+     a threshold, two jambs, and the leaf and its arc — which are drawn
+     outside the shape on purpose, because that sweep is most of what makes
+     a plan read as a plan. */
+  function door(s, cell, buf){
+    const style = s.variant || 'swing';
+    const w = s.width || cell * 2;
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 141);
+      buf.cell(x, y, shade(C.plaster, 0.5 + r * 0.25), 0.32 * fade, 0.7, 0,
+               0.24 * fade, 0.78, 0, 0.02, hash(u, v, s.seed + 142));
+    });
+    if (s.type !== 'line') return;
+    const F = flatten(s), A = F[0], B = F[F.length - 1];
+    const dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy);
+    if (L < cell) return;
+    const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+    const dot = (px, py, col, a, sz, g, salt) =>
+      buf.cell(px, py, col, a, sz, g, a * 0.8, sz * 1.06, g, 0.02, hash(salt, 3, s.seed + 143));
+    for (const [jx, jy] of [[A[0], A[1]], [B[0], B[1]]])       // the jambs
+      for (let k = -1; k <= 1; k++)
+        dot(jx + nx * k * w * 0.4, jy + ny * k * w * 0.4, C.plaster, 0.95, 1, 0, jx + k);
+    if (style === 'open') return;
+    if (style === 'slide'){                                    // the leaf parked alongside
+      const n = Math.max(5, Math.round(L / cell));
+      for (let i = 0; i <= n; i++){
+        const p = i / n * L;
+        dot(B[0] + ux * p + nx * w * 0.7, B[1] + uy * p + ny * w * 0.7,
+            shade(C.plaster, 0.9), 0.82, 0.84, 0, i);
+      }
+      return;
+    }
+    const arm = style === 'double' ? L / 2 : L;
+    const swing = (hx, hy, su, sv, salt) => {
+      const n = Math.max(5, Math.round(arm / cell));
+      for (let i = 1; i <= n; i++)                             // the leaf, standing open
+        dot(hx + nx * (i / n) * arm, hy + ny * (i / n) * arm, C.plaster, 0.88, 0.82, 0,
+            salt * 100 + i);
+      const m = Math.max(9, Math.round(arm / cell * 1.5));
+      for (let i = 0; i <= m; i++){                            // the arc it sweeps
+        const th = i / m * Math.PI / 2, c = Math.cos(th), n2 = Math.sin(th);
+        dot(hx + (nx * c + su * n2) * arm, hy + (ny * c + sv * n2) * arm,
+            C.plaster, 0.26, 0.5, 1, salt * 200 + i);
+      }
+    };
+    if (style === 'double'){ swing(A[0], A[1], ux, uy, 1); swing(B[0], B[1], -ux, -uy, 2); }
+    else swing(A[0], A[1], ux, uy, 1);
+  }
+
+  /* a flight of treads with a lit nosing on each, brightening as it climbs,
+     so which way is up is on the drawing rather than in your head */
+  function stairs(s, cell, buf){
+    const down = s.variant === 'down';
+    const runU = (s.w || 0) >= (s.h || 0);
+    const half = runU ? halfU(s, cell) : halfV(s, cell);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const t = runU ? u : v;
+      const p = clamp((t + half) / (2 * half), 0, 1);
+      const rise = down ? 1 - p : p;
+      const nose = mod(t, 3) === 0;
+      const r = hash(u, v, s.seed + 151);
+      if (!nose && r > 0.95) return;
+      const col = nose ? mixc(C.timberHi, C.plaster, 0.35 + rise * 0.45)
+                       : shade(mixc(C.timber, C.timberHi, rise * 0.5), 0.85 + r * 0.3);
+      const a = nose ? 0.95 : 0.6 + rise * 0.22;
+      const sz = nose ? 0.98 : 0.9;
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.82 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 152));
+    });
+  }
+
+  /* ── FITTINGS ──────────────────────────────────────────────────────────
+     One piece each, laid out against the shape's own half-extents. */
+  function counter(s, cell, buf){
+    const style = s.variant || 'counter';
+    const hh = halfV(s, cell);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 161);
+      const back = style === 'counter' && v < -hh + 1.2;   // a splashback along the top
+      let col, a, sz;
+      if (back){ col = shade(C.tileF, 0.88 + r * 0.3); a = 0.72; sz = 0.88; }
+      else if (d < 0.9){ col = mixc(C.metal, C.plaster, 0.35 + r * 0.35); a = 0.95; sz = 0.94; }
+      else {
+        const grain = vnoise(u * 0.5, v * 0.5, s.seed + 162);
+        col = style === 'bench' ? mixc(C.timber, C.timberHi, grain * 0.7)
+                                : shade(mixc(C.tileDim, C.tileF, grain * 0.65), 0.92);
+        a = 0.7 + grain * 0.18; sz = 0.96;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.82 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 163));
+    });
+  }
+
+  /* the top sits inside the shape and the chairs live in the band around
+     it, so the whole piece — table and everything pulled up to it — is what
+     you drag, and what the walker has to go round */
+  function table(s, cell, buf){
+    const style = s.variant || 'dining';
+    const hw = halfU(s, cell), hh = halfV(s, cell);
+    const seat = Math.min(1.8, Math.max(hw, hh) * 0.34);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 171);
+      if (d > seat){
+        const grain = vnoise(u * 0.42, v * 0.42, s.seed + 172);
+        const rim = d < seat + 1;
+        const col = rim ? mixc(C.timberHi, C.timber, 0.3 + r * 0.3)
+                        : mixc(C.timber, C.timberHi, grain * 0.6);
+        buf.cell(x, y, col, (rim ? 0.95 : 0.74 + grain * 0.2) * fade, rim ? 0.98 : 0.94, 0,
+                 (rim ? 0.8 : 0.6) * fade, 1.04, 0, 0.02, hash(u, v, s.seed + 173));
+        return;
+      }
+      const horiz = hh - Math.abs(v) <= hw - Math.abs(u);
+      let on;
+      if (style === 'round'){
+        const th = Math.atan2(v / hh, u / hw);
+        on = mod(th / (Math.PI * 2) * 6 + 0.5, 1) < 0.45;
+      } else if (style === 'desk'){
+        on = v > 0 && horiz && Math.abs(u) < 1.8;
+      } else {
+        on = horiz ? mod(u + 1.5, 4) < 2.2 && Math.abs(u) < hw - 1
+                   : mod(v + 1.5, 4) < 2.2 && Math.abs(v) < hh - 1;
+      }
+      if (!on) return;
+      buf.cell(x, y, shade(C.fabric, 0.85 + r * 0.45), 0.82 * fade, 0.86, 0,
+               0.62 * fade, 0.94, 0, 0.02, hash(u, v, s.seed + 174));
+    });
+  }
+
+  function bed(s, cell, buf){
+    const twin = s.variant === 'double';
+    const hh = halfV(s, cell);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 181);
+      let col, a, sz;
+      if (d < 0.9){ col = shade(C.timber, 0.9 + r * 0.4); a = 0.9; sz = 0.94; }
+      else if (v < -hh + 2.4){                          // the pillow end
+        const gap = twin && Math.abs(u) < 0.8;
+        col = gap ? shade(C.timber, 0.8) : shade(C.linen, 0.92 + r * 0.16);
+        a = gap ? 0.6 : 0.88; sz = gap ? 0.78 : 0.98;
+      }
+      else if (v < -hh + 4){ col = shade(C.linen, 0.84 + r * 0.24); a = 0.78; sz = 0.94; }
+      else {
+        const fold = vnoise(u * 0.3, v * 0.5, s.seed + 182);
+        col = mixc(C.fabric, C.fabricHi, fold * 0.8);
+        a = 0.7 + fold * 0.2; sz = 0.95;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.82 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 183));
+    });
+  }
+
+  function sofa(s, cell, buf){
+    const chair = s.variant === 'armchair';
+    const hw = halfU(s, cell), hh = halfV(s, cell);
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 191);
+      const back = v < -hh + 1.8, arm = Math.abs(u) > hw - 1.6;
+      const seam = !back && !arm && !chair && mod(u + 2, 4) < 0.7;
+      let col, a, sz;
+      if (back || arm){ col = shade(C.fabric, 0.7 + r * 0.35); a = 0.9; sz = 0.98; }
+      else if (seam){ col = shade(C.fabric, 0.5); a = 0.6; sz = 0.76; }
+      else {
+        const n = vnoise(u * 0.4, v * 0.4, s.seed + 192);
+        col = mixc(C.fabric, C.fabricHi, 0.35 + n * 0.6);
+        a = 0.74 + n * 0.18; sz = 0.96;
+      }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.82 * fade, sz * 1.06, 0,
+               0.02, hash(u, v, s.seed + 193));
+    });
+  }
+
+  function shelf(s, cell, buf){
+    const style = s.variant || 'books';
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 201);
+      if (d < 0.9 || mod(u, 5) === 0){                  // the case and its dividers
+        buf.cell(x, y, shade(C.timber, 0.85 + r * 0.35), 0.92 * fade, 0.95, 0,
+                 0.76 * fade, 1.02, 0, 0.02, hash(u, v, s.seed + 202));
+        return;
+      }
+      if (style === 'wardrobe'){
+        buf.cell(x, y, shade(C.timberHi, 0.78 + r * 0.3), 0.6 * fade, 0.9, 0,
+                 0.46 * fade, 0.96, 0, 0.02, hash(u, v, s.seed + 203));
+        return;
+      }
+      if (style === 'store' && r > 0.68) return;
+      const spine = hash(u, Math.floor(v / 2), s.seed + 204);
+      const col = style === 'books'
+        ? [0.3 + spine * 0.6, 0.26 + hash(u, 3, s.seed + 205) * 0.5,
+           0.28 + hash(u, 5, s.seed + 206) * 0.5]
+        : shade(C.tileF, 0.7 + r * 0.5);
+      buf.cell(x, y, col, (0.7 + spine * 0.25) * fade, 0.7 + spine * 0.22, 0,
+               0.55 * fade, 0.9, 0, 0.02, hash(u, v, s.seed + 207));
+    });
+  }
+
+  /* a pot showing round a ragged crown — the one green thing indoors, and
+     the same silhouette trick the stands outside use, at one plant's size */
+  function plant(s, cell, buf){
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed + 211);
+      if (d < 1){
+        buf.cell(x, y, shade(C.pot, 0.85 + r * 0.4), 0.9 * fade, 0.94, 0,
+                 0.72 * fade, 1, 0, 0.02, hash(u, v, s.seed + 212));
+        return;
+      }
+      const n = vnoise(u * 0.6, v * 0.6, s.seed + 213);
+      if (r > 0.8 + n * 0.18) return;
+      buf.cell(x, y, mixc(C.tree, C.treeHi, n * 0.9), (0.8 + n * 0.18) * fade, 0.9 + n * 0.2, 0,
+               0.6 * fade, 1.02, n > 0.8 ? 1 : 0, 0.05 + n * 0.05, hash(u, v, s.seed + 214));
+    });
+  }
+
   /* ── the registry ────────────────────────────────────────────────────── */
   /* listed in the order you work through a plan, but drawn by `z`: the
      road network reads on top of everything, the way it does on the
-     printed map, so a block of housing can never bury the route through it */
+     printed map, so a block of housing can never bury the route through it.
+     `start` is the layer build mode opens on — the network everything else
+     gets arranged around, outdoors and in. */
   const LAYERS = [
-    {id: 'roads',  label: 'Roads',     z: 3, solo: true},
+    {id: 'roads',  label: 'Roads',     z: 3, solo: true, start: true},
     {id: 'ground', label: 'Ground',    z: 0},
     {id: 'trees',  label: 'Trees',     z: 1},
     {id: 'built',  label: 'Buildings', z: 2}
@@ -625,9 +1013,6 @@ const Kinds = (() => {
      variants: ['mixed', 'detached', 'terraced'],
      walk: 0, stamp: 2, gen: houses,    swatch: '#C9A488'}
   ];
-  const BY = {};
-  for (const k of LIST) BY[k.id] = k;
-
   /* what the palette offers: a kind plus the shape it starts as, so a
      roundabout is one chip rather than a mode you have to know about */
   const PALETTE = [
@@ -641,12 +1026,104 @@ const Kinds = (() => {
     {label: 'Buildings',  kind: 'buildings', type: 'rect'},
     {label: 'Houses',     kind: 'houses',    type: 'rect'}
   ];
+
+  /* ── the floor registry ────────────────────────────────────────────────
+     The same four columns as the map's, because it is the same editor:
+     layers, kinds, what each accepts as a shape, and what it means to the
+     walker. Walls sit at the top on their own for the reason roads do —
+     indoors the walls are the thing everything else is arranged around.
+
+     Stamping order is what makes a plan behave. The floor goes down first
+     and carries you; furniture and walls are laid over it and stop you; the
+     door goes down last, which is what opens the wall it crosses. */
+  const FLAYERS = [
+    {id: 'walls',  label: 'Walls',    z: 2, solo: true, start: true},
+    {id: 'floor',  label: 'Floor',    z: 0},
+    {id: 'fixt',   label: 'Fittings', z: 1},
+    {id: 'access', label: 'Access',   z: 3}
+  ];
+  const HARD = {feather0: 0, pad0: 0, padFade0: 0, padBreak0: 0};   // architecture has edges
+  const FLIST = [
+    {id: 'floor',   label: 'Floor',   layer: 'floor',  types: AREA,
+     variants: ['boards', 'tile', 'flags'], w0: 9, h0: 7,
+     walk: 2, stamp: 1, gen: floor,    swatch: '#9A7A52', ...HARD},
+    {id: 'rug',     label: 'Rug',     layer: 'floor',  types: AREA,
+     variants: ['plain', 'stripe', 'medallion'], w0: 4, h0: 3,
+     walk: 2, stamp: 2, gen: rug,      swatch: '#94383F', ...HARD},
+    {id: 'pool',    label: 'Water',   layer: 'floor',  types: AREA, w0: 3, h0: 2,
+     walk: 0, stamp: 3, gen: water,    swatch: '#2E66B8', ...HARD},
+    {id: 'counter', label: 'Counter', layer: 'fixt',   types: AREA,
+     variants: ['counter', 'island', 'bench'], w0: 5, h0: 1,
+     walk: 0, stamp: 4, gen: counter,  swatch: '#A9ABAF', ...HARD},
+    {id: 'table',   label: 'Table',   layer: 'fixt',   types: AREA,
+     variants: ['dining', 'desk', 'round'], w0: 5, h0: 4,
+     walk: 0, stamp: 4, gen: table,    swatch: '#8A6438', ...HARD},
+    {id: 'bed',     label: 'Bed',     layer: 'fixt',   types: AREA,
+     variants: ['single', 'double'], w0: 3, h0: 4,
+     walk: 0, stamp: 4, gen: bed,      swatch: '#DDDAD3', ...HARD},
+    {id: 'sofa',    label: 'Sofa',    layer: 'fixt',   types: AREA,
+     variants: ['sofa', 'armchair'], w0: 4, h0: 2,
+     walk: 0, stamp: 4, gen: sofa,     swatch: '#52638A', ...HARD},
+    {id: 'shelf',   label: 'Shelf',   layer: 'fixt',   types: AREA,
+     variants: ['books', 'store', 'wardrobe'], w0: 4, h0: 1,
+     walk: 0, stamp: 4, gen: shelf,    swatch: '#7F5C3C', ...HARD},
+    {id: 'plant',   label: 'Plant',   layer: 'fixt',   types: AREA, w0: 1, h0: 1,
+     walk: 0, stamp: 4, gen: plant,    swatch: '#3E7A3A', ...HARD},
+    /* walls run into one another the way roads do, so a corner is a corner
+       and not two walls with a hole punched where they meet */
+    {id: 'wall',    label: 'Wall',    layer: 'walls',  types: ['line', 'rect', 'ellipse', 'ring'],
+     variants: ['plaster', 'brick', 'timber'], w0: 9, h0: 7, len0: 8,
+     walk: 0, stamp: 5, gen: wall,     swatch: '#E4E0D5', connects: true, hollow: true, ...HARD},
+    {id: 'glazing', label: 'Window',  layer: 'walls',  types: ['line', 'rect', 'ellipse', 'ring'],
+     w0: 4, h0: 3, len0: 4,
+     walk: 0, stamp: 5, gen: glazing,  swatch: '#85C7DB', connects: true, hollow: true, ...HARD},
+    /* A door reaches a whole tile either side when it opens the walk grid.
+       Everything here snaps to tile centres and a wall's own band is half a
+       tile thick, so a door dropped a tile off the wall is a door that looks
+       right and does nothing — and a silently shut door is a much worse
+       failure than a doorway one tile deep. */
+    {id: 'door',    label: 'Door',    layer: 'access', types: ['line'],
+     variants: ['swing', 'double', 'slide', 'open'], len0: 2, walkTol: 1.05,
+     walk: 2, stamp: 6, gen: door,     swatch: '#F2EDE2', ...HARD},
+    {id: 'stairs',  label: 'Stairs',  layer: 'access', types: AREA, variants: ['up', 'down'],
+     w0: 2, h0: 5,
+     walk: 2, stamp: 6, gen: stairs,   swatch: '#C39A5C', ...HARD}
+  ];
+  const FPALETTE = [
+    {label: 'Wall',    kind: 'wall',    type: 'line'},
+    {label: 'Room',    kind: 'wall',    type: 'rect'},
+    {label: 'Window',  kind: 'glazing', type: 'line'},
+    {label: 'Floor',   kind: 'floor',   type: 'rect'},
+    {label: 'Rug',     kind: 'rug',     type: 'rect'},
+    {label: 'Water',   kind: 'pool',    type: 'ellipse'},
+    {label: 'Counter', kind: 'counter', type: 'rect'},
+    {label: 'Table',   kind: 'table',   type: 'rect'},
+    {label: 'Bed',     kind: 'bed',     type: 'rect'},
+    {label: 'Sofa',    kind: 'sofa',    type: 'rect'},
+    {label: 'Shelf',   kind: 'shelf',   type: 'rect'},
+    {label: 'Plant',   kind: 'plant',   type: 'ellipse'},
+    {label: 'Door',    kind: 'door',    type: 'line'},
+    {label: 'Stairs',  kind: 'stairs',  type: 'rect'}
+  ];
   const SHAPES = [{id: 'rect', label: 'Rect'}, {id: 'ellipse', label: 'Oval'},
                   {id: 'line', label: 'Line'}, {id: 'ring', label: 'Ring'}];
 
+  /* ── two registries, one editor ────────────────────────────────────────
+     Everything downstream — the palette, the layer rows, the walk-grid
+     stamp, saving — reads `Kinds.list`, `Kinds.by`, `Kinds.layers` and
+     `Kinds.palette` and never learns which set it is looking at. Going
+     inside a building swaps the registry and the storage key under it; the
+     editor is not told, because there is nothing it would do differently. */
+  const index = list => { const by = {}; for (const k of list) by[k.id] = k; return by; };
+  const REG = {
+    map:   {list: LIST,  by: index(LIST),  layers: LAYERS,  palette: PALETTE},
+    floor: {list: FLIST, by: index(FLIST), layers: FLAYERS, palette: FPALETTE}
+  };
+  let scope = 'map';
+
   /* one shape → its instances, detached from the growable backing store */
   function build(s, cell, occ){
-    const k = BY[s.kind];
+    const k = REG[scope].by[s.kind];
     /* diamonds grow with the grain so a coarser sample still covers, and
        Scale is the "font size" on top of that */
     const buf = new Buf(s.bright, (s.scale || 1) * Math.max(1, Math.round(s.grain || 1)));
@@ -656,6 +1133,9 @@ const Kinds = (() => {
     return buf.view().slice();
   }
 
-  return {list: LIST, by: BY, layers: LAYERS, palette: PALETTE, shapes: SHAPES,
-          geo, build, hash, vnoise, MAX_CELLS};
+  const api = {geo, build, hash, vnoise, MAX_CELLS, hollow, shapes: SHAPES,
+               use: v => { if (REG[v]) scope = v; }, scope: () => scope};
+  for (const f of ['list', 'by', 'layers', 'palette'])
+    Object.defineProperty(api, f, {get: () => REG[scope][f]});
+  return api;
 })();

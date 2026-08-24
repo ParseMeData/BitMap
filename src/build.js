@@ -18,9 +18,13 @@ const Build = (() => {
   let on = false, sel = null, drag = null, armed = null, nextId = 1;
   let layer = 'roads', combined = null, lastKind = null;
   const vis = {};
-  for (const L of Kinds.layers) vis[L.id] = true;
+  const seeVis = () => { for (const L of Kinds.layers) if (vis[L.id] === undefined) vis[L.id] = true; };
+  seeVis();
 
-  const KEY = 'hq.shapes';
+  /* Which shapes are being edited is one string. Outdoors it is the town;
+     inside a building it is that building's floor plan, and nothing else in
+     here changes — see interior.js. */
+  let KEY = 'hq.shapes';
   /* what a newly placed shape inherits. The sliders write here when nothing
      is selected, so you can dial in a look and then keep placing it. */
   const defs = {feather: 4, bright: 1, mask: false, variant: {},
@@ -94,13 +98,24 @@ const Build = (() => {
                mask: defs.mask,
                variant: defs.variant[kind] || (k.variants ? k.variants[0] : 'mixed')};
     defaults(s, type);
-    if (type !== 'line'){ s.x = snapC(wx); s.y = snapC(wy); }
-    else { const d = g * 5; s.pts = [[snapC(wx - d), snapC(wy)], [snapC(wx + d), snapC(wy)]]; }
+    born(s, k, type, wx, wy);
     G.shapes.push(s);
     sel = s;
     layer = k.layer;
     changed(s);
     return s;
+  }
+  /* A kind can say how big one of it is. A district is born big because a
+     district is a field of housing; a bed is born the size of a bed. */
+  function born(s, k, type, wx, wy){
+    const g = grid();
+    if (type === 'line'){
+      const d = g * (k.len0 ? k.len0 / 2 : 5);
+      s.pts = [[snapC(wx - d), snapC(wy)], [snapC(wx + d), snapC(wy)]];
+    } else {
+      s.x = snapC(wx); s.y = snapC(wy);
+      if (k.w0){ s.w = snapS(g * k.w0); s.h = snapS(g * (k.h0 || k.w0)); }
+    }
   }
 
   function remove(s){
@@ -117,6 +132,12 @@ const Build = (() => {
       if (s.ctrl) for (const c of s.ctrl) if (c){ c[0] += dx; c[1] += dy; }
     } else { s.x += dx; s.y += dy; }
   }
+
+  /* What the one width slider means. A route and a ring are bands, and so is
+     a room drawn with a hollow kind — for that the slider is the wall
+     thickness, and the size is left to the grips and [ ], because a room
+     needs both and a district only ever needed one. */
+  const banded = s => s.type === 'line' || s.type === 'ring' || Kinds.hollow(s);
 
   /* [ and ] mean thickness on a route and size on an area */
   function scaleSel(f){
@@ -211,10 +232,15 @@ const Build = (() => {
     for (const k of order)
       for (const s of G.shapes){
         if (s.kind !== k.id) continue;
+        /* A route thinner than a walk tile would stamp a dotted line of
+           walkable tiles, so a band stamps by distance with half a tile of
+           tolerance. An area-shaped route is already wider than that, and
+           the same tolerance on one would lay a walkable ring right through
+           the wall around it — so it stamps exactly what it covers. */
         tiles(s, t, i => {
           if (k.walk === 0){ t.walk[i] = 0; t.path[i] = 0; }
           else { t.walk[i] = 1; if (k.walk === 2) t.path[i] = 1; }
-        }, k.walk === 2 ? t.tsz * 0.62 : 0);
+        }, k.walk === 2 && banded(s) ? t.tsz * (k.walkTol || 0.62) : 0);
       }
   }
   /* a tile counts as covered if its centre or any of its four shoulders is
@@ -506,6 +532,7 @@ const Build = (() => {
       '<div class="kfoot"><button class="btn" id="kmask">Mask</button>' +
       '<button class="btn" id="kclearlayer">Clear layer</button></div>' +
       '<div class="plabel">Markers</div><div id="kmarkers"></div>' +
+      '<input id="kmname" type="text" spellcheck="false" placeholder="name this place" hidden>' +
       '<div class="kfoot one"><button class="btn" id="kclear">Clear all</button></div>' +
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
@@ -556,7 +583,20 @@ const Build = (() => {
       if (keep.length === G.shapes.length) return;
       G.shapes = keep; sel = null; changed();
     };
+    /* a marker with a name is a place you can be told you are standing
+       outside of, and be told you are inside once you are */
+    const nm = $('#kmname');
+    nm.oninput = () => { const mk = Markers.selected(); if (mk) Markers.rename(mk, nm.value); };
+    nm.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') nm.blur(); };
+    Markers.ui();
     syncUI();
+  }
+  /* the palette belongs to whichever registry is mounted, so it is thrown
+     away and rebuilt rather than patched when the registry changes */
+  function reui(){
+    const el = $('#palette');
+    if (el) el.innerHTML = '';
+    ui();
   }
 
   function slider(key, label, min, max, step){
@@ -591,7 +631,7 @@ const Build = (() => {
     if (key === 'padFade')  return set('padFade', v / 10);
     if (key === 'padBreak') return set('padBreak', v / 100);
     if (!sel) return;
-    if (sel.type === 'line' || sel.type === 'ring') sel.width = snapW(v * cellSize());
+    if (banded(sel)) sel.width = snapW(v * cellSize());
     else {
       const ratio = sel.h / Math.max(sel.w, 1);
       sel.w = clamp(snapS(v * grid()), grid(), MAXSPAN());
@@ -661,7 +701,7 @@ const Build = (() => {
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'straight', true, 0, 100);
       } else if (!sel){
         lab.textContent = 'Size'; r._set(1, '\u2014', false, 1, 60);
-      } else if (sel.type === 'line' || sel.type === 'ring'){
+      } else if (banded(sel)){
         const v = Math.max(1, Math.min(WMAX, Math.round(sel.width / c)));
         lab.textContent = 'Width'; r._set(v, v + (v === 1 ? ' cell' : ' cells'), true, 1, WMAX);
       } else {
@@ -711,11 +751,18 @@ const Build = (() => {
       c.classList.toggle('dim', !allowed.includes(c.dataset.shape));
     });
     /* say plainly what the thing you have selected can be made to do */
+    const mkSel = Markers.selected();
+    const nm = $('#kmname');
+    if (nm){
+      nm.hidden = !mkSel;
+      if (mkSel && document.activeElement !== nm) nm.value = mkSel.name || '';
+    }
     const st = $('#kstate');
     if (st){
-      const mk = Markers.selected();
+      const mk = mkSel;
       if (mk)
-        st.innerHTML = '<b>marker</b> · drag to move · <b>C</b> colour · <b>del</b> removes';
+        st.innerHTML = '<b>marker</b> · drag to move · <b>C</b> colour · ' +
+          '<b>Enter</b> goes inside · <b>del</b> removes';
       else if (!sel)
         st.innerHTML = 'nothing selected · click a shape, or drag one out of Place';
       else if (sel.type === 'line')
@@ -792,15 +839,35 @@ const Build = (() => {
       });
   }
 
+  const startLayer = () => (Kinds.layers.find(L => L.start) || Kinds.layers[0]).id;
+
+  /* ── mounting a different set of shapes ────────────────────────────────
+     One call swaps what is being edited: the registry the palette is built
+     from, and the key the shapes are saved under. Commit first — whatever
+     was on screen belongs to the key it came from. */
+  function mount(scope, key){
+    Kinds.use(scope);
+    KEY = key;
+    seeVis();
+    sel = null; drag = null; armed = null; lastKind = null;
+    document.body.classList.remove('arming');
+    Markers.disarm();
+    load();
+    reui();
+    rebuild();
+    setLayer(startLayer());
+    if (typeof restampTerrain === 'function') restampTerrain();
+  }
+
   function init(){
     load();
     wire();
     ui();
     rebuild();
-    setLayer('roads');
+    setLayer(startLayer());
     setOn(false);
   }
 
-  return {init, rebuild, stamp, overlay, setOn, active: () => on,
-          count: () => G.shapes.length};
+  return {init, rebuild, stamp, overlay, setOn, mount, active: () => on,
+          commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

@@ -93,9 +93,24 @@ const Basemap = (() => {
             ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]];
   }
 
+  /* Held down rather than switched off. A floor plan has nothing to trace
+     against, so going inside a building takes the underlay away — but it is
+     the town's setting, not the room's, so it is put back untouched on the
+     way out rather than being turned off and having to be turned on again. */
+  let held = false;
+  const showing = () => shown && !held;
+  function suspend(v){
+    if (held === !!v) return;
+    held = !!v;
+    if (held){ setBar(false); setPlacing(false); }
+    if (layer) layer.style.display = showing() ? 'block' : 'none';
+    if (R) R.clearA = showing() ? 0 : 1;
+    if (showing()){ paint(); sync(); }
+  }
+
   /* ── laid out by the camera, one transform a frame in either mode ── */
   function sync(){
-    if (!shown || !layer) return;
+    if (!showing() || !layer) return;
     const cssW = canvas.clientWidth || 1, dpr = VW / cssW;
     const Zc = G.cam[2] / dpr;
     const hw = (VW / dpr) / 2, hh = (VH / dpr) / 2;
@@ -370,7 +385,7 @@ const Basemap = (() => {
     addEventListener('dragover', e => { e.preventDefault(); });
     addEventListener('drop', e => {
       const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (!f) return;
+      if (!f || held) return;
       e.preventDefault();
       setBar(true);
       take(f);
@@ -387,9 +402,9 @@ const Basemap = (() => {
   }
   function setShown(v){
     shown = v;
-    if (layer) layer.style.display = v ? 'block' : 'none';
-    if (R) R.clearA = v ? 0 : 1;      // the plate clears through while tracing
-    if (v){ paint(); sync(); } else if (!pic) clear();
+    if (layer) layer.style.display = showing() ? 'block' : 'none';
+    if (R) R.clearA = showing() ? 0 : 1;      // the plate clears through while tracing
+    if (showing()){ paint(); sync(); } else if (!pic) clear();
     if (!v) setPlacing(false);
     save(); syncUI();
   }
@@ -578,13 +593,14 @@ const Basemap = (() => {
 
   addEventListener('keydown', e => {
     if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (held) return;                 // nothing to trace against inside a building
     if (e.code === 'KeyM' && !e.ctrlKey && !e.metaKey){
       setBar(!barOpen);
       if (barOpen) $('#mapq').focus();
     }
   });
 
-  return {init, sync, find, setShown, setSrc, freeze, thaw, take,
+  return {init, sync, find, setShown, setSrc, freeze, thaw, take, suspend,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey};
 })();

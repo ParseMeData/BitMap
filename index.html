@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
-<title>Memory Quest V2.0</title>
+<title>Memory Quest V3.0</title>
 <script>
 /* name the window before it maps, so the KWin wallpaper rule matches it
    the moment it appears rather than a frame later */
@@ -137,6 +137,23 @@ body.wall:not(.drifting) #wallhint{opacity:0}
 #ktune .prow .pv{width:46px;font-size:9px}
 #ktune .prow.off{opacity:.38}
 #ktune input[type=range]{height:14px}
+/* inside a building: a standing banner saying where you are, and the prompt
+   that appears under the walker whenever a place is within reach */
+/* clear of the HUD, which is wide enough to reach the middle of the screen;
+   and the round message steps down out of its way while it is up */
+#inside{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
+  padding:8px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
+#inside b{color:var(--flare);font-weight:400}
+#inside em{color:var(--dim);font-style:normal}
+#enterhint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
+  padding:7px 12px;display:flex;gap:9px;align-items:center;font-size:9.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
+#enterhint em{color:var(--gold);font-style:normal}
+body.inside #msg{top:98px}
+body.wall #inside,body.wall #enterhint{display:none}
+#kmname{width:100%;background:#0D0D12;border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
 body.placing #gl{cursor:move}
 body.placing #mapplace{background:var(--bone);color:var(--ground)}
 body.building #gl{cursor:crosshair}
@@ -179,9 +196,11 @@ body.arming,body.arming #gl{cursor:copy}
   <em>WASD</em> move &nbsp; <em>Shift</em> sprint<br>
   <em>Space</em> recrystallise &nbsp; <em>Tab</em> overview<br>
   <em>Wheel</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
-  <em>B</em> build
+  <em>B</em> build &nbsp; <em>Enter</em> go inside a marker
 </div>
 
+<div id="inside" class="glass" hidden></div>
+<div id="enterhint" class="glass" hidden></div>
 <div id="toast" hidden></div>
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
@@ -203,9 +222,10 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Drag</td><td>move the picture &nbsp;·&nbsp; Shift turns it, Ctrl holds 15°</td></tr>
     <tr><td>[ ]</td><td>size or width of the selection &nbsp;·&nbsp; Del removes it</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
+    <tr><td>Enter</td><td>go inside the marker you are standing by</td></tr>
     <tr><td>R</td><td>new round</td></tr>
     <tr><td>F / F11</td><td>fullscreen</td></tr>
-    <tr><td>Esc</td><td>resume</td></tr>
+    <tr><td>Esc</td><td>leave the interior &nbsp;·&nbsp; otherwise resume</td></tr>
   </table>
 </div>
 
@@ -250,10 +270,11 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 38, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 39, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
-   'src/panel.js','src/build.js','src/markers.js','src/basemap.js','src/game.js']
+   'src/panel.js','src/build.js','src/markers.js','src/interior.js',
+   'src/basemap.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

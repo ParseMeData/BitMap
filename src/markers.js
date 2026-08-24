@@ -15,7 +15,9 @@ const Markers = (() => {
                 '⤲', '⇑', '⇯', '⇭', '⤊', '⟰', '≛',
                 '✥'];
   const SIZE = 64, COLS = 8;
-  const KEY = 'hq.markers';
+  /* Which markers are being pinned is one string, the way the shapes are —
+     the town's, or the ones inside a building. */
+  let KEY = 'hq.markers';
   const TINT = [[0.47, 0.88, 0.85], [1, 0.76, 0.31], [1, 0.37, 0.64],
                 [0.93, 0.92, 0.89], [0.65, 0.55, 0.98]];
 
@@ -72,14 +74,33 @@ const Markers = (() => {
   const grid = () => (G.terr ? G.terr.tsz : 12);
   const snap = v => (Math.round(v / grid() - 0.5) + 0.5) * grid();
 
+  /* A marker's place in the array is not an identity: delete one above it
+     and everything below shifts. What hangs off a marker — the floor plan
+     inside it — needs a name that survives that, so every marker carries
+     one of its own, minted once and saved with it. */
+  let uidN = 0;
+  const mint = () => 'm' + (Date.now().toString(36)) + (uidN++).toString(36) +
+                     Math.random().toString(36).slice(2, 5);
+
   function place(x, y){
     if (armed < 0 || armed >= glyphs.length) return null;
-    const m = {id: nextId++, gi: armed, x: snap(x), y: snap(y),
+    const m = {id: nextId++, uid: mint(), name: '', gi: armed, x: snap(x), y: snap(y),
                size: grid() * 0.8, tint: 0};
     G.markers.push(m);
     sel = m;
     save();
     return m;
+  }
+  function rename(m, s){ m.name = String(s || '').slice(0, 40); save(); }
+  /* the nearest marker within reach of a point — what "the place you are
+     standing by" means when you press Enter */
+  function nearest(x, y, r){
+    let best = null, bd = r;
+    for (const m of G.markers || []){
+      const d = Math.hypot(m.x - x, m.y - y);
+      if (d <= bd){ bd = d; best = m; }
+    }
+    return best;
   }
   function hit(x, y, tol){
     for (let i = G.markers.length - 1; i >= 0; i--){
@@ -110,6 +131,10 @@ const Markers = (() => {
       const c = TINT[k.tint % TINT.length];
       m = put(a, m, k.x, k.y, c[0], c[1], c[2], 0.32, r * 2.1, 0, 0, 0, 2);
       m = put(a, m, k.x, k.y, c[0], c[1], c[2], 1, r, 0, 0, 0, 3, k.gi);
+      /* a marker with something built inside it wears a ring, so a place you
+         can walk into looks different from a place that is only a note */
+      if (typeof Interior !== 'undefined' && Interior.has(k.uid))
+        m = put(a, m, k.x, k.y, c[0], c[1], c[2], 0.5, r * 1.28, 1, 0, 0, 1);
       if (k === sel)
         m = put(a, m, k.x, k.y, 1, 0.37, 0.64, 0.9, r * 1.5, 1, 0, 0, 1);
     }
@@ -142,15 +167,30 @@ const Markers = (() => {
   function save(){
     try {
       localStorage.setItem(KEY, JSON.stringify(G.markers.map(m =>
-        ({gi: m.gi, x: m.x, y: m.y, size: m.size, tint: m.tint}))));
+        ({uid: m.uid, name: m.name || '', gi: m.gi, x: m.x, y: m.y,
+          size: m.size, tint: m.tint}))));
     } catch (e){}
   }
   function load(){
     let raw = [];
     try { raw = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e){}
+    let minted = false;
     G.markers = (Array.isArray(raw) ? raw : [])
       .filter(m => m && m.gi < glyphs.length)
-      .map(m => Object.assign({id: nextId++}, m));
+      .map(m => {
+        /* markers saved before interiors existed have no id of their own.
+           Mint one and write it straight back, so the plan built inside a
+           marker today is still that marker's tomorrow. */
+        if (!m.uid){ m = Object.assign({}, m, {uid: mint()}); minted = true; }
+        return Object.assign({id: nextId++, name: ''}, m);
+      });
+    if (minted) save();
+  }
+  /* swap which set of markers is pinned — see interior.js */
+  function mount(key){
+    KEY = key;
+    sel = null;
+    load();
   }
 
   function init(){
@@ -161,11 +201,12 @@ const Markers = (() => {
     ui();
   }
 
-  return {init, draw, place, hit, moveTo, remove, cycleTint,
+  return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, nearest, mount,
           armed: () => armed >= 0,
           disarm: () => { armed = -1; document.body.classList.remove('arming'); syncChips(); },
           select: m => { sel = m; },
           selected: () => sel,
+          commit: save, key: () => KEY,
           count: () => (G.markers ? G.markers.length : 0),
           glyphs: () => glyphs};
 })();

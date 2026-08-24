@@ -1,4 +1,4 @@
-# Memory Quest Low Effort V6.1
+# Memory Quest Low Effort V6.2
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest Low Effort V6.1 in the KDE launcher
+    ./play.sh          # or: Memory Quest Low Effort V6.2 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the

@@ -697,6 +697,15 @@ Close, not merely nearby: it opens from the tile at the threshold and stays
 shut from the one before, so it gives as you reach it rather than anticipating
 you from across the room.
 
+**Opening and closing are not the same distance.** One radius for both gives a
+door that flutters while you stand at the edge of it, and one that starts
+shutting the moment you are past the jamb — into the back of somebody who has
+not finished walking through. So it opens at the threshold and stays open
+until you are clear of the arc the leaf actually swept, plus a few cells, and
+then waits a second longer in case you turn round. Shut, it asks whether you
+have reached it; open, it asks whether you have finished with it, which is a
+larger question and the reason the two are separate numbers.
+
 **It swings away from you, either way.** Which side it opens to is decided at
 the moment it starts to move, from where the walker is standing and which way
 they are heading, so the leaf goes ahead of them and never through them — and

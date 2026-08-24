@@ -26,7 +26,16 @@
    a door you had to learn to operate, in a game about walking a route. */
 
 const Doors = (() => {
-  const NEAR = 1.2;                  // tiles from the threshold itself
+  const NEAR = 1.2;                  // tiles from the threshold: how close opens it
+  /* ── and how far shuts it ───────────────────────────────────────────────
+     Not the same distance. Opening and closing at one radius means a door
+     that flutters while you stand at the edge of it, and one that starts
+     shutting the moment you are past the jamb — into the back of somebody
+     who has not finished walking through. So it opens at the threshold and
+     stays open until you are clear of the arc the leaf actually swept, plus
+     a few cells, and then waits a second longer in case you turn round. */
+  const CLEAR = 3;                   // lattice cells past the end of the swing
+  const HOLD = 1.0;                  // seconds of grace once you are clear
   const SPEED = 0.006;               // smaller is faster; this is about a third of a second
   const BONE = [0.93, 0.92, 0.89];
 
@@ -47,10 +56,23 @@ const Doors = (() => {
     const t = L2 > 0 ? Math.max(0, Math.min(1, (wx0 * vx + wy0 * vy) / L2)) : 0;
     return Math.hypot(wx0 - vx * t, wy0 - vy * t);
   }
-  function wanted(s, f, wx, wy){
+  function wanted(s, f, wx, wy, dt){
     if (s.variant === 'open') return 1;
     const t = G.terr ? G.terr.tsz : 12;
-    return reach(f, wx, wy) <= NEAR * t ? 1 : 0;
+    const cell = G.A ? G.A.cell : t / 4;
+    const d = reach(f, wx, wy);
+    const arm = s.variant === 'double' ? f.L / 2 : f.L;
+    /* Shut, it asks only whether you have reached it. Open, it asks whether
+       you have finished with it — which is a different and larger question,
+       and the reason the two are not one number. */
+    if (!(s._open > 0.02)){
+      s._hold = HOLD;
+      return d <= NEAR * t ? 1 : 0;
+    }
+    const clear = d > arm + CLEAR * cell;
+    if (!clear){ s._hold = HOLD; return 1; }
+    s._hold = Math.max(0, (s._hold === undefined ? HOLD : s._hold) - dt);
+    return s._hold > 0 ? 1 : 0;
   }
 
   /* Which way it goes: away from the walker, and if they are already standing
@@ -75,7 +97,7 @@ const Doors = (() => {
       if (s.kind !== 'door') continue;
       const f = frame(s);
       if (!f) continue;
-      const want = wanted(s, f, wx, wy);
+      const want = wanted(s, f, wx, wy, dt);
       if (s._open === undefined) s._open = want;      // a door already stood open
       if (want && s._open < 0.02) s._side = side(s, f, wx, wy);
       if (!s._side) s._side = 1;

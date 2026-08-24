@@ -433,6 +433,7 @@ const Build = (() => {
     if (s){
       alignFine(s);
       s._flat = null;                       // the curve may have moved
+      s._span = null;                       // and so may the corners
       const nb = reachBox(s), ob = s._bb || nb;
       s._buf = null;
       /* whatever this shape used to cover has to come back, and whatever it

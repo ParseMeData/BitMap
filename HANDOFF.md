@@ -209,12 +209,19 @@ is the one place a hole is the point. Merging them would either put holes in
 every scattered field or make the tail unable to finish.
 
 **The rect is the footprint; the quad is what survives it.** On a demolish area
-with a dragged corner, the cells inside `w`/`h` but outside the quad are dropped
-outright — not weathered, not rolled for. Reading it the other way round, as if
-the quad were simply a smaller shape, would take the one hard edge the tool has
-away again, and that edge is what the free corners were added for. `geo.lost()`
-is the test, and it answers false for anything that has never had a corner
-dragged.
+with a dragged corner, the cells inside `w`/`h` but outside the quad are spent
+out — a ramp to total removal measured against the wedge's own depth, not a
+stamp. Reading it the other way round, as if the quad were simply a smaller
+shape, takes away the only way this tool can end a town on a diagonal.
+`geo.lost()` is the test the overlay uses, and it answers false for anything
+that has never had a corner dragged.
+
+**Feather is measured from the RECT on a quad, never from the quad's edges.**
+The rectangle is the rim, where the tool's influence ends; the quad edge is in
+the middle of what it is doing. Feathering the quad edge is what made a dragged
+corner read as a slice — untouched ground tapering right up to a line with
+nothing on the far side of it — and putting that back would undo the fix, not
+tidy it.
 
 **On a quad, `quad` is the shape and `w`/`h` are its shadow.** A demolish area
 that has had a corner dragged carries four corners in its own local frame, and

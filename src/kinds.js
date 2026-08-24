@@ -391,35 +391,26 @@ const Kinds = (() => {
      because it is asked once per lattice cell of every shape a demolish
      area lies over — up to MAX_CELLS of them in a single pass — and an
      allocation there is a frame's worth of garbage for every drag frame. */
-  const RUIN = {m: null, w: 0, gone: false};
+  /* ── how far past the quad the cut-off wedge reaches ───────────────────
+     The deepest point outside a convex quad but inside the rectangle it
+     sits in is always one of that rectangle's corners, so four distances
+     answer it. Cached on the shape the way `_flat` is, and dropped by
+     build.js's changed() along with it, because it only moves when the
+     corners do. */
+  function lostSpan(s){
+    if (s._span) return s._span;
+    const hw = s.w / 2, hh = s.h / 2;
+    let m = 0;
+    for (const c of [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]])
+      m = Math.max(m, -polyDepth(s.quad, c[0], c[1]));
+    return (s._span = Math.max(m, 1e-6));
+  }
+
+  const RUIN = {m: null, w: 0, lost: 0, lseed: 0};
   function bitten(mods, x, y, cell){
-    RUIN.m = null; RUIN.w = 0; RUIN.gone = false;
+    RUIN.m = null; RUIN.w = 0; RUIN.lost = 0; RUIN.lseed = 0;
     for (let i = 0; i < mods.length; i++){
       const m = mods[i];
-      let d;
-      if (m.quad){
-        /* the polygon IS the whole answer for these: a quad only ever
-           belongs to a modifier, which is never hollow and never an
-           ellipse, so this is what geo.depth would work out anyway —
-           done here so the wedge test below does not cost a second pass
-           over the same four edges. */
-        const l = geo.local(m, x, y);
-        d = polyDepth(m.quad, l[0], l[1]);
-        if (d <= 0){
-          /* outside the quad but still inside the rectangle it sits in:
-             the wedge the corner cut off, and nothing outweighs it —
-             there is no weight to compare, the ground is simply not
-             there any more. */
-          if (Math.abs(l[0]) <= m.w / 2 && Math.abs(l[1]) <= m.h / 2){
-            RUIN.gone = true; RUIN.m = m; RUIN.w = 1;
-            return true;
-          }
-          continue;
-        }
-      } else {
-        d = geo.depth(m, x, y);
-        if (d <= 0) continue;
-      }
       /* the area's own Feather, read by the same arithmetic scan() reads a
          shape's own with: depth in cells over feather in cells, clamped. It
          ramps the damage down to nothing at the rim, which is what stops the
@@ -427,12 +418,65 @@ const Kinds = (() => {
          it. A Feather of zero says hard-edged, exactly as it does anywhere
          else in this file. */
       const f = Math.max(0, m.feather || 0);
-      /* the rim ramp and the directional one are the same weight arrived at
-         two ways, so they multiply rather than compete: Feather still keeps
-         the ruin off its own edges, and Fall decides which of those edges
-         the damage was coming from. */
-      const w = (f > 0 ? clamp01(d / cell / f) : 1) * geo.fall(m, x, y);
+      let w, lost = 0;
+      if (m.quad){
+        /* ── a quad has two boundaries, and they do different jobs ────────
+           The RECTANGLE is the rim: it is where the tool's influence ends,
+           and Feather tapers the whole ruin — the wedge included — as it
+           approaches it, exactly as it does for any other area.
+
+           The quad edge is not a rim at all. It is the line where thinning
+           turns into going, and it sits in the MIDDLE of what the tool is
+           doing. Feathering it was what made a dragged corner read as a
+           slice: the ruin was tapering back to untouched ground on one side
+           of the line while everything on the other side was gone. Taking
+           the rim off it is most of what makes the cut dissolve instead. */
+        const l = geo.local(m, x, y);
+        const rim = Math.min(m.w / 2 - Math.abs(l[0]), m.h / 2 - Math.abs(l[1]));
+        if (rim <= 0) continue;
+        const fr = f > 0 ? clamp01(rim / cell / f) : 1;
+        const d = polyDepth(m.quad, l[0], l[1]);
+        if (d > 0){
+          w = fr * geo.fall(m, x, y);
+        } else {
+          /* ── the wedge the corner cut off ──────────────────────────────
+             Not a stamp. It goes the way the end of a fall goes: nothing
+             taken at the line itself, everything taken by the far side,
+             and the same smoothstep in between — so what the corner does
+             is spend the ground out rather than cut it off, in the units
+             the rest of the area is already spending it in.
+
+             Measured against the wedge's own depth, so the fade is spread
+             across the whole of whatever was cut off: a corner pulled a
+             long way in fades over a long way, a small nick fades over a
+             small one. It arrives at nothing three quarters of the way,
+             for the reason Out does — a ramp still finishing at the far
+             corner leaves a fringe of survivors along it, and a fringe is
+             a border.
+
+             Then the rim taper on top, so the erased ground fades back to
+             terrain at the tool's own edge instead of ending on the
+             rectangle. There is no edge left anywhere: not the diagonal,
+             not the rectangle, not the tip. */
+          const g = clamp01(-d / (lostSpan(m) * 0.75));
+          lost = g * g * (3 - 2 * g) * fr;
+          /* and the survivors are at the ruin's full strength, because
+             this ground is going rather than thinning */
+          w = fr;
+        }
+      } else {
+        const d = geo.depth(m, x, y);
+        if (d <= 0) continue;
+        /* the rim ramp and the directional one are the same weight arrived
+           at two ways, so they multiply rather than compete: Feather keeps
+           the ruin off its own edges, and Fall decides which of those edges
+           the damage was coming from. */
+        w = (f > 0 ? clamp01(d / cell / f) : 1) * geo.fall(m, x, y);
+      }
       if (w > RUIN.w){ RUIN.w = w; RUIN.m = m; }
+      /* a cell one area has spent out is spent, whatever another makes of
+         it — this is the one thing that does not average */
+      if (lost > RUIN.lost){ RUIN.lost = lost; RUIN.lseed = m.seed | 0; }
     }
     return RUIN.m !== null;
   }
@@ -520,9 +564,9 @@ const Kinds = (() => {
            seated diamonds to mark where the area finished. */
         let rjit = 0, rscat = 0, rseed = 0, rgone = 0;
         if (mods && bitten(mods, wx, wy, cell)){
-          /* the wedge a dragged corner cut off: no roll, no rubble, no
-             surviving fringe — the cell is not drawn */
-          if (RUIN.gone) continue;
+          /* what the dragged corner spent, on its own salt so shaping the
+             quad does not re-draw the rubble the fall already made */
+          if (RUIN.lost > 0 && hash(u, v, RUIN.lseed + 667) < RUIN.lost) continue;
           const w = RUIN.w, e = w * w * (3 - 2 * w);
           const out = clamp(RUIN.m.out || 0, 0, 1);
           rseed = RUIN.m.seed | 0;

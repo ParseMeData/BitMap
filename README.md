@@ -459,19 +459,38 @@ its own, while an edge grip carries the two corners of its edge, which is the
 old stretch said in the only way a quad can say it. Switch it to Oval or Line
 and the corners are given back.
 
-**What a dragged corner cuts off is gone.** The rectangle the quad sits in is
-still the footprint — dragging a corner in does not shrink what the demolisher
-has hold of, it declares that the wedge between the edge you dragged and the
-rectangle's corner is *not there any more*. No fall, no rubble, no surviving
-fringe: the cells are not drawn at all, and the selection marks that wedge
-along with the rest so nothing is taken without being shown.
+**What a dragged corner cuts off is spent out.** The rectangle the quad sits in
+is still the footprint — dragging a corner in does not shrink what the
+demolisher has hold of, it declares that the wedge between the edge you dragged
+and the rectangle's corner is ground on its way to not being there. The
+selection marks that wedge along with the rest, so nothing is taken without
+being shown.
 
-That is the only hard edge a demolisher can draw, and it is the whole reason
-the corners move. Everything else here is about ground coming apart gradually,
-because a straight line through terrain reads as a stencil. But a rect can only
-end a town along an axis, and a town does not end along an axis — it ends at a
-river, a ridge, a road on the diagonal. A dragged corner is how you say where,
-and the fall then handles the side that is meant to peter out rather than stop.
+It goes the way the end of a fall goes, and for the same reason: nothing taken
+at the line itself, everything taken by the far side of the wedge, the same
+smoothstep in between, and the same scatter and jitter throwing what is left
+about on the way out. So a corner does not cut — it spends the ground out, in
+the units the rest of the area is already spending it in.
+
+The fade is measured against the wedge's own depth, so it is spread across
+whatever was cut off: a corner pulled a long way in fades over a long way, a
+small nick over a small one. It arrives at nothing three quarters of the way,
+for the reason Out does — a ramp still finishing at the far corner leaves a
+fringe of survivors along it, and a fringe is a border.
+
+**A quad has two boundaries and they do different jobs.** The rectangle is the
+rim: it is where the tool's influence ends, and Feather tapers the whole ruin —
+the wedge included — as it approaches it, exactly as for any other area. The
+quad edge is not a rim at all; it is the line where thinning turns into going,
+and it sits in the middle of what the tool is doing. Feathering it was what made
+a dragged corner read as a slice, with the ruin tapering back to untouched
+ground on one side of the line and everything gone on the other. Taking the rim
+off it is most of what makes the cut dissolve instead.
+
+This is how a town ends on a diagonal. A rect can only end one along an axis,
+and a town ends at a river, a ridge, a road running across it. A dragged corner
+is how you say where, and the fall handles the side that is meant to peter out
+rather than stop.
 
 It stays a modifier for all that: nothing is written back to the shapes
 underneath, so moving the area off brings every diamond back, and the walk grid

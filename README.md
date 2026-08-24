@@ -659,6 +659,29 @@ The contents are laid again on release, not on every frame of the drag:
 watching furniture flicker through every intermediate size is worse than
 seeing it settle once.
 
+A refit takes the wall's own centre and size rather than a box measured back
+out of it. Measuring it back out is a trap: a shape's centre snaps to a tile
+*centre*, so a room an even number of tiles wide has its edges on tile
+centres, and rounding those to tile indices moves the floor a whole tile
+sideways. Rooms an odd number of tiles wide never showed it, which is what
+made it look random. Generated geometry is placed exactly for the same
+reason — snapping is for a shape being dragged, and re-snapping one that was
+computed against a grid is not a no-op.
+
+Shapes say which room they are in, and a plan drawn before they did has that
+recovered from the drawing itself on load: a room is a labelled wall and what
+is in it is whatever sits inside it. Only the kinds a refit lays down again
+are claimed — a door sits on the boundary between two rooms and belongs to
+neither, and claiming one would delete it the first time either side was
+resized. Without that ownership a refit cannot tell what to replace, so
+moving a wall left the floor and the furniture standing where they were,
+which does not read as *the fit-out did not follow* — it reads as the room
+coming apart by a random amount, because the amount is how far you dragged.
+
+Resizing a room shrinks or grows it about its own centre, so a room pulled
+away from its doors is a room no longer joined to its neighbours. That is
+what **Remove wall** is for.
+
 ### Words made of diamonds
 
 `src/type.js` is a five-by-seven typeface where every lit square is one

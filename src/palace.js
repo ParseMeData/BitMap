@@ -178,7 +178,7 @@ const Palace = (() => {
          the one shape here that is a thing you named rather than a thing you
          drew, so it is the one that gets to say so */
       out.push({kind: 'wall', type: 'rect', x: cx, y: cy,
-                w: g.rw * z, h: g.rh * z, width: wall,
+                w: g.rw * z, h: g.rh * z, width: wall, exact: true,
                 variant: 'plaster', label: String(name).slice(0, 22),
                 n: i + 1, room: i + 1});
       /* The floor runs the FULL width of the room, under the wall rather
@@ -188,9 +188,9 @@ const Palace = (() => {
          cross. */
       out.push({kind: 'floor', type: 'rect', x: cx, y: cy,
                 w: g.rw * z, h: g.rh * z, variant: kit.floor,
-                room: i + 1});
+                exact: true, room: i + 1});
 
-      for (const it of fill(kit, x0, y0, g.rw, g.rh))
+      for (const it of fill(kit, x0 * z, y0 * z, g.rw, g.rh))
         out.push(Object.assign(it, {room: i + 1}));
     });
 
@@ -207,7 +207,8 @@ const Palace = (() => {
         const x = a.cx;
         p0 = [x - z, y]; p1 = [x + z, y];
       }
-      out.push({kind: 'door', type: 'line', pts: [p0, p1], width: wall, variant: 'swing'});
+      out.push({kind: 'door', type: 'line', pts: [p0, p1], width: wall,
+                variant: 'swing', exact: true});
     }
     Build.lay(out);
     return names.length;
@@ -236,14 +237,14 @@ const Palace = (() => {
      kitchen counters. A ring cannot be blocked by anything placed inside it,
      so the guarantee is structural rather than something to re-test. */
   const RING = 1;
-  function fill(kit, x0, y0, rw, rh){
+  function fill(kit, ox, oy, rw, rh){
     const out = [], z = G.terr.tsz;
-    const pad = 1 + RING;                        // the wall, then the walkway
-    x0 += pad; y0 += pad;
-    const iw = rw - pad * 2, ih = rh - pad * 2;
-    if (iw < 1 || ih < 1) return out;
-    const cols = Math.max(1, Math.floor(iw / SLOT));
-    const rows = Math.max(1, Math.floor(ih / SLOT));
+    const pad = (1 + RING) * z;                  // the wall, then the walkway
+    const x0 = ox + pad, y0 = oy + pad;
+    const iw = rw * z - pad * 2, ih = rh * z - pad * 2;
+    if (iw < z || ih < z) return out;
+    const cols = Math.max(1, Math.floor(iw / (SLOT * z)));
+    const rows = Math.max(1, Math.floor(ih / (SLOT * z)));
     const sw = iw / cols, sh = ih / rows;
     const used = kit.items.map(() => 0);
     let cursor = 0;
@@ -253,17 +254,18 @@ const Palace = (() => {
         for (let k = 0; k < kit.items.length; k++){
           const i = (cursor + k) % kit.items.length, it = kit.items[i];
           if (used[i] >= (it.max || 1)) continue;
-          if (it.w > Math.min(sw, iw) || it.h > Math.min(sh, ih)) continue;
+          if (it.w * z > Math.min(sw, iw) || it.h * z > Math.min(sh, ih)) continue;
           pick = i; break;
         }
         if (pick < 0) continue;                  // nothing left that fits here
         const it = kit.items[pick];
         used[pick]++; cursor = pick + 1;
-        const cx = clampN(x0 + (c + 0.5) * sw, x0 + it.w / 2, x0 + iw - it.w / 2);
-        const cy = clampN(y0 + (r + 0.5) * sh, y0 + it.h / 2, y0 + ih - it.h / 2);
+        const iwd = it.w * z, ihd = it.h * z;
+        const cx = clampN(x0 + (c + 0.5) * sw, x0 + iwd / 2, x0 + iw - iwd / 2);
+        const cy = clampN(y0 + (r + 0.5) * sh, y0 + ihd / 2, y0 + ih - ihd / 2);
         out.push({kind: it.k, type: it.k === 'plant' || it.k === 'pool' ? 'ellipse' : 'rect',
-                  x: cx * z, y: cy * z, w: it.w * z, h: it.h * z,
-                  variant: it.v || undefined});
+                  x: cx, y: cy, w: iwd, h: ihd,
+                  variant: it.v || undefined, exact: true});
       }
     return out;
   }
@@ -279,16 +281,20 @@ const Palace = (() => {
   function refit(wall){
     if (!wall || !wall.label || !wall.room || !G.terr) return false;
     const z = G.terr.tsz;
-    const b = Kinds.geo.bbox(wall);
-    const x0 = Math.round(b[0] / z), y0 = Math.round(b[1] / z);
-    const rw = Math.max(3, Math.round((b[2] - b[0]) / z));
-    const rh = Math.max(3, Math.round((b[3] - b[1]) / z));
+    /* The floor takes the wall's own centre and size rather than a box
+       measured back out of it. Measuring it back out was the bug: a room an
+       even number of tiles wide sits with its edges on tile CENTRES, because
+       a centre snaps to a tile centre — and rounding those edges to tile
+       indices moved the floor a whole tile sideways. The wall already knows
+       where it is; nothing else needs to work it out again. */
+    const rw = Math.max(3, Math.round(wall.w / z));
+    const rh = Math.max(3, Math.round(wall.h / z));
     const kit = KIT[kitFor(wall.label)] || KIT.plain;
     const out = [{kind: 'floor', type: 'rect',
-                  x: (x0 + rw / 2) * z, y: (y0 + rh / 2) * z,
-                  w: rw * z, h: rh * z,
-                  variant: kit.floor, room: wall.room}];
-    for (const it of fill(kit, x0, y0, rw, rh)) out.push(Object.assign(it, {room: wall.room}));
+                  x: wall.x, y: wall.y, w: wall.w, h: wall.h,
+                  variant: kit.floor, exact: true, room: wall.room}];
+    for (const it of fill(kit, wall.x - wall.w / 2, wall.y - wall.h / 2, rw, rh))
+      out.push(Object.assign(it, {room: wall.room}));
     Build.refill(wall.room, out);
     return true;
   }

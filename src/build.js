@@ -155,14 +155,23 @@ const Build = (() => {
       if (!k) return null;
       const type = d.type || (k.types || ['rect'])[0];
       const area = type !== 'line' && type !== 'ring';
+      /* Snapping is for a shape being dragged: sub-cell positions make the
+         pattern shimmer under your hand. A generated shape is not being
+         dragged — it has been worked out against a box that is already on
+         the grid — and re-snapping it is not a no-op. A centre snaps to a
+         tile CENTRE, so a room an even number of tiles wide has its edges on
+         tile centres, and anything derived from it by rounding lands a whole
+         tile out. `exact` says this position was computed, not pointed at. */
+      const sc = d.exact ? (v => v) : snapC;
+      const ss = d.exact ? (v => Math.max(grid(), v)) : snapS;
       const s = {id: nextId++, kind: d.kind, type,
                  seed: d.seed === undefined ? (Math.random() * 1e6) | 0 : d.seed,
                  rot: d.rot || 0,
-                 x: snapC(d.x || 0), y: snapC(d.y || 0),
-                 w: snapS(d.w || grid() * 6), h: snapS(d.h || grid() * 5),
+                 x: sc(d.x || 0), y: sc(d.y || 0),
+                 w: ss(d.w || grid() * 6), h: ss(d.h || grid() * 5),
                  r: snapR(d.r || cellSize()),
                  width: snapW(d.width || cellSize() * 2),
-                 pts: d.pts ? d.pts.map(q => [snapC(q[0]), snapC(q[1])]) : [[0, 0]],
+                 pts: d.pts ? d.pts.map(q => [sc(q[0]), sc(q[1])]) : [[0, 0]],
                  ctrl: null,
                  feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
@@ -1090,6 +1099,38 @@ const Build = (() => {
       }))));
     } catch (e){}
   }
+  /* ── palaces built before a room owned its contents ────────────────────
+     A plan whose shapes do not say which room they are in is a plan where
+     moving a wall leaves the floor and the furniture standing where they
+     were — which does not read as "the fit-out did not follow", it reads as
+     the room coming apart at random, because how far it comes apart is how
+     far you happened to drag.
+
+     Ownership is recoverable from the drawing itself: a room is a labelled
+     wall, and what is in it is whatever sits inside it. Only the kinds a
+     refit would lay down again are claimed — a door is on the boundary
+     between two rooms and belongs to neither, and claiming one would delete
+     it the first time either side was resized. */
+  function adopt(){
+    const walls = G.shapes.filter(s => s.label);
+    if (!walls.length || walls.every(w => w.room)) return false;
+    walls.forEach((w, i) => { if (!w.room) w.room = w.n || i + 1; });
+    const boxes = walls.map(w => Kinds.geo.bbox(w));
+    const OWNED = {floor: 1, fixt: 1};
+    for (const s of G.shapes){
+      if (s.label || s.room) continue;
+      if (!OWNED[layerOf(s)]) continue;
+      const c = Kinds.geo.centre(s);
+      for (let i = 0; i < walls.length; i++){
+        const b = boxes[i];
+        if (c[0] >= b[0] && c[0] <= b[2] && c[1] >= b[1] && c[1] <= b[3]){
+          s.room = walls[i].room; break;
+        }
+      }
+    }
+    return true;
+  }
+
   function load(){
     let raw = [];
     try { raw = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e){}
@@ -1117,6 +1158,7 @@ const Build = (() => {
           variant: s.variant || (k.variants ? k.variants[0] : 'mixed')
         });
       });
+    if (adopt()) save();
   }
 
   const startLayer = () => (Kinds.layers.find(L => L.start) || Kinds.layers[0]).id;

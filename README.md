@@ -148,6 +148,7 @@ reach.
                     lit square is one more diamond in the same stream
     src/palace.js   the room list, the layout it generates, the fit-out that
                     follows a wall, and the names drawn on the plan
+    src/doors.js    the one part of a plan that moves: leaves that swing
     platformer.html the runner — the halftone platformer, which takes this
                     route as its deck when there is one (see Playing it)
     src/basemap.js  the tracing underlay, live tiles and frozen picture
@@ -676,6 +677,27 @@ to every tile and turns aqua — plainly a tool rather than part of the page. A
 grid you cannot see over the floor you are aiming at is not helping; one that
 fine standing there permanently is graph paper you are trying to draw a house
 on. It thins back out when the dots get too close to tell apart.
+
+**A door is shut until somebody comes to it**, and swings open as the walker
+arrives and shut again once they are clear of the sweep.
+
+Everything else on the plate is still — a wall is where it was last frame and
+will be there next frame, which is why the whole plan lives in one static
+buffer the CPU never touches. A leaf is the exception, being the one part of a
+floor plan that is supposed to move, so it is drawn per frame in the entity
+stream alongside the walker and the sparks. What stays in the plate is the arc
+it travels through: a drawing shows the sweep, and the door does the swinging.
+
+There is no state machine behind it. Each door holds one number — how open it
+is — and eases toward whether the walker is near enough to be coming through,
+so it is already moving before you arrive and still settling as you leave.
+That is the difference between a door and a sprite with two frames. A sliding
+one gets out of the way rather than turning, a double one opens from both
+jambs, and an *open* one has no leaf at all.
+
+It swings for the look and nothing else: the walk grid was opened when the
+door was cut and stays open. A leaf that could actually stop you would be a
+door you had to learn to operate, in a game about walking a route.
 
 **Door** drags along a wall and cuts one there. It takes the wall out where it
 stands, the way the demolisher does — a door is a hole with a leaf drawn in

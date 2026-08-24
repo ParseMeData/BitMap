@@ -805,31 +805,23 @@ const Kinds = (() => {
     for (const [jx, jy] of [[A[0], A[1]], [B[0], B[1]]])       // the jambs
       for (let k = -1; k <= 1; k++)
         dot(jx + nx * k * w * 0.4, jy + ny * k * w * 0.4, C.plaster, 0.95, 1, 0, jx + k);
-    if (style === 'open') return;
-    if (style === 'slide'){                                    // the leaf parked alongside
-      const n = Math.max(5, Math.round(L / cell));
-      for (let i = 0; i <= n; i++){
-        const p = i / n * L;
-        dot(B[0] + ux * p + nx * w * 0.7, B[1] + uy * p + ny * w * 0.7,
-            shade(C.plaster, 0.9), 0.82, 0.84, 0, i);
-      }
-      return;
-    }
+    if (style === 'open' || style === 'slide') return;
+    /* ── the sweep, and only the sweep ──────────────────────────────────
+       The LEAF is not here. A leaf is the one part of a plan that moves, so
+       it is drawn per frame with the walker and the sparks (see doors.js);
+       what stays in the static plate is the arc it travels through, which is
+       the part a drawing is supposed to show and the part that never moves.  */
     const arm = style === 'double' ? L / 2 : L;
-    const swing = (hx, hy, su, sv, salt) => {
-      const n = Math.max(5, Math.round(arm / cell));
-      for (let i = 1; i <= n; i++)                             // the leaf, standing open
-        dot(hx + nx * (i / n) * arm, hy + ny * (i / n) * arm, C.plaster, 0.88, 0.82, 0,
-            salt * 100 + i);
+    const sweep = (hx, hy, su, sv, salt) => {
       const m = Math.max(9, Math.round(arm / cell * 1.5));
-      for (let i = 0; i <= m; i++){                            // the arc it sweeps
+      for (let i = 0; i <= m; i++){
         const th = i / m * Math.PI / 2, c = Math.cos(th), n2 = Math.sin(th);
         dot(hx + (nx * c + su * n2) * arm, hy + (ny * c + sv * n2) * arm,
-            C.plaster, 0.26, 0.5, 1, salt * 200 + i);
+            C.plaster, 0.22, 0.5, 1, salt * 200 + i);
       }
     };
-    if (style === 'double'){ swing(A[0], A[1], ux, uy, 1); swing(B[0], B[1], -ux, -uy, 2); }
-    else swing(A[0], A[1], ux, uy, 1);
+    if (style === 'double'){ sweep(A[0], A[1], ux, uy, 1); sweep(B[0], B[1], -ux, -uy, 2); }
+    else sweep(A[0], A[1], ux, uy, 1);
   }
 
   /* a flight of treads with a lit nosing on each, brightening as it climbs,

@@ -630,6 +630,10 @@ function frame(now){
     m = put(ENT, m, pxw, pyw + bob, fl[0]/255, fl[1]/255, fl[2]/255,
             0.5 * (1 - z / (G.fitW * 0.9)), 16 * minW * beat, 1, 0, 0, 1);
 
+  /* the doors answer the walker, not the clock, so they are stepped from
+     where it actually is this frame rather than from the tile it is on */
+  if (live) Doors.step(dt, pxw, pyw);
+  m = Doors.draw(ENT, m, ENTMAX);
   m = Interior.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);

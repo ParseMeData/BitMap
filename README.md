@@ -1,4 +1,4 @@
-# Memory Quest V4.2
+# Memory Quest V4.4
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest V4.2 in the KDE launcher
+    ./play.sh          # or: Memory Quest V4.4 in the KDE launcher
 
 Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
@@ -36,6 +36,9 @@ out of the diamonds carried from the one before it.
 **v4.2** — palaces you type rather than draw: a room list that lays itself
 out and refits as you move the walls, a wall demolisher, and words made of
 diamonds.
+**v4.4** — doors as a tool rather than a consequence, plan tools that aim and
+trim at the lattice cell, grips that stretch from the side you hold, no clock,
+and a click to resume.
 
 ### The half that is not in the repo
 
@@ -46,10 +49,10 @@ own is only half a version. `tools/` writes the other half to a file beside
 it:
 
     ./play.sh --remote-debugging-port=9222 &
-    tools/snapshot.py save    snapshots/v4.0.json
-    tools/snapshot.py restore snapshots/v4.0.json
+    tools/snapshot.py save    snapshots/v4.4.json
+    tools/snapshot.py restore snapshots/v4.4.json
 
-`snapshots/v4.0.json` is the town as it stood at that tag, frozen picture and
+`snapshots/v4.4.json` is the town as it stood at that tag, frozen picture and
 all. Restoring is destructive — the profile *becomes* the file, so a room
 built since the snapshot is removed rather than left behind, and the page
 reloads. Snapshot the live state first if it is ahead of the file.

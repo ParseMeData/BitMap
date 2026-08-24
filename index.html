@@ -159,6 +159,19 @@ body.wall #inside,body.wall #enterhint{display:none}
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
 /* the route: the rooms in order, or the loci inside one — the order is the
    thing being authored, so it gets a list rather than living on the plate */
+/* the room order: a list you type, top to bottom, which the plan is laid out
+   from. It sits on the left with the palette because it is authoring, not
+   tuning — and above it, because it comes first. */
+#palace{position:fixed;left:16px;top:62px;width:206px;z-index:5;padding:12px;
+  display:flex;flex-direction:column;gap:8px}
+#palace .phead{margin-bottom:1px}
+#palace .phead .btn{padding:4px 7px;font-size:8px}
+#porder{background:#0D0D12;border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 11px/1.65 var(--mono);padding:7px 8px;letter-spacing:.04em;resize:vertical;
+  min-height:96px;width:100%}
+#porder::placeholder{color:#3A3A44}
+#pgen.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
+body.locus #palace{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
 #route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
@@ -233,7 +246,7 @@ body.arming,body.arming #gl{cursor:copy}
   <em>WASD</em> move &nbsp; <em>Shift</em> sprint<br>
   <em>Space</em> recrystallise &nbsp; <em>Tab</em> overview<br>
   <em>Wheel</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
-  <em>B</em> build &nbsp; <em>Enter</em> open a marker &nbsp; <em>P</em> play
+  <em>B</em> build &nbsp; <em>O</em> rooms &nbsp; <em>Enter</em> open &nbsp; <em>P</em> play
 </div>
 
 <div id="inside" class="glass" hidden></div>
@@ -261,12 +274,21 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Drag</td><td>move the picture &nbsp;·&nbsp; Shift turns it, Ctrl holds 15°</td></tr>
     <tr><td>[ ]</td><td>size or width of the selection &nbsp;·&nbsp; Del removes it</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
+    <tr><td>O</td><td>the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it</td></tr>
     <tr><td>Enter</td><td>open the marker you are standing by &nbsp;·&nbsp; a room, or a locus</td></tr>
     <tr><td>P</td><td>play the route in the platformer</td></tr>
     <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
     <tr><td>F / F11</td><td>fullscreen</td></tr>
     <tr><td>Esc</td><td>close the locus &nbsp;·&nbsp; then the interior &nbsp;·&nbsp; then resume</td></tr>
   </table>
+</div>
+
+<div id="palace" class="glass" hidden>
+  <div class="phead"><span>The <b>rooms</b></span><button class="btn" id="pclosep">&#10005;</button></div>
+  <textarea id="porder" spellcheck="false" rows="7"
+            placeholder="hall&#10;bedroom&#10;bathroom&#10;kitchen&#10;study"></textarea>
+  <button class="btn" id="pgen">Generate</button>
+  <div class="knote" id="pgnote"></div>
 </div>
 
 <div id="route" class="glass" hidden>
@@ -326,11 +348,11 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 40, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 41, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
-   'src/panel.js','src/build.js','src/markers.js','src/loci.js','src/interior.js',
-   'src/basemap.js','src/game.js']
+   'src/panel.js','src/build.js','src/markers.js','src/loci.js','src/palace.js',
+   'src/interior.js','src/basemap.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

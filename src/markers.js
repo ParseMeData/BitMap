@@ -14,10 +14,12 @@ const Markers = (() => {
                 '⫫', '⇞', '⇬', '✦', '↬', '⏎', '➣',
                 '⤲', '⇑', '⇯', '⇭', '⤊', '⟰', '≛',
                 '✥'];
-  /* Cut from the same sheet but never offered in the palette: the order a
-     marker sits at is drawn beside it, and a memory palace is its order —
-     a plan where you cannot see it is a plan you cannot check. */
-  const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  /* Cut from the same sheet but never offered in the palette. The order a
+     marker sits at is drawn beside it, and a room's name is drawn on it —
+     a palace is its order and its rooms, and a plan where you cannot see
+     either is a plan you cannot check. Digits first so a number is one
+     lookup; the sheet is the only texture in the program either way. */
+  const TEXT = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const SIZE = 64, COLS = 8;
   /* Which markers are being pinned is one string, the way the shapes are —
      the town's, or the ones inside a building. */
@@ -25,7 +27,7 @@ const Markers = (() => {
   const TINT = [[0.47, 0.88, 0.85], [1, 0.76, 0.31], [1, 0.37, 0.64],
                 [0.93, 0.92, 0.89], [0.65, 0.55, 0.98]];
 
-  let glyphs = [], sel = null, armed = -1, nextId = 1, digit0 = 0;
+  let glyphs = [], sel = null, armed = -1, nextId = 1, text0 = 0;
 
   /* Draw one glyph into a scratch cell and hand back its pixels, so a
      character the font cannot make — which comes back as tofu, not as
@@ -64,8 +66,8 @@ const Markers = (() => {
     glyphs = keep;
     /* the digits go on the end, so a marker's saved `gi` still means the
        glyph it always meant however many symbols the font dropped */
-    digit0 = keep.length;
-    const cells = keep.concat(DIGITS);
+    text0 = keep.length;
+    const cells = keep.concat(TEXT.split(''));
 
     const rows = Math.max(1, Math.ceil(cells.length / COLS));
     const c = document.createElement('canvas');
@@ -186,14 +188,31 @@ const Markers = (() => {
     }
     return m;
   }
+  /* ── words, out of the same sheet ────────────────────────────────────
+     One instance per character, riding in the entity stream with everything
+     else, so a label costs no draw call and no second way of drawing text.
+     A character the sheet does not carry advances the pen and draws
+     nothing, which is what makes a space a space. */
+  const cellOf = ch => {
+    const i = TEXT.indexOf(String(ch).toUpperCase());
+    return i < 0 ? -1 : text0 + i;
+  };
+  /* left-aligned from x; `text` returns where the pen ended up */
+  function text(a, m, str, x, y, r, c, al, cap){
+    const w = r * 1.06;
+    for (let i = 0; i < str.length; i++, x += w){
+      if (cap !== undefined && m > cap - 2) break;
+      const g = cellOf(str[i]);
+      if (g < 0) continue;
+      m = put(a, m, x, y, c[0], c[1], c[2], al === undefined ? 0.95 : al, r, 0, 0, 0, 3, g);
+    }
+    return m;
+  }
+  const textWidth = (str, r) => str.length * r * 1.06;
   /* the digits of `v`, laid out left to right from a centred anchor */
   function number(a, m, v, x, y, r, c){
-    const s = String(v | 0), w = r * 1.05;
-    let px = x - (s.length - 1) * w / 2;
-    for (let i = 0; i < s.length; i++, px += w)
-      m = put(a, m, px, y, c[0], c[1], c[2], 0.95, r, 0, 0, 0, 3,
-              digit0 + (s.charCodeAt(i) - 48));
-    return m;
+    const s = String(v | 0);
+    return text(a, m, s, x - (s.length - 1) * r * 1.06 / 2, y, r, c);
   }
 
   /* ── palette strip ── */
@@ -261,7 +280,7 @@ const Markers = (() => {
   }
 
   return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, nearest, mount,
-          ordered, reorder, renumber,
+          ordered, reorder, renumber, text, textWidth,
           armed: () => armed >= 0,
           disarm: () => { armed = -1; document.body.classList.remove('arming'); syncChips(); },
           select: m => { sel = m; },

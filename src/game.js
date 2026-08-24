@@ -108,6 +108,23 @@ let VW = 1, VH = 1;
 let BLANK = false;
 try { BLANK = localStorage.getItem('hq.blank') === '1'; } catch (e){}
 
+/* ── the sparks ─────────────────────────────────────────────────────────
+   The round is the game this started as, and it is in the way of the game
+   it is becoming: a floor plan you are laying out does not want twelve gold
+   diamonds scattered over it. So they are a switch, off by default, and the
+   round machinery underneath is untouched — turn them back on and the
+   deal-and-collect loop is exactly where it was. */
+let SPARKS = false;
+try { SPARKS = localStorage.getItem('hq.sparks') === '1'; } catch (e){}
+function setSparks(v){
+  SPARKS = !!v;
+  try { localStorage.setItem('hq.sparks', SPARKS ? '1' : '0'); } catch (e){}
+  G.got = 0; G.sparks.length = 0;
+  G.total = roundTotal();
+  scatterSparks();
+  if (typeof syncPanel === 'function') syncPanel();
+}
+
 /* ── build ── */
 function analyse(){
   G.A = Lattice.analyse(G.px, G.W, G.H, T.cols, T);
@@ -203,6 +220,7 @@ function floodReach(){
 function scatterSparks(){
   if (!G.terr || !G.reach) return;
   G.sparks.length = 0; G.got = 0; G.steps = 0; G.clock = 0; G.over = false; G.msg = '';
+  if (!SPARKS){ G.total = 0; hud(true); return; }
   const t = G.terr, cand = [];
   for (let y = 0; y < t.th; y++)
     for (let x = 0; x < t.tw; x++)
@@ -293,6 +311,7 @@ const roundTotal = () => Math.min(24, 12 + (G.round - 1) * 2);
 
 /* put back however many sparks the edit stranded */
 function topUp(){
+  if (!SPARKS) return;
   const t = G.terr, want = roundTotal() - G.got - G.sparks.length;
   if (want <= 0) return;
   const cand = [];
@@ -386,12 +405,19 @@ addEventListener('keydown', e => {
       break;
     case 'Escape':
       if (Loci.opened()) Loci.close();
+      else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
       else togglePause();
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
+    /* O is the order: the list of rooms this palace is laid out from */
+    case 'KeyO':
+      if (Loci.opened()) break;
+      if (Palace.opened()) Palace.close();
+      else if (Interior.inside()) Palace.show();
+      break;
     /* P plays the route: the loci you have written, in their order, handed
        to the platformer as its deck */
     case 'KeyP': if (!Loci.opened()) Loci.play(); break;
@@ -441,7 +467,7 @@ const fmt = t => {
 let hudClock = -1, lastMsg = null;
 function hud(force){
   if (force){
-    $('#hsparks').textContent = G.got + '/' + G.total;
+    $('#hsparks').textContent = SPARKS ? G.got + '/' + G.total : '\u2014';
     $('#hround').textContent = String(G.round);
     $('#hsteps').textContent = String(G.steps);
     $('#hbest').textContent = G.best ? fmt(G.best) : '—';
@@ -600,6 +626,7 @@ function frame(now){
             0.5 * (1 - z / (G.fitW * 0.9)), 16 * minW * beat, 1, 0, 0, 1);
 
   m = Interior.overlay(ENT, m, ENTMAX);
+  m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);
   Interior.prompt();
@@ -648,6 +675,7 @@ function boot(img){
   /* the picture store answers asynchronously; the palette and the rings
      redraw themselves once it has said what is attached */
   Loci.init().then(() => Build.sync());
+  Palace.init();
   Basemap.init();
   applyPlate();
   spawn(); scatterSparks();

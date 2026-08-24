@@ -81,6 +81,11 @@ const Interior = (() => {
     G.total = 12;
     scatterSparks();
     banner();
+    /* A palace with nothing in it is the one moment where "what rooms?" is
+       always the right question, so the order box asks it without being
+       sent for. A palace you have already built stays as you left it. */
+    if (typeof Palace !== 'undefined' && !G.shapes.length) Palace.show(mk.uid);
+    else if (typeof Palace !== 'undefined') Palace.close();
     return true;
   }
 
@@ -101,6 +106,7 @@ const Interior = (() => {
     G.cam = f.cam; G.camT = f.camT;
     G.sparks = f.sparks; G.got = f.got; G.total = f.total; G.round = f.round;
     G.clock = f.clock; G.steps = f.steps; G.over = f.over; G.msg = f.msg;
+    if (typeof Palace !== 'undefined') Palace.close();
     revalidate();
     Basemap.suspend(stack.length > 0);
     hud(true);

@@ -69,6 +69,7 @@ WebSocket, because nothing else here needs a dependency.
 | wheel, `+` `-`, `0` | zoom / reset zoom |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
+| `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus |
 | `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
@@ -80,6 +81,12 @@ WebSocket, because nothing else here needs a dependency.
 
 Clear every spark to finish a round; each round adds two more. Your best
 clear time is kept in the browser profile the launcher uses.
+
+**Sparks are off by default.** The round is the game this started as and it is
+in the way of the one it is becoming — twelve gold diamonds scattered over a
+floor plan you are laying out. The machinery underneath is untouched: turn
+them back on under *Sparks* in the tune panel and the deal-and-collect loop is
+exactly where it was.
 
 ## What changed from the phone build
 
@@ -126,6 +133,8 @@ reach.
     src/interior.js going inside a marker: the stack, and the swap
     src/loci.js     the numbered places inside a room, their pictures,
                     the lattice preview, and the route the platformer plays
+    src/palace.js   the room list, the layout it generates, and the names
+                    drawn on the plan
     platformer.html the runner — the halftone platformer, which takes this
                     route as its deck when there is one (see Playing it)
     src/basemap.js  the tracing underlay, live tiles and frozen picture
@@ -534,6 +543,49 @@ A marker with something built inside it wears a ring on the map, so a place
 you can walk into looks different from a place that is only a note. The plans
 live beside the town in the browser profile, under `hq.rooms.<marker>`, with
 `hq.rooms` as the index of which markers have one.
+
+## Typing a palace
+
+Drawing four walls is not the interesting part of a room and it is the same
+four walls every time. The interesting part is which rooms, in what order —
+so `O` opens a list you type, one room to a line, and the plan is laid out
+from it:
+
+    hall
+    living room
+    kitchen
+    bathroom
+    bedroom
+    study
+
+Press Generate and you get those rooms, walled, floored and furnished with
+what each one is expected to hold: a bed and a wardrobe in the bedroom, a
+bath and a basin in the bathroom, a cooktop and an island in the kitchen, a
+table on a rug in the dining room. From that moment they are ordinary shapes
+— drag them, resize them, throw them away, draw more.
+
+The names are read rather than matched, so *master bedroom*, *the ensuite*
+and *kids bed* all get the right furniture, and a name nothing recognises
+gets a plain room rather than a refusal.
+
+**The order you type is a route you can walk.** Rooms are placed so that
+consecutive ones are always neighbours — the run ploughs along a row and
+turns back along the next, so room five is beside room four even when it
+starts a new one — and a door is cut through every wall between a pair. That
+is checked rather than assumed: every walkable tile in a generated palace is
+reachable from every other.
+
+Rooms carry their name and their number, and which of the two you see depends
+on how far back you are standing. Close in, the name across the top of the
+room. Pulled back to the whole plan, a large number in the middle of the
+floor — because from there what you are reading is the order, and a
+fourteen-letter name at seven pixels a letter is a smudge with a word's
+shape.
+
+The list is kept per palace, so coming back shows what the place was built
+from. It opens itself on a palace with nothing in it yet, which is the one
+moment the answer is always yes. Generating over a plan that already exists
+asks twice.
 
 ## The route, and playing it
 

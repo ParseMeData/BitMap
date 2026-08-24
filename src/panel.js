@@ -87,6 +87,21 @@ function buildPanel(){
   }
   body.appendChild(plate);
 
+  /* the round, on or off. It is the game this started as and it is in the
+     way of the one it is becoming, so it is a switch rather than a removal */
+  const sh = document.createElement('div');
+  sh.className = 'plabel'; sh.textContent = 'Sparks';
+  body.appendChild(sh);
+  const spk = document.createElement('div');
+  spk.className = 'chips'; spk.style.gridTemplateColumns = 'repeat(2,1fr)';
+  for (const [name, v] of [['Off', false], ['On', true]]){
+    const c = document.createElement('div');
+    c.className = 'chip'; c.textContent = name; c.dataset.spark = v ? '1' : '0';
+    c.onclick = () => { setSparks(v); syncPanel(); };
+    spk.appendChild(c);
+  }
+  body.appendChild(spk);
+
   const head = document.createElement('div');
   head.className = 'plabel'; head.textContent = 'Variations';
   body.appendChild(head);
@@ -126,6 +141,8 @@ function syncPanel(){
     c.classList.toggle('sel', +c.dataset.ink === T.ink));
   document.querySelectorAll('.chip[data-blank]').forEach(c =>
     c.classList.toggle('sel', (c.dataset.blank === '1') === BLANK));
+  document.querySelectorAll('.chip[data-spark]').forEach(c =>
+    c.classList.toggle('sel', (c.dataset.spark === '1') === SPARKS));
 }
 function setPanel(open){
   panelOpen = open;

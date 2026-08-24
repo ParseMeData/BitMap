@@ -118,6 +118,46 @@ const Build = (() => {
     }
   }
 
+  /* ── a plan arriving whole ──────────────────────────────────────────────
+     The generator hands over a finished set of shapes rather than dragging
+     them out one at a time, so they are built here — same defaults, same
+     snapping, same everything a dragged one gets — and the expensive half
+     (regenerating instances, restamping the walk grid, saving) is paid once
+     at the end instead of once per shape.
+
+     It replaces rather than appends. A generated plan is a plan, not a layer
+     over whatever was there, and half of one laid over half of another is
+     not something anyone asked for. */
+  function lay(list){
+    G.shapes.length = 0;
+    sel = null;
+    for (const d of list){
+      const k = Kinds.by[d.kind];
+      if (!k) continue;
+      const type = d.type || (k.types || ['rect'])[0];
+      const area = type !== 'line' && type !== 'ring';
+      const s = {id: nextId++, kind: d.kind, type,
+                 seed: d.seed === undefined ? (Math.random() * 1e6) | 0 : d.seed,
+                 rot: d.rot || 0,
+                 x: snapC(d.x || 0), y: snapC(d.y || 0),
+                 w: snapS(d.w || grid() * 6), h: snapS(d.h || grid() * 5),
+                 r: snapR(d.r || cellSize()),
+                 width: snapW(d.width || cellSize() * 2),
+                 pts: d.pts ? d.pts.map(q => [snapC(q[0]), snapC(q[1])]) : [[0, 0]],
+                 ctrl: null,
+                 feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
+                 bright: defs.bright * (k.bright0 || 1),
+                 grain: 1, scale: 1, jitter: 0, scatter: 0,
+                 pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
+                 mask: false,
+                 variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
+                 label: d.label || '', n: d.n || 0};
+      G.shapes.push(s);
+    }
+    changed();
+    return G.shapes.length;
+  }
+
   function remove(s){
     const i = G.shapes.indexOf(s);
     if (i < 0) return;
@@ -856,6 +896,7 @@ const Build = (() => {
     try {
       localStorage.setItem(KEY, JSON.stringify(G.shapes.map(s => ({
         kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, rot: s.rot || 0,
+        label: s.label || '', n: s.n || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
@@ -886,6 +927,7 @@ const Build = (() => {
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
           r: Math.min(s.r || cellSize(), RMAX * cellSize()),
+          label: s.label || '', n: s.n || 0,
           variant: s.variant || (k.variants ? k.variants[0] : 'mixed')
         });
       });
@@ -920,6 +962,6 @@ const Build = (() => {
     setOn(false);
   }
 
-  return {init, rebuild, stamp, overlay, setOn, mount, active: () => on,
+  return {init, rebuild, stamp, overlay, setOn, mount, lay, active: () => on,
           sync: syncUI, commit: save, key: () => KEY, count: () => G.shapes.length};
 })();

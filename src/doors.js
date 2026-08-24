@@ -10,17 +10,23 @@
    it travels through. A drawing shows the sweep; the door does the swinging.
 
    Opening is not a trigger with a state machine behind it. Each door holds
-   one number, how open it is, and eases toward whether the walker is near
-   enough to be coming through. So it is already moving before you arrive and
-   still settling as you leave, which is what makes it read as a door rather
-   than as a sprite with two frames.
+   one number, how open it is, and eases toward whether the walker is close
+   enough to be going through — close, not merely nearby: it should give as
+   you reach it, the way a door does, rather than anticipating you from
+   across the room.
+
+   And it swings AWAY. Which side it opens to is decided at the moment it
+   starts to move, from where the walker is standing and which way they are
+   heading, so the leaf goes ahead of them and never through them. The same
+   door opens the other way when it is met from the other side, which is what
+   a door does and what a drawn arc can never show.
 
    It swings for the look and nothing else: the walk grid was opened when the
    door was cut and stays open. A leaf that could actually stop you would be
    a door you had to learn to operate, in a game about walking a route. */
 
 const Doors = (() => {
-  const NEAR = 1.0;                  // tiles of reach past the leaf's own arc
+  const NEAR = 1.2;                  // tiles from the threshold itself
   const SPEED = 0.006;               // smaller is faster; this is about a third of a second
   const BONE = [0.93, 0.92, 0.89];
 
@@ -32,15 +38,33 @@ const Doors = (() => {
     return {A, B, L, ux: dx / L, uy: dy / L, nx: -dy / L, ny: dx / L};
   }
 
-  /* How far along it should be. Distance from the middle of the opening,
-     because a door is answered by somebody approaching the doorway rather
-     than by somebody standing on the hinge. */
+  /* distance from the opening ITSELF, not from its middle — a doorway is a
+     stretch of wall, and standing at either end of it is standing in it */
+  function reach(f, wx, wy){
+    const vx = f.B[0] - f.A[0], vy = f.B[1] - f.A[1];
+    const wx0 = wx - f.A[0], wy0 = wy - f.A[1];
+    const L2 = vx * vx + vy * vy;
+    const t = L2 > 0 ? Math.max(0, Math.min(1, (wx0 * vx + wy0 * vy) / L2)) : 0;
+    return Math.hypot(wx0 - vx * t, wy0 - vy * t);
+  }
   function wanted(s, f, wx, wy){
     if (s.variant === 'open') return 1;
     const t = G.terr ? G.terr.tsz : 12;
-    const arm = s.variant === 'double' ? f.L / 2 : f.L;
+    return reach(f, wx, wy) <= NEAR * t ? 1 : 0;
+  }
+
+  /* Which way it goes: away from the walker, and if they are already standing
+     in the doorway, the way they are heading. Decided once, as it starts to
+     move, and held while it is open — a leaf that flipped sides underneath
+     somebody halfway through would be a door swinging through them. */
+  function side(s, f, wx, wy){
+    const t = G.terr ? G.terr.tsz : 12;
     const cx = (f.A[0] + f.B[0]) / 2, cy = (f.A[1] + f.B[1]) / 2;
-    return Math.hypot(wx - cx, wy - cy) <= arm + NEAR * t ? 1 : 0;
+    const across = (wx - cx) * f.nx + (wy - cy) * f.ny;
+    if (Math.abs(across) > 0.35 * t) return across > 0 ? -1 : 1;
+    const face = G.face ? G.face[0] * f.nx + G.face[1] * f.ny : 0;
+    if (Math.abs(face) > 1e-6) return face > 0 ? 1 : -1;
+    return across > 0 ? -1 : 1;
   }
 
   /* ── the state, which is one number per door ── */
@@ -53,6 +77,8 @@ const Doors = (() => {
       if (!f) continue;
       const want = wanted(s, f, wx, wy);
       if (s._open === undefined) s._open = want;      // a door already stood open
+      if (want && s._open < 0.02) s._side = side(s, f, wx, wy);
+      if (!s._side) s._side = 1;
       s._open += (want - s._open) * k;
       if (Math.abs(want - s._open) < 0.002) s._open = want;
     }
@@ -78,9 +104,8 @@ const Doors = (() => {
       const f = frame(s);
       if (!f) continue;
       const o = s._open === undefined ? 0 : s._open;
-      /* wide open is nothing to draw: the leaf is flat against the wall it
-         opened into and reads as part of it */
-      const al = 0.92 - 0.35 * o;
+      const sd = s._side || 1;
+      const al = 0.88;
 
       if (s.variant === 'slide'){
         /* a sliding leaf does not turn, it gets out of the way — parked one
@@ -91,8 +116,9 @@ const Doors = (() => {
         m = leaf(a, m, cap, px, py, f.ux, f.uy, f.L, cell, al);
         continue;
       }
-      /* 0 is shut — lying along the opening — and 1 is square to it */
-      const th = o * Math.PI / 2, c = Math.cos(th), n2 = Math.sin(th);
+      /* 0 is shut — lying along the opening — and 1 is square to it, on the
+         side the walker is not */
+      const th = o * Math.PI / 2, c = Math.cos(th), n2 = Math.sin(th) * sd;
       if (s.variant === 'double'){
         const arm = f.L / 2;
         m = leaf(a, m, cap, f.A[0], f.A[1],

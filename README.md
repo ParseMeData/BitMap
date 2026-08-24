@@ -678,22 +678,35 @@ grid you cannot see over the floor you are aiming at is not helping; one that
 fine standing there permanently is graph paper you are trying to draw a house
 on. It thins back out when the dots get too close to tell apart.
 
-**A door is shut until somebody comes to it**, and swings open as the walker
-arrives and shut again once they are clear of the sweep.
+**A door is shut until somebody walks into it**, gives as they reach it, and
+falls shut behind them.
 
 Everything else on the plate is still — a wall is where it was last frame and
 will be there next frame, which is why the whole plan lives in one static
 buffer the CPU never touches. A leaf is the exception, being the one part of a
 floor plan that is supposed to move, so it is drawn per frame in the entity
-stream alongside the walker and the sparks. What stays in the plate is the arc
-it travels through: a drawing shows the sweep, and the door does the swinging.
+stream alongside the walker and the sparks. Nothing of it is left in the
+plate but the threshold and the two jambs: **no arc**. A plan draws the sweep
+because a plan cannot move, and a quarter-circle of dots standing there
+permanently over a door that *does* move is a diagram of a door laid on top of
+a door.
 
 There is no state machine behind it. Each door holds one number — how open it
-is — and eases toward whether the walker is near enough to be coming through,
-so it is already moving before you arrive and still settling as you leave.
-That is the difference between a door and a sprite with two frames. A sliding
-one gets out of the way rather than turning, a double one opens from both
-jambs, and an *open* one has no leaf at all.
+is — and eases toward whether the walker is close enough to be going through.
+Close, not merely nearby: it opens from the tile at the threshold and stays
+shut from the one before, so it gives as you reach it rather than anticipating
+you from across the room.
+
+**It swings away from you, either way.** Which side it opens to is decided at
+the moment it starts to move, from where the walker is standing and which way
+they are heading, so the leaf goes ahead of them and never through them — and
+the same door opens the other way when it is met from the other side, which is
+what a door does and what a drawn arc can never show. The side is then held
+while it is open: a leaf that flipped underneath somebody halfway through
+would be a door swinging through them.
+
+A sliding one gets out of the way rather than turning, a double one opens from
+both jambs, and an *open* one has no leaf at all.
 
 It swings for the look and nothing else: the walk grid was opened when the
 door was cut and stays open. A leaf that could actually stop you would be a

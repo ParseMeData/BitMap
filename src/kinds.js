@@ -788,7 +788,6 @@ const Kinds = (() => {
      outside the shape on purpose, because that sweep is most of what makes
      a plan read as a plan. */
   function door(s, cell, buf){
-    const style = s.variant || 'swing';
     const w = s.width || cell * 2;
     scan(s, cell, (x, y, u, v, d, fade) => {
       const r = hash(u, v, s.seed + 141);
@@ -805,23 +804,10 @@ const Kinds = (() => {
     for (const [jx, jy] of [[A[0], A[1]], [B[0], B[1]]])       // the jambs
       for (let k = -1; k <= 1; k++)
         dot(jx + nx * k * w * 0.4, jy + ny * k * w * 0.4, C.plaster, 0.95, 1, 0, jx + k);
-    if (style === 'open' || style === 'slide') return;
-    /* ── the sweep, and only the sweep ──────────────────────────────────
-       The LEAF is not here. A leaf is the one part of a plan that moves, so
-       it is drawn per frame with the walker and the sparks (see doors.js);
-       what stays in the static plate is the arc it travels through, which is
-       the part a drawing is supposed to show and the part that never moves.  */
-    const arm = style === 'double' ? L / 2 : L;
-    const sweep = (hx, hy, su, sv, salt) => {
-      const m = Math.max(9, Math.round(arm / cell * 1.5));
-      for (let i = 0; i <= m; i++){
-        const th = i / m * Math.PI / 2, c = Math.cos(th), n2 = Math.sin(th);
-        dot(hx + (nx * c + su * n2) * arm, hy + (ny * c + sv * n2) * arm,
-            C.plaster, 0.22, 0.5, 1, salt * 200 + i);
-      }
-    };
-    if (style === 'double'){ sweep(A[0], A[1], ux, uy, 1); sweep(B[0], B[1], -ux, -uy, 2); }
-    else sweep(A[0], A[1], ux, uy, 1);
+    /* No sweep drawn. A plan puts the arc in because a plan cannot move;
+       this one can, and a quarter-circle of dots standing there permanently
+       is a diagram of a door laid over a door. What is left in the plate is
+       the threshold and the two jambs — the parts that are built. */
   }
 
   /* a flight of treads with a lit nosing on each, brightening as it climbs,

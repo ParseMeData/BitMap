@@ -450,36 +450,68 @@ const Palace = (() => {
     }
 
     /* and the name of the whole thing, over the top of it */
-    m = title(a, m, cap, box, z);
+    m = title(a, m, cap, box);
     return m;
   }
 
   /* The palace's name inside one, the town's name outside — the same word in
      the same type in the same place, because they are the same thing at two
      scales: what is this that I am looking at. */
-  function title(a, m, cap, box, z){
+  function title(a, m, cap, box){
+    const at = titleAt(box);
+    if (!at) return m;
+    /* Whole or not at all, and the flair is what gives way first: if the
+       dressed heading will not fit what is left of the instance cap, the
+       plain one usually still will, and a name drawn plainly is a name.
+       STYLE.md's rule is that new work is flair on top of the plate — so
+       when there is not room for both, the plate wins. */
+    let tr = treat, bd = border;
+    if (m + Type.headCost(at.name, tr, bd) > cap){ tr = 'solid'; bd = 'none'; }
+    if (m + Type.headCost(at.name, tr, bd) > cap) return m;
+    return Type.heading(a, m, at.name, at.x, at.y, at.px,
+                        [0.93, 0.92, 0.89], at.alpha, cap, tr, bd);
+  }
+
+  /* ── where the title goes ──────────────────────────────────────────────
+     Split out of the drawing because the pointer has to ask the same
+     question: what you can pick up has to be exactly what was drawn, and
+     two copies of this arithmetic would agree right up until the day one of
+     them was edited.
+
+     Returns the point the heading is centred on, its pitch and its alpha,
+     plus — for a town — `home`, the point it would be centred on if it had
+     never been dragged. */
+  function titleAt(box){
+    if (!G.terr || !G.shapes) return null;
     const inside = typeof Interior !== 'undefined' && Interior.inside();
     const name = (inside ? (Interior.at() || '') : townName()).trim();
-    if (!name || m > cap - 400) return m;
+    if (!name) return null;
+    /* `overlay` hands in the box round every room it has labelled; out on
+       the town nothing carries a label, so this is `built()` — which is
+       what the offset below is measured from. */
     if (!box) box = built();
-    if (!box) return m;
-    const t = G.terr.tsz;
+    if (!box) return null;
+    const t = G.terr.tsz, z = G.cam[2] || 1;
     /* sized to the thing it names rather than to the screen, so it is part
        of the drawing — but never so fine that it stops being readable */
-    let px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8));
+    let px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8, treat));
     px = Math.max(px, 2.2 / z);
     /* A palace's name is a title block: it goes above the plan, clear of it,
        the way a name goes at the top of a drawing. A town's name is a map
        label, and a map label lies ACROSS the ground it names — put above the
        town it would sit off the edge of everything you had drawn, which is
-       to say somewhere you would have to go looking for it. */
+       to say somewhere you would have to go looking for it.
+
+       So a palace's name is not draggable and there is no offset for it: a
+       title block that had wandered off the top of its own drawing would be
+       a mistake rather than a choice. */
     if (inside)
-      return Type.centred(a, m, name, (box[0] + box[2]) / 2,
-                          box[1] - Type.height(px) * 1.15, px,
-                          [0.93, 0.92, 0.89], 0.66, cap);
-    px = Math.min(px, Type.pitchFor(name, (box[2] - box[0]) * 0.62));
-    return Type.centred(a, m, name, (box[0] + box[2]) / 2, (box[1] + box[3]) / 2, px,
-                        [0.93, 0.92, 0.89], 0.38, cap);
+      return {name, px, inside: true, alpha: 0.66,
+              x: (box[0] + box[2]) / 2, y: box[1] - Type.height(px) * 1.15};
+    px = Math.min(px, Type.pitchFor(name, (box[2] - box[0]) * 0.62, treat));
+    const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+    return {name, px, inside: false, alpha: 0.38, home: [cx, cy],
+            x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};
   }
   /* everything that has been drawn, which is what a town's name goes over */
   function built(){
@@ -491,6 +523,243 @@ const Palace = (() => {
     }
     return b;
   }
+
+  /* ── the town's title, moved by hand ───────────────────────────────────
+     Lying across the middle of the town is the default and stays the
+     default: it is a map label, it names the ground it lies on, and the
+     user has seen it there and kept it. But the middle of everything you
+     have drawn is not always where you want the words — it is wherever the
+     town happens to be densest — so the title can be dragged, and once it
+     has been the hand-placed spot wins and it stops re-centring.
+
+     WAY BACK TO THE DEFAULT, and there are two: drop the title back on the
+     middle of the town — anywhere within its own height of where it would
+     centre itself — and the manual position is dropped with it, which is
+     the one you can find without being told. `Palace.resetTitle()` is the
+     other, for a key or a button to call.
+
+     STORED AS AN OFFSET FROM THE DEFAULT, not as a world point, and the
+     trade is worth writing down because both readings are defensible. An
+     absolute point holds still while the town grows around it: drag the
+     title onto the empty paddock in the south-west and it stays on that
+     paddock for good — which sounds right until you build on the paddock,
+     because the reason it was a good spot was that nothing was there. An
+     offset moves with the drawing: the title keeps the relation to the
+     whole that you chose when you dragged it — a little north of centre
+     stays a little north of centre — which is what a label on a map is for.
+     And it decides the other question for free: zero offset IS the default,
+     so getting back to the default is deleting the key, rather than a
+     second flag that says whether the point in the first one counts.
+
+     The offset is held in world units rather than as a fraction of the
+     town's extent for the same kind of reason: a bbox does not grow, it
+     jumps, and the first shape drawn out on the edge of the map would fling
+     a fractional offset half a town sideways. */
+  const POS = 'hq.title.off';
+  let off = null;                              // {dx, dy} world units, or null
+  function loadOff(){
+    try {
+      const raw = localStorage.getItem(POS);
+      if (!raw) return;
+      const v = JSON.parse(raw);
+      if (v && isFinite(v.dx) && isFinite(v.dy)) off = {dx: +v.dx, dy: +v.dy};
+    } catch (e){ off = null; }                 // an unreadable position is no position
+  }
+  /* Written on the drop rather than on every frame of the drag, which is
+     the same reason `basemap.js` saves the traced picture's place on
+     pointerup: a save per frame is sixty writes a second, and a save that
+     fails fails on all sixty. The latch is its own phrase so that a title
+     that cannot be saved does not silence the town's name, which is a
+     different thing being saved. */
+  function storeOff(){
+    try {
+      if (off) localStorage.setItem(POS, JSON.stringify(
+        {dx: +off.dx.toFixed(2), dy: +off.dy.toFixed(2)}));
+      else localStorage.removeItem(POS);
+      if (typeof hqStoreOK === 'function') hqStoreOK('the title position');
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the title position', e); }
+  }
+
+  /* ── how a heading is dressed ──────────────────────────────────────────
+     One treatment and one border, chosen once and worn by every title —
+     the town's name and a palace's name both, because they are the same
+     thing at two scales and dressing them differently would say they were
+     not. Room labels and locus numbers are deliberately left out of it:
+     they go through `Type.text`, which has no border and stays solid, so
+     working text keeps reading as working text however the headings are
+     set. The tables themselves are in `type.js`, beside the font, because
+     they are the same kind of thing as the font. */
+  const TREAT = 'hq.title.treat', BORD = 'hq.title.border';
+  let treat = 'solid', border = 'none';
+  function loadStyle(){
+    try {
+      const t = localStorage.getItem(TREAT), b = localStorage.getItem(BORD);
+      /* checked against the tables rather than trusted: a name that has been
+         retired should fall back to the plain one, not draw nothing */
+      if (t && Type.hasTreatment(t)) treat = t;
+      if (b && Type.hasBorder(b)) border = b;
+    } catch (e){}
+  }
+  function storeStyle(){
+    try {
+      localStorage.setItem(TREAT, treat);
+      localStorage.setItem(BORD, border);
+      if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
+    } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
+  }
+  const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
+  const step = (list, cur, d) => {
+    const n = list.length, i = Math.max(0, list.indexOf(cur));
+    return list[((i + (d || 1)) % n + n) % n];
+  };
+  /* `d` is how far to step, so the same call runs the cycle backwards with
+     -1 — a cycle you can only go forwards round is a cycle you have to go
+     all the way round to undo a mistake in. */
+  function cycleTreatment(d){
+    treat = step(Type.treatments, treat, d);
+    storeStyle();
+    note('headings · ' + treat);
+    return treat;
+  }
+  function cycleBorder(d){
+    border = step(Type.borders, border, d);
+    storeStyle();
+    note('heading border · ' + border);
+    return border;
+  }
+  function setTreatment(name){
+    if (!Type.hasTreatment(name)) return treat;
+    treat = name; storeStyle(); return treat;
+  }
+  function setBorder(name){
+    if (!Type.hasBorder(name)) return border;
+    border = name; storeStyle(); return border;
+  }
+  function resetTitle(){
+    if (!off) return false;
+    off = null; storeOff();
+    note('the town name centres itself again');
+    return true;
+  }
+
+  /* ── picking the title up ──────────────────────────────────────────────
+     Only when it is actually on screen, and only out on the town. This is
+     `Hud.shown()`'s rule with one more clause: a thing drawn on the plate
+     cannot be hidden by a stylesheet, so every mode that takes the plate
+     away has to be named here by hand. The pause card covers the viewport,
+     an open locus has one photograph owning the screen, and the wallpaper
+     plate never draws a title at all — `overlay` leaves on `WALL` before it
+     reaches one — so there is nothing there to pick up. */
+  function grabbable(){
+    if (!G.terr || WALL || G.paused) return false;
+    if (typeof Loci !== 'undefined' && Loci.opened()) return false;
+    if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    /* And not while the traced picture is being laid down. That drag is also
+       a capture-phase pointerdown on the window, and `Palace.init()` runs
+       before `Basemap.init()`, so this one is asked first — stopping
+       propagation would not stop a listener already registered on the same
+       node, and a press over the title would move the picture AND the title
+       at once. Asking is the only thing that separates them. */
+    if (typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) return false;
+    return true;
+  }
+  /* The box the title was drawn in, plus a letterform pixel of slack all
+     round. Deliberately no more than that: the title lies across the middle
+     of the town, so every pixel of slack is a pixel of the map you cannot
+     click through to — the target is the words and not a region around
+     them. */
+  function titleBox(){
+    if (!grabbable()) return null;
+    const at = titleAt(null);
+    if (!at || at.inside) return null;
+    const w = Type.width(at.name, at.px, treat), h = Type.height(at.px);
+    return {at, b: [at.x - w / 2 - at.px, at.y - h / 2 - at.px,
+                    at.x + w / 2 + at.px, at.y + h / 2 + at.px]};
+  }
+
+  /* the same screen → world mapping `hud.js` and `basemap.js` use: `VW` is
+     the canvas backing store, which is larger than its CSS box by the pixel
+     ratio the renderer actually settled on, so the ratio is measured off the
+     canvas rather than read from `devicePixelRatio` */
+  function geom(){
+    if (typeof canvas === 'undefined' || !canvas) return null;
+    const b = canvas.getBoundingClientRect();
+    if (!b.width || !b.height) return null;
+    return {b, dpr: VW / b.width, z: G.cam[2] || 1};
+  }
+  const toWorld = (ev, g) => [((ev.clientX - g.b.left) * g.dpr - VW / 2) / g.z + G.cam[0],
+                              ((ev.clientY - g.b.top) * g.dpr - VH / 2) / g.z + G.cam[1]];
+
+  let drag = null;
+  function wireTitle(){
+    /* Capture phase, for the reason `basemap.js` gives where it lays the
+       traced picture down: build mode's own pointerdown sits on the canvas,
+       and by the time the event gets there the shape under the pointer has
+       already been grabbed. Getting in first is the only way a press on the
+       title is a press on the title — and the propagation is stopped ONLY
+       on a hit, so every other click reaches build mode exactly as it did. */
+    addEventListener('pointerdown', e => {
+      if (e.button !== 0 || !grabbable()) return;
+      if (e.target && /^(INPUT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return;
+      /* and the press has to have landed on the plate rather than on a panel
+         floating above it, which is the canvas test `hud.js` makes */
+      if (e.target !== canvas) return;
+      const g = geom();
+      if (!g) return;
+      const p = toWorld(e, g);
+      /* The HUD is drawn on the plate too and gets first refusal. Both
+         listeners sit on the window in the capture phase, and stopping
+         propagation does not stop a sibling listener on the same node — so
+         without asking, a title lying over a ring would take the press as
+         well as the ring, and both would answer it. */
+      if (typeof Hud !== 'undefined' && Hud.hit && Hud.hit(p[0], p[1])) return;
+      const hit = titleBox();
+      if (!hit) return;
+      const b = hit.b;
+      if (p[0] < b[0] || p[0] > b[2] || p[1] < b[1] || p[1] > b[3]) return;
+      e.stopPropagation();
+      /* the town cannot change under a drag, so where the default is and how
+         big the letters are is settled here rather than asked every move */
+      drag = {ox: p[0] - hit.at.x, oy: p[1] - hit.at.y,
+              home: hit.at.home, px: hit.at.px, was: off};
+    }, true);
+
+    addEventListener('pointermove', e => {
+      if (!drag) return;
+      e.stopPropagation();
+      const g = geom();
+      if (!g) return;
+      const p = toWorld(e, g);
+      /* measured from the default rather than from the last position, so a
+         drag that starts on a title already moved does not compound */
+      off = {dx: p[0] - drag.ox - drag.home[0], dy: p[1] - drag.oy - drag.home[1]};
+    }, true);
+
+    addEventListener('pointerup', drop, true);
+    /* A pointer can go away without ever coming up — a touch that turns into
+       a scroll, a window that loses the pointer mid-drag — and a drag left
+       armed would then stick the title to the cursor and swallow every
+       pointermove the plate was meant to get. Both endings land here. */
+    addEventListener('pointercancel', drop, true);
+    addEventListener('blur', () => drop(null));
+  }
+
+  function drop(e){
+    if (!drag) return;
+    if (e) e.stopPropagation();
+    /* Dropped back where it would have centred itself: the hand-placed
+       position goes with it. That is the way back to the default you can
+       find without being told about it, and the tolerance is the title's
+       own height so it scales with the town rather than with the zoom. */
+    const back = off && Math.hypot(off.dx, off.dy) < Type.height(drag.px);
+    if (back) off = null;
+    const moved = !drag.was && off;
+    drag = null;
+    storeOff();
+    if (back) note('the town name centres itself again');
+    else if (moved) note('the town name is placed by hand now · drop it back on the middle to undo that');
+  }
+
   const TOWN = 'hq.town';
   const townName = () => { try { return localStorage.getItem(TOWN) || ''; }
                            catch (e){ return ''; } };
@@ -519,9 +788,18 @@ const Palace = (() => {
     }
     if (btn) btn.onclick = go;
     if (x) x.onclick = () => close();
+    loadStyle();
+    loadOff();
+    wireTitle();
   }
 
   return {init, show, close, sync, overlay, build, rename, named, refit,
+          cycleTreatment, cycleBorder, setTreatment, setBorder, resetTitle,
+          /* what a control that drives the cycle needs to draw itself: the
+             two names in force, the two lists to choose from, and whether
+             the title is somewhere the user put it */
+          heading: () => ({treatment: treat, border: border, moved: !!off}),
+          treatments: () => Type.treatments, borders: () => Type.borders,
           opened: () => open, at: () => uid,
           has: id => { try { return !!localStorage.getItem(KEY(id)); }
                        catch (e){ return false; } }};

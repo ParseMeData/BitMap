@@ -197,7 +197,11 @@ body.wall #inside,body.wall #enterhint{display:none}
 #porder{background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
   font:400 11px/1.65 var(--mono);padding:7px 8px;letter-spacing:.04em;resize:vertical;
   min-height:96px;width:100%}
-#pgen.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
+/* Gold is what an armed destructive press looks like here — #pgen wears it
+   to say 'press again to replace the plan', and revert is the same promise
+   about the same kind of loss. Bone inversion means armed; gold means armed
+   and it will throw work away. */
+#pgen.sel,#krevert.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
 body.locus #palace{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
@@ -416,7 +420,8 @@ addEventListener('unhandledrejection', e => hqReport(
   var BUILD = 43, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
-   'src/panel.js','src/type.js','src/build.js','src/markers.js','src/loci.js','src/palace.js',
+   'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',
+   'src/loci.js','src/palace.js',
    'src/doors.js',
    'src/interior.js','src/basemap.js','src/hud.js','src/game.js']
     .forEach(function(src){

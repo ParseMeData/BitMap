@@ -40,6 +40,23 @@ const Build = (() => {
   const defs = {feather: 4, bright: 1, mask: false, variant: {},
                 grain: 1, scale: 1, jitter: 0, scatter: 0,
                 pad: 0, padFade: 0.8, padBreak: 0.3};
+  /* ── telling history what just happened ────────────────────────────────
+     A gesture that has ended is a step you can walk back (hstep); anything
+     else is a nudge that history coalesces with whatever else happens in
+     the next moment (htap), because a drag writes on every frame and a step
+     per frame is a stack that holds a quarter of a second of history.
+
+     The module is asked for by name at call time because history.js loads
+     after this file — and it is asked for by one of its OWN methods rather
+     than by `typeof History`, because the browser already has a History and
+     that name is never undefined. A history.js that failed to load would
+     otherwise be a TypeError on every frame of every drag instead of a
+     feature that is quietly absent. */
+  const hist = () => (typeof History !== 'undefined' &&
+                      typeof History.step === 'function' ? History : null);
+  const hstep = () => { const h = hist(); if (h) h.step(); };
+  const htap = () => { const h = hist(); if (h) h.tap(); };
+
   const cellSize = () => (G.A ? G.A.cell : 8);
   /* Everything lands on the walk grid — the same tiles the walker steps
      between — and that grid is a whole number of lattice cells, so snapping
@@ -741,7 +758,11 @@ const Build = (() => {
       if (band){ const q = toWorld(e); band.x1 = snapK(q[0]); band.y1 = snapK(q[1]); return; }
       if (!drag) return;
       const p = toWorld(e), s = drag.s, c = cellSize();
-      if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); return; }
+      /* Markers save themselves and never pass through save(), so without
+         this the quiet timer armed at pointerdown was never re-armed: it
+         fired mid-drag and one press of undo left the marker wherever it
+         happened to be 450ms in. Every other drag re-arms through save(). */
+      if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); htap(); return; }
       const q = quant(s);
       if (drag.mode === 'move'){
         const dx = snapQ(p[0] - drag.ox, q), dy = snapQ(p[1] - drag.oy, q);
@@ -837,6 +858,7 @@ const Build = (() => {
           if (s2){ sel = s2; changed(s2); }
         }
         syncUI();
+        hstep();
         return;
       }
       if (drag){
@@ -852,6 +874,8 @@ const Build = (() => {
            work to no purpose. */
         if (s && s.label && mode === 'rooms' && typeof Palace !== 'undefined' &&
             (s.w !== w0 || s.h !== h0)) Palace.refit(s);
+        /* the whole drag is one step, however many frames it wrote */
+        hstep();
         return;
       }
       if (!armed) return;
@@ -863,6 +887,7 @@ const Build = (() => {
          treat it as a click and build it in front of the camera */
       if (over){ const p = toWorld(e); create(a.kind, a.type, p[0], p[1]); }
       else create(a.kind, a.type, G.cam[0], G.cam[1]);
+      hstep();
     });
 
     addEventListener('keydown', e => {
@@ -874,6 +899,9 @@ const Build = (() => {
         const mk = Markers.selected();
         if (mk) Markers.remove(mk); else remove(sel);
         syncUI();
+        /* a deletion is the edit people reach for undo after, so it lands
+           on the stack now rather than when the room goes quiet */
+        hstep();
       }
       else if (e.code === 'KeyC'){
         const mk = Markers.selected();
@@ -912,6 +940,22 @@ const Build = (() => {
       '<div id="kmarkers" class="fitonly"></div>' +
       '<input id="kmname" class="fitonly" type="text" spellcheck="false" ' +
       'placeholder="name this place" hidden>' +
+      /* History belongs to neither edit layer, because a mistake made while
+         the plan was being moved is undone from wherever you happen to be
+         standing when you notice it. */
+      '<div class="plabel">History</div>' +
+      '<div class="kfoot"><button class="btn" id="kundo">Undo</button>' +
+      '<button class="btn" id="ksave">Save point</button></div>' +
+      '<div class="kfoot one"><button class="btn" id="krevert">Revert</button></div>' +
+      /* The heading is a town-level thing rather than a layer's, so it sits
+         with History rather than under either edit layer — and both controls
+         say what they are showing, because a cycle you cannot read the state
+         of is a button that seems to do nothing on the presses that land on
+         a treatment resembling the last one. */
+      '<div class="plabel">Heading</div>' +
+      '<div class="kfoot"><button class="btn" id="ktreat">Solid</button>' +
+      '<button class="btn" id="kborder">No border</button></div>' +
+      '<div class="knote" id="khnote"></div>' +
       '<div class="kfoot one"><button class="btn" id="kclear">Clear all</button></div>' +
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
@@ -971,16 +1015,44 @@ const Build = (() => {
     $('#kclear').onclick = () => {
       if (!G.shapes.length) return;
       G.shapes.length = 0; sel = null; changed();
+      hstep();
     };
     $('#kclearlayer').onclick = () => {
       const keep = G.shapes.filter(s => layerOf(s) !== layer);
       if (keep.length === G.shapes.length) return;
       G.shapes = keep; sel = null; changed();
+      hstep();
     };
+    /* ── the two sizes of second thought ───────────────────────────────────
+       Undo walks back a gesture at a time; Revert goes the whole way to the
+       restore point and says so before it does, because that is the press
+       there is no coming back from once the session ends. Both leave the
+       drawing to history.js: it writes storage and has this read it back,
+       which is what keeps the plate and the profile saying the same thing. */
+    const hb = (id, fn) => {
+      const b = $(id);
+      if (b) b.onclick = () => { const h = hist(); if (h) fn(h); };
+    };
+    hb('#kundo', h => h.undo());
+    hb('#ksave', h => h.point());
+    hb('#krevert', h => h.revert());
+    const cyc = (sel, fn) => { const b = $(sel); if (b) b.onclick = () => {
+      if (typeof Palace !== 'undefined' && Palace[fn]) Palace[fn]();
+      syncHead();
+    }; };
+    cyc('#ktreat', 'cycleTreatment');
+    cyc('#kborder', 'cycleBorder');
+    syncHead();
     /* a marker with a name is a place you can be told you are standing
        outside of, and be told you are inside once you are */
     const nm = $('#kmname');
-    nm.oninput = () => { const mk = Markers.selected(); if (mk) Markers.rename(mk, nm.value); };
+    /* typing a name never reaches syncUI — the field would fight the caret
+       for it — so history is nudged here instead, and a name typed a letter
+       at a time comes back as the one word it was */
+    nm.oninput = () => {
+      const mk = Markers.selected();
+      if (mk){ Markers.rename(mk, nm.value); htap(); }
+    };
     nm.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') nm.blur(); };
     /* the field at the head of the route names whatever the route belongs
        to — the town out here, the palace in there */
@@ -1008,6 +1080,9 @@ const Build = (() => {
     row.dataset.key = key;
     const inp = row.querySelector('input'), out = row.querySelector('.pv');
     inp.oninput = () => applySlider(key, +inp.value);
+    /* a range fires `input` all the way along the drag and `change` when the
+       thumb is let go, which is the gesture ending said out loud */
+    inp.onchange = () => hstep();
     row._set = (v, text, live, lo, hi) => {
       if (lo !== undefined){ inp.min = lo; inp.max = hi; }
       inp.value = v; out.textContent = text; inp.disabled = !live;
@@ -1193,7 +1268,27 @@ const Build = (() => {
   }
   const sel2 = s => { sel = s; };
 
+  /* The two heading buttons carry their own state as their label — there is
+     no room in the palette for a name and a value, and a cycle whose current
+     setting you cannot read is the thing that makes a treatment look broken
+     when it happens to resemble the one before it. Names come from Type's own
+     tables through Palace, so adding a treatment there adds it here. */
+  function syncHead(){
+    if (typeof Palace === 'undefined' || !Palace.heading) return;
+    const h = Palace.heading(), tb = $('#ktreat'), bb = $('#kborder');
+    const cap = s => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+    if (tb) tb.textContent = cap(h.treatment);
+    if (bb) bb.textContent = h.border === 'none' ? 'No border' : cap(h.border);
+  }
+
   function syncUI(){
+    /* Markers save themselves, so a marker placed, renamed, recoloured or
+       reordered never passes through save() above — but every one of them
+       ends here. Nudging history from the one place they all reach is what
+       makes the undo stack cover the markers as well as the shapes. */
+    htap();
+    const h0 = hist();
+    if (h0) h0.sync();
     if (!$('#palette') || !$('#kmode')) return;
     document.querySelectorAll('#kmode .chip').forEach(c =>
       c.classList.toggle('sel', c.dataset.mode === mode));
@@ -1286,6 +1381,11 @@ const Build = (() => {
     document.body.classList.toggle('building', on);
     const el = $('#palette');
     if (el) el.hidden = !on;
+    /* Opening the builder is what "before we opened the builder" means, so
+       that is the moment the restore point is stamped, without being asked
+       for — see history.js. */
+    const h = hist();
+    if (h) h.opened(on);
     syncUI();
   }
 
@@ -1305,6 +1405,25 @@ const Build = (() => {
       }))));
       if (typeof hqStoreOK === 'function') hqStoreOK(what);
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail(what, e); }
+    /* Storage is where history takes its snapshots from, so every write is
+       worth a nudge — this is the catch-all under the handful of places
+       that step outright, and it costs a timer being reset. */
+    htap();
+  }
+  /* ── putting a state back from outside ─────────────────────────────────
+     Undo and revert write storage and then have this read it, because that
+     is the path a reload takes and the one that cannot leave storage and
+     the screen disagreeing. Everything a fresh mount does except the two
+     things that did not change: the registry is the same registry, and the
+     layer and edit mode are where you left them, because being thrown back
+     to Rooms and the first layer on every undo is its own small loss. */
+  function reload(){
+    sel = null; drag = null; armed = null; band = null;
+    document.body.classList.remove('arming');
+    load();
+    rebuild();
+    if (typeof restampTerrain === 'function') restampTerrain();
+    syncUI();
   }
   /* ── palaces built before a room owned its contents ────────────────────
      A plan whose shapes do not say which room they are in is a plan where
@@ -1434,7 +1553,7 @@ const Build = (() => {
     document.body.classList.toggle('rooms', mode === 'rooms');
     syncUI();
   }
-  return {init, rebuild, stamp, overlay, setOn, mount, lay, refill, setMode,
+  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, refill, setMode,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

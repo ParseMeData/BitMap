@@ -435,6 +435,18 @@ addEventListener('keydown', e => {
       if (Loci.opened()) Loci.pick(Loci.at());
       else { spawn(); scatterSparks(); }
       break;
+    /* Ctrl-Z walks build mode back one gesture. It is asked for by one of
+       History's own methods rather than by `typeof History`, because the
+       browser has a History of its own and that name is never undefined —
+       and it does nothing outside build mode, where there is nothing you
+       could have just done to the drawing. */
+    case 'KeyZ':
+      if (!(e.ctrlKey || e.metaKey)) break;
+      if (typeof History === 'undefined' || typeof History.undo !== 'function') break;
+      if (!Build.active()) break;
+      e.preventDefault();
+      History.undo();
+      break;
     case 'KeyF': case 'F11': e.preventDefault(); toggleFull(); break;
     case 'Tab': e.preventDefault(); break;
     case 'Equal': case 'NumpadAdd': zoomBy(1.25); break;

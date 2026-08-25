@@ -13,9 +13,9 @@
    of diamonds keeps that rule whole instead of carving an exception in it.
 
    The four rings are the letter system (up), the number system (left), home
-   (right) and the towns (down). Three of them lead somewhere that has not
-   been built yet, so each is wired to a named seam rather than to a guess —
-   see `the four seams`, at the bottom.
+   (right) and the towns (down). Each is wired to a named seam rather than
+   to the thing itself, so this file never learns what a ring opens — see
+   `the four seams`, at the bottom.
 
    It is pinned to the screen while being drawn in world space, which is the
    one piece of arithmetic in here worth reading carefully. The camera moves
@@ -311,18 +311,18 @@ const Hud = (() => {
   }
 
   /* ── the four seams ────────────────────────────────────────────────────
-     Three of these four rings lead to something that has not been decided
-     yet, and the wrong way to handle that is to invent contents for them.
-     Each is a named hook instead: set `Hud.onLetters` (and the rest) to a
-     function and the ring calls it; leave it null and the ring says, in the
-     note channel, that there is nothing there yet. So the next session has
-     four obvious places rather than four mysteries.
+     The rings were built before what they lead to was decided, and the
+     wrong way to handle that is to invent contents for them. Each is a
+     named hook instead: set `Hud.onLetters` (and the rest) to a function
+     and the ring calls it; leave it null and the ring says, in the note
+     channel, that there is nothing there yet. Three of the four are filled
+     now, each from the module that owns the destination.
 
-       Hud.onLetters   the letter system. What it holds is undecided.
-       Hud.onNumbers   the number system. Likewise.
-       Hud.onTowns     the towns registry, which is the next piece of work —
-                       a list of towns to move between. This is where the
-                       compass will open it.
+       Hud.onLetters   the letter system — the bag (`src/bag.js`), opened
+                       as `Bag.open('letters')` from game.js.
+       Hud.onNumbers   the number system — the same bag, `Bag.open('numbers')`.
+       Hud.onTowns     the mind map of plates (`src/atlas.js`), which sets
+                       this itself at init.
        Hud.onHome      the framing below, if something better than framing
                        is ever wanted from the house.
 

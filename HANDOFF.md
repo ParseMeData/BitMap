@@ -149,7 +149,8 @@ Storage, all under `hq.`:
     hq.best              nothing here writes it — a leftover carried in the
                          profile since the fork from Haunt Quest, and kept by
                          `save` only because `save` takes every `hq.` key
-    IndexedDB hq.loci    the locus pictures
+    IndexedDB hq.loci    the locus pictures — and the bag's cards, under
+                         keys of their own (bag:<system>:<label>:<slot>)
     IndexedDB hq.basemap the frozen tracing picture
     hq.basemap.img       the same frozen picture, when IndexedDB refused it
 
@@ -401,6 +402,19 @@ than this page load, because nothing ever clears that key and a restore skips
 it too; and it defers to anything `game.js` has already written into the boot
 screen, because `#fatal` covers the viewport and would otherwise hide the
 precise reason behind the vague one.
+
+**The bag is one page, and its pictures live with the loci.** The `123` and
+`abc` rings open the same `Bag.open(system)`; `SYSTEMS` in `src/bag.js` is
+the whole of the difference between them (a title, a cap, a label function),
+and a third system would be a third entry. The obvious alternative — a page
+each — is two copies of one layout, which is what a second copy does. The
+cards' pictures go into the locus store rather than a store of their own
+because that store already shrinks a photograph on the way in and is already
+what `snapshot.py` carries key for key; nothing in `Loci` walks the store
+expecting every key to be a marker. The one shared piece of chrome is the
+`#lfile` input, which both modules listen to, each answering only when its
+own `pending` is set. The five-at-a-time deal is computed from what is
+complete, never stored, so a detached picture folds the deal back on its own.
 
 **The platformer is unchanged in behaviour.** It plays its own deck when
 opened alone. The route is a *chain* — 0 into 1, 1 into 2 — rather than the

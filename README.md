@@ -1,4 +1,4 @@
-# Memory Quest Low Effort V6.3
+# Loci Bitmap V7.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Memory Quest Low Effort V6.3 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.0 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -64,6 +64,13 @@ finally lighting up, a snapshot tool you can aim at a throwaway profile and
 that takes a backup before it destroys anything, and `STYLE.md` — the look
 written down, so the one thing that cannot be re-derived from the code stops
 depending on whoever last touched it.
+**v6.x** — Memory Quest Low Effort: the fork standing on its own, plates
+joined at road ends, the warp, landmarks from glyph sheets, the tones.
+**v7.0** — Loci Bitmap: the bag. The `123` and `abc` rings open one page of
+cards — a person, an action and an object for every number and letter,
+each a picture and a word, stacked down the right like a solitaire column
+and kept between sessions; a slider and the arrow keys to reach any of
+the hundred.
 
 ### The half that is not in the repo
 

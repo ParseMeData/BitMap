@@ -54,6 +54,7 @@ const Bag = (() => {
   let sel = -1;          // the selected column, by index; -1 for none
   let at = 1;            // the slider: which number is in view, 1-based
   let cur = 0;           // the keyboard's place in the row, 0..4; ←/→ move it
+  let zone = 'row';      // where the keyboard is: the row of cards, or the switch above it
   let pending = null;    // the key the file picker was opened for
 
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
@@ -176,6 +177,13 @@ const Bag = (() => {
      the row starts */
   function step(d){
     if (!system) return false;
+    /* the switch sits above the top row: one more press up from there
+       reaches it, and one press down comes back */
+    if (zone === 'switch'){
+      if (d > 0){ zone = 'row'; render(); }
+      return true;
+    }
+    if (d < 0 && first() === 0){ zone = 'switch'; sel = -1; render(); return true; }
     const v = Math.min(SYSTEMS[system].cap, Math.max(1, first() + 1 + d * DEAL));
     if (v === at) return true;
     at = v; sel = -1; cur = 0; render();
@@ -185,6 +193,11 @@ const Bag = (() => {
      or folds it if it is the one already open */
   function move(d){
     if (!system) return false;
+    if (zone === 'switch'){                  // ←/→ on the switch: the other system
+      const other = system === 'numbers' ? 'letters' : 'numbers';
+      open(other); zone = 'switch'; render();
+      return true;
+    }
     const n = Math.min(DEAL, SYSTEMS[system].cap - first());
     cur = Math.min(n - 1, Math.max(0, cur + d));
     render();
@@ -192,6 +205,7 @@ const Bag = (() => {
   }
   function enter(){
     if (!system) return false;
+    if (zone === 'switch') return move(1);
     const i = first() + cur;
     select(sel === i ? -1 : i);
     return true;
@@ -310,18 +324,20 @@ const Bag = (() => {
     placeThumb();
     for (const b of el.querySelectorAll('.bagswitch .chip'))
       b.classList.toggle('sel', b.dataset.system === system);
+    el.querySelector('.bagswitch').classList.toggle('cur', zone === 'switch');
     const row = el.querySelector('#bagrow');
     row.innerHTML = '';
     const f0 = first();
     for (let i = f0; i < Math.min(f0 + DEAL, S.cap); i++){
       const col = document.createElement('div');
-      col.className = 'bagcol' + (i === sel ? ' sel' : '') + (i === f0 + cur ? ' cur' : '');
+      col.className = 'bagcol' + (i === sel ? ' sel' : '') + (zone === 'row' && i === f0 + cur ? ' cur' : '');
       col.append(card(system, i, 'character', false));
       row.append(col);
     }
     stack();
     el.querySelector('#bagnote').textContent =
-      sel < 0 ? '←→ and enter pick a card · ↑↓ another row · esc closes'
+      zone === 'switch' ? '←→ the other system · ↓ back to the cards · esc closes'
+            : sel < 0 ? '←→ and enter pick a card · ↑↓ another row, ↑ past the top for the switch · esc closes'
               : S.label(sel) + ' · the stack: click a card for its picture, or drop one on it · type its word · esc folds it';
   }
 
@@ -357,19 +373,20 @@ const Bag = (() => {
   function open(name){
     if (!SYSTEMS[name]){ note('there is no ' + name + ' system'); return false; }
     if (system === name) return true;     // the switch pressed on the side already up
-    system = name; sel = -1; at = 1; cur = 0;
+    system = name; sel = -1; at = 1; cur = 0; zone = 'row';
     render();
     return true;
   }
   /* Esc is back, one step: a selected column folds first, then the page */
   function back(){
     if (!system) return false;
+    if (zone === 'switch'){ zone = 'row'; render(); return true; }
     if (sel >= 0){ select(-1); return true; }
     return close();
   }
   function close(){
     if (!system) return false;
-    system = null; sel = -1; pending = null;
+    system = null; sel = -1; pending = null; zone = 'row';
     render();
     return true;
   }

@@ -282,6 +282,8 @@ body.tuning #route{display:none}
 #bagright::-webkit-scrollbar-thumb{background:var(--thumb)}
 .bagswitch{display:flex;flex-direction:row;gap:6px;width:100%}
 .bagswitch .chip{flex:1}
+/* the keyboard standing on the switch: the same bone edge the row gets */
+.bagswitch.cur .chip{border-color:var(--bone)}
 /* the stack: the open number's cards laid like a solitaire column, each a
    step below the last — enough of a covered card shows to read its tag
    and put the pointer on it; the one under the pointer comes to the top */
@@ -519,7 +521,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 70, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 71, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

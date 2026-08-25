@@ -1611,7 +1611,9 @@ const Kinds = (() => {
        lattice cell per drawn pixel, worked out from the glyph itself in
        build.js — these numbers are only what it falls back to if the glyph
        table failed to load, and they are in tiles like every other kind's. */
-    {id: 'landmark',  label: 'Landmark',  layer: 'built',  types: ['rect'],
+    /* labelled Buildings on the chip; the id stays `landmark` because every
+       saved town names its shapes by id */
+    {id: 'landmark',  label: 'Buildings', layer: 'built',  types: ['rect'],
      glyphs: 'landmark', w0: 4, h0: 4, feather0: 0,
      walk: 0, stamp: 0, gen: landmark,  swatch: '#D8D2C6'},
     /* ── the demolish area ─────────────────────────────────────────────
@@ -1701,7 +1703,7 @@ const Kinds = (() => {
     {label: 'Blocks',     kind: 'buildings', type: 'rect'},
     {label: 'Housing',    kind: 'houses',    type: 'rect'},
     {label: 'Houses',     kind: 'house',     type: 'rect'},
-    {label: 'Landmark',   kind: 'landmark',  type: 'rect'},
+    {label: 'Buildings',  kind: 'landmark',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
     /* an oval by default: a town thins out into the country in every
        direction at once, and a rect is the answer you reach for when it

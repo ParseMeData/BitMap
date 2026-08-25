@@ -612,7 +612,8 @@ sixty words nobody can map back to a shape is a worse picker than none.
 The chips are read off `Glyphs` at load, so re-slicing the sheet is the
 only step in adding a building. Two kinds draw from the sheets, both on
 the Buildings layer: **Houses** takes the set the slicer was told is
-houses (`--set houses=…`), and **Landmark** takes everything left. The
+houses (`--set houses=…`), and **Buildings** (id `landmark`) takes
+everything left. The
 district textures that used to sit on this layer — Blocks and Housing —
 are on **Terrain** now, because a field of housing drawn from a rule is
 ground cover, and a drawn building is a thing standing on it.

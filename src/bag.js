@@ -51,7 +51,15 @@ const Bag = (() => {
   const DEAL = 5;            // columns in a row
 
   let system = null;     // which set of labels is up, or null when closed
-  let sel = -1;          // the selected column, by index; -1 for none
+  /* the stack's owner: which system and which index. It is not the row's
+     selection — it outlives the row, the system and the page, so the
+     stack you were building is there when you come back. Saved under
+     `hq.bagsel`, an hq. key, so a snapshot carries it. */
+  const HELD = 'hq.bagsel';
+  let held = null;       // {sys, i}, or null
+  try { held = JSON.parse(localStorage.getItem(HELD) || 'null'); } catch (e){ held = null; }
+  if (held && !SYSTEMS[held.sys]) held = null;
+  const sel = () => (held && held.sys === system ? held.i : -1);   // as the row sees it
   let at = 1;            // the slider: which number is in view, 1-based
   let cur = 0;           // the keyboard's place in the row, 0..4; ←/→ move it
   let zone = 'row';      // where the keyboard is: the row of cards, or the switch above it
@@ -122,11 +130,10 @@ const Bag = (() => {
   function stack(){
     const el = document.getElementById('bagstack');
     el.innerHTML = '';
-    if (sel < 0) return;
+    if (!held) return;
     for (let k = 0; ; k++){
-      if (k > 0 && !filled(keyAt(system, sel, k - 1))) break;
-      const c = card(system, sel, SLOTS[k % SLOTS.length], true, keyAt(system, sel, k));
-      el.append(c);
+      if (k > 0 && !filled(keyAt(held.sys, held.i, k - 1))) break;
+      el.append(card(held.sys, held.i, SLOTS[k % SLOTS.length], true, keyAt(held.sys, held.i, k)));
     }
   }
 
@@ -161,7 +168,7 @@ const Bag = (() => {
       const cap = SYSTEMS[system].cap;
       const f = Math.min(1, Math.max(0, (e.clientY - r.top) / Math.max(1, r.height)));
       const v = 1 + Math.round(f * (cap - 1));
-      if (v !== at){ at = v; sel = -1; cur = 0; render(); }
+      if (v !== at){ at = v; cur = 0; render(); }
     };
     track.addEventListener('pointerdown', e => {
       if (e.button !== 0) return;
@@ -183,10 +190,10 @@ const Bag = (() => {
       if (d > 0){ zone = 'row'; render(); }
       return true;
     }
-    if (d < 0 && first() === 0){ zone = 'switch'; sel = -1; render(); return true; }
+    if (d < 0 && first() === 0){ zone = 'switch'; render(); return true; }
     const v = Math.min(SYSTEMS[system].cap, Math.max(1, first() + 1 + d * DEAL));
     if (v === at) return true;
-    at = v; sel = -1; cur = 0; render();
+    at = v; cur = 0; render();
     return true;
   }
   /* ←/→ walk the highlight along the row; Enter opens the card under it,
@@ -207,7 +214,7 @@ const Bag = (() => {
     if (!system) return false;
     if (zone === 'switch') return move(1);
     const i = first() + cur;
-    select(sel === i ? -1 : i);
+    select(sel() === i ? -1 : i);
     return true;
   }
   function placeThumb(){
@@ -297,7 +304,7 @@ const Bag = (() => {
     c.addEventListener('click', () => {
       if (!shown){                           // a row card: the press selects it
         cur = i - first();                   // the keyboard follows the pointer
-        select(sel === i ? -1 : i);
+        select(sel() === i ? -1 : i);
         return;
       }
       pick(k);                               // a stack card asks for its picture
@@ -330,18 +337,23 @@ const Bag = (() => {
     const f0 = first();
     for (let i = f0; i < Math.min(f0 + DEAL, S.cap); i++){
       const col = document.createElement('div');
-      col.className = 'bagcol' + (i === sel ? ' sel' : '') + (zone === 'row' && i === f0 + cur ? ' cur' : '');
+      col.className = 'bagcol' + (i === sel() ? ' sel' : '') + (zone === 'row' && i === f0 + cur ? ' cur' : '');
       col.append(card(system, i, 'character', false));
       row.append(col);
     }
     stack();
     el.querySelector('#bagnote').textContent =
       zone === 'switch' ? '←→ the other system · ↓ back to the cards · esc closes'
-            : sel < 0 ? '←→ and enter pick a card · ↑↓ another row, ↑ past the top for the switch · esc closes'
-              : S.label(sel) + ' · the stack: click a card for its picture, or drop one on it · type its word · esc folds it';
+            : !held ? '←→ and enter pick a card · ↑↓ another row, ↑ past the top for the switch · esc closes'
+              : SYSTEMS[held.sys].label(held.i) + ' · the stack: click a card for its picture, or drop one on it · type its word · enter on its card folds it';
   }
 
-  function select(i){ sel = i; render(); }
+  function select(i){
+    held = i < 0 ? null : {sys: system, i};
+    try { held ? localStorage.setItem(HELD, JSON.stringify(held)) : localStorage.removeItem(HELD); }
+    catch (e){}
+    render();
+  }
 
   /* ── the picker ────────────────────────────────────────────────────────
      The same one input the loci use (`#lfile`), with a `pending` of this
@@ -373,25 +385,25 @@ const Bag = (() => {
   function open(name){
     if (!SYSTEMS[name]){ note('there is no ' + name + ' system'); return false; }
     if (system === name) return true;     // the switch pressed on the side already up
-    system = name; sel = -1; at = 1; cur = 0; zone = 'row';
+    system = name; at = 1; cur = 0; zone = 'row';
     render();
     return true;
   }
-  /* Esc is back, one step: a selected column folds first, then the page */
+  /* Esc is back: off the switch first, then out of the page. It does not
+     fold the stack — the stack stays until another card is opened. */
   function back(){
     if (!system) return false;
     if (zone === 'switch'){ zone = 'row'; render(); return true; }
-    if (sel >= 0){ select(-1); return true; }
     return close();
   }
   function close(){
     if (!system) return false;
-    system = null; sel = -1; pending = null; zone = 'row';
+    system = null; pending = null; zone = 'row';
     render();
     return true;
   }
   const opened = () => !!system;
 
   return {open, close, back, opened, step, move, enter, count, key, keyAt, word, setWord, filled, at: () => at,
-          system: () => system, selected: () => sel, SYSTEMS, SLOTS};
+          system: () => system, selected: sel, held: () => held, SYSTEMS, SLOTS};
 })();

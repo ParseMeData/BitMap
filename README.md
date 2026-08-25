@@ -1437,7 +1437,9 @@ a time: the next appears once the last is filled. Every card takes a
 picture and a word: click it in the stack, or drop an image on it, and
 the picture is the card's face from then on with the tag kept in its
 corner; the word is typed along its bottom edge (`Enter` to finish).
-Either one fills a card. Every card is one size, at 5:7. The row sits
+Either one fills a card. The stack stays — through other rows, the other
+system, and closing the page — until you open another card, or press
+`Enter` on its own card to fold it. Every card is one size, at 5:7. The row sits
 between two **rails**: the left holds the switch between `123` and `abc`
 and the slider; the right holds the stack.
 

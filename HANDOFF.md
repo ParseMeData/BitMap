@@ -145,6 +145,7 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
+    hq.bagsel            which number's stack is open in the bag
     hq.lastError         the last runtime slip; nothing ever clears it
     hq.loads             reload stamps, to catch a relaunch loop
     hq.best              nothing here writes it — a leftover carried in the

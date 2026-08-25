@@ -402,6 +402,12 @@ addEventListener('keydown', e => {
   /* typing into the map search must not also walk the sprite */
   if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
   if (e.repeat) return;
+  /* the bag owns the screen while it is up; the only key it answers is the
+     way out, and nothing under it walks */
+  if (typeof Bag !== 'undefined' && Bag.opened()){
+    if (e.code === 'Escape') Bag.close();
+    return;
+  }
   keys.add(e.code);
   if (DIRS.some(d => d[0] === e.code)) wake();
   switch (e.code){
@@ -768,6 +774,11 @@ function boot(img){
   Palace.init();
   Basemap.init();
   Hud.init();
+  /* the left and top rings open the bag: one page, two sets of labels */
+  if (typeof Bag !== 'undefined'){
+    Hud.onNumbers = () => Bag.open('numbers');
+    Hud.onLetters = () => Bag.open('letters');
+  }
   if (typeof Atlas !== 'undefined') Atlas.init();
   applyPlate();
   spawn(); scatterSparks();

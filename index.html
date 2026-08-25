@@ -265,6 +265,22 @@ body.tuning #route{display:none}
 .knote.warn,.kstate.warn{color:var(--gold)}
 #kstat.warn{color:var(--gold)}
 /* the locus preview: a modal look at one asset, so the editor gets out of it */
+/* the bag: one page over the plate, five cards in a row. It is the one
+   overlay that owns the whole screen without being a picture, so like the
+   locus it clears the chrome out of its way rather than sitting among it. */
+#bag{position:fixed;inset:16px;z-index:8;padding:14px 16px;display:flex;
+  flex-direction:column;gap:14px}
+#bag .phead .btn{padding:4px 7px;font-size:8px}
+#bagrow{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;
+  align-content:start;min-height:0}
+.bagcol{display:flex;flex-direction:column;gap:10px}
+.bagcard{aspect-ratio:5/7;display:grid;place-content:center;cursor:pointer;
+  border:1px solid rgba(237,234,227,.22);background:var(--well);
+  font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.bagcard:hover{background:rgba(237,234,227,.12);color:var(--bone)}
+.bagcard.sel{background:var(--bone);color:var(--ground)}
+body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
+body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
   padding:9px 15px;display:flex;gap:13px;align-items:center;font-size:9.5px;
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone);pointer-events:none}
@@ -449,13 +465,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 59, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 60, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

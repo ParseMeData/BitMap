@@ -408,6 +408,9 @@ addEventListener('keydown', e => {
     if (e.code === 'Escape') Bag.back();
     else if (e.code === 'ArrowUp') Bag.step(-1);
     else if (e.code === 'ArrowDown') Bag.step(1);
+    else if (e.code === 'ArrowLeft') Bag.move(-1);
+    else if (e.code === 'ArrowRight') Bag.move(1);
+    else if (e.code === 'Enter' || e.code === 'NumpadEnter'){ e.preventDefault(); Bag.enter(); }
     return;
   }
   keys.add(e.code);

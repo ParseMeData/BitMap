@@ -47,6 +47,7 @@ const Bag = (() => {
   let system = null;     // which set of labels is up, or null when closed
   let sel = -1;          // the selected column, by index; -1 for none
   let at = 1;            // the slider: which number is in view, 1-based
+  let cur = 0;           // the keyboard's place in the row, 0..4; ←/→ move it
   let pending = null;    // the key the file picker was opened for
 
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
@@ -117,7 +118,7 @@ const Bag = (() => {
       const cap = SYSTEMS[system].cap;
       const f = Math.min(1, Math.max(0, (e.clientY - r.top) / Math.max(1, r.height)));
       const v = 1 + Math.round(f * (cap - 1));
-      if (v !== at){ at = v; sel = -1; render(); }
+      if (v !== at){ at = v; sel = -1; cur = 0; render(); }
     };
     track.addEventListener('pointerdown', e => {
       if (e.button !== 0) return;
@@ -135,7 +136,22 @@ const Bag = (() => {
     if (!system) return false;
     const v = Math.min(SYSTEMS[system].cap, Math.max(1, first() + 1 + d * DEAL));
     if (v === at) return true;
-    at = v; sel = -1; render();
+    at = v; sel = -1; cur = 0; render();
+    return true;
+  }
+  /* ←/→ walk the highlight along the row; Enter opens the card under it,
+     or folds it if it is the one already open */
+  function move(d){
+    if (!system) return false;
+    const n = Math.min(DEAL, SYSTEMS[system].cap - first());
+    cur = Math.min(n - 1, Math.max(0, cur + d));
+    render();
+    return true;
+  }
+  function enter(){
+    if (!system) return false;
+    const i = first() + cur;
+    select(sel === i ? -1 : i);
     return true;
   }
   function placeThumb(){
@@ -230,6 +246,7 @@ const Bag = (() => {
       c.append(w);
     }
     c.addEventListener('click', () => {
+      cur = i - first();                     // the keyboard follows the pointer
       if (sel !== i){ select(i); return; }   // a press on a folded column opens it
       pick(k);                               // and on an open one, asks for the picture
     });
@@ -260,7 +277,7 @@ const Bag = (() => {
     const f0 = first();
     for (let i = f0; i < Math.min(f0 + DEAL, S.cap); i++){
       const col = document.createElement('div');
-      col.className = 'bagcol' + (i === sel ? ' sel' : '');
+      col.className = 'bagcol' + (i === sel ? ' sel' : '') + (i === f0 + cur ? ' cur' : '');
       col.append(card(system, i, 'character', i === sel));
       /* an open column deals one card at a time: the action once the
          character is filled, the object once the action is */
@@ -270,7 +287,7 @@ const Bag = (() => {
       row.append(col);
     }
     el.querySelector('#bagnote').textContent =
-      sel < 0 ? 'pick a card · slider or ↑↓ for another row · esc closes'
+      sel < 0 ? '←→ and enter pick a card · ↑↓ another row · esc closes'
               : S.label(sel) + ' · click a card for its picture, or drop one on it · type its word · esc folds it';
   }
 
@@ -306,7 +323,7 @@ const Bag = (() => {
   function open(name){
     if (!SYSTEMS[name]){ note('there is no ' + name + ' system'); return false; }
     if (system === name) return true;     // the switch pressed on the side already up
-    system = name; sel = -1; at = 1;
+    system = name; sel = -1; at = 1; cur = 0;
     render();
     return true;
   }
@@ -324,6 +341,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, step, count, key, word, setWord, filled, at: () => at,
+  return {open, close, back, opened, step, move, enter, count, key, word, setWord, filled, at: () => at,
           system: () => system, selected: () => sel, SYSTEMS, SLOTS};
 })();

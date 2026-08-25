@@ -305,6 +305,8 @@ body.tuning #route{display:none}
   font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .bagcard:hover,.bagcard.over{background-color:rgba(237,234,227,.12);color:var(--bone)}
 .bagcard.done{color:var(--bone)}
+/* the keyboard's place in the row: a bone edge on the column it stands on */
+.bagcol.cur .bagcard{border-color:var(--bone)}
 .bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone)}
 .bagcol.sel .bagcard:not(.character){font-size:10px;letter-spacing:.26em}
 .bagcol.sel .bagcard.face{color:transparent}
@@ -503,7 +505,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 67, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 68, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

@@ -104,7 +104,7 @@ const Bag = (() => {
     thumb = document.createElement('div');
     thumb.className = 'bagthumb';
     track.append(thumb);
-    /* and a button at each end, for one number at a time; the keyboard's
+    /* and a button at each end, for one row at a time; the keyboard's
        arrows do the same through `step`, from game.js */
     const up = document.createElement('div'), down = document.createElement('div');
     up.className = 'chip bagstep'; up.innerHTML = '&#9650;';
@@ -128,10 +128,12 @@ const Bag = (() => {
     track.addEventListener('pointermove', e => { if (track.hasPointerCapture(e.pointerId)) set(e); });
     return el;
   }
-  /* one number up or down — up is toward 1, the top of the track */
+  /* one row up or down — five numbers, up toward 1 at the top of the
+     track — landing on the first of the row, so the readout says where
+     the row starts */
   function step(d){
     if (!system) return false;
-    const v = Math.min(SYSTEMS[system].cap, Math.max(1, at + d));
+    const v = Math.min(SYSTEMS[system].cap, Math.max(1, first() + 1 + d * DEAL));
     if (v === at) return true;
     at = v; sel = -1; render();
     return true;

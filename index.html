@@ -273,11 +273,19 @@ body.tuning #route{display:none}
   flex-direction:column;gap:14px}
 #bag .phead .btn{padding:4px 7px;font-size:8px}
 #bag .phead em{color:var(--dim);font-style:normal;margin-left:10px}
-#bagrow{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;
+/* a rail either side of the row, each a fixed lane of room for the
+   options the page will grow; the row takes what is left between them */
+#bagmid{flex:1;display:grid;grid-template-columns:150px minmax(0,1fr) 150px;gap:14px;min-height:0}
+.bagrail{display:flex;flex-direction:column;gap:9px;padding-top:2px}
+#bagright{align-items:flex-end}
+.bagswitch{display:flex;flex-direction:column;gap:6px;width:72px}
+.bagswitch .chip{font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+#bagrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;
   align-content:start;align-items:start;min-height:0;overflow-y:auto;padding-right:4px}
 #bagrow::-webkit-scrollbar{width:6px}
 #bagrow::-webkit-scrollbar-thumb{background:var(--thumb)}
-.bagcol{display:flex;flex-direction:column;gap:10px;max-width:200px;width:100%;margin:0 auto}
+.bagcol{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.bagcard{width:100%;max-width:150px}
 .bagcard{position:relative;aspect-ratio:5/7;display:grid;place-content:center;cursor:pointer;
   border:1px solid rgba(237,234,227,.22);background:var(--well) center/cover no-repeat;
   font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -286,9 +294,9 @@ body.tuning #route{display:none}
 .bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone)}
 .bagcol.sel .bagcard:not(.character){font-size:10px;letter-spacing:.26em}
 .bagcol.sel .bagcard.face{color:transparent}
-/* an open column shows its three cards at once: the card gives up its
-   aspect for a height that puts three, with their gaps, inside the page */
-.bagcol.sel .bagcard{aspect-ratio:auto;height:calc((100vh - 176px) / 3 - 10px);min-height:96px}
+/* an open column shows its three cards at once, each still a 5:7 card:
+   the height is a third of the page, with the gaps, and the width follows */
+.bagcol.sel .bagcard{width:auto;height:calc((100vh - 176px) / 3 - 10px);min-height:96px}
 /* the word: typed on the card, along its bottom edge */
 .bagword{position:absolute;left:0;right:0;bottom:0;width:100%;background:rgba(8,8,11,.72);
   border:0;border-top:1px solid rgba(237,234,227,.22);color:var(--bone);
@@ -484,7 +492,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 63, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 64, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

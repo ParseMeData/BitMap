@@ -1436,7 +1436,9 @@ picture and a word: click it in an open column, or drop an image on it,
 and the picture is the card's face from then on with the label kept in
 its corner; the word is typed along its bottom edge (`Enter` to finish).
 Either one fills a card. An open column is sized so all three cards fit
-on the screen. That is the same method the palace uses (a
+on the screen, each still a 5:7 card. The row sits between two **rails**
+— room either side for the page's options; the right one holds the switch
+between `123` and `abc`. That is the same method the palace uses (a
 place, and a picture of what stands there) applied to the digits and the
 alphabet: a peg system, where `3` is always the same character doing the
 same thing to the same object.

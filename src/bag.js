@@ -117,12 +117,36 @@ const Bag = (() => {
     x.innerHTML = '&#10005;';
     x.addEventListener('click', close);
     head.append(title, x);
+    /* the middle: a rail, the row, a rail. The rails are the room left
+       either side for what the page will grow — a slider on the left is
+       the example given — and the right one already holds the switch
+       between the two systems. */
+    const mid = document.createElement('div');
+    mid.id = 'bagmid';
+    const left = document.createElement('div');
+    left.className = 'bagrail';
+    left.id = 'bagleft';
     const row = document.createElement('div');
     row.id = 'bagrow';
+    const right = document.createElement('div');
+    right.className = 'bagrail';
+    right.id = 'bagright';
+    const sw = document.createElement('div');
+    sw.className = 'bagswitch';
+    for (const [name, text] of [['numbers', '123'], ['letters', 'abc']]){
+      const b = document.createElement('div');
+      b.className = 'chip';
+      b.dataset.system = name;
+      b.textContent = text;
+      b.addEventListener('click', () => open(name));
+      sw.append(b);
+    }
+    right.append(sw);
+    mid.append(left, row, right);
     const foot = document.createElement('div');
     foot.className = 'knote';
     foot.id = 'bagnote';
-    el.append(head, row, foot);
+    el.append(head, mid, foot);
     document.body.appendChild(el);
     wirePicker();
     return el;
@@ -178,6 +202,8 @@ const Bag = (() => {
     const S = SYSTEMS[system], n = dealt(system);
     el.querySelector('#bagtitle').textContent = S.title;
     el.querySelector('#bagcount').textContent = count(system) + ' of ' + (n * SLOTS.length);
+    for (const b of el.querySelectorAll('.bagswitch .chip'))
+      b.classList.toggle('sel', b.dataset.system === system);
     const row = el.querySelector('#bagrow');
     row.innerHTML = '';
     for (let i = 0; i < n; i++){
@@ -231,6 +257,7 @@ const Bag = (() => {
 
   function open(name){
     if (!SYSTEMS[name]){ note('there is no ' + name + ' system'); return false; }
+    if (system === name) return true;     // the switch pressed on the side already up
     system = name; sel = -1;
     render();
     return true;

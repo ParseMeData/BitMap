@@ -1034,8 +1034,27 @@ const Kinds = (() => {
     return gx >= 0 && gy >= 0 && gx < M && gy < N ? rows[gy][gx] : '0';
   }
 
+  /* ── what a print is built of ───────────────────────────────────────
+     One wall colour, its dim, a window and a trim — the four notes the
+     generator spends, and the whole of what a tone changes. `stone` is the
+     plate's own C.wall set, unchanged, and every other one is held to the
+     same register: saturated enough to read as a material at a glance,
+     never so much that one building is the only thing on the screen.
+     The window stays near-gold in all of them, because a lit window at
+     night is one colour whatever the wall is. */
+  const TONES = [
+    {id: 'stone', label: 'Stone', wall: [0.70, 0.68, 0.63], dim: [0.28, 0.28, 0.33], win: [0.95, 0.82, 0.46], trim: [0.95, 0.76, 0.31]},
+    {id: 'brick', label: 'Brick', wall: [0.74, 0.47, 0.38], dim: [0.34, 0.21, 0.19], win: [0.95, 0.82, 0.46], trim: [0.88, 0.62, 0.40]},
+    {id: 'slate', label: 'Slate', wall: [0.52, 0.59, 0.68], dim: [0.21, 0.25, 0.32], win: [0.92, 0.80, 0.50], trim: [0.70, 0.76, 0.82]},
+    {id: 'moss',  label: 'Moss',  wall: [0.54, 0.64, 0.47], dim: [0.21, 0.29, 0.21], win: [0.93, 0.81, 0.46], trim: [0.74, 0.80, 0.50]},
+    {id: 'sand',  label: 'Sand',  wall: [0.82, 0.70, 0.49], dim: [0.37, 0.30, 0.21], win: [0.96, 0.85, 0.54], trim: [0.92, 0.66, 0.34]},
+    {id: 'rose',  label: 'Rose',  wall: [0.75, 0.55, 0.58], dim: [0.32, 0.21, 0.26], win: [0.96, 0.84, 0.56], trim: [0.88, 0.62, 0.60]}
+  ];
+  const TONE = {}; for (const t of TONES) TONE[t.id] = t;
+
   function landmark(s, cell, buf){
     if (typeof Glyphs === 'undefined') return;
+    const T = TONE[s.tone] || TONE.stone;
     const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
     if (!rows || !rows.length) return;
     const N = rows.length, M = rows[0].length;
@@ -1115,10 +1134,10 @@ const Kinds = (() => {
          a third of every building in window colour and the result was the
          only thing on the screen, which is exactly what STYLE.md warns a
          saturated kind will do. */
-      if (roof){ col = mixc(C.wall, C.trim, 0.16 + r * 0.18); a = 0.92; sz = 1.0; }
-      else if (open){ col = shade(C.wall, 0.86 + r * 0.26); a = 0.8 + r * 0.16; sz = 0.96; }
-      else if (screen && r > 0.74){ col = mixc(C.win, C.wall, 0.4 + r * 0.3); a = 0.62 + r * 0.26; sz = 0.58; }
-      else { col = shade(C.wallDim, 1.02 + r * 0.34); a = 0.4 + r * 0.22; sz = 0.88; }
+      if (roof){ col = mixc(T.wall, T.trim, 0.16 + r * 0.18); a = 0.92; sz = 1.0; }
+      else if (open){ col = shade(T.wall, 0.86 + r * 0.26); a = 0.8 + r * 0.16; sz = 0.96; }
+      else if (screen && r > 0.74){ col = mixc(T.win, T.wall, 0.4 + r * 0.3); a = 0.62 + r * 0.26; sz = 0.58; }
+      else { col = shade(T.dim, 1.02 + r * 0.34); a = 0.4 + r * 0.22; sz = 0.88; }
       buf.cell(x, y, col, a * fade, sz, 0, a * 0.8 * fade, sz * (screen ? 1.4 : 1.06),
                screen && !open && !roof ? 1 : 0, 0.02 + r * 0.02, hash(u, v, s.seed + 83));
     });
@@ -1839,7 +1858,7 @@ const Kinds = (() => {
     return buf.view().slice();
   }
 
-  const api = {geo, build, hash, vnoise, MAX_CELLS, hollow, shapes: SHAPES,
+  const api = {geo, build, hash, vnoise, MAX_CELLS, hollow, shapes: SHAPES, tones: TONES,
                use: v => { if (REG[v]) scope = v; }, scope: () => scope};
   for (const f of ['list', 'by', 'layers', 'palette'])
     Object.defineProperty(api, f, {get: () => REG[scope][f]});

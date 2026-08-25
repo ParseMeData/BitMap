@@ -626,6 +626,15 @@ from the next has no scale at all. So you pick it, you put it down, and
 you move it whole — `[`, `]` and the Size row do nothing to it, and the
 size field is not shown.
 
+What you can change is its **tone** — the row under the picker. Stone is
+the plate's own wall colour and the default; Brick, Slate, Moss, Sand and
+Rose are the same four notes (wall, its dim, window, trim) in another
+material, all held to the same register: enough saturation to read as a
+material at a glance, never so much that one building is the only thing
+on the screen. The window stays near-gold in every tone, because a lit
+window at night is one colour whatever the wall is. Tones live in
+`TONES` in `src/kinds.js`; adding one is one line there.
+
 Re-slicing, when a sheet changes:
 
     tools/glyphs.py assets/buildings-a.png --cols 6 --rows 5 --prefix a \

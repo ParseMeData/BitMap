@@ -37,7 +37,7 @@ const Build = (() => {
   let KEY = 'hq.shapes';
   /* what a newly placed shape inherits. The sliders write here when nothing
      is selected, so you can dial in a look and then keep placing it. */
-  const defs = {feather: 4, bright: 1, mask: false, variant: {},
+  const defs = {feather: 4, bright: 1, mask: false, variant: {}, tone: {},
                 grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0, aim: null,
                 core: 0.35, pad: 0, padFade: 0.8, padBreak: 0.3};
   /* ── telling history what just happened ────────────────────────────────
@@ -291,7 +291,8 @@ const Build = (() => {
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
                mask: defs.mask,
-               variant: defs.variant[kind] || firstVariant(k)};
+               variant: defs.variant[kind] || firstVariant(k),
+               tone: defs.tone[kind] || 'stone'};
     defaults(s, type);
     born(s, k, type, wx, wy);
     aimFall(s);
@@ -436,7 +437,7 @@ const Build = (() => {
                  fall: k.fall0 || 0, out: k.out0 || 0, aim: null,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
-                 variant: d.variant || firstVariant(k),
+                 variant: d.variant || firstVariant(k), tone: d.tone || 'stone',
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
       aimFall(s);
       G.shapes.push(s);
@@ -1487,6 +1488,8 @@ const Build = (() => {
       '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly" id="kvarlabel">Type</div>' +
       '<div id="kvariants" class="kgrid fitonly"></div>' +
+      '<div class="plabel fitonly" id="ktonelabel">Tone</div>' +
+      '<div id="ktones" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly">Adjust</div><div id="ktune" class="fitonly"></div>' +
       '<div class="kfoot fitonly"><button class="btn" id="kmask">Mask</button>' +
       '<button class="btn" id="kclearlayer">Clear layer</button></div>' +
@@ -1834,6 +1837,35 @@ const Build = (() => {
     if (cur && glyph) cur.scrollIntoView({block: 'nearest'});
   }
 
+  /* ── the tone a print is built in ───────────────────────────────────
+     Same shape as the variant row and for the same shape you are working
+     with: the selection, or the last kind reached for. Only a print has
+     one — the district textures take their colour from the kind — so the
+     row takes itself down for anything else. */
+  function syncTones(){
+    const box = $('#ktones'), lab = $('#ktonelabel');
+    if (!box) return;
+    const id = sel ? sel.kind : lastKind;
+    const k = id ? Kinds.by[id] : null;
+    const show = !!(k && k.glyphs && Kinds.tones);
+    box.hidden = !show; if (lab) lab.hidden = !show;
+    box.innerHTML = '';
+    if (!show) return;
+    const current = sel && sel.kind === id ? (sel.tone || 'stone') : (defs.tone[id] || 'stone');
+    for (const t of Kinds.tones){
+      const c = document.createElement('div');
+      c.className = 'kchip' + (t.id === current ? ' sel' : '');
+      const hex = t.wall.map(v => ('0' + Math.round(v * 255).toString(16)).slice(-2)).join('');
+      c.innerHTML = '<i style="background:#' + hex + '"></i>' + t.label;
+      c.onclick = () => {
+        defs.tone[id] = t.id;
+        if (sel && sel.kind === id){ sel.tone = t.id; changed(sel); }
+        else syncUI();
+      };
+      box.appendChild(c);
+    }
+  }
+
   function syncTune(){
     const c = cellSize();
     /* ── Fall and Core are one slot seen from two tools ─────────────────
@@ -2092,6 +2124,7 @@ const Build = (() => {
     });
     syncKinds();
     syncVariants();
+    syncTones();
     syncTune();
     syncRoute();
     const allowed = sel ? (Kinds.by[sel.kind].types || []) : [];
@@ -2164,7 +2197,7 @@ const Build = (() => {
     const what = KEY === 'hq.shapes' ? 'the town' : 'this plan';
     try {
       localStorage.setItem(KEY, JSON.stringify(G.shapes.map(s => ({
-        kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, rot: s.rot || 0,
+        kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, tone: s.tone || 'stone', rot: s.rot || 0,
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
@@ -2262,7 +2295,8 @@ const Build = (() => {
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
           r: Math.min(s.r || cellSize(), RMAX * cellSize()),
           label: s.label || '', n: s.n || 0, room: s.room || 0,
-          variant: s.variant || firstVariant(k)
+          variant: s.variant || firstVariant(k),
+          tone: s.tone || 'stone'
         });
       });
     /* a cut drawn before cuts were held to the cell grid is corrected on

@@ -279,6 +279,13 @@ through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
 
+**A tone is four colours, and the window is not one of them.** A print's
+`tone` swaps wall, dim and trim; the window note barely moves between
+tones, so a street of mixed materials still reads as one town at night.
+The six in `TONES` were chosen against STYLE.md's warning that a saturated
+kind becomes the only thing on the screen — the first cut of the landmark
+already proved that once, in gold.
+
 **A print occludes under its ink, not its box.** `covered()` takes the
 ground under every occluder's footprint, and a landmark's footprint is a
 rectangle around a building that is not one — so the terrain vanished in a

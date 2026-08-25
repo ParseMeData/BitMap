@@ -1435,20 +1435,22 @@ character is filled, the object once the action is. Every card takes a
 picture and a word: click it in an open column, or drop an image on it,
 and the picture is the card's face from then on with the label kept in
 its corner; the word is typed along its bottom edge (`Enter` to finish).
-Either one fills a card. An open column is sized so all three cards fit
-on the screen, each still a 5:7 card. The row sits between two **rails**
-— room either side for the page's options; the right one holds the switch
-between `123` and `abc`. That is the same method the palace uses (a
+Either one fills a card. Every card is one size, open or not — the size
+three can stack in on the screen, at 5:7. The row sits between two
+**rails** — room either side for the page's options: the left holds the
+slider, the right the switch between `123` and `abc`. That is the same method the palace uses (a
 place, and a picture of what stands there) applied to the digits and the
 alphabet: a peg system, where `3` is always the same character doing the
 same thing to the same object.
 
-A system is dealt five columns at a time. When all fifteen cards of the
-first five are complete the next five appear — `6`–`10`, `F`–`J` — and so
-on to `100` and `Z`. A column with all three pictures shows its label in
-bone. The head counts what is filled against what is dealt. `Esc` folds an
-open column, and closes the page from the row; the ✕ closes it outright.
-The town underneath is exactly where you left it.
+The page shows one row of five at a time, and the **slider** down the
+left rail is the way between rows: `1` at the top, `100` at the bottom
+(`A` to `Z` for the letters) — drag the thumb, or press the track, and
+the row holding that number comes up. A column with all three cards
+filled shows its label in bone. The head counts what is filled out of
+the whole system. `Esc` folds an open column, and closes the page from
+the row; the ✕ closes it outright. The town underneath is exactly where
+you left it.
 
 The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
 their own, `bag:numbers:3:action`, and the words into `hq.bag`, so a

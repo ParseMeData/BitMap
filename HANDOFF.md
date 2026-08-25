@@ -414,8 +414,13 @@ because that store already shrinks a photograph on the way in and is already
 what `snapshot.py` carries key for key; nothing in `Loci` walks the store
 expecting every key to be a marker. The one shared piece of chrome is the
 `#lfile` input, which both modules listen to, each answering only when its
-own `pending` is set. The five-at-a-time deal is computed from what is
-complete, never stored, so a detached picture folds the deal back on its own.
+own `pending` is set. The page shows one row of five and the slider picks
+the row; there was a deal — the next five appearing once fifteen were
+complete — and it went when the slider came, because a slider that stops at
+the deal is a slider that will not reach the number you came for. The slider
+is drawn, not an `<input type=range>`: a native range stood on end is either
+a deprecated appearance value or a writing-mode that puts the big number at
+the top.
 
 **The platformer is unchanged in behaviour.** It plays its own deck when
 opened alone. The route is a *chain* — 0 into 1, 1 into 2 — rather than the

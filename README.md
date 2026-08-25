@@ -262,6 +262,11 @@ behind the burst.
 
 ## Building
 
+Placing anything is two clicks: one on its chip, which arms it (the cursor
+says so), and one on the map, where it lands — nothing appears until you
+have pointed at where. You can also drag straight from the chip and drop
+it. `Esc` disarms.
+
 `B` opens the palette. Work is organised in layers, the way a plan is —
 the road network first and set apart, because it is the thing everything else
 gets arranged around, and it is the layer you land on when build mode opens:

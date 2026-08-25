@@ -1181,7 +1181,16 @@ const Build = (() => {
         canvas.setPointerCapture(e.pointerId);
         return;
       }
-      if (armed) return;
+      if (armed){
+        /* the click the chip was waiting for: build it here */
+        const a = armed;
+        armed = null;
+        document.body.classList.remove('arming');
+        const q = toWorld(e);
+        create(a.kind, a.type, q[0], q[1]);
+        hstep();
+        return;
+      }
       /* handles are small things to hit at low zoom; give them a target a
          pointer can actually land on */
       const p = toWorld(e), hr = 20 / G.cam[2];
@@ -1429,14 +1438,18 @@ const Build = (() => {
         return;
       }
       if (!armed) return;
+      const over = document.elementFromPoint(e.clientX, e.clientY) === canvas;
+      /* Dragged onto the map: build it where it was dropped. Released
+         without travelling — a click on the chip — and it stays armed:
+         nothing is built until you click the map, and it lands where you
+         click. Building it in front of the camera on a click was the one
+         place in this editor something appeared where you had not
+         pointed, and then had to be moved. Escape disarms. */
+      if (!over) return;
       const a = armed;
       armed = null;
       document.body.classList.remove('arming');
-      const over = document.elementFromPoint(e.clientX, e.clientY) === canvas;
-      /* dropped on the map: build it there. released without travelling:
-         treat it as a click and build it in front of the camera */
-      if (over){ const p = toWorld(e); create(a.kind, a.type, p[0], p[1]); }
-      else create(a.kind, a.type, G.cam[0], G.cam[1]);
+      const p = toWorld(e); create(a.kind, a.type, p[0], p[1]);
       hstep();
     });
 
@@ -1456,6 +1469,11 @@ const Build = (() => {
       else if (e.code === 'KeyC'){
         const mk = Markers.selected();
         if (mk){ Markers.cycleTint(mk); syncUI(); }
+      }
+      else if (e.code === 'Escape' && armed){
+        armed = null;
+        document.body.classList.remove('arming');
+        syncUI();
       }
       else if (e.code === 'BracketLeft') scaleSel(1 / 1.15);
       else if (e.code === 'BracketRight') scaleSel(1.15);

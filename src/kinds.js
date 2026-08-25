@@ -53,17 +53,45 @@ const Kinds = (() => {
      Everything downstream (distance, bounds, the walk grid, the outline)
      only ever sees the flattened line, so a curve costs nothing extra. */
   const FLAT = 14;                   // sub-segments per bowed segment
+  /* ── a stream is one curve through its points ────────────────────────
+     A road is straight between its points unless you bow a segment by
+     hand, and that is right for a road: it is built in lengths. Water is
+     not. A creek with three points that turns a hard corner at the middle
+     one is a pipe, and bowing each length by hand to hide the corner is
+     work the water should be doing. So a `smooth` kind ignores its bows
+     and runs a Catmull-Rom spline through every point instead: put a
+     point down and the whole run bends to pass through it, pull it and
+     the bend follows. The ends stay where they were put — the anchors —
+     and the curve arrives at them along its last leg. */
+  const smooth = s => s.type === 'line' && s.pts.length >= 3
+    && !!(REG[scope].by[s.kind] || {}).smooth;
+  function spline(s, i, t){
+    const P = s.pts, n = P.length - 1;
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[Math.min(n, i + 1)], p3 = P[Math.min(n, i + 2)];
+    const t2 = t * t, t3 = t2 * t;
+    const f = k => 0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t
+                 + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2
+                 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3);
+    return [f(0), f(1)];
+  }
+  /* the point a fraction `t` along segment `i`, however that segment is
+     drawn: on the spline for a smooth kind, on the bow for a bowed
+     segment, on the straight otherwise. What the grips are placed by. */
+  function along(s, i, t){
+    if (smooth(s)) return spline(s, i, t);
+    const a = s.pts[i], b = s.pts[i + 1], c = s.ctrl && s.ctrl[i], u = 1 - t;
+    if (!c) return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+    return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
+            u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+  }
   function flatten(s){
     if (s._flat) return s._flat;
     const out = [s.pts[0]];
+    const sm = smooth(s);
     for (let i = 0; i < s.pts.length - 1; i++){
       const a = s.pts[i], b = s.pts[i + 1], c = s.ctrl && s.ctrl[i];
-      if (!c){ out.push(b); continue; }
-      for (let k = 1; k <= FLAT; k++){
-        const t = k / FLAT, u = 1 - t;
-        out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
-                  u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]);
-      }
+      if (!sm && !c){ out.push(b); continue; }
+      for (let k = 1; k <= FLAT; k++) out.push(along(s, i, k / FLAT));
     }
     s._flat = out;
     return out;
@@ -104,7 +132,7 @@ const Kinds = (() => {
   }
   const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 
-  const geo = {
+  const geo = {along, smooth, 
     flat: flatten,
     corners,
     bbox(s){
@@ -1526,6 +1554,7 @@ const Kinds = (() => {
      walk: 0, stamp: 0, gen: water,     swatch: '#2E66B8'},
     {id: 'creek',     label: 'Creek',     layer: 'ground', types: ['line', 'ring'],
      walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
+     anchored: true, smooth: true,
      feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
      /* creeks run into one another the way roads do, so a tributary is a
         junction and not two channels with a hole punched where they meet.
@@ -1560,7 +1589,7 @@ const Kinds = (() => {
         keeps them apart from Water's stiller, deeper blue on the same
         layer. */
      walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
-     len0: 16, width0: 4, anchored: true,
+     len0: 16, width0: 4, anchored: true, smooth: true,
      feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
      connects: true},
     {id: 'trees',     label: 'Trees',     layer: 'trees',  types: AREA, variants: WOOD,

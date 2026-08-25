@@ -342,10 +342,20 @@ none and the terrain closes right up to the kerb.
 ### Creek
 
 A **creek** is a road's geometry carrying water. Drawing one *is* the road
-editor — a polyline whose segments bow, a width, `Shift`-click to add a
-point, and a ring if you want a moat — because the editor keys off a shape's
-**type**, not its kind, so `types: ['line', 'ring']` inherits all of it for
-free.
+editor — a polyline, a width, and a ring if you want a moat — because the
+editor keys off a shape's **type**, not its kind, so `types: ['line',
+'ring']` inherits all of it for free.
+
+Where it differs from a road is how it bends. A road is straight between
+its points unless you bow a length by hand, which is right for a thing
+built in lengths. A creek or a river is **one curve through every point**:
+put it down from source to mouth — those two ends are anchored and stay
+where you put them — then take hold of the grip in the middle of any run
+and pull. A new point is born under your hand and the whole stream bends
+to pass through it, and you can do that as many times as the water needs.
+`Shift`-click still adds a point too. The curve is a Catmull-Rom spline
+(`smooth: true` on the kind, `Kinds.geo.along`), flattened once and cached
+like a bow, so everything downstream still only ever sees a polyline.
 
 What differs is what it is made of and what it means. It reads as a channel
 with damp banks, and the flow runs *along* the line rather than across it —

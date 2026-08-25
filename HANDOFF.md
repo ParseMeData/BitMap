@@ -279,6 +279,14 @@ through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
 
+**Water bends through its points; a road bends between them.** A `smooth`
+kind ignores its per-segment bows and runs a Catmull-Rom through every
+point, so its mid-segment grips are not bows but births: take one and a
+point is made there and dragged. Ends are anchored. The bows (`ctrl`) are
+still saved on the shape and still honoured for anything not smooth, so a
+creek saved with bows before this loses them — the spline replaces them —
+which is the intended reading, not a migration gap.
+
 **A tone is four colours, and the window is not one of them.** A print's
 `tone` swaps wall, dim and trim; the window note barely moves between
 tones, so a street of mixed materials still reads as one town at night.

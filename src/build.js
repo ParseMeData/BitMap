@@ -895,12 +895,11 @@ const Build = (() => {
      and the one standing off the top edge turns the shape. */
   /* where a segment's curve actually passes at the halfway mark: the point
      the bend grip sits on and the point you drag to move it */
-  function bendAt(s, i){
-    const a = s.pts[i], b = s.pts[i + 1], c = s.ctrl && s.ctrl[i];
-    if (!c) return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-    return [0.25 * a[0] + 0.5 * c[0] + 0.25 * b[0],
-            0.25 * a[1] + 0.5 * c[1] + 0.25 * b[1]];
-  }
+  const bendAt = (s, i) => Kinds.geo.along(s, i, 0.5);
+  /* a stream's mid-segment grip is not a bow, it is a point waiting to be
+     put down: take hold of it and a new point is born there and comes with
+     you, and the whole run bends through it. As many as you like. */
+  const isStream = s => !!(Kinds.by[s.kind] || {}).smooth && s.type === 'line';
   function handles(s){
     if (isPrint(s)) return [];
     if (s.type === 'line'){
@@ -912,9 +911,10 @@ const Build = (() => {
       const lock = anchored(s), last = s.pts.length - 1;
       const out = s.pts.map((p, i) => ({x: p[0], y: p[1], tag: 'p' + i,
         kind: lock && (i === 0 || i === last) ? 'anchor' : 'point'}));
+      const add = isStream(s);
       for (let i = 0; i < s.pts.length - 1; i++){
         const m = bendAt(s, i);
-        out.push({x: m[0], y: m[1], tag: 'b' + i, kind: 'bend'});
+        out.push({x: m[0], y: m[1], tag: (add ? 'a' : 'b') + i, kind: 'bend'});
       }
       return out;
     }
@@ -1221,7 +1221,16 @@ const Build = (() => {
           if (d < bd){ bd = d; best = h; }
         }
         if (best){
-          drag = {mode: best.tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
+          let tag = best.tag;
+          if (tag.charAt(0) === 'a'){
+            /* born under the grip, then dragged as the point it now is */
+            const i = +tag.slice(1);
+            sel.pts.splice(i + 1, 0, [snapC(best.x), snapC(best.y)]);
+            if (sel.ctrl) sel.ctrl.splice(i, 1, null, null);
+            changed(sel);
+            tag = 'p' + (i + 1);
+          }
+          drag = {mode: tag, s: sel, ox: p[0], oy: p[1], w0: sel.w, h0: sel.h};
           canvas.setPointerCapture(e.pointerId);
           return;
         }

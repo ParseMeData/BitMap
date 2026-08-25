@@ -613,8 +613,26 @@ const Build = (() => {
   }
 
   /* a shape changed: only its own instances need regenerating */
+  /* ── nothing is drawn past the edge of the plate ─────────────────────
+     The plate is the map and the walk grid is exactly its size, so a road
+     drawn past the edge is a road the walker stops short of, at a point
+     that looks like the middle of nowhere. Held to the plate on every
+     edit instead: a line's points stay inside it and an area's centre
+     stays where its box does. The town's plate only — a floor plan has no
+     edge to fall off. */
+  function keepOnPlate(s){
+    if (!G.W || !G.H || Kinds.scope() !== 'map' || isRadial(s)) return;
+    const c = cellSize(), W = G.W, H = G.H;
+    if (s.pts){
+      for (const q of s.pts){ q[0] = clamp(q[0], c / 2, W - c / 2); q[1] = clamp(q[1], c / 2, H - c / 2); }
+    } else {
+      const hw = Math.min(s.w || 0, W) / 2, hh = Math.min(s.h || 0, H) / 2;
+      s.x = clamp(s.x, hw, W - hw); s.y = clamp(s.y, hh, H - hh);
+    }
+  }
   function changed(s){
     if (s){
+      keepOnPlate(s);
       alignFine(s);
       s._flat = null;                       // the curve may have moved
       s._span = null;                       // and so may the corners
@@ -1025,6 +1043,21 @@ const Build = (() => {
                                   [x0, y0 + (y1 - y0) * t], [x1, y0 + (y1 - y0) * t]]){
           if (m > cap - 2) return m;
           m = put(a, m, px2, py2, 1, 0.373, 0.635, 0.9, r, 0, 0, 0, 1);
+        }
+      }
+    }
+    /* ── the edge of the plate ─────────────────────────────────────────
+       The plate is the map: the walk grid stops at its edge, and so does
+       everything you draw (see keepOnPlate). The window is wider than
+       the plate, and the margin beside it looks like more map — so the
+       edge is drawn, faintly, whenever you are building on the town. */
+    if (G.W && G.H && Kinds.scope() === 'map'){
+      const px = 1 / G.cam[2], r = Math.max(1.5 * px, cellSize() * 0.12), n = 70;
+      for (let j = 0; j <= n; j++){
+        const t = j / n;
+        for (const [qx, qy] of [[G.W * t, 0], [G.W * t, G.H], [0, G.H * t], [G.W, G.H * t]]){
+          if (m > cap - 2) return m;
+          m = put(a, m, qx, qy, IDLE[0], IDLE[1], IDLE[2], 0.55, r, 0, 0, 0, 1);
         }
       }
     }

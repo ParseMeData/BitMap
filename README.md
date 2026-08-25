@@ -1393,7 +1393,13 @@ column, on a stub of your road running in, so you are standing on ground
 and the road visibly continues. Every dead end is its own doorway: a town
 may have many roads, long or short, and each can lead to a plate of its
 own. Pressing sideways off a road mid-way never asks; only a real end
-does. Each plate
+does.
+
+The plate is the map, and nothing is drawn past its edge: a line's
+points and an area's centre are held inside it on every edit, because a
+road drawn into the margin beside the plate is a road the walker stops
+short of. Build mode draws the edge, faintly, so you can see where the
+town ends and the next plate would begin. Each plate
 is its own town under its own keys — shapes, markers, sparks — and the
 palaces inside markers are shared by all of them. The **compass** at the
 bottom of the HUD opens the mind map: every plate laid out by how it

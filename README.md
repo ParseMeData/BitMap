@@ -344,6 +344,18 @@ reaches any further out than Clear does. Roads are born with 1.2 cells of it, so
 side of itself, all the way along, including around a roundabout. Set it to
 none and the terrain closes right up to the kerb.
 
+### The other grounds
+
+Rock, Cement, Dirt, Desert, Gravel, Mud, Scrub and Snow sit beside Grass
+on the Ground layer, and all eight are one generator with a recipe each
+(`GROUNDS` in `src/kinds.js`): grass with the green taken out and another
+note put in. What tells rock from mud at a glance is not the pattern but
+colour, how much it varies and how coarsely — plus the one habit each has:
+cement cracks on a grid, sand ripples, mud puddles, scrub tufts. All are
+walkable, all stamp with grass, and all are held to the plate's register:
+a desert is ochre in the dark, not a beach at noon. Adding a ground is one
+recipe line and one kind line.
+
 ### Creek
 
 A **creek** is a road's geometry carrying water. Drawing one *is* the road

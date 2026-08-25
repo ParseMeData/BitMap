@@ -768,6 +768,45 @@ const Kinds = (() => {
 
   /* the one kind that really moves: a dense plate whose two faces differ
      enough that the whole surface crawls like light on water */
+  /* ── the other grounds ─────────────────────────────────────────────
+     Grass with the green taken out and something else put in. Every one
+     of these is the same field — near every cell filled, a little wider
+     than its cell so it knits — because ground cover is ground cover,
+     and what tells rock from mud at a glance is not the pattern but the
+     note: colour, how much it varies, how coarse the variation is, and
+     the one habit each has (cement cracks on a grid, sand ripples, mud
+     puddles, scrub tufts). Held to the plate's register like everything
+     else: a desert is ochre in the dark, not a beach at noon. */
+  const GROUNDS = {
+    rock:   {base: [0.40, 0.40, 0.45], hi: [0.60, 0.60, 0.65], dens: 0.92, coarse: 0.10, fine: 0.9,  vary: 0.6, sz: 1.00},
+    cement: {base: [0.52, 0.52, 0.52], hi: [0.64, 0.64, 0.62], dens: 0.98, coarse: 0.05, fine: 0.4,  vary: 0.2, sz: 1.02, slab: 8},
+    dirt:   {base: [0.40, 0.30, 0.20], hi: [0.56, 0.43, 0.29], dens: 0.92, coarse: 0.14, fine: 0.7,  vary: 0.5, sz: 0.98},
+    desert: {base: [0.68, 0.56, 0.36], hi: [0.84, 0.72, 0.48], dens: 0.88, coarse: 0.06, fine: 0.5,  vary: 0.4, sz: 0.96, ripple: 0.22},
+    gravel: {base: [0.46, 0.45, 0.42], hi: [0.66, 0.64, 0.60], dens: 0.84, coarse: 0.30, fine: 1.4,  vary: 0.8, sz: 0.88},
+    mud:    {base: [0.30, 0.24, 0.17], hi: [0.42, 0.34, 0.25], dens: 0.97, coarse: 0.10, fine: 0.5,  vary: 0.4, sz: 1.04, puddle: 0.72},
+    scrub:  {base: [0.40, 0.42, 0.26], hi: [0.60, 0.62, 0.36], dens: 0.78, coarse: 0.12, fine: 0.9,  vary: 0.6, sz: 0.94, tuft: 0.86},
+    snow:   {base: [0.78, 0.80, 0.85], hi: [0.92, 0.93, 0.96], dens: 0.97, coarse: 0.08, fine: 0.3,  vary: 0.15, sz: 1.04}
+  };
+  function terrain(s, cell, buf){
+    const T = GROUNDS[s.kind] || GROUNDS.dirt;
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const r = hash(u, v, s.seed);
+      if (r > T.dens) return;
+      let n = vnoise(u * T.coarse, v * T.coarse, s.seed + 3) * 0.6 +
+              vnoise(u * T.fine, v * T.fine, s.seed + 4) * 0.4;
+      if (T.ripple) n = n * 0.7 + (0.5 + 0.5 * Math.sin(v * T.ripple + vnoise(u * 0.08, v * 0.08, s.seed + 5) * 4)) * 0.3;
+      let col = mixc(shade(T.base, 1 - T.vary / 2 + n * T.vary), T.hi, n * n * 0.5);
+      let a = (0.6 + n * 0.3), sz = T.sz * (0.94 + n * 0.12);
+      /* the one habit each ground has */
+      if (T.slab && (mod(u, T.slab) === 0 || mod(v, T.slab) === 0)){ col = shade(col, 0.72); a *= 0.9; }
+      if (T.puddle && n > T.puddle){ col = mixc(col, C.water, 0.35); a = 0.5 + n * 0.3; sz *= 1.1; }
+      if (T.tuft && r > T.tuft){ col = mixc(col, C.treeHi, 0.5); sz *= 1.15; }
+      buf.cell(x, y, col, a * fade, sz * (0.55 + fade * 0.45), 0,
+               (0.48 + n * 0.36) * fade, sz * 1.05, 0,
+               0.03 + r * 0.04, hash(u, v, s.seed + 11));
+    });
+  }
+
   function water(s, cell, buf){
     scan(s, cell, (x, y, u, v, d, fade) => {
       const r = hash(u, v, s.seed);
@@ -1550,6 +1589,23 @@ const Kinds = (() => {
   const LIST = [
     {id: 'grass',     label: 'Grass',     layer: 'ground', types: AREA,
      walk: 1, stamp: 3, gen: grass,     swatch: '#5C9648'},
+    /* the other grounds: one generator, one recipe each, in GROUNDS */
+    {id: 'rock',      label: 'Rock',      layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#666673'},
+    {id: 'cement',    label: 'Cement',    layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#858585'},
+    {id: 'dirt',      label: 'Dirt',      layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#664D33'},
+    {id: 'desert',    label: 'Desert',    layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#AD8F5C'},
+    {id: 'gravel',    label: 'Gravel',    layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#75736B'},
+    {id: 'mud',       label: 'Mud',       layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#4D3D2B'},
+    {id: 'scrub',     label: 'Scrub',     layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#666B42'},
+    {id: 'snow',      label: 'Snow',      layer: 'ground', types: AREA,
+     walk: 1, stamp: 3, gen: terrain,   swatch: '#C7CCD9'},
     {id: 'water',     label: 'Water',     layer: 'ground', types: AREA,
      walk: 0, stamp: 0, gen: water,     swatch: '#2E66B8'},
     {id: 'creek',     label: 'Creek',     layer: 'ground', types: ['line', 'ring'],
@@ -1722,6 +1778,14 @@ const Kinds = (() => {
      roundabout is one chip rather than a mode you have to know about */
   const PALETTE = [
     {label: 'Grass',      kind: 'grass',     type: 'ellipse'},
+    {label: 'Rock',       kind: 'rock',      type: 'ellipse'},
+    {label: 'Cement',     kind: 'cement',    type: 'rect'},
+    {label: 'Dirt',       kind: 'dirt',      type: 'ellipse'},
+    {label: 'Desert',     kind: 'desert',    type: 'ellipse'},
+    {label: 'Gravel',     kind: 'gravel',    type: 'ellipse'},
+    {label: 'Mud',        kind: 'mud',       type: 'ellipse'},
+    {label: 'Scrub',      kind: 'scrub',     type: 'ellipse'},
+    {label: 'Snow',       kind: 'snow',      type: 'ellipse'},
     {label: 'Water',      kind: 'water',     type: 'ellipse'},
     {label: 'Creek',      kind: 'creek',     type: 'line'},
     {label: 'River',      kind: 'river',     type: 'line'},

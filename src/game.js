@@ -406,6 +406,8 @@ addEventListener('keydown', e => {
      way out, and nothing under it walks */
   if (typeof Bag !== 'undefined' && Bag.opened()){
     if (e.code === 'Escape') Bag.back();
+    else if (e.code === 'ArrowUp') Bag.step(-1);
+    else if (e.code === 'ArrowDown') Bag.step(1);
     return;
   }
   keys.add(e.code);

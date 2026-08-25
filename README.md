@@ -1445,8 +1445,9 @@ same thing to the same object.
 
 The page shows one row of five at a time, and the **slider** down the
 left rail is the way between rows: `1` at the top, `100` at the bottom
-(`A` to `Z` for the letters) — drag the thumb, or press the track, and
-the row holding that number comes up. A column with all three cards
+(`A` to `Z` for the letters) — drag the thumb, press the track, press the
+`▲`/`▼` at its ends, or use `↑`/`↓` on the keyboard, and the row holding
+that number comes up. A column with all three cards
 filled shows its label in bone. The head counts what is filled out of
 the whole system. `Esc` folds an open column, and closes the page from
 the row; the ✕ closes it outright. The town underneath is exactly where

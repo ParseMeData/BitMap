@@ -288,6 +288,7 @@ body.tuning #route{display:none}
   width:48px;padding-bottom:8px}
 .bagat{font-size:12px;letter-spacing:.18em;color:var(--bone);font-variant-numeric:tabular-nums;
   min-height:18px}
+.bagstep{width:100%;padding:4px 0;font-size:8px;line-height:1}
 .bagtrack{position:relative;flex:1;width:14px;cursor:pointer;touch-action:none}
 .bagtrack::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;
   margin-left:-.5px;background:rgba(237,234,227,.22)}
@@ -502,7 +503,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 65, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 66, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

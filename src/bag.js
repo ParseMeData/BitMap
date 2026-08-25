@@ -104,7 +104,14 @@ const Bag = (() => {
     thumb = document.createElement('div');
     thumb.className = 'bagthumb';
     track.append(thumb);
-    el.append(readout, track);
+    /* and a button at each end, for one number at a time; the keyboard's
+       arrows do the same through `step`, from game.js */
+    const up = document.createElement('div'), down = document.createElement('div');
+    up.className = 'chip bagstep'; up.innerHTML = '&#9650;';
+    down.className = 'chip bagstep'; down.innerHTML = '&#9660;';
+    up.addEventListener('click', () => step(-1));
+    down.addEventListener('click', () => step(1));
+    el.append(readout, up, track, down);
     const set = e => {
       const r = track.getBoundingClientRect();
       const cap = SYSTEMS[system].cap;
@@ -120,6 +127,14 @@ const Bag = (() => {
     });
     track.addEventListener('pointermove', e => { if (track.hasPointerCapture(e.pointerId)) set(e); });
     return el;
+  }
+  /* one number up or down — up is toward 1, the top of the track */
+  function step(d){
+    if (!system) return false;
+    const v = Math.min(SYSTEMS[system].cap, Math.max(1, at + d));
+    if (v === at) return true;
+    at = v; sel = -1; render();
+    return true;
   }
   function placeThumb(){
     if (!thumb || !system) return;
@@ -253,7 +268,7 @@ const Bag = (() => {
       row.append(col);
     }
     el.querySelector('#bagnote').textContent =
-      sel < 0 ? 'pick a card · drag the slider for another row · esc closes'
+      sel < 0 ? 'pick a card · slider or ↑↓ for another row · esc closes'
               : S.label(sel) + ' · click a card for its picture, or drop one on it · type its word · esc folds it';
   }
 
@@ -307,6 +322,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, count, key, word, setWord, filled, at: () => at,
+  return {open, close, back, opened, step, count, key, word, setWord, filled, at: () => at,
           system: () => system, selected: () => sel, SYSTEMS, SLOTS};
 })();

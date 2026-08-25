@@ -1384,12 +1384,16 @@ is there to read again.
 
 The map never pans and never zooms: what is on screen is the town. When
 the town needs more room it gets another **plate** — a second screen the
-same size as this one, joined to it along an edge. Walk a road off the
-north edge of one and you arrive on the south edge of the plate joined
-there, on the same road, which continues. Walk off an edge nothing is
-joined to and a prompt asks whether to open a plate there (`Enter` opens,
-`Esc` stays); a new plate arrives with a stub of the road you were on
-running in from the crossing, so you are standing on ground. Each plate
+same size as this one — and plates are joined where **roads end**. Walk
+to the end of any road and press on: if that end leads somewhere you
+arrive there; if it does not, a prompt asks whether to open a plate for
+it (`Enter` opens, `Esc` stays). A new plate is drawn as though it lay the
+way the road was heading — you arrive on its opposite edge in the same
+column, on a stub of your road running in, so you are standing on ground
+and the road visibly continues. Every dead end is its own doorway: a town
+may have many roads, long or short, and each can lead to a plate of its
+own. Pressing sideways off a road mid-way never asks; only a real end
+does. Each plate
 is its own town under its own keys — shapes, markers, sparks — and the
 palaces inside markers are shared by all of them. The **compass** at the
 bottom of the HUD opens the mind map: every plate laid out by how it

@@ -7,11 +7,13 @@
    — so a second one is the same machinery mounted on a second pair of
    keys, which is what going inside a building already does.
 
-   Plates are joined by their edges. Walk a road off the north edge of one
-   and you arrive on the south edge of the plate joined there; walk off an
-   edge nothing is joined to and you are asked whether to open a plate. The
-   compass at the bottom of the HUD draws them as a mind map, laid out by
-   how they join, and jumps.
+   Plates are joined where roads END. Walk to the end of a road and press
+   on, and if that end leads somewhere you arrive there; if it does not,
+   you are asked whether to open a plate for it. Every dead end is its own
+   doorway — a town may have many roads, long or short, and each can lead
+   to its own plate — so a link is kept per end, not per side. The compass
+   at the bottom of the HUD draws them as a mind map, laid out by which
+   way each road was heading, and jumps.
 
    `hq.atlas` holds the graph and which plate you are on. The home plate
    keeps the keys it always had, so a town saved before the atlas existed
@@ -27,17 +29,20 @@ const Atlas = (() => {
   function load(){
     try {
       const a = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (a && a.areas && a.areas.home) return a;
+      if (a && a.areas && a.areas.home){
+        for (const id in a.areas) if (!Array.isArray(a.areas[id].links)) a.areas[id].links = [];
+        return a;
+      }
     } catch (e){}
-    return {areas: {home: {name: 'Home', links: {}}}, current: 'home'};
+    return {areas: {home: {name: 'Home', links: []}}, current: 'home'};
   }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(A)); } catch (e){} }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   /* ── where a crossing lands ───────────────────────────────────────────
-     Off the north edge at column x is onto the south edge at column x of
-     the plate beyond: the two plates share the edge, so the road carries
-     straight on. */
+     A road heading north when it ended arrives on the south edge of the
+     plate beyond, in the same column, and carries on northward from
+     there: the new plate is drawn as though it lay in that direction. */
   function entry(dir, at){
     const t = G.terr;
     if (dir === 'n') return [at[0], t.th - 1];
@@ -80,16 +85,18 @@ const Atlas = (() => {
      the road you were on visibly continues. The stub is written straight
      into the new plate's storage in the shape the builder saves, before
      the plate is mounted, so the builder loads it like anything else. */
+  const linkAt = (area, at, dir) => area.links.find(l => l.at[0] === at[0] && l.at[1] === at[1] && (!dir || l.dir === dir));
   function add(dir, at){
     const cur = A.areas[A.current];
-    if (cur.links[dir]) return go(cur.links[dir], entry(dir, at));
+    const had = linkAt(cur, at, dir);
+    if (had) return go(had.to, had.land);
     const id = 'a' + Date.now().toString(36);
     const n = Object.keys(A.areas).length;
-    A.areas[id] = {name: 'Plate ' + (n + 1), links: {}};
-    A.areas[id].links[OPP[dir]] = A.current;
-    cur.links[dir] = id;
-    save();
+    const from = A.current;
     const t = G.terr, z = t.tsz, e = entry(dir, at);
+    A.areas[id] = {name: 'Plate ' + (n + 1), links: [{at: e, dir: OPP[dir], to: from, land: at}]};
+    cur.links.push({at: [at[0], at[1]], dir, to: id, land: e});
+    save();
     const dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0;
     const a = [(e[0] + 0.5) * z - dx * z, (e[1] + 0.5) * z - dy * z];   // half a tile past the edge, so the crossing tile is covered
     const b = [(e[0] + 0.5) * z + dx * z * 5, (e[1] + 0.5) * z + dy * z * 5];
@@ -102,14 +109,18 @@ const Atlas = (() => {
     return go(id, e);
   }
 
-  /* ── the edge ────────────────────────────────────────────────────────
-     Called by the walker when a step would leave the plate. Joined: cross.
-     Not joined: ask, in a prompt that holds the keys until answered. */
+  /* ── the end of the road ─────────────────────────────────────────────
+     Called by the walker when it presses on from a dead end. Joined:
+     cross. Not joined: ask, in a prompt that holds the keys until
+     answered. A dead end is a road tile with at most one road neighbour,
+     pressed away from that neighbour — decided in game.js, where the
+     walk grid is, so this only ever hears about real ends. */
   const NAME = {n: 'north', s: 'south', e: 'east', w: 'west'};
   let asking = null;
-  function edge(dir, at){
+  function end(dir, at){
     const cur = A.areas[A.current];
-    if (cur.links[dir]) return go(cur.links[dir], entry(dir, at));
+    const l = linkAt(cur, at, dir) || linkAt(cur, at, null);
+    if (l) return go(l.to, l.land);
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
     asking = {dir, at};
     const el = prompt();
@@ -123,8 +134,8 @@ const Atlas = (() => {
     el = document.createElement('div');
     el.id = 'edge';
     el.className = 'glass';
-    el.innerHTML = '<div class="plabel">The edge of the plate</div>' +
-      '<div>the road runs off to the <b></b> and there is no plate there yet</div>' +
+    el.innerHTML = '<div class="plabel">The end of the road</div>' +
+      '<div>the road ends here heading <b></b>, and leads nowhere yet</div>' +
       '<div class="erow"><button id="edgeyes">open a plate</button><button id="edgeno">stay</button></div>' +
       '<div class="knote">enter opens &middot; esc stays</div>';
     document.body.appendChild(el);
@@ -152,13 +163,17 @@ const Atlas = (() => {
   function place(){
     const pos = {home: [0, 0]}, q = ['home'];
     const D = {n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0]};
+    const taken = new Set(['0,0']);
     while (q.length){
       const id = q.shift();
-      for (const dir in A.areas[id].links){
-        const to = A.areas[id].links[dir];
-        if (pos[to]) continue;
-        pos[to] = [pos[id][0] + D[dir][0], pos[id][1] + D[dir][1]];
-        q.push(to);
+      for (const l of A.areas[id].links){
+        if (pos[l.to]) continue;
+        /* one step the way the road was heading; if that cell is taken by
+           another plate, slide along until one is free */
+        let x = pos[id][0] + D[l.dir][0], y = pos[id][1] + D[l.dir][1];
+        while (taken.has(x + ',' + y)){ if (D[l.dir][0]) y++; else x++; }
+        pos[l.to] = [x, y]; taken.add(x + ',' + y);
+        q.push(l.to);
       }
     }
     for (const id in A.areas) if (!pos[id]) pos[id] = [0, Object.keys(pos).length]; // an orphan, listed below
@@ -180,14 +195,15 @@ const Atlas = (() => {
     for (const id in pos){
       const [x, y] = pos[id];
       const a = A.areas[id];
-      for (const dir in a.links){        // a joint, drawn once from the side that is above/left
-        if (dir === 's') html += '<i class="ajoin v" style="left:' + ((x - x0) * CW + CW / 2 - 1) + 'px;top:' + ((y - y0) * CH + CH - 8) + 'px"></i>';
-        if (dir === 'e') html += '<i class="ajoin h" style="left:' + ((x - x0) * CW + CW - 8) + 'px;top:' + ((y - y0) * CH + CH / 2 - 1) + 'px"></i>';
+      for (const l of a.links){          // a joint, drawn once, from the plate above or to the left
+        const q = pos[l.to]; if (!q) continue;
+        if (q[1] === y + 1 && q[0] === x) html += '<i class="ajoin v" style="left:' + ((x - x0) * CW + CW / 2 - 1) + 'px;top:' + ((y - y0) * CH + CH - 8) + 'px"></i>';
+        if (q[0] === x + 1 && q[1] === y) html += '<i class="ajoin h" style="left:' + ((x - x0) * CW + CW - 8) + 'px;top:' + ((y - y0) * CH + CH / 2 - 1) + 'px"></i>';
       }
       html += '<div class="achip' + (id === A.current ? ' sel' : '') + '" data-id="' + id + '" style="left:' +
               ((x - x0) * CW + 8) + 'px;top:' + ((y - y0) * CH + 8) + 'px">' + a.name + '</div>';
     }
-    html += '</div><div class="knote">click a plate to stand on it &middot; walk a road off an edge to open the next &middot; esc closes</div>';
+    html += '</div><div class="knote">click a plate to stand on it &middot; walk to the end of a road and press on to open the next &middot; esc closes</div>';
     el.innerHTML = html;
     el.querySelectorAll('.achip').forEach(c => { c.onclick = () => go(c.dataset.id, null); });
     el.hidden = false;
@@ -207,7 +223,7 @@ const Atlas = (() => {
     if (typeof Hud !== 'undefined') Hud.onTowns = toggleMap;
   }
 
-  return {init, go, add, edge, openMap, closeMap, toggleMap,
+  return {init, go, add, end, openMap, closeMap, toggleMap,
           current: () => A.current, areas: () => A.areas,
           name: () => A.areas[A.current].name,
           rename: v => { A.areas[A.current].name = v; save(); },

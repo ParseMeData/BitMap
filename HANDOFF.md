@@ -288,15 +288,18 @@ saved before the atlas existed is the home plate of a one-plate atlas
 without being touched. Plates are never entered from inside a building:
 `Atlas.go` refuses while `Interior.inside()`.
 
-**Crossing an edge is a step the walker asks about.** `tryStep` in
-`game.js` hands a straight step off the grid, from a road tile, to
-`Atlas.edge(dir, [x, y])` and returns if it was taken; a diagonal fallback
-never leaves the plate. The landing tile is the same column or row on the
-opposite edge, so the road carries straight on; a plate opened from a road
-gets a stub laid from the crossing inward, written into its storage in the
-shape `save()` writes before the plate is mounted, so the builder loads it
-like anything else. Land on a tile that is not road and `revalidate()`
-rescues, as after any edit.
+**The end of a road is a step the walker asks about.** `tryStep` in
+`game.js` decides what a dead end is — a road tile with at most one road
+neighbour, pressed away from that neighbour — and hands it to
+`Atlas.end(dir, [x, y])`, returning if it was taken. Decided there because
+that is where the walk grid is; the atlas only ever hears about real ends,
+so a sideways bump mid-road never asks. Links are kept per end
+(`{at, dir, to, land}`), not per side, because Eden wanted many roads each
+leading to their own plate; the first cut keyed them by plate edge and was
+wrong for exactly that reason. A new plate is entered on its opposite edge
+in the same column, with a stub laid inward, written into its storage in
+the shape `save()` writes before the plate is mounted. Land on a tile that
+is not road and `revalidate()` rescues, as after any edit.
 
 **A stranded road is said, not fixed.** Eden chose connectivity over
 "any road walkable": the route is one flood from the walker, and a road

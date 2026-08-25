@@ -344,14 +344,24 @@ function tryStep(dx, dy){
   }
   G.face = [sx, sy];
   const nx = G.x + sx, ny = G.y + sy;
-  /* ── off the plate ───────────────────────────────────────────────────
-     The map never pans: a road that runs to the edge runs onto the next
-     plate, and the atlas says whether there is one. Only from a road
-     tile, and only straight off — a diagonal fallback never leaves. */
-  if (typeof Atlas !== 'undefined' && wAt(G.x, G.y) && !(sx && sy) &&
-      (nx < 0 || ny < 0 || nx >= G.terr.tw || ny >= G.terr.th)){
-    const dir = nx < 0 ? 'w' : nx >= G.terr.tw ? 'e' : ny < 0 ? 'n' : 's';
-    if (Atlas.edge(dir, [G.x, G.y])) return;
+  /* ── the end of the road ─────────────────────────────────────────────
+     The map never pans: a road that ends leads to the next plate, and the
+     atlas says whether there is one. A dead end is a road tile with at
+     most one road neighbour, and pressing on is pressing away from that
+     neighbour — so a sideways bump mid-road never asks, and a road that
+     ends at the plate edge asks the same as one that ends in a field. */
+  if (typeof Atlas !== 'undefined' && wAt(G.x, G.y) && !(sx && sy) && !wAt(nx, ny)){
+    let nb = 0, vx = 0, vy = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      if ((dx || dy) && wAt(G.x + dx, G.y + dy)){ nb++; vx += dx; vy += dy; }
+    }
+    /* onward is away: the press must point mostly along the road's own
+       outward heading, so a perpendicular bump at the end never asks */
+    const len = Math.hypot(vx, vy) || 1;
+    if (nb === 0 || (nb === 1 && -(sx * vx + sy * vy) / len > 0.5)){
+      const dir = sx < 0 ? 'w' : sx > 0 ? 'e' : sy < 0 ? 'n' : 's';
+      if (Atlas.end(dir, [G.x, G.y])) return;
+    }
   }
   G.stepT = 0; G.moving = true;
   G.stepScale = (sx && sy) ? 1.414 : 1;      // a diagonal is a longer stride

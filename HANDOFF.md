@@ -259,6 +259,27 @@ tiles wide has its edges on tile centres — and anything derived from it by
 rounding lands a whole tile out. That bug looked random because odd-width rooms
 never showed it.
 
+**A landmark is lattice, not a sprite.** The sheets in `assets/` are read by
+`tools/glyphs.py` and by nothing else; `src/glyphs.js` is what ships, and a
+lit square there becomes one diamond at stamp time, the way a letter does in
+`type.js`. Loading the PNG and drawing it would be quicker to write and would
+put a second material on the plate — a picture of a building over a town made
+of diamonds — which is the objection the whole renderer exists to answer.
+`glyphs.js` is generated: hand-edit it and the next slice reverts you.
+
+**A landmark is born at one cell per pixel and resized only in whole
+multiples.** Every other kind is born in tiles, because a park has no size
+of its own. A fourteen-pixel glyph does, and one cell per pixel is the only
+footprint that shows all of it and no more — tile-snapping that to sixteen
+adds two columns of nothing and to twelve loses two of building, which is
+the same bug from both sides. So `glyphSize` reads the birth size off the
+glyph and does not snap it, and `glyphSnap` holds every later resize to
+n× that: at 1½× some pixels get two cells and some one, and the strokes
+come out uneven, differently at every size. `[`/`]` step by one multiple
+for the same reason — ×1.15 from 1× rounds straight back to 1×. The
+generator fits the glyph inside the box by aspect, so a box snapped on the
+tighter axis and slack on the other is not distortion, only margin.
+
 **Cuts are held to whole cells.** A cell is removed when its *centre* falls
 inside the cut, and centres sit halfway between boundaries — so a cut whose
 edges land halfway puts every centre exactly on the test boundary and which
@@ -385,6 +406,13 @@ builder and the platformer expose their state as globals (`G`, `Build`,
 `cdp.attach()` picks the builder on purpose, so the platformer's globals are
 reached only by asking for it: `cdp.attach(match='platformer')`.
 
+**Re-slice, do not redraw.** When a building sheet changes, run
+`tools/glyphs.py` (the two invocations are in README under *Landmark*;
+`--preview` shows the slice as text first) and commit `src/glyphs.js` with
+the PNG. The pitch is autodetected from the sheet and both current sheets
+come back at 5.371; a sheet exported at another factor is the one case for
+`--pitch`.
+
 **Verify with a real screenshot.** `Page.captureScreenshot` over CDP. Counting
 instances proves geometry; only a picture proves it looks right. The camera
 follows the walker, so setting `G.camT[0]`/`[1]` does nothing — move
@@ -483,6 +511,11 @@ thing that was measured, and the mistake that was made on the way.
   drawing is authored on tiles and baked to cells, while collision has stayed
   on the tile — answered for the picture, still open for the walk grid, which
   is the cut-narrower-than-a-tile thread above.
+- **Landmarks placed before the one-cell-per-pixel rule keep their old
+  boxes.** Eight in the live town were born at tile-snapped sizes; the glyph
+  is fitted inside so they draw correctly, but their boxes carry slack until
+  each is next resized, at which point `glyphSnap` tidies it. Nothing
+  migrates them on load, by choice — a save should not change under you.
 - **There is no LICENSE.** The repo is public, `platformer.html` is vendored
   from another project, `assets/map.js` is The Mighty Haunt's printed sheet,
   and the map bar credits OpenStreetMap, CARTO and Google on screen — so what

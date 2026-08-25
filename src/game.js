@@ -405,7 +405,7 @@ addEventListener('keydown', e => {
   /* the bag owns the screen while it is up; the only key it answers is the
      way out, and nothing under it walks */
   if (typeof Bag !== 'undefined' && Bag.opened()){
-    if (e.code === 'Escape') Bag.close();
+    if (e.code === 'Escape') Bag.back();
     return;
   }
   keys.add(e.code);

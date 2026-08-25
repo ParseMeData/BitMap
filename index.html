@@ -265,20 +265,30 @@ body.tuning #route{display:none}
 .knote.warn,.kstate.warn{color:var(--gold)}
 #kstat.warn{color:var(--gold)}
 /* the locus preview: a modal look at one asset, so the editor gets out of it */
-/* the bag: one page over the plate, five cards in a row. It is the one
-   overlay that owns the whole screen without being a picture, so like the
-   locus it clears the chrome out of its way rather than sitting among it. */
+/* the bag: one page over the plate, cards in columns of three. It is the
+   one overlay that owns the whole screen without being a picture, so like
+   the locus it clears the chrome out of its way rather than sitting among
+   it. A card's face is its picture; its tag stays in the corner. */
 #bag{position:fixed;inset:16px;z-index:8;padding:14px 16px;display:flex;
   flex-direction:column;gap:14px}
 #bag .phead .btn{padding:4px 7px;font-size:8px}
-#bagrow{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;
-  align-content:start;min-height:0}
-.bagcol{display:flex;flex-direction:column;gap:10px}
-.bagcard{aspect-ratio:5/7;display:grid;place-content:center;cursor:pointer;
-  border:1px solid rgba(237,234,227,.22);background:var(--well);
+#bag .phead em{color:var(--dim);font-style:normal;margin-left:10px}
+#bagrow{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;
+  align-content:start;align-items:start;min-height:0;overflow-y:auto;padding-right:4px}
+#bagrow::-webkit-scrollbar{width:6px}
+#bagrow::-webkit-scrollbar-thumb{background:var(--thumb)}
+.bagcol{display:flex;flex-direction:column;gap:10px;max-width:200px;width:100%;margin:0 auto}
+.bagcard{position:relative;aspect-ratio:5/7;display:grid;place-content:center;cursor:pointer;
+  border:1px solid rgba(237,234,227,.22);background:var(--well) center/cover no-repeat;
   font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.bagcard:hover{background:rgba(237,234,227,.12);color:var(--bone)}
-.bagcard.sel{background:var(--bone);color:var(--ground)}
+.bagcard:hover,.bagcard.over{background-color:rgba(237,234,227,.12);color:var(--bone)}
+.bagcard.done{color:var(--bone)}
+.bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone)}
+.bagcol.sel .bagcard:not(.character){font-size:10px;letter-spacing:.26em}
+.bagcol.sel .bagcard.face{color:transparent}
+/* the tag: the label sits in the corner of a card with a face on it */
+.bagcard.face .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
+  letter-spacing:.2em;color:var(--bone);background:rgba(8,8,11,.72)}
 body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
 body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
@@ -465,7 +475,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 60, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 61, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

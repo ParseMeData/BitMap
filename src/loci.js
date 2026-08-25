@@ -328,7 +328,9 @@ const Loci = (() => {
     return survey();
   }
 
-  return {init, has, enter, show, close, pick, attach, detach, draw, survey,
+  /* `get` is handed out for the bag, which keeps its cards in this store
+     under its own keys and reads them back to paint the faces */
+  return {init, has, get, enter, show, close, pick, attach, detach, draw, survey,
           route, deck, count, publish, play, opened: () => !!open,
           at: () => (open ? open.mk : null)};
 })();

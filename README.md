@@ -1427,21 +1427,19 @@ The HUD's left ring, `123`, opens the **number system**; its top ring,
 with a different set of labels on the cards, and nothing else differs.
 
 The page lays a row of cards over the town, one per number or letter. A
-card that is not selected shows only its label. Click one and it opens:
-that card is the **character**, and beneath it, in the same column, come
-the **action** and then the **object** — three cards to a label, fifteen
-to a row of five, dealt one at a time: the action appears once the
-character is filled, the object once the action is. Every card takes a
-picture and a word: click it in an open column, or drop an image on it,
-and the picture is the card's face from then on with the label kept in
-its corner; the word is typed along its bottom edge (`Enter` to finish).
-Either one fills a card. Every card is one size, open or not — the size
-three can stack in on the screen, at 5:7. The row sits between two
-**rails** — room either side for the page's options: the left holds the
-slider, the right the switch between `123` and `abc`. That is the same method the palace uses (a
-place, and a picture of what stands there) applied to the digits and the
-alphabet: a peg system, where `3` is always the same character doing the
-same thing to the same object.
+card that is not selected shows only its label. Click one — or walk
+to it with `←`/`→` and press `Enter` — and its **stack** opens down the
+right rail, laid like a solitaire column: each card a step below the
+last, so a covered card shows its tag. The row card is the **person**,
+and the stack runs person, **action**, **object**, then person again,
+and round — as many cards as you want, always in that order, dealt one at
+a time: the next appears once the last is filled. Every card takes a
+picture and a word: click it in the stack, or drop an image on it, and
+the picture is the card's face from then on with the tag kept in its
+corner; the word is typed along its bottom edge (`Enter` to finish).
+Either one fills a card. Every card is one size, at 5:7. The row sits
+between two **rails**: the left holds the switch between `123` and `abc`
+and the slider; the right holds the stack.
 
 The page shows one row of five at a time, and the **slider** down the
 left rail is the way between rows: `1` at the top, `100` at the bottom
@@ -1454,7 +1452,7 @@ the row; the ✕ closes it outright. The town underneath is exactly where
 you left it.
 
 The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
-their own, `bag:numbers:3:action`, and the words into `hq.bag`, so a
+their own, `bag:numbers:3:action` (`…:action2` for the second time round), and the words into `hq.bag`, so a
 snapshot carries both.
 
 ## Walking

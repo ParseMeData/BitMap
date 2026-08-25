@@ -275,16 +275,32 @@ body.tuning #route{display:none}
 #bag .phead em{color:var(--dim);font-style:normal;margin-left:10px}
 /* a rail either side of the row, each a fixed lane of room for the
    options the page will grow; the row takes what is left between them */
-#bagmid{flex:1;display:grid;grid-template-columns:150px minmax(0,1fr) 150px;gap:14px;min-height:0}
-.bagrail{display:flex;flex-direction:column;gap:9px;padding-top:2px}
-#bagright{align-items:flex-end}
-.bagswitch{display:flex;flex-direction:column;gap:6px;width:72px}
+#bagmid{flex:1;display:grid;grid-template-columns:150px minmax(0,1fr) 190px;gap:14px;min-height:0}
+.bagrail{display:flex;flex-direction:column;gap:9px;padding-top:2px;min-height:0}
+#bagright{align-items:flex-end;overflow-y:auto}
+#bagright::-webkit-scrollbar{width:6px}
+#bagright::-webkit-scrollbar-thumb{background:var(--thumb)}
+.bagswitch{display:flex;flex-direction:row;gap:6px;width:100%}
+.bagswitch .chip{flex:1}
+/* the stack: the open number's cards laid like a solitaire column, each a
+   step below the last — enough of a covered card shows to read its tag
+   and put the pointer on it; the one under the pointer comes to the top */
+#bagstack{display:flex;flex-direction:column;align-items:flex-end;width:100%;--step:32px}
+#bagstack .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone);
+  width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7);flex:none}
+#bagstack .bagcard + .bagcard{margin-top:calc(var(--step) - ((100vh - 176px) / 3 - 10px))}
+/* on a stack card the tag is always in the corner — that corner is all
+   that shows of a covered card, and it has to say which card it is */
+#bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
+  letter-spacing:.2em;color:var(--ground);background:rgba(237,234,227,.9)}
+#bagstack .bagcard.face .bagtag{color:var(--bone);background:rgba(8,8,11,.72)}
+#bagstack .bagcard:hover,#bagstack .bagcard:focus-within{z-index:2}
 .bagswitch .chip{font-size:10px;letter-spacing:.22em;text-transform:uppercase}
 #bagrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;
   align-content:start;align-items:start;min-height:0}
 /* the slider: a track the height of the rail, a square thumb, the number
    it stands at above it */
-#bagslide{display:flex;flex-direction:column;align-items:center;gap:10px;height:100%;
+#bagslide{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;min-height:0;
   width:48px;padding-bottom:8px}
 .bagat{font-size:12px;letter-spacing:.18em;color:var(--bone);font-variant-numeric:tabular-nums;
   min-height:18px}
@@ -308,8 +324,6 @@ body.tuning #route{display:none}
 /* the keyboard's place in the row: a bone edge on the column it stands on */
 .bagcol.cur .bagcard{border-color:var(--bone)}
 .bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone)}
-.bagcol.sel .bagcard:not(.character){font-size:10px;letter-spacing:.26em}
-.bagcol.sel .bagcard.face{color:transparent}
 /* the word: typed on the card, along its bottom edge */
 .bagword{position:absolute;left:0;right:0;bottom:0;width:100%;background:rgba(8,8,11,.72);
   border:0;border-top:1px solid rgba(237,234,227,.22);color:var(--bone);
@@ -505,7 +519,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 68, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 70, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

@@ -16,13 +16,15 @@
    back exactly as it was — so it is opened through the HUD's seams
    (`Hud.onNumbers`, `Hud.onLetters`, filled in game.js).
 
-   Each label is a column of three cards: the CHARACTER, which is the card
-   you see in the row; and beneath it, once it is selected, the ACTION and
-   the OBJECT. A card that is not selected shows its label and nothing
+   Each label is a stack of cards, laid down the right rail the way a
+   solitaire column is — each card a step below the last, so what shows of
+   a covered card is its tag. The row card is the PERSON; select it and the
+   stack opens beside the row: the person, then the ACTION, then the
+   OBJECT, then a person again, and round — as many as you want, in that
+   order and no other, one card at a time: the next appears once the last
+   is filled. A card that is not selected shows its label and nothing
    else. Every card takes a picture — click it, or drop one on it — and the
-   picture is its face from then on; and a word, typed on the card. The
-   column is dealt one card at a time: the action once the character is
-   filled, the object once the action is. That is the method the whole game is
+   picture is its face from then on; and a word, typed on the card. That is the method the whole game is
    built on (a place, and a picture of what stands there), applied to a
    number: five columns of three is fifteen pictures. The page shows one
    row of five at a time, and the slider down the left is the way between
@@ -41,7 +43,11 @@ const Bag = (() => {
     numbers: {title: 'numbers', cap: 100, label: i => String(i + 1)},
     letters: {title: 'letters', cap: 26,  label: i => String.fromCharCode(65 + i)},
   };
+  /* the cycle. The first is called the person on the page and `character`
+     in the store, because the store had that name before the page did and
+     the pictures already in it answer to it. */
   const SLOTS = ['character', 'action', 'object'];
+  const NAMES = {character: 'person', action: 'action', object: 'object'};
   const DEAL = 5;            // columns in a row
 
   let system = null;     // which set of labels is up, or null when closed
@@ -51,7 +57,12 @@ const Bag = (() => {
   let pending = null;    // the key the file picker was opened for
 
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
-  const key = (sys, i, slot) => 'bag:' + sys + ':' + SYSTEMS[sys].label(i) + ':' + slot;
+  /* the k-th card in a stack: slot k%3 of cycle k/3. The first cycle's
+     keys carry no number, so what was stored before there were cycles is
+     the first cycle. */
+  const key = (sys, i, slot, cyc) =>
+    'bag:' + sys + ':' + SYSTEMS[sys].label(i) + ':' + slot + (cyc ? String(cyc + 1) : '');
+  const keyAt = (sys, i, k) => key(sys, i, SLOTS[k % SLOTS.length], Math.floor(k / SLOTS.length));
 
   /* ── the words ─────────────────────────────────────────────────────────
      Each card carries a word as well as a picture — the character's name,
@@ -86,6 +97,37 @@ const Bag = (() => {
     for (let i = 0; i < SYSTEMS[sys].cap; i++) for (const slot of SLOTS) if (has(sys, i, slot)) c++;
     return c;
   };
+
+  /* the switch between the two systems */
+  function sw(){
+    const el = document.createElement('div');
+    el.className = 'bagswitch';
+    for (const [name, text] of [['numbers', '123'], ['letters', 'abc']]){
+      const b = document.createElement('div');
+      b.className = 'chip';
+      b.dataset.system = name;
+      b.textContent = text;
+      b.addEventListener('click', () => open(name));
+      el.append(b);
+    }
+    return el;
+  }
+
+  /* ── the stack ─────────────────────────────────────────────────────────
+     The open number's cards, each `STEP` below the last. Card k is shown
+     if it is the first or the one before it is filled, so the stack is
+     always exactly one card longer than what has been done — the next
+     thing to fill, and never a blank run of them. */
+  function stack(){
+    const el = document.getElementById('bagstack');
+    el.innerHTML = '';
+    if (sel < 0) return;
+    for (let k = 0; ; k++){
+      if (k > 0 && !filled(keyAt(system, sel, k - 1))) break;
+      const c = card(system, sel, SLOTS[k % SLOTS.length], true, keyAt(system, sel, k));
+      el.append(c);
+    }
+  }
 
   /* ── the slider ────────────────────────────────────────────────────────
      A track down the left rail with a thumb on it: drag the thumb, or press
@@ -191,23 +233,15 @@ const Bag = (() => {
     const left = document.createElement('div');
     left.className = 'bagrail';
     left.id = 'bagleft';
-    left.append(slider());
+    left.append(sw(), slider());
     const row = document.createElement('div');
     row.id = 'bagrow';
     const right = document.createElement('div');
     right.className = 'bagrail';
     right.id = 'bagright';
-    const sw = document.createElement('div');
-    sw.className = 'bagswitch';
-    for (const [name, text] of [['numbers', '123'], ['letters', 'abc']]){
-      const b = document.createElement('div');
-      b.className = 'chip';
-      b.dataset.system = name;
-      b.textContent = text;
-      b.addEventListener('click', () => open(name));
-      sw.append(b);
-    }
-    right.append(sw);
+    const stack = document.createElement('div');
+    stack.id = 'bagstack';
+    right.append(stack);
     mid.append(left, row, right);
     const foot = document.createElement('div');
     foot.className = 'knote';
@@ -218,14 +252,15 @@ const Bag = (() => {
     return el;
   }
 
-  function card(sys, i, slot, shown){
-    const k = key(sys, i, slot);
+  function card(sys, i, slot, shown, k){
+    k = k || key(sys, i, slot);
     const c = document.createElement('div');
     c.className = 'bagcard ' + slot;
     c.dataset.key = k;
     const tag = document.createElement('span');
     tag.className = 'bagtag';
-    tag.textContent = slot === 'character' ? SYSTEMS[sys].label(i) : slot;
+    tag.textContent = shown ? NAMES[slot] + ' · ' + SYSTEMS[sys].label(i)
+                            : SYSTEMS[sys].label(i);
     c.append(tag);
     if (shown && Loci.has(k)){
       c.classList.add('face');
@@ -246,9 +281,12 @@ const Bag = (() => {
       c.append(w);
     }
     c.addEventListener('click', () => {
-      cur = i - first();                     // the keyboard follows the pointer
-      if (sel !== i){ select(i); return; }   // a press on a folded column opens it
-      pick(k);                               // and on an open one, asks for the picture
+      if (!shown){                           // a row card: the press selects it
+        cur = i - first();                   // the keyboard follows the pointer
+        select(sel === i ? -1 : i);
+        return;
+      }
+      pick(k);                               // a stack card asks for its picture
     });
     c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('over'); });
     c.addEventListener('dragleave', () => c.classList.remove('over'));
@@ -278,17 +316,13 @@ const Bag = (() => {
     for (let i = f0; i < Math.min(f0 + DEAL, S.cap); i++){
       const col = document.createElement('div');
       col.className = 'bagcol' + (i === sel ? ' sel' : '') + (i === f0 + cur ? ' cur' : '');
-      col.append(card(system, i, 'character', i === sel));
-      /* an open column deals one card at a time: the action once the
-         character is filled, the object once the action is */
-      if (i === sel)
-        for (let j = 1; j < SLOTS.length && has(system, i, SLOTS[j - 1]); j++)
-          col.append(card(system, i, SLOTS[j], true));
+      col.append(card(system, i, 'character', false));
       row.append(col);
     }
+    stack();
     el.querySelector('#bagnote').textContent =
       sel < 0 ? '←→ and enter pick a card · ↑↓ another row · esc closes'
-              : S.label(sel) + ' · click a card for its picture, or drop one on it · type its word · esc folds it';
+              : S.label(sel) + ' · the stack: click a card for its picture, or drop one on it · type its word · esc folds it';
   }
 
   function select(i){ sel = i; render(); }
@@ -341,6 +375,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, step, move, enter, count, key, word, setWord, filled, at: () => at,
+  return {open, close, back, opened, step, move, enter, count, key, keyAt, word, setWord, filled, at: () => at,
           system: () => system, selected: () => sel, SYSTEMS, SLOTS};
 })();

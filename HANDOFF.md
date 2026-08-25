@@ -404,6 +404,13 @@ it too; and it defers to anything `game.js` has already written into the boot
 screen, because `#fatal` covers the viewport and would otherwise hide the
 precise reason behind the vague one.
 
+**The bag's first card is `character` in the store and "person" on the
+page.** The store had the name before the page did, and the words and
+pictures already in it answer to it; renaming the key would orphan them for
+a word. Cycle keys are `character2`, `action2`, `object2`, … — the first
+cycle carries no number, so what was stored before there were cycles is the
+first cycle.
+
 **The bag is one page, and its pictures live with the loci.** The `123` and
 `abc` rings open the same `Bag.open(system)`; `SYSTEMS` in `src/bag.js` is
 the whole of the difference between them (a title, a cap, a label function),

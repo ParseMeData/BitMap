@@ -1427,12 +1427,16 @@ The HUD's left ring, `123`, opens the **number system**; its top ring,
 with a different set of labels on the cards, and nothing else differs.
 
 The page lays a row of cards over the town, one per number or letter. A
-card that is not selected shows only its label. Click one and it unfolds:
+card that is not selected shows only its label. Click one and it opens:
 that card is the **character**, and beneath it, in the same column, come
-the **action** and the **object** — three cards to a label, fifteen to a
-row of five. Every card takes a picture: click it in an open column, or
-drop an image on it, and the picture is the card's face from then on with
-the label kept in its corner. That is the same method the palace uses (a
+the **action** and then the **object** — three cards to a label, fifteen
+to a row of five, dealt one at a time: the action appears once the
+character is filled, the object once the action is. Every card takes a
+picture and a word: click it in an open column, or drop an image on it,
+and the picture is the card's face from then on with the label kept in
+its corner; the word is typed along its bottom edge (`Enter` to finish).
+Either one fills a card. An open column is sized so all three cards fit
+on the screen. That is the same method the palace uses (a
 place, and a picture of what stands there) applied to the digits and the
 alphabet: a peg system, where `3` is always the same character doing the
 same thing to the same object.
@@ -1445,8 +1449,8 @@ open column, and closes the page from the row; the ✕ closes it outright.
 The town underneath is exactly where you left it.
 
 The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
-their own, `bag:numbers:3:action`, so a snapshot carries them with the
-loci.
+their own, `bag:numbers:3:action`, and the words into `hq.bag`, so a
+snapshot carries both.
 
 ## Walking
 

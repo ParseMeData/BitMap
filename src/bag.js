@@ -20,7 +20,9 @@
    you see in the row; and beneath it, once it is selected, the ACTION and
    the OBJECT. A card that is not selected shows its label and nothing
    else. Every card takes a picture — click it, or drop one on it — and the
-   picture is its face from then on. That is the method the whole game is
+   picture is its face from then on; and a word, typed on the card. The
+   column is dealt one card at a time: the action once the character is
+   filled, the object once the action is. That is the method the whole game is
    built on (a place, and a picture of what stands there), applied to a
    number: five columns of three is fifteen pictures, and a system is
    dealt out five columns at a time. When the first five are complete the
@@ -48,7 +50,33 @@ const Bag = (() => {
 
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   const key = (sys, i, slot) => 'bag:' + sys + ':' + SYSTEMS[sys].label(i) + ':' + slot;
-  const has = (sys, i, slot) => Loci.has(key(sys, i, slot));
+
+  /* ── the words ─────────────────────────────────────────────────────────
+     Each card carries a word as well as a picture — the character's name,
+     the verb, the thing. Words are small and there are at most a few
+     hundred, so they live in one localStorage key, `hq.bag`, as a map from
+     card key to text; being an `hq.` key it is carried by snapshot.py
+     without that tool having to know it exists. */
+  const WORDS = 'hq.bag';
+  let words = null;
+  function loadWords(){
+    if (words) return words;
+    try { words = JSON.parse(localStorage.getItem(WORDS) || '{}') || {}; }
+    catch (e){ words = {}; }
+    return words;
+  }
+  const word = k => (loadWords()[k] || '');
+  function setWord(k, text){
+    loadWords();
+    text = (text || '').trim();
+    if (text) words[k] = text; else delete words[k];
+    try { localStorage.setItem(WORDS, JSON.stringify(words)); }
+    catch (e){ note('could not save the word — storage is full'); }
+  }
+
+  /* a card is filled by a picture or a word; either is enough to move on */
+  const filled = k => Loci.has(k) || !!word(k);
+  const has = (sys, i, slot) => filled(key(sys, i, slot));
   const complete = (sys, i) => SLOTS.every(slot => has(sys, i, slot));
 
   /* how many columns are dealt: five, plus five for every full set of five
@@ -114,6 +142,19 @@ const Bag = (() => {
       Loci.get(k).then(url => { if (url && c.isConnected) c.style.backgroundImage = 'url("' + url + '")'; });
     }
     if (!shown && complete(sys, i)) c.classList.add('done');
+    if (shown){
+      const w = document.createElement('input');
+      w.type = 'text'; w.className = 'bagword'; w.spellcheck = false;
+      w.placeholder = slot === 'character' ? 'who' : slot === 'action' ? 'does what' : 'to what';
+      w.value = word(k);
+      w.addEventListener('click', e => e.stopPropagation());
+      w.addEventListener('input', () => setWord(k, w.value));
+      /* the next card appears once this one is filled — after the word is
+         done, not on every keystroke, or the field would jump under you */
+      w.addEventListener('change', () => { if (system) render(); });
+      w.addEventListener('keydown', e => { if (e.key === 'Enter') w.blur(); });
+      c.append(w);
+    }
     c.addEventListener('click', () => {
       if (sel !== i){ select(i); return; }   // a press on a folded column opens it
       pick(k);                               // and on an open one, asks for the picture
@@ -143,15 +184,19 @@ const Bag = (() => {
       const col = document.createElement('div');
       col.className = 'bagcol' + (i === sel ? ' sel' : '');
       col.append(card(system, i, 'character', i === sel));
-      if (i === sel) for (const slot of SLOTS.slice(1)) col.append(card(system, i, slot, true));
+      /* an open column deals one card at a time: the action once the
+         character is filled, the object once the action is */
+      if (i === sel)
+        for (let j = 1; j < SLOTS.length && has(system, i, SLOTS[j - 1]); j++)
+          col.append(card(system, i, SLOTS[j], true));
       row.append(col);
     }
     el.querySelector('#bagnote').textContent =
       sel < 0 ? 'pick a card · esc closes'
-              : S.label(sel) + ' · click a card for its picture, or drop one on it · esc folds it';
+              : S.label(sel) + ' · click a card for its picture, or drop one on it · type its word · esc folds it';
     if (sel >= 0){
       const c = row.children[sel];
-      if (c && c.scrollIntoView) c.scrollIntoView({block: 'nearest'});
+      if (c && c.scrollIntoView) c.scrollIntoView({block: 'start'});
     }
   }
 
@@ -204,6 +249,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, dealt, count, key,
+  return {open, close, back, opened, dealt, count, key, word, setWord, filled,
           system: () => system, selected: () => sel, SYSTEMS, SLOTS};
 })();

@@ -286,6 +286,15 @@ body.tuning #route{display:none}
 .bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone)}
 .bagcol.sel .bagcard:not(.character){font-size:10px;letter-spacing:.26em}
 .bagcol.sel .bagcard.face{color:transparent}
+/* an open column shows its three cards at once: the card gives up its
+   aspect for a height that puts three, with their gaps, inside the page */
+.bagcol.sel .bagcard{aspect-ratio:auto;height:calc((100vh - 176px) / 3 - 10px);min-height:96px}
+/* the word: typed on the card, along its bottom edge */
+.bagword{position:absolute;left:0;right:0;bottom:0;width:100%;background:rgba(8,8,11,.72);
+  border:0;border-top:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em;text-align:center;outline:0}
+.bagword::placeholder{color:var(--faint)}
+.bagword:focus{border-top-color:var(--flare)}
 /* the tag: the label sits in the corner of a card with a face on it */
 .bagcard.face .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
   letter-spacing:.2em;color:var(--bone);background:rgba(8,8,11,.72)}
@@ -475,7 +484,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 62, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 63, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

@@ -123,6 +123,19 @@ const Build = (() => {
      wedge, and neither of those is a question a shape measured from its
      own centre outward can be asked. It gets Core instead. */
   const isRadial = s => !!(Kinds.by[s.kind] || {}).radial;
+  /* ── the choices a kind offers, however it offers them ─────────────────
+     Most kinds carry a short written list. A landmark carries `glyphs`
+     instead, and its list is whatever tools/glyphs.py last sliced — read
+     off Glyphs rather than copied into the registry, so the sheet stays
+     the one place a building is added.
+
+     Everything downstream asks this rather than reading `k.variants`, so
+     the two kinds of list are the same kind of list everywhere except the
+     one place they are drawn. `variant` is still just a string on the
+     shape, which is what keeps a saved town readable either way. */
+  const variantsOf = k => !k ? null
+    : (k.glyphs ? (typeof Glyphs === 'undefined' ? null : Glyphs.names) : k.variants) || null;
+  const firstVariant = k => { const l = variantsOf(k); return l ? l[0] : 'mixed'; };
   /* ── a line whose ends are anchors ──────────────────────────────────────
      A river is one line bent in many places with its two ends staying put,
      which is the whole difference between it and a chain of creek segments.
@@ -157,6 +170,15 @@ const Build = (() => {
      ways between them. All three are edited at plan level and none of them
      is furniture. */
   const isPlan = s => !!s.label || !!isGap(s) || s.kind === 'door';
+  /* ── what the pointer will answer to ───────────────────────────────────
+     The active layer, and the modifiers, which are not on one. A modifier
+     reaches every layer whatever its own is listed as, and the palette now
+     offers both of them above the layer rows rather than under Roads — so
+     a boundary you can see weathering the trees you are working on but
+     cannot pick up without changing layers first would be the palette
+     saying one thing and the plate another. They stay tied to their
+     layer's eye, because that is the switch that says whether they are in
+     the picture at all. */
   const editable = s => mode === 'rooms'
     ? isPlan(s)
     : (!isPlan(s) && vis[layerOf(s)] && (isMod(s) || layerOf(s) === layer));
@@ -170,15 +192,6 @@ const Build = (() => {
       s.pts = [[snapC(C0[0] - span / 2), snapC(C0[1])], [snapC(C0[0] + span / 2), snapC(C0[1])]];
       s.width = snapW(s.width || g * 0.5);
     } else if (type === 'ring'){
-  /* ── what the pointer will answer to ───────────────────────────────────
-     The active layer, and the modifiers, which are not on one. A modifier
-     reaches every layer whatever its own is listed as, and the palette now
-     offers both of them above the layer rows rather than under Roads — so
-     a boundary you can see weathering the trees you are working on but
-     cannot pick up without changing layers first would be the palette
-     saying one thing and the plate another. They stay tied to their
-     layer's eye, because that is the switch that says whether they are in
-     the picture at all. */
       s.x = snapC(C0[0]); s.y = snapC(C0[1]);
       s.r = snapR(cellSize());                // as small as it goes
       s.width = snapW(s.width || cellSize() * 2);
@@ -224,19 +237,6 @@ const Build = (() => {
     s.aim = L < 1e-3 ? [-1, 0] : [-dx / L * s.fall, -dy / L * s.fall];
   }
 
-  function create(kind, type, wx, wy){
-    const k = Kinds.by[kind];
-    if (!k) return null;
-    const c = cellSize();
-    const area = type !== 'line' && type !== 'ring';
-    const g = grid();
-    const s = {id: nextId++, kind, type, seed: (Math.random() * 1e6) | 0, rot: 0,
-               x: snapC(wx), y: snapC(wy), w: snapS(g * 6), h: snapS(g * 5),
-               r: snapR(cellSize()), width: snapW(cellSize() * 2),
-               pts: [[snapC(wx), snapC(wy)]],
-               feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
-               bright: defs.bright * (k.bright0 || 1),
-               grain: defs.grain, scale: defs.scale,
   /* ── a boundary is born as the plate ───────────────────────────────────
      Every other kind is born where you dropped it, at a size you then drag
      out, because a park is one of many and where it goes is the whole
@@ -264,20 +264,35 @@ const Build = (() => {
     s.h = clamp(snapS(H * 0.9), grid(), MAXSPAN());
   }
 
+  function create(kind, type, wx, wy){
+    const k = Kinds.by[kind];
+    if (!k) return null;
+    const c = cellSize();
+    const area = type !== 'line' && type !== 'ring';
+    const g = grid();
+    const s = {id: nextId++, kind, type, seed: (Math.random() * 1e6) | 0, rot: 0,
+               x: snapC(wx), y: snapC(wy), w: snapS(g * 6), h: snapS(g * 5),
+               r: snapR(cellSize()), width: snapW(cellSize() * 2),
+               pts: [[snapC(wx), snapC(wy)]],
+               feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
+               bright: defs.bright * (k.bright0 || 1),
+               grain: defs.grain, scale: defs.scale,
                /* a kind that draws nothing has to be born already doing
                   something, or dropping it reads as a tool that is broken */
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
                scatter: k.scatter0 !== undefined ? k.scatter0 : defs.scatter,
                fall: k.fall0 !== undefined ? k.fall0 : defs.fall,
                out: k.out0 !== undefined ? k.out0 : defs.out, aim: null,
+               core: k.core0 !== undefined ? k.core0 : defs.core,
                pad: k.pad0 !== undefined ? k.pad0 : defs.pad,
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
                mask: defs.mask,
-               variant: defs.variant[kind] || (k.variants ? k.variants[0] : 'mixed')};
+               variant: defs.variant[kind] || firstVariant(k)};
     defaults(s, type);
     born(s, k, type, wx, wy);
     aimFall(s);
+    framePlate(s);
     G.shapes.push(s);
     sel = s;
     /* A modifier is not on the layer it is listed under — it is above them
@@ -288,7 +303,6 @@ const Build = (() => {
     if (!k.modifies) layer = k.layer;
     changed(s);
     return s;
-               core: k.core0 !== undefined ? k.core0 : defs.core,
   }
   /* A kind can say how big one of it is. A district is born big because a
      district is a field of housing; a bed is born the size of a bed. */
@@ -297,14 +311,73 @@ const Build = (() => {
     if (type === 'line'){
       const d = g * (k.len0 ? k.len0 / 2 : 5);
       s.pts = [[snapC(wx - d), snapC(wy)], [snapC(wx + d), snapC(wy)]];
-    framePlate(s);
       /* and how wide, for the same reason it can say how long: a river born
          two cells across is a ditch with the wrong name on it */
       if (k.width0) s.width = snapW(cellSize() * k.width0);
     } else {
       s.x = snapC(wx); s.y = snapC(wy);
       if (k.w0){ s.w = snapS(g * k.w0); s.h = snapS(g * (k.h0 || k.w0)); }
+      glyphSize(s, k);
     }
+  }
+
+  /* ── a landmark is born at one lattice cell per drawn pixel ────────────
+     Every other kind is born at a size measured in TILES, because a park or
+     a district has no size of its own — it is however big you drag it, and
+     a tile is the unit the rest of the builder snaps to.
+
+     A landmark does have a size of its own. Its glyph is a bitmap fourteen
+     or so pixels across, and there is exactly one footprint at which the
+     lattice can show all of it and no smaller: one cell per pixel. Bigger
+     is legible but wasteful — the same building spread over four times the
+     ground, which is what a tile-measured default gave it, since a tile is
+     four cells and `w0: 10` is forty cells for a fourteen-pixel glyph.
+     Smaller and the lattice has fewer cells than the art has pixels, so
+     detail is being thrown away before it ever reaches the screen.
+
+     So the size is read off the glyph rather than declared: M by N pixels
+     becomes M by N cells. That is the smallest a landmark can be drawn and
+     still be the building you picked, and it is where placing one starts.
+
+     Deliberately NOT snapped. snapS rounds to whole tiles, and rounding a
+     fourteen-cell building to the nearest four would either lose two
+     columns of it or add two of nothing — both of which are the bug this
+     exists to fix. Position still snaps; only the size is exact. */
+  function glyphSize(s, k){
+    if (!k.glyphs || typeof Glyphs === 'undefined') return;
+    const rows = Glyphs.rows(s.variant);
+    if (!rows || !rows.length) return;
+    const c = cellSize();
+    s.w = rows[0].length * c;
+    s.h = rows.length * c;
+  }
+
+  /* ── and grows only in whole multiples of itself ───────────────────────
+     Born at one cell per pixel, a landmark is crisp because every pixel is
+     exactly one diamond. Drag it to one-and-a-half times that and the
+     generator has to put fourteen pixels across twenty-one cells: some
+     pixels get two cells and some get one, and the building comes out
+     with strokes of uneven weight, different ones at every size. The only
+     sizes at which it stays crisp are the ones where a pixel is a whole
+     number of cells — twice, three times — so those are the only sizes a
+     resize can land on.
+
+     Applied to w and h together, from whichever of them is the tighter
+     fit, because the generator fits the glyph inside the box by its own
+     aspect anyway: a box that is snapped on one axis and slack on the
+     other is a crisp building with a margin of nothing around it, and the
+     margin is what the grips would then be moving. Returns null for a
+     kind that is not a landmark, so callers can fall through to the tile
+     snap everything else uses. */
+  function glyphSnap(s, w, h){
+    const k = Kinds.by[s.kind];
+    if (!k || !k.glyphs || typeof Glyphs === 'undefined') return null;
+    const rows = Glyphs.rows(s.variant);
+    if (!rows || !rows.length) return null;
+    const c = cellSize(), M = rows[0].length, N = rows.length;
+    const nmax = Math.max(1, Math.floor(MAXSPAN() / (Math.max(M, N) * c)));
+    const n = clamp(Math.round(Math.min(w / (M * c), h / (N * c))), 1, nmax);
+    return {w: n * M * c, h: n * N * c, n};
   }
 
   /* ── a plan arriving whole ──────────────────────────────────────────────
@@ -354,7 +427,7 @@ const Build = (() => {
                  fall: k.fall0 || 0, out: k.out0 || 0, aim: null,
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
-                 variant: d.variant || (k.variants ? k.variants[0] : 'mixed'),
+                 variant: d.variant || firstVariant(k),
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
       aimFall(s);
       G.shapes.push(s);
@@ -442,8 +515,17 @@ const Build = (() => {
     } else if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
     else {
-      sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
-      sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
+      /* a landmark steps by one multiple of itself, not by fifteen
+         percent: at 1× the next crisp size up is 2×, and 1.15× is nothing */
+      const gs = glyphSnap(sel, sel.w, sel.h);
+      if (gs){
+        const m = (gs.n + (f > 1 ? 1 : -1)) / gs.n;
+        const g2 = glyphSnap(sel, gs.w * m, gs.h * m);
+        sel.w = g2.w; sel.h = g2.h;
+      } else {
+        sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
+        sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
+      }
     }
     changed(sel);
     if (room && typeof Palace !== 'undefined') Palace.refit(room);
@@ -489,8 +571,18 @@ const Build = (() => {
       s._buf = null;
       /* whatever this shape used to cover has to come back, and whatever it
          covers now has to go — so both footprints are invalidated */
+      /* ── except a boundary, whose reach is the plate ─────────────────
+         Two footprints is the right answer for a shape that only speaks
+         about the ground under it. A boundary speaks about all of it, so
+         moving one a tile changes what every shape on the plate is doing —
+         the ones it has just let back in and the ones it has just put
+         outside — and both of those can be a long way from either
+         footprint. There is nothing to intersect against, so nothing is:
+         every buffer goes. */
+      const all = isRadial(s);
       for (const t of G.shapes){
         if (t === s || !t._buf) continue;
+        if (all){ t._buf = null; continue; }
         const tb = t._bb || reachBox(t);
         if (bbHit(tb, nb) || bbHit(tb, ob)) t._buf = null;
       }
@@ -571,18 +663,8 @@ const Build = (() => {
        halves. The geometric half is already done: changed() clears the
        buffer of every shape whose reach meets the moved shape's OLD or NEW
        footprint, and a demolish area is a shape like any other to that loop,
-      /* ── except a boundary, whose reach is the plate ─────────────────
-         Two footprints is the right answer for a shape that only speaks
-         about the ground under it. A boundary speaks about all of it, so
-         moving one a tile changes what every shape on the plate is doing —
-         the ones it has just let back in and the ones it has just put
-         outside — and both of those can be a long way from either
-         footprint. There is nothing to intersect against, so nothing is:
-         every buffer goes. */
-      const all = isRadial(s);
        so a drag invalidates both what it has left and what it has arrived
        over. What changed() never sees is a rebuild it was not the cause of —
-        if (all){ t._buf = null; continue; }
        hiding the layer this area sits on drops it out of `order` entirely,
        and every shape it was weathering would keep its ruined buffer for
        ever. So the set that was in force last time is remembered, and a
@@ -598,6 +680,14 @@ const Build = (() => {
     const modOf = new Array(order.length);
     for (let i = 0; i < order.length; i++){
       const s = order[i];
+      /* ── and a boundary reaches everything ───────────────────────────
+         The bbox test is right for a demolish area, whose whole statement
+         is inside its own footprint. It is exactly wrong for a boundary,
+         because half of what a boundary says is about ground it is nowhere
+         near: a stand of trees off past the rim is not outside the tool's
+         influence, it is outside the map, and the tool has to be asked
+         about it to say so. So a radial modifier is gathered against every
+         shape and answers for the ones it does not touch as well. */
       const m = (!mods.length || isMod(s)) ? null
         : mods.filter(x => isRadial(x) || bbHit(box[i], reachBox(x)));
       modOf[i] = m && m.length ? m : null;
@@ -680,14 +770,6 @@ const Build = (() => {
   function tiles(s, t, fn, tol){
     const bb = Kinds.geo.bbox(s), z = t.tsz, o = z * 0.32, pad = (tol || 0) + z;
     const x0 = Math.max(0, Math.floor((bb[0] - pad) / z)), x1 = Math.min(t.tw - 1, Math.ceil((bb[2] + pad) / z));
-      /* ── and a boundary reaches everything ───────────────────────────
-         The bbox test is right for a demolish area, whose whole statement
-         is inside its own footprint. It is exactly wrong for a boundary,
-         because half of what a boundary says is about ground it is nowhere
-         near: a stand of trees off past the rim is not outside the tool's
-         influence, it is outside the map, and the tool has to be asked
-         about it to say so. So a radial modifier is gathered against every
-         shape and answers for the ones it does not touch as well. */
     const y0 = Math.max(0, Math.floor((bb[1] - pad) / z)), y1 = Math.min(t.th - 1, Math.ceil((bb[3] + pad) / z));
     for (let ty = y0; ty <= y1; ty++)
       for (let tx = x0; tx <= x1; tx++){
@@ -961,6 +1043,38 @@ const Build = (() => {
         dot(x0, y0 + (y1 - y0) * t); dot(x1, y0 + (y1 - y0) * t);
       }
     }
+    /* ── a boundary has two outlines, and only one of them is its edge ───
+       The rim is where the town has finished going. The core is where it
+       has not started, and between them is the entire tool — so a boundary
+       showing only its rim is showing you the half you can already infer
+       from the diamonds that survived, and hiding the half you are
+       actually setting.
+
+       Drawn dimmer than the rim and on the same aqua, because it is the
+       same statement further in rather than a second thing: the ground is
+       untouched up to here, and gone by the line outside it. It goes at
+       Core exactly, not at the 85% the fall marker sits at — this one is a
+       reading rather than a grip, and a reading that is nearly right is
+       worse than none. */
+    if (isRadial(s) && s.core > 0 && s.type !== 'line'){
+      const cw = s.w / 2 * s.core, ch = s.h / 2 * s.core;
+      const cdot = (lx, ly) => {
+        const p = rotpt(s, lx, ly);
+        m = put(a, m, p.x, p.y, AQUA[0], AQUA[1], AQUA[2], al * 0.4,
+                r * 0.8, 0, 0, 0, 1);
+      };
+      if (s.type === 'ellipse'){
+        for (let j = 0; j < N; j++){
+          const th = j / N * 6.283185307;
+          cdot(Math.cos(th) * cw, Math.sin(th) * ch);
+        }
+      } else {
+        for (let j = 0; j <= N / 2; j++){
+          const t = j / (N / 2), lx = -cw + cw * 2 * t, ly = -ch + ch * 2 * t;
+          cdot(lx, -ch); cdot(lx, ch); cdot(-cw, ly); cdot(cw, ly);
+        }
+      }
+    }
     if (isSel){
       const GOLD = [1, 0.76, 0.31], BONE = [0.93, 0.92, 0.89];
       const big = Math.max(7 * px, grid() * 0.3);
@@ -1043,38 +1157,6 @@ const Build = (() => {
       if (d < bd){ bd = d; best = i + 1; }
     }
     s.pts.splice(best, 0, [snapC(p[0]), snapC(p[1])]);
-    /* ── a boundary has two outlines, and only one of them is its edge ───
-       The rim is where the town has finished going. The core is where it
-       has not started, and between them is the entire tool — so a boundary
-       showing only its rim is showing you the half you can already infer
-       from the diamonds that survived, and hiding the half you are
-       actually setting.
-
-       Drawn dimmer than the rim and on the same aqua, because it is the
-       same statement further in rather than a second thing: the ground is
-       untouched up to here, and gone by the line outside it. It goes at
-       Core exactly, not at the 85% the fall marker sits at — this one is a
-       reading rather than a grip, and a reading that is nearly right is
-       worse than none. */
-    if (isRadial(s) && s.core > 0 && s.type !== 'line'){
-      const cw = s.w / 2 * s.core, ch = s.h / 2 * s.core;
-      const cdot = (lx, ly) => {
-        const p = rotpt(s, lx, ly);
-        m = put(a, m, p.x, p.y, AQUA[0], AQUA[1], AQUA[2], al * 0.4,
-                r * 0.8, 0, 0, 0, 1);
-      };
-      if (s.type === 'ellipse'){
-        for (let j = 0; j < N; j++){
-          const th = j / N * 6.283185307;
-          cdot(Math.cos(th) * cw, Math.sin(th) * ch);
-        }
-      } else {
-        for (let j = 0; j <= N / 2; j++){
-          const t = j / (N / 2), lx = -cw + cw * 2 * t, ly = -ch + ch * 2 * t;
-          cdot(lx, -ch); cdot(lx, ch); cdot(-cw, ly); cdot(cw, ly);
-        }
-      }
-    }
     /* the split segment gives up its bend: two straight halves, which you can
        then bow independently */
     if (s.ctrl) s.ctrl.splice(best - 1, 1, null, null);
@@ -1251,8 +1333,13 @@ const Build = (() => {
         if (tag.indexOf('w') >= 0) x0 = l[0];
         if (tag.indexOf('n') >= 0) y0 = l[1];
         if (tag.indexOf('s') >= 0) y1 = l[1];
-        const nw = clamp(snapQS(Math.abs(x1 - x0), q), q, MAXSPAN());
-        const nh = clamp(snapQS(Math.abs(y1 - y0), q), q, MAXSPAN());
+        let nw = clamp(snapQS(Math.abs(x1 - x0), q), q, MAXSPAN());
+        let nh = clamp(snapQS(Math.abs(y1 - y0), q), q, MAXSPAN());
+        /* a landmark lands only on whole multiples of its glyph; an edge
+           grip on one therefore sizes both axes, since the far edge of the
+           other axis is the one that would otherwise be left slack */
+        const gs = glyphSnap(s, nw, nh);
+        if (gs){ nw = gs.w; nh = gs.h; }
         /* the size has been snapped, so the moving edge is put back at
            whatever that size makes it — the fixed one is never recomputed */
         if (tag.indexOf('e') >= 0) x1 = x0 + nw; else if (tag.indexOf('w') >= 0) x0 = x1 - nw;
@@ -1380,6 +1467,20 @@ const Build = (() => {
       '<button class="btn" id="kgap">Remove wall</button></div>' +
       '<div class="knote roomonly">drag along a wall for a door, or a rectangle ' +
       'across one to take it out &middot; either can be selected and deleted</div>' +
+      /* ── the two tools that are not on a layer ────────────────────────
+         Both are modifiers: they draw nothing, and what they do reaches
+         every layer whatever their own is listed as. Under Roads they read
+         as road tools and are only in front of you a quarter of the time,
+         which is wrong for the demolisher and much worse for the boundary,
+         since a boundary is the last thing you reach for and it is about
+         the whole town rather than about any layer of it. So they sit
+         above the layer rows, outside them, and stay there whatever you
+         are working on — and Modify is the third verb this editor has,
+         beside placing a thing and shaping it. */
+      '<div class="plabel fitonly" id="kmodlabel">Modify</div>' +
+      '<div id="kmods" class="kgrid fitonly"></div>' +
+      '<div class="knote fitonly" id="kmodnote">a boundary lands as the plate &middot; ' +
+      'pull it in to where the town stops</div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
@@ -1462,25 +1563,15 @@ const Build = (() => {
           ['bright', 'Bright', 40, 220, 5], ['grain', 'Grain', 1, 4, 1],
           ['scale', 'Scale', 40, 200, 5], ['jitter', 'Jitter', 0, 150, 5],
           ['scatter', 'Scatter', 0, 100, 5], ['fall', 'Fall', 0, 100, 5],
+          /* beside Fall, because they are the same question asked by the
+             two modifiers — which ground is being kept — and only ever one
+             of them is on screen */
+          ['core', 'Core', 0, 95, 5],
           ['out', 'Out', 0, 100, 5], ['pad', 'Clear', 0, 60, 5],
           ['padFade', 'Fade', 0, 80, 5], ['padBreak', 'Break', 0, 100, 5]])
       $('#ktune').appendChild(slider(key, label, min, max, step));
     /* The same factory, the same two ranges the plate's own Bright and
        Jitter use, so the heading is turned up in the units everything else
-      /* ── the two tools that are not on a layer ────────────────────────
-         Both are modifiers: they draw nothing, and what they do reaches
-         every layer whatever their own is listed as. Under Roads they read
-         as road tools and are only in front of you a quarter of the time,
-         which is wrong for the demolisher and much worse for the boundary,
-         since a boundary is the last thing you reach for and it is about
-         the whole town rather than about any layer of it. So they sit
-         above the layer rows, outside them, and stay there whatever you
-         are working on — and Modify is the third verb this editor has,
-         beside placing a thing and shaping it. */
-      '<div class="plabel fitonly" id="kmodlabel">Modify</div>' +
-      '<div id="kmods" class="kgrid fitonly"></div>' +
-      '<div class="knote fitonly" id="kmodnote">a boundary lands as the plate &middot; ' +
-      'pull it in to where the town stops</div>' +
        is turned up in. `h` on the key is what keeps them out of the shape
        branches in applySlider and syncTune. */
     for (const [key, label, min, max, step] of
@@ -1563,10 +1654,6 @@ const Build = (() => {
     if (el) el.innerHTML = '';
     ui();
   }
-          /* beside Fall, because they are the same question asked by the
-             two modifiers — which ground is being kept — and only ever one
-             of them is on screen */
-          ['core', 'Core', 0, 95, 5],
 
   function slider(key, label, min, max, step){
     const row = document.createElement('div');
@@ -1629,6 +1716,7 @@ const Build = (() => {
       }
       return set('fall', v / 100);
     }
+    if (key === 'core')    return set('core', v / 100);
     if (key === 'out')     return set('out', v / 100);
     if (key === 'pad')     return set('pad', v / 10);
     if (key === 'padFade')  return set('padFade', v / 10);
@@ -1640,6 +1728,8 @@ const Build = (() => {
       const w0 = sel.w, h0 = sel.h;
       sel.w = clamp(snapS(v * grid()), grid(), MAXSPAN());
       sel.h = clamp(snapS(sel.w * ratio), grid(), MAXSPAN());
+      const gs = glyphSnap(sel, sel.w, sel.h);
+      if (gs){ sel.w = gs.w; sel.h = gs.h; }
       /* the quad IS the shape, so a size that moved without it would be a
          size the shape does not have — scale the corners by the same two
          factors and w/h stay the shadow they are meant to be */
@@ -1649,6 +1739,57 @@ const Build = (() => {
       }
     }
     changed(sel);
+  }
+
+  /* ── a glyph, drawn as what it will become ─────────────────────────────
+     The chip for a landmark is the building itself, at the pitch the
+     palette has room for, made of the same diamonds the plate will make it
+     of. Drawn rather than written because sixty words are not sixty
+     buildings — and drawn out of diamonds rather than shown as the source
+     PNG, because a chip that previewed the sheet would be promising a
+     material the plate does not use.
+
+     One canvas each, painted once when the palette is built. Sixteen
+     squared elements per glyph across sixty-odd glyphs is a hundred and
+     seventy thousand DOM nodes and a palette that hitches every time you
+     change layers; a canvas is one node and one paint.
+
+     Colour is read off the stylesheet rather than written here. The ten
+     tokens live in `:root` and nowhere else, and that stays true of the
+     script as well as of the CSS. */
+  const ink = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function paintGlyph(cv, name, on){
+    const rows = typeof Glyphs === 'undefined' ? null : Glyphs.rows(name);
+    if (!rows) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    /* Four across inside the palette's 214px, less its padding, its border,
+       each chip's own — and the 6px the vertical scrollbar takes, which is
+       always there because sixty-six buildings never fit. Miss any of those
+       and the fourth column is clipped into a horizontal scrollbar under the
+       picker, which is a worse trade than a slightly smaller glyph. */
+    const S = 34;
+    cv.width = S * dpr; cv.height = S * dpr;
+    cv.style.width = cv.style.height = S + 'px';
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, S, S);
+    const N = rows.length, M = rows[0].length;
+    const p = S / Math.max(N, M);
+    const ox = (S - M * p) / 2, oy = (S - N * p) / 2;
+    /* selection is inversion everywhere else in this game, so the selected
+       glyph is the ground drawn on bone rather than a tinted version of
+       itself — the chip becomes a hole punched in the palette */
+    g.fillStyle = on ? ink('--ground') : ink('--bone');
+    const r = p * 0.62;                    // the same fat diamond type.js uses
+    for (let y = 0; y < N; y++)
+      for (let x = 0; x < M; x++){
+        if (rows[y][x] !== '1') continue;
+        const cx = ox + (x + 0.5) * p, cy = oy + (y + 0.5) * p;
+        g.beginPath();
+        g.moveTo(cx, cy - r); g.lineTo(cx + r, cy);
+        g.lineTo(cx, cy + r); g.lineTo(cx - r, cy);
+        g.closePath(); g.fill();
+      }
   }
 
   /* a stand of trees can be all conifer or all broadleaf, a district all
@@ -1661,15 +1802,24 @@ const Build = (() => {
     if (!box) return;
     const id = sel ? sel.kind : lastKind;
     const k = id ? Kinds.by[id] : null;
-    const list = k && k.variants;
+    const list = variantsOf(k);
     box.hidden = !list; lab.hidden = !list;
     box.innerHTML = '';
     if (!list) return;
+    const glyph = !!(k && k.glyphs);
+    box.classList.toggle('kgl', glyph);
+    if (lab) lab.textContent = glyph ? 'Building' : 'Variant';
     const current = sel && sel.kind === id ? sel.variant : (defs.variant[id] || list[0]);
     for (const v of list){
       const c = document.createElement('div');
-      c.className = 'kchip' + (current === v ? ' sel' : '');
-      c.textContent = v;
+      const on = current === v;
+      c.className = (glyph ? 'gchip' : 'kchip') + (on ? ' sel' : '');
+      if (glyph){
+        c.title = v;
+        const cv = document.createElement('canvas');
+        c.appendChild(cv);
+        paintGlyph(cv, v, on);
+      } else c.textContent = v;
       c.onclick = () => {
         defs.variant[id] = v;
         if (sel && sel.kind === id){ sel.variant = v; changed(sel); }
@@ -1677,10 +1827,26 @@ const Build = (() => {
       };
       box.appendChild(c);
     }
+    /* the one you are on, brought into view — a picker that scrolls sixty
+       buildings is a picker you can lose your place in */
+    const cur = box.querySelector('.sel');
+    if (cur && glyph) cur.scrollIntoView({block: 'nearest'});
   }
 
   function syncTune(){
     const c = cellSize();
+    /* ── Fall and Core are one slot seen from two tools ─────────────────
+       They answer the same question — which ground is being kept — and a
+       shape only ever has one of them, so only one is ever up. Feather
+       goes with Fall for the same reason: on a boundary the rim is the
+       bite rather than the thing the bite is kept off, and a slider that
+       does nothing to what you have selected is worse than one that is not
+       there, because you spend a drag finding out.
+
+       Only ever hidden against a SELECTION. With nothing selected these
+       rows are writing the defaults the next shape is born with, and the
+       next shape could be anything. */
+    const rad = !!sel && isRadial(sel);
     document.querySelectorAll('#ktune .prow').forEach(r => {
       const key = r.dataset.key, lab = r.querySelector('label');
       if (key === 'core') r.hidden = !rad;
@@ -1722,7 +1888,6 @@ const Build = (() => {
       } else if (key === 'padBreak'){
         const v = sel ? (sel.padBreak || 0) : defs.padBreak;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'straight', true, 0, 100);
-    if (key === 'core')    return set('core', v / 100);
       } else if (!sel){
         lab.textContent = 'Size'; r._set(1, '\u2014', false, 1, 60);
       } else if (banded(sel)){
@@ -1747,6 +1912,22 @@ const Build = (() => {
     }
   }
 
+  /* one chip, wherever it is going to hang — the two rows differ in what
+     they hold and in nothing else */
+  function kindChip(p, k){
+    const c = document.createElement('div');
+    c.className = 'kchip';
+    c.innerHTML = '<i style="background:' + k.swatch + '"></i>' + p.label;
+    c.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      armed = {kind: p.kind, type: p.type};
+      lastKind = p.kind;
+      document.body.classList.add('arming');
+      syncUI();
+    });
+    return c;
+  }
+
   /* the kind chips belong to the active layer, so the palette only ever
      shows what you can actually place right now — and the modifiers belong
      to none of them, so they are pulled out and hung above the layer rows
@@ -1761,6 +1942,7 @@ const Build = (() => {
     const box = $('#kkinds'), mbox = $('#kmods');
     if (!box) return;
     box.innerHTML = '';
+    if (mbox) mbox.innerHTML = '';
     for (const p of Kinds.palette){
       const k = Kinds.by[p.kind];
       if (!k) continue;
@@ -1846,18 +2028,6 @@ const Build = (() => {
        and the ranges come from Palace rather than from a second copy of
        them here, so the clamp that guards a stored value and the ends of
        the slider that sets it can never drift apart. */
-    /* ── Fall and Core are one slot seen from two tools ─────────────────
-       They answer the same question — which ground is being kept — and a
-       shape only ever has one of them, so only one is ever up. Feather
-       goes with Fall for the same reason: on a boundary the rim is the
-       bite rather than the thing the bite is kept off, and a slider that
-       does nothing to what you have selected is worse than one that is not
-       there, because you spend a drag finding out.
-
-       Only ever hidden against a SELECTION. With nothing selected these
-       rows are writing the defaults the next shape is born with, and the
-       next shape could be anything. */
-    const rad = !!sel && isRadial(sel);
     document.querySelectorAll('#khtune .prow').forEach(r => {
       const key = r.dataset.key;
       if (key === 'hbright'){
@@ -1917,29 +2087,12 @@ const Build = (() => {
     document.querySelectorAll('#klayers .krow').forEach(r => {
       r.classList.toggle('sel', r.dataset.layer === layer);
       r.classList.toggle('off', !vis[r.dataset.layer]);
-  /* one chip, wherever it is going to hang — the two rows differ in what
-     they hold and in nothing else */
-  function kindChip(p, k){
-    const c = document.createElement('div');
-    c.className = 'kchip';
-    c.innerHTML = '<i style="background:' + k.swatch + '"></i>' + p.label;
-    c.addEventListener('pointerdown', ev => {
-      ev.preventDefault();
-      armed = {kind: p.kind, type: p.type};
-      lastKind = p.kind;
-      document.body.classList.add('arming');
-      syncUI();
-    });
-    return c;
-  }
-
     });
     syncKinds();
     syncVariants();
     syncTune();
     syncRoute();
     const allowed = sel ? (Kinds.by[sel.kind].types || []) : [];
-    if (mbox) mbox.innerHTML = '';
     document.querySelectorAll('#kshapes .kchip').forEach(c => {
       c.classList.toggle('sel', !!sel && sel.type === c.dataset.shape);
       c.classList.toggle('dim', !allowed.includes(c.dataset.shape));
@@ -1983,7 +2136,7 @@ const Build = (() => {
     layer = id;
     if (sel && layerOf(sel) !== id) sel = null;
     if (!sel){
-      const first = Kinds.list.find(k => k.layer === id && k.variants);
+      const first = Kinds.list.find(k => k.layer === id && variantsOf(k));
       lastKind = first ? first.id : null;
     }
     syncUI();
@@ -2014,6 +2167,7 @@ const Build = (() => {
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
         fall: s.fall || 0, out: s.out || 0, quad: s.quad || null,
+        core: s.core === undefined ? 0.35 : s.core,
         aim: s.aim ? [s.aim[0], s.aim[1]] : null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
         x: s.x, y: s.y, w: s.w, h: s.h, r: s.r, pts: s.pts, ctrl: s.ctrl, width: s.width
@@ -2095,6 +2249,10 @@ const Build = (() => {
              those were doing — so an old town comes back unchanged */
           fall: s.fall === undefined ? 0 : s.fall,
           out: s.out === undefined ? 0 : s.out,
+          /* absent on everything saved before Boundary existed, and the
+             kind's own default is what one of those would have been born
+             with — nothing else reads it, so nothing else notices */
+          core: s.core === undefined ? (k.core0 === undefined ? 0.35 : k.core0) : s.core,
           aim: (Array.isArray(s.aim) && s.aim.length === 2) ? [s.aim[0], s.aim[1]] : null,
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
@@ -2102,7 +2260,7 @@ const Build = (() => {
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
           r: Math.min(s.r || cellSize(), RMAX * cellSize()),
           label: s.label || '', n: s.n || 0, room: s.room || 0,
-          variant: s.variant || (k.variants ? k.variants[0] : 'mixed')
+          variant: s.variant || firstVariant(k)
         });
       });
     /* a cut drawn before cuts were held to the cell grid is corrected on
@@ -2167,7 +2325,6 @@ const Build = (() => {
     setLayer(startLayer());
     setOn(false);
   }
-        core: s.core === undefined ? 0.35 : s.core,
 
   function setMode(v){
     mode = v === 'rooms' ? 'rooms' : 'fit';
@@ -2182,7 +2339,3 @@ const Build = (() => {
           sync: syncUI, head: syncHead,
           commit: save, key: () => KEY, count: () => G.shapes.length};
 })();
-          /* absent on everything saved before Boundary existed, and the
-             kind's own default is what one of those would have been born
-             with — nothing else reads it, so nothing else notices */
-          core: s.core === undefined ? (k.core0 === undefined ? 0.35 : k.core0) : s.core,

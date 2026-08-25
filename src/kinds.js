@@ -980,6 +980,108 @@ const Kinds = (() => {
     });
   }
 
+  /* ── the landmark ──────────────────────────────────────────────────────
+     One named building, drawn from a glyph, where `buildings` draws a whole
+     district from a rule. The district generator is the right tool for the
+     ground a town is mostly made of, and the wrong one for the six things
+     in a town that anybody actually navigates by — the cathedral, the
+     station, the pagoda on the hill. Those have a SHAPE, and a rule that
+     could produce it would be a rule with one output.
+
+     So the shape is authored, in `assets/`, and sliced offline into a grid
+     of lit squares by tools/glyphs.py. What arrives here is that grid, and
+     every lit square becomes one diamond — exactly what src/type.js does
+     with a letterform, and for exactly the same reason. The sheet is never
+     loaded, never blitted, never sampled at run time. There is no sprite on
+     the plate at any point, only the same lattice everything else is made
+     of, which is what keeps a landmark and the grass it stands on reading
+     as one material.
+
+     The glyph is fitted to the shape's own box, so resizing is resampling
+     rather than magnification: pull it in and the building is redrawn at
+     the coarser pitch, the way the printed map would have drawn it smaller
+     in the first place. A cell takes the OR of every glyph square it
+     covers rather than the one under its centre, because the alternative
+     is that a spire — which is one square wide and the whole reason you
+     picked that building — is the first thing to vanish when you shrink it.
+
+     Rect only. A landmark's outline is the glyph; asking an ellipse to clip
+     it as well would be two silhouettes fighting over one building. */
+  function landmark(s, cell, buf){
+    if (typeof Glyphs === 'undefined') return;
+    const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
+    if (!rows || !rows.length) return;
+    const N = rows.length, M = rows[0].length;
+    const lit = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '1';
+    /* ── the glyph keeps its proportions ─────────────────────────────────
+       A glyph is stored at whatever size it was drawn — twelve by fourteen,
+       nine by twenty — so mapping it straight onto the shape's box would
+       stretch a bell tower into a bunker the moment you dragged the box
+       wider than it is tall. Instead the largest rectangle of the glyph's
+       own aspect is fitted inside the box and centred, and the rest of the
+       box draws nothing.
+
+       That makes the box a frame you size rather than a shape you deform,
+       which is also what makes the corner grips behave: drag any of them
+       and the building grows or shrinks, and never distorts. */
+    const fit = Math.min((s.w || 1) / M, (s.h || 1) / N);
+    const dw = M * fit, dh = N * fit;
+    const stepx = cell / dw * M, stepy = cell / dh * N;
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const l = geo.local(s, x, y);
+      const fx = (l[0] + dw / 2) / dw * M, fy = (l[1] + dh / 2) / dh * N;
+      const gx0 = Math.floor(fx), gy0 = Math.floor(fy);
+      /* ── a cell reads one pixel, unless it covers more than one ────────
+         Taking the OR of every glyph pixel a cell's footprint touches is
+         what keeps a spire alive when a landmark is shrunk. It is the
+         wrong thing to do at one cell per pixel, which is where a landmark
+         now starts: there the footprint straddles two columns about half
+         the time, and OR-ing the pair thickens every stroke and closes
+         every one-pixel window. So the widening only switches on once a
+         cell genuinely spans more than a pixel. */
+      const gx1 = stepx <= 1 ? gx0 : Math.floor(fx + stepx - 1e-9);
+      const gy1 = stepy <= 1 ? gy0 : Math.floor(fy + stepy - 1e-9);
+      let on = false, open = 0;
+      for (let gy = gy0; gy <= gy1 && !on; gy++)
+        for (let gx = gx0; gx <= gx1; gx++)
+          if (lit(gx, gy)){ on = true; break; }
+      if (!on) return;
+      /* how much of the building's own outline this cell sits on. Taken
+         from the block's rim rather than from one square, so an edge
+         survives being resampled down alongside the thing it edges. */
+      if (!lit(gx0 - 1, gy0)) open++;
+      if (!lit(gx1 + 1, gy0)) open++;
+      if (!lit(gx0, gy0 - 1)) open++;
+      if (!lit(gx0, gy1 + 1)) open++;
+      const r = hash(u, v, s.seed + 81);
+      const roof = !lit(gx0, gy0 - 1);            // nothing above: the lit top edge
+      /* ── the halftone ────────────────────────────────────────────────
+         A filled glyph stamped solid would be a silhouette, and a
+         silhouette is the one thing on this plate that reads as a
+         cut-out. So the inside is screened: a checker sets the pitch and
+         the noise breaks it up, and what comes out is tone rather than
+         ink — the same trick the printed map uses to say "built" without
+         saying "black". The rim is left solid, so the building keeps a
+         drawn edge and only its body is screened. */
+      const screen = (u + v) & 1;
+      let col, a, sz;
+      /* The warm note is spent sparingly and in that order: a touch of trim
+         along the top edge, plain wall down the sides, and a lit window
+         only now and then. A landmark that spent it everywhere would come
+         out gold, and the plate palette is muted on purpose — the town has
+         to read as a printed map at night. The first cut of this screened
+         a third of every building in window colour and the result was the
+         only thing on the screen, which is exactly what STYLE.md warns a
+         saturated kind will do. */
+      if (roof){ col = mixc(C.wall, C.trim, 0.16 + r * 0.18); a = 0.92; sz = 1.0; }
+      else if (open){ col = shade(C.wall, 0.86 + r * 0.26); a = 0.8 + r * 0.16; sz = 0.96; }
+      else if (screen && r > 0.74){ col = mixc(C.win, C.wall, 0.4 + r * 0.3); a = 0.62 + r * 0.26; sz = 0.58; }
+      else { col = shade(C.wallDim, 1.02 + r * 0.34); a = 0.4 + r * 0.22; sz = 0.88; }
+      buf.cell(x, y, col, a * fade, sz, 0, a * 0.8 * fade, sz * (screen ? 1.4 : 1.06),
+               screen && !open && !roof ? 1 : 0, 0.02 + r * 0.02, hash(u, v, s.seed + 83));
+    });
+  }
+
   /* grass, thinner stands, a walk just inside the fence, and a pond if
      there is room for one */
   function park(s, cell, buf){
@@ -1410,6 +1512,35 @@ const Kinds = (() => {
     {id: 'houses',    label: 'Houses',    layer: 'built',  types: AREA,
      variants: ['mixed', 'detached', 'terraced'],
      walk: 0, stamp: 2, gen: houses,    swatch: '#C9A488'},
+    /* ── the landmark ──────────────────────────────────────────────────
+       `glyphs: true` rather than a `variants` list, and the difference is
+       the whole reason the palette grew a new control. A variant is a word
+       you can put on a chip — towers, terraced, conifer — and there are
+       three of them. A landmark is one of sixty-odd buildings told apart
+       by their SHAPE, and sixty words nobody can map back to a shape is a
+       worse picker than no picker. So the palette draws each one as its
+       own glyph and you choose by sight; this flag is what tells it to.
+
+       The list itself is not written here. It is whatever tools/glyphs.py
+       last sliced, read off Glyphs at load — so adding a building to the
+       sheet and re-slicing puts it in the palette, and there is no second
+       place to remember to update.
+
+       Stamped before the districts (stamp 0) because a landmark is what a
+       district is arranged around: the ground it stands on should be the
+       thing that loses the argument, not the cathedral. */
+    /* Feather is off, where every other area kind starts at four. A feather
+       fades a kind out as it approaches the rim of its shape, which is the
+       right behaviour when the rim is an arbitrary box drawn around a field
+       of grass. Here the rim IS the building's outline, and fading it is
+       fading exactly the line that says which building this is. */
+    /* w0/h0 are a fallback and nothing more. A landmark is born at one
+       lattice cell per drawn pixel, worked out from the glyph itself in
+       build.js — these numbers are only what it falls back to if the glyph
+       table failed to load, and they are in tiles like every other kind's. */
+    {id: 'landmark',  label: 'Landmark',  layer: 'built',  types: ['rect'],
+     glyphs: true, w0: 4, h0: 4, feather0: 0,
+     walk: 0, stamp: 0, gen: landmark,  swatch: '#D8D2C6'},
     /* ── the demolish area ─────────────────────────────────────────────
        Not deletion and not occlusion: a MODIFIER, and the engine's third
        verb. `Remove wall` in the floor registry is the wrong model to copy
@@ -1496,6 +1627,7 @@ const Kinds = (() => {
     {label: 'Roundabout', kind: 'road',      type: 'ring'},
     {label: 'Buildings',  kind: 'buildings', type: 'rect'},
     {label: 'Houses',     kind: 'houses',    type: 'rect'},
+    {label: 'Landmark',   kind: 'landmark',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
     /* an oval by default: a town thins out into the country in every
        direction at once, and a rect is the answer you reach for when it

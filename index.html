@@ -51,10 +51,10 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
    out and fell back to the browser's own, which is a bright bar in a --well
    trough — the one place a light scrollbar shows against a dark ground. */
 #tune::-webkit-scrollbar,#palette::-webkit-scrollbar,#route::-webkit-scrollbar,
-#porder::-webkit-scrollbar,#pjson::-webkit-scrollbar{width:6px}
+#porder::-webkit-scrollbar,#pjson::-webkit-scrollbar,.kgl::-webkit-scrollbar{width:6px}
 #tune::-webkit-scrollbar-thumb,#palette::-webkit-scrollbar-thumb,
 #route::-webkit-scrollbar-thumb,#porder::-webkit-scrollbar-thumb,
-#pjson::-webkit-scrollbar-thumb{background:var(--thumb)}
+#pjson::-webkit-scrollbar-thumb,.kgl::-webkit-scrollbar-thumb{background:var(--thumb)}
 #hud{position:fixed;left:16px;top:14px;padding:10px 14px;display:flex;gap:18px;
   font-size:10px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
 #hud b{color:var(--dim);font-weight:400;margin-right:6px}
@@ -147,6 +147,21 @@ body.ordering #palette{display:none}
 .kchip.sel{background:var(--bone);color:var(--ground)}
 .kchip.dim{opacity:.25;pointer-events:none}
 .kchip i{width:8px;height:8px;flex:none;transform:rotate(45deg)}
+/* the landmark picker: the same chip, sized to a drawn building rather than
+   to a word, and scrolling because there are sixty of them. Four across is
+   what fits the palette's 214px at a pitch the glyph is still readable at. */
+/* `flex:none` is load-bearing. #palette is a flex column that already
+   overflows, and a flex item which scrolls has an automatic minimum size of
+   zero — so without this the picker is the one item flex chooses to crush,
+   and it collapses to 0px while its chips lay out correctly inside a box
+   that clips them. It renders as a heading with nothing under it. */
+.kgl{grid-template-columns:repeat(4,1fr);gap:4px;flex:none;max-height:196px;overflow-y:auto}
+.gchip{display:flex;align-items:center;justify-content:center;padding:2px;cursor:grab;
+  border:1px solid rgba(237,234,227,.2);transition:background .12s,color .12s}
+.gchip:hover{background:rgba(237,234,227,.12)}
+.gchip:active{cursor:grabbing}
+.gchip.sel{background:var(--bone)}
+.gchip canvas{display:block}
 #kshapes .kchip{cursor:pointer}
 .kfoot{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:3px}
 .knote{color:var(--dim);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
@@ -417,9 +432,9 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 43, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 46, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
-  ['assets/map.js','src/render.js','src/lattice.js','src/kinds.js',
+  ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',

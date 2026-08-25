@@ -386,6 +386,12 @@ const Kinds = (() => {
           if (geo.inside(o._cut[j], x, y)){ gone = true; break; }
         if (gone) continue;
       }
+      /* a print takes only the ground under its ink and its own dark; the
+         terrain runs right up to the drawn edge and shows in every gap */
+      if ((REG[scope].by[o.kind] || {}).glyphs){
+        if (glyphAt(o, x, y) !== '0') return true;
+        continue;
+      }
       /* `pad` is the whole of the clearance, measured from the shape's edge:
          the terrain never gives up more ground than that. `padFade` spends
          part of that distance dithering the boundary instead of cutting it,
@@ -1010,6 +1016,24 @@ const Kinds = (() => {
 
      Rect only. A landmark's outline is the glyph; asking an ellipse to clip
      it as well would be two silhouettes fighting over one building. */
+  /* which square of a print's glyph a world point falls on: '1' ink, '2'
+     the building's own dark, '0' the town around it — and '0' for anything
+     off the glyph or not a print at all. Shared by the generator and by
+     `covered`, so a print takes exactly the ground it draws on. Its box is
+     a frame around the drawing, and a frame takes nothing. */
+  function glyphAt(s, x, y){
+    const k = REG[scope].by[s.kind];
+    if (!k || !k.glyphs || typeof Glyphs === 'undefined') return '0';
+    const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
+    if (!rows || !rows.length) return '0';
+    const N = rows.length, M = rows[0].length;
+    const fit = Math.min((s.w || 1) / M, (s.h || 1) / N);
+    const dw = M * fit, dh = N * fit;
+    const l = geo.local(s, x, y);
+    const gx = Math.floor((l[0] + dw / 2) / dw * M), gy = Math.floor((l[1] + dh / 2) / dh * N);
+    return gx >= 0 && gy >= 0 && gx < M && gy < N ? rows[gy][gx] : '0';
+  }
+
   function landmark(s, cell, buf){
     if (typeof Glyphs === 'undefined') return;
     const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);

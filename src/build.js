@@ -123,6 +123,9 @@ const Build = (() => {
      wedge, and neither of those is a question a shape measured from its
      own centre outward can be asked. It gets Core instead. */
   const isRadial = s => !!(Kinds.by[s.kind] || {}).radial;
+  /* a drawn building: one size, the size it was drawn at, and no grips —
+     it is placed like a print, moved whole, and that is the whole of it */
+  const isPrint = s => !!(s && (Kinds.by[s.kind] || {}).glyphs);
   /* ── the choices a kind offers, however it offers them ─────────────────
      Most kinds carry a short written list. A landmark carries `glyphs`
      instead, and its list is whatever tools/glyphs.py last sliced — read
@@ -370,26 +373,20 @@ const Build = (() => {
      kind that is not a landmark, so callers can fall through to the tile
      snap everything else uses.
 
-     The birth size is also the ceiling. A building drawn at fourteen
-     pixels is a fourteen-pixel building; blown up to twice that it is the
-     same fourteen pixels with the gaps showing, and a town where one
+     There is now exactly one such size. A building drawn at fourteen
+     pixels is a fourteen-pixel building: bigger is the same pixels with
+     the gaps showing, smaller is detail thrown away, and a town where one
      cathedral is drawn at a different scale from the next is a town with
-     no scale at all. So there is no 2×: `n` is 1 or less. Below 1× the
-     glyph is resampled — lossy, and allowed, because a small building in
-     the distance is a thing a map does — and the box is held to whole
-     cells with the glyph's own aspect, since a box wider than the glyph
-     it holds is only margin. */
+     no scale at all. So a print has no grips and `[`/`]` ignore it, and
+     this is the backstop for the paths that still carry a size — a plan
+     arriving whole, the size field — which all land back on 1×. */
   function glyphSnap(s, w, h){
     const k = Kinds.by[s.kind];
     if (!k || !k.glyphs || typeof Glyphs === 'undefined') return null;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return null;
-    const c = cellSize(), M = rows[0].length, N = rows.length;
-    const f = Math.min(w / (M * c), h / (N * c));
-    if (f >= 1) return {w: M * c, h: N * c, n: 1};
-    const mw = Math.max(3, Math.round(f * M));
-    const mh = Math.max(3, Math.round(mw * N / M));
-    return {w: mw * c, h: mh * c, n: mw / M};
+    const c = cellSize();
+    return {w: rows[0].length * c, h: rows.length * c, n: 1};
   }
 
   /* ── a plan arriving whole ──────────────────────────────────────────────
@@ -510,7 +507,7 @@ const Build = (() => {
 
   /* [ and ] mean thickness on a route and size on an area */
   function scaleSel(f){
-    if (!sel) return;
+    if (!sel || isPrint(sel)) return;
     const room = sel.label && mode === 'rooms' ? sel : null;
     const g = grid();
     if (fine(sel) && sel.type !== 'line' && sel.type !== 'ring'){
@@ -527,18 +524,8 @@ const Build = (() => {
     } else if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
     else {
-      /* a drawn building steps by one cell of width, not by fifteen
-         percent, which on a fourteen-cell building is nothing; and never
-         above the size it was drawn at */
-      const gs = glyphSnap(sel, sel.w, sel.h);
-      if (gs){
-        const c = cellSize(), d = f > 1 ? c : -c;
-        const g2 = glyphSnap(sel, gs.w + d, gs.h + d * gs.h / gs.w);
-        sel.w = g2.w; sel.h = g2.h;
-      } else {
-        sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
-        sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
-      }
+      sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
+      sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
     }
     changed(sel);
     if (room && typeof Palace !== 'undefined') Palace.refit(room);
@@ -914,6 +901,7 @@ const Build = (() => {
             0.25 * a[1] + 0.5 * c[1] + 0.25 * b[1]];
   }
   function handles(s){
+    if (isPrint(s)) return [];
     if (s.type === 'line'){
       /* The anchors are still SHOWN — an end you cannot see is an end you
          will keep trying to grab — they are simply not targets. What happens
@@ -1864,6 +1852,7 @@ const Build = (() => {
       const key = r.dataset.key, lab = r.querySelector('label');
       if (key === 'core') r.hidden = !rad;
       else if (key === 'fall' || key === 'feather') r.hidden = rad;
+      else if (key === 'size') r.hidden = isPrint(sel);   // a print has one size
       if (key === 'core'){
         const v = sel ? (sel.core === undefined ? defs.core : sel.core) : defs.core;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'from the middle',

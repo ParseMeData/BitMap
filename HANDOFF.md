@@ -267,25 +267,30 @@ put a second material on the plate — a picture of a building over a town made
 of diamonds — which is the objection the whole renderer exists to answer.
 `glyphs.js` is generated: hand-edit it and the next slice reverts you.
 
-**A landmark is born at one cell per pixel, and that is its ceiling.**
-Every other kind is born in tiles, because a park has no size of its own.
-A fourteen-pixel glyph does, and one cell per pixel is the only footprint
-that shows all of it and no more — tile-snapping that to sixteen adds two
-columns of nothing and to twelve loses two of building, which is the same
-bug from both sides. So `glyphSize` reads the birth size off the glyph and
-does not snap it, and `glyphSnap` refuses anything larger: bigger is the
-same pixels with gaps between, and a town drawn at two scales is drawn at
-none. Smaller is allowed and lossy, held to whole cells at the glyph's
-aspect; `[`/`]` step a cell, because ×1.15 on a fourteen-cell building
-rounds back to where it was. The generator fits the glyph inside the box
-by aspect, so a box snapped on the tighter axis and slack on the other is
-not distortion, only margin.
+**A drawn building is a print: one size, no grips.** Every other kind is
+born in tiles, because a park has no size of its own. A fourteen-pixel
+glyph does, and one cell per pixel is the only footprint that shows all of
+it and no more — tile-snapping that to sixteen adds two columns of nothing
+and to twelve loses two of building, which is the same bug from both
+sides. So `glyphSize` reads the birth size off the glyph and does not snap
+it, `handles()` gives a print none, `scaleSel` ignores it, and `glyphSnap`
+lands every path that still carries a size back on 1×. Resizing went
+through two designs in one day — whole multiples, then a ceiling with
+shrink — before Eden settled it: the thing is a print, and a print is not
+resized.
+
+**A print occludes under its ink, not its box.** `covered()` takes the
+ground under every occluder's footprint, and a landmark's footprint is a
+rectangle around a building that is not one — so the terrain vanished in a
+square. For a glyph kind it now asks `glyphAt()` per cell and takes only
+'1' and '2'; the box is a frame, and a frame takes nothing.
 
 **The slicer decides inside from outside; the sheet cannot.** Windows and
 sky are both black on the sheet. Flood-filling from the sprite's edge
-tells them apart, and what is not reached is written `'2'` and drawn as
-dark cover at stamp time, with a one-square ring grown around the whole
-silhouette so the building stands on its own ground. Doing this in
+tells them apart, and what is not reached is written `'2'` and painted the
+plate's own colour at stamp time — a hole to the night, with the grass
+behind it gone. A grey there read as a plinth, and a ring of it around the
+silhouette read as a slab; both were tried and both were wrong. Doing this in
 `kinds.js` per cell instead would mean a flood fill on every stamp of every
 landmark; doing it here means it is done once, when the art changes, and
 holds for every sheet that is ever imported.

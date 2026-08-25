@@ -319,6 +319,9 @@ const Kinds = (() => {
 
   /* ── the ink ── */
   const C = {
+    /* the plate itself — index.html's --ground and render.js's clearColor,
+       kept in step by hand; a cell painted this is a cell that is not there */
+    plate:   [0.031, 0.031, 0.043],
     road:    [1.00, 0.99, 0.97], kerb:    [0.52, 0.52, 0.56],
     paving:  [0.30, 0.30, 0.34],
     grass:   [0.29, 0.50, 0.26], grassHi: [0.50, 0.70, 0.36], grassDim: [0.20, 0.36, 0.21],
@@ -1053,12 +1056,12 @@ const Kinds = (() => {
         }
       if (!on){
         if (!ground) return;
-        /* the building's own ground: flat, dark, a shade off the plate so
-           the plinth reads as a footprint and not as a hole. Oversized so
-           the squares knit into cover with nothing between them. */
-        const rg = hash(u, v, s.seed + 85);
-        const gcol = shade(C.wallDim, 0.62 + rg * 0.1);
-        buf.cell(x, y, gcol, 0.92 * fade, 1.18, 0, 0.9 * fade, 1.14, 0, 0.01, rg);
+        /* the building's own ground, in the plate's own colour: the
+           detail inside a building reads as transparent, and only the grass
+           that would have shown through it is gone. Opaque, unshaded, and
+           oversized so the squares knit into cover with nothing between —
+           a grey here read as a plinth, and a plinth was not wanted. */
+        buf.cell(x, y, C.plate, fade, 1.18, 0, fade, 1.14, 0, 0, hash(u, v, s.seed + 85));
         return;
       }
       /* how much of the building's own outline this cell sits on. Taken

@@ -434,6 +434,24 @@ const Kinds = (() => {
     return (s._span = Math.max(m, 1e-6));
   }
 
+  /* ── how far out of a boundary a point is ──────────────────────────────
+     0 in the middle, 1 at the rim, past 1 outside it. Normalised on each
+     axis separately, so the number means the same thing on a boundary
+     stretched along a valley as on a round one, and taken in the shape's
+     own frame so the rotate grip turns it with everything else.
+
+     An oval is measured to its own edge and a rectangle to its own, rather
+     than both to the ellipse inscribed in the box. A boundary is the line
+     the map's detail stops at, and you have to be able to see that line:
+     a ramp that finished short of a rect's corners would leave four wedges
+     of untouched town standing outside the shape drawn to contain it. */
+  function radius(s, x, y){
+    const l = geo.local(s, x, y);
+    const a = Math.abs(l[0]) / Math.max(s.w / 2, 1e-6);
+    const b = Math.abs(l[1]) / Math.max(s.h / 2, 1e-6);
+    return s.type === 'ellipse' ? Math.hypot(a, b) : Math.max(a, b);
+  }
+
   const RUIN = {m: null, w: 0, lost: 0, lseed: 0};
   function bitten(mods, x, y, cell){
     RUIN.m = null; RUIN.w = 0; RUIN.lost = 0; RUIN.lseed = 0;
@@ -447,7 +465,42 @@ const Kinds = (() => {
          else in this file. */
       const f = Math.max(0, m.feather || 0);
       let w, lost = 0;
-      if (m.quad){
+      /* asked of the KIND and not of the shape: `radial` is what a boundary
+         IS, not something one was saved carrying, so a town written before
+         this existed reads back with every boundary still radial and there
+         is no field to migrate */
+      if ((REG[scope].by[m.kind] || {}).radial){
+        /* ── a boundary is a demolisher pointed outwards ─────────────────
+           Same third verb, same two operations, and the ruin arrives
+           through the same arithmetic below. What differs is only where it
+           is measured from: a demolish area's damage comes from one SIDE
+           and Feather keeps it off every rim, so the strongest bite is in
+           the middle. A boundary's comes from the MIDDLE, and the rim is
+           where the bite is total — which is Feather turned inside out, so
+           Feather is not read here at all.
+
+           `core` is the heart it holds off: everything inside that
+           fraction of the radius is the town exactly as it was drawn, and
+           the ramp is spread across whatever is left between there and the
+           rim. So the middle is untouched, and the further out you go the
+           harder the ground goes, which is the tool said in one line.
+
+           Past the rim it is not a ramp at all: the ground is gone
+           outright, whatever Out is set to. That is the difference between
+           weathering a district and saying where the map ends — inside the
+           shape the town thins, outside it there is no town, and the two
+           meet at the outline you can see. This is also why `out0` is 1:
+           the ramp has to arrive at the same nothing the outside already
+           is, or the rim would be a step. */
+        const q = radius(m, x, y);
+        if (q >= 1){ w = 1; lost = 1; }
+        else {
+          const core = clamp01(m.core === undefined ? 0.35 : m.core);
+          const t = core >= 1 ? 0 : clamp01((q - core) / (1 - core));
+          if (t <= 0) continue;                  // still the untouched heart
+          w = t;
+        }
+      } else if (m.quad){
         /* ── a quad has two boundaries, and they do different jobs ────────
            The RECTANGLE is the rim: it is where the tool's influence ends,
            and Feather tapers the whole ruin — the wedge included — as it
@@ -1393,7 +1446,42 @@ const Kinds = (() => {
         because opening or blocking a tile is the one thing it must not do */
      walk: 1, stamp: 9, gen: nothing,   swatch: '#3A3A44',
      modifies: true, jitter0: 0.35, scatter0: 0.5, fall0: 1,
-     pad0: 0, padFade0: 0, padBreak0: 0}
+     pad0: 0, padFade0: 0, padBreak0: 0},
+    /* ── the boundary ──────────────────────────────────────────────────
+       The same verb as the demolisher and the same machinery under it —
+       `modifies` does all three of its jobs here unchanged — turned round
+       to answer a different question. A demolish area says *this district
+       is coming apart*. A boundary says *the map stops here*: you lay one
+       over the whole town, the middle stays exactly as you drew it, and
+       everything on the way out to the rim goes progressively harder
+       until, at the outline, there is nothing.
+
+       `radial` is the whole difference, and it is read in one place —
+       bitten(). It swaps the side the damage comes from for the middle,
+       which also puts Feather and Fall out of a job: both are about which
+       RIM the bite is kept off, and here the rim is the bite. `core` takes
+       their place, and it is the only new number the tool needs.
+
+       It reaches every shape rather than the ones its box happens to meet,
+       because half of what a boundary says is about ground it is nowhere
+       near: a stand of trees off past the rim is not outside the tool's
+       influence, it is outside the map.
+
+       Born big and centred rather than dragged out, because there is
+       almost never a second one and it is almost always the plate — see
+       framePlate() in build.js. Out at full, so the ramp arrives at the
+       same nothing the outside of the shape already is and the rim is not
+       a step. The swatch is the aqua both other drawing-nothing tools are
+       already outlined in, so the tools that take rather than lay look
+       alike in the palette as well as on the plate. */
+    {id: 'boundary', label: 'Boundary', layer: 'roads',  types: AREA,
+     /* never read: a modifier is skipped where the walk grid is stamped —
+        the town outside a boundary is gone from the picture, not from the
+        route, and deciding otherwise would strand the walker */
+     walk: 1, stamp: 9, gen: nothing,   swatch: '#5FBFC4',
+     modifies: true, radial: true, core0: 0.35,
+     jitter0: 0.4, scatter0: 0.35, out0: 1,
+     feather0: 0, fall0: 0, pad0: 0, padFade0: 0, padBreak0: 0}
   ];
   /* what the palette offers: a kind plus the shape it starts as, so a
      roundabout is one chip rather than a mode you have to know about */
@@ -1408,7 +1496,11 @@ const Kinds = (() => {
     {label: 'Roundabout', kind: 'road',      type: 'ring'},
     {label: 'Buildings',  kind: 'buildings', type: 'rect'},
     {label: 'Houses',     kind: 'houses',    type: 'rect'},
-    {label: 'Demolish',   kind: 'demolish',  type: 'rect'}
+    {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
+    /* an oval by default: a town thins out into the country in every
+       direction at once, and a rect is the answer you reach for when it
+       does not — one chip away on the Shape row */
+    {label: 'Boundary',   kind: 'boundary',  type: 'ellipse'}
   ];
 
   /* ── the floor registry ────────────────────────────────────────────────

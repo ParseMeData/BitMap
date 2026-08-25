@@ -126,7 +126,7 @@ function setSparks(v){
 
 /* ── build ── */
 function analyse(){
-  G.A = Lattice.analyse(G.px, G.W, G.H, T.cols, T);
+  G.A = Lattice.analyse(G.px, G.W, G.H, plateCols(), T);
 }
 function compose(upload){
   const buf = BLANK ? new Float32Array(0) : Lattice.compose(G.A, T);
@@ -724,12 +724,26 @@ function refit(){
 }
 
 /* ── boot ── */
+/* ── the plate is wider than the sheet ─────────────────────────────────
+   The printed map is taller than it is wide and the window is the other
+   way round, so a plate the sheet's exact size leaves a margin down the
+   right that looks like map and is not. The plate is the sheet plus this
+   many lattice cells of plain ground on the right — measured in cells,
+   not pixels, so the cell pitch the whole town is built at does not
+   move: the lattice gets the same extra columns the picture gets. The
+   sheet itself is untouched; the strip is the plate's own ground colour,
+   which the classifier reads as open ground and Blank zeroes anyway. */
+const PLATE_EXT_COLS = 64;
+const plateCols = () => T.cols + PLATE_EXT_COLS;
 function boot(img){
-  G.W = img.naturalWidth; G.H = img.naturalHeight;
+  const ext = Math.round(img.naturalWidth / T.cols * PLATE_EXT_COLS);
+  G.W = img.naturalWidth + ext; G.H = img.naturalHeight;
+  G.sheetW = img.naturalWidth;      // the printed sheet's own width, for what is anchored to it
   const c = document.createElement('canvas');
   c.width = G.W; c.height = G.H;
   const cx = c.getContext('2d', {willReadFrequently: true});
   cx.imageSmoothingEnabled = false;
+  cx.fillStyle = '#08080B'; cx.fillRect(0, 0, G.W, G.H);
   cx.drawImage(img, 0, 0);
   G.px = cx.getImageData(0, 0, G.W, G.H).data;
 
@@ -739,7 +753,7 @@ function boot(img){
      weave underneath it — and its pattern still travels with it exactly
      when you drag, because a tile step is a whole number of cells. */
   G.terr = Lattice.terrain(G.px, G.W, G.H,
-                           Math.max(8, Math.round(T.cols / G.cellsPerTile)));
+                           Math.max(8, Math.round(plateCols() / G.cellsPerTile)));
   /* the classifier's own reading of the map, kept pristine: every edit in
      build mode restamps from this rather than piling up on itself */
   G.terrBase = {walk: G.terr.walk.slice(), path: G.terr.path.slice()};

@@ -1395,6 +1395,12 @@ may have many roads, long or short, and each can lead to a plate of its
 own. Pressing sideways off a road mid-way never asks; only a real end
 does.
 
+The plate is the printed sheet plus a strip of plain ground down the
+right — `PLATE_EXT_COLS` lattice cells of it, 64 today — because the sheet
+is taller than it is wide and the window is the other way round. Measured
+in cells so the pitch the town is built at does not move; the tracing
+underlay stays anchored to the sheet, not the plate.
+
 The plate is the map, and nothing is drawn past its edge: a line's
 points and an area's centre are held inside it on every edit, because a
 road drawn into the margin beside the plate is a road the walker stops

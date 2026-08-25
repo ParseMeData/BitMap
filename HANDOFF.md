@@ -267,18 +267,34 @@ put a second material on the plate — a picture of a building over a town made
 of diamonds — which is the objection the whole renderer exists to answer.
 `glyphs.js` is generated: hand-edit it and the next slice reverts you.
 
-**A landmark is born at one cell per pixel and resized only in whole
-multiples.** Every other kind is born in tiles, because a park has no size
-of its own. A fourteen-pixel glyph does, and one cell per pixel is the only
-footprint that shows all of it and no more — tile-snapping that to sixteen
-adds two columns of nothing and to twelve loses two of building, which is
-the same bug from both sides. So `glyphSize` reads the birth size off the
-glyph and does not snap it, and `glyphSnap` holds every later resize to
-n× that: at 1½× some pixels get two cells and some one, and the strokes
-come out uneven, differently at every size. `[`/`]` step by one multiple
-for the same reason — ×1.15 from 1× rounds straight back to 1×. The
-generator fits the glyph inside the box by aspect, so a box snapped on the
-tighter axis and slack on the other is not distortion, only margin.
+**A landmark is born at one cell per pixel, and that is its ceiling.**
+Every other kind is born in tiles, because a park has no size of its own.
+A fourteen-pixel glyph does, and one cell per pixel is the only footprint
+that shows all of it and no more — tile-snapping that to sixteen adds two
+columns of nothing and to twelve loses two of building, which is the same
+bug from both sides. So `glyphSize` reads the birth size off the glyph and
+does not snap it, and `glyphSnap` refuses anything larger: bigger is the
+same pixels with gaps between, and a town drawn at two scales is drawn at
+none. Smaller is allowed and lossy, held to whole cells at the glyph's
+aspect; `[`/`]` step a cell, because ×1.15 on a fourteen-cell building
+rounds back to where it was. The generator fits the glyph inside the box
+by aspect, so a box snapped on the tighter axis and slack on the other is
+not distortion, only margin.
+
+**The slicer decides inside from outside; the sheet cannot.** Windows and
+sky are both black on the sheet. Flood-filling from the sprite's edge
+tells them apart, and what is not reached is written `'2'` and drawn as
+dark cover at stamp time, with a one-square ring grown around the whole
+silhouette so the building stands on its own ground. Doing this in
+`kinds.js` per cell instead would mean a flood fill on every stamp of every
+landmark; doing it here means it is done once, when the art changes, and
+holds for every sheet that is ever imported.
+
+**Blocks and Housing kept their ids when they moved to Terrain.** The
+palette says Blocks and Housing; the registry says `buildings` and
+`houses`, because every saved town names its shapes by id and a rename
+would orphan them. The drawn house is `house`, singular, for the same
+reason — the plural was taken.
 
 **Cuts are held to whole cells.** A cell is removed when its *centre* falls
 inside the cut, and centres sit halfway between boundaries — so a cut whose
@@ -407,9 +423,9 @@ builder and the platformer expose their state as globals (`G`, `Build`,
 reached only by asking for it: `cdp.attach(match='platformer')`.
 
 **Re-slice, do not redraw.** When a building sheet changes, run
-`tools/glyphs.py` (the two invocations are in README under *Landmark*;
-`--preview` shows the slice as text first) and commit `src/glyphs.js` with
-the PNG. The pitch is autodetected from the sheet and both current sheets
+`tools/glyphs.py` (the two invocations are in README under *Landmark*,
+with the `--set houses=…` split; `--preview` shows the slice as text first)
+and commit `src/glyphs.js` with the PNG. The pitch is autodetected from the sheet and both current sheets
 come back at 5.371; a sheet exported at another factor is the one case for
 `--pitch`.
 

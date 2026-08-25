@@ -197,11 +197,78 @@ def sample(art, ax0, ay0, ax1, ay1, cap):
     return out
 
 
+def body(rows, pad=1):
+    """Inside from outside, and a margin of inside around it.
+
+    A sprite is white on a dark ground, and the dark pixels come in two
+    kinds that the sheet does not distinguish: the sky around the building,
+    and the windows, doors and hatching INSIDE it. Both were '0', so both
+    drew nothing, and the grass showed through every window. The difference
+    is reachability: sky touches the edge of the sprite's box and a window
+    does not. So the box is flood-filled from outside, and whatever dark is
+    left unreached is the building's own ground, written as '2'.
+
+    Then the whole silhouette is grown by `pad` — one ring of '2' around
+    every lit or interior square, and the glyph grows by that much on every
+    side — so a building stands on a plinth of its own ground rather than
+    having grass lap its walls. At stamp time '2' is drawn as dark cover:
+    the sheet's black, kept, where the sheet's black was the building's."""
+    H, W = len(rows), len(rows[0])
+    g = [[ch for ch in r] for r in rows]
+    # flood the exterior from a ring outside the box
+    seen = [[False] * W for _ in range(H)]
+    stack = [(x, y) for x in range(W) for y in (0, H - 1)] + \
+            [(x, y) for y in range(H) for x in (0, W - 1)]
+    stack = [(x, y) for x, y in stack if g[y][x] == '0']
+    while stack:
+        x, y = stack.pop()
+        if seen[y][x]: continue
+        seen[y][x] = True
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            u, v = x + dx, y + dy
+            if 0 <= u < W and 0 <= v < H and not seen[v][u] and g[v][u] == '0':
+                stack.append((u, v))
+    for y in range(H):
+        for x in range(W):
+            if g[y][x] == '0' and not seen[y][x]: g[y][x] = '2'
+    # pad: grow by `pad` rings of '2', widening the box to hold them
+    for _ in range(pad):
+        H2, W2 = H + 2, W + 2
+        n = [['0'] * W2 for _ in range(H2)]
+        for y in range(H):
+            for x in range(W): n[y + 1][x + 1] = g[y][x]
+        for y in range(H2):
+            for x in range(W2):
+                if n[y][x] != '0': continue
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        u, v = x + dx, y + dy
+                        if 0 <= u < W2 and 0 <= v < H2 and n[v][u] in '12':
+                            n[y][x] = '2'; break
+                    if n[y][x] == '2': break
+        g, H, W = n, H2, W2
+    return [''.join(r) for r in g]
+
+
+def expand(spec):
+    """'a01-a24,b11' → ['a01', ..., 'a24', 'b11']"""
+    out = []
+    for part in filter(None, spec.split(',')):
+        if '-' in part:
+            lo, hi = part.split('-')
+            stem = lo.rstrip('0123456789')
+            for i in range(int(lo[len(stem):]), int(hi[len(stem):]) + 1):
+                out.append('%s%02d' % (stem, i))
+        else:
+            out.append(part)
+    return out
+
+
 def preview(rows):
     """Printed so the slice can be judged by eye before it is committed. The
     project's own rule — only a picture proves it looks right — applies to a
     16-square glyph as much as to the plate."""
-    return '\n'.join('    ' + r.replace('0', '·').replace('1', '█') for r in rows)
+    return '\n'.join('    ' + r.replace('0', '·').replace('1', '█').replace('2', '▒') for r in rows)
 
 
 def main():
@@ -215,6 +282,10 @@ def main():
     ap.add_argument('--prefix', default='b', help='name stem for the glyphs from this sheet')
     ap.add_argument('--append', action='store_true', help='add to src/glyphs.js instead of replacing it')
     ap.add_argument('--preview', action='store_true', help='print each glyph as text and write nothing')
+    ap.add_argument('--pad', type=int, default=1, help='rings of the building\'s own ground around it (default 1)')
+    ap.add_argument('--set', action='append', default=[], metavar='NAME=LIST',
+                    help='which kind offers which glyphs, e.g. houses=a01-a24,b11; '
+                         'anything unlisted is the landmark\'s')
     a = ap.parse_args()
 
     W, H = identify(a.sheet)
@@ -248,7 +319,7 @@ def main():
             if ax1 < ax0:
                 blank.append(name)
                 continue
-            rows = sample(art, ax0, ay0, ax1, ay1, a.grid)
+            rows = body(sample(art, ax0, ay0, ax1, ay1, a.grid), a.pad)
             glyphs[name] = rows
             if a.preview:
                 print('%s  (%d×%d)' % (name, len(rows[0]), len(rows)))
@@ -263,16 +334,21 @@ def main():
     if a.preview:
         return
 
-    existing = {}
+    existing, sets = {}, {}
     grid = a.grid
     if a.append and os.path.exists(OUT):
-        existing, grid = read_back()
+        existing, grid, sets = read_back()
         if grid != a.grid:
             sys.exit('src/glyphs.js is on a %d grid and this sheet is %d — '
                      'one grid per file, so re-slice both at the same size' % (grid, a.grid))
     existing.update(glyphs)
-    write(existing, grid)
-    print('  wrote %s (%d glyphs total)' % (os.path.relpath(OUT, ROOT), len(existing)))
+    for spec in a.set:
+        k, _, lst = spec.partition('=')
+        sets.setdefault(k, [])
+        sets[k] = sorted(set(sets[k]) | set(expand(lst)))
+    write(existing, grid, sets)
+    print('  wrote %s (%d glyphs total; sets: %s)' % (os.path.relpath(OUT, ROOT), len(existing),
+          ', '.join('%s=%d' % (k, len(v)) for k, v in sets.items()) or 'none'))
 
 
 def read_back():
@@ -281,12 +357,13 @@ def read_back():
     src = open(OUT, encoding='utf8').read()
     i, j = src.index('/*DATA*/'), src.index('/*END*/')
     blob = json.loads(src[i + 8:j].strip().rstrip(';'))
-    return blob['glyphs'], blob['grid']
+    return blob['glyphs'], blob['grid'], blob.get('sets', {})
 
 
-def write(glyphs, grid):
+def write(glyphs, grid, sets):
     names = sorted(glyphs)
-    blob = json.dumps({'grid': grid, 'glyphs': {n: glyphs[n] for n in names}},
+    sets = {k: [n for n in v if n in glyphs] for k, v in sets.items()}
+    blob = json.dumps({'grid': grid, 'sets': sets, 'glyphs': {n: glyphs[n] for n in names}},
                       indent=0, separators=(',', ':'))
     with open(OUT, 'w', encoding='utf8') as f:
         f.write(HEADER % (len(names), grid, grid))
@@ -299,21 +376,31 @@ HEADER = """'use strict';
    GENERATED by tools/glyphs.py from the sheets in assets/. Do not hand-edit:
    re-slice and commit what comes out, or the next run silently reverts you.
 
-   %d glyphs, each a %d×%d grid of lit squares written out as strings of
-   ones and zeroes, for the same reason src/type.js writes its letterforms
-   out rather than packing them — this is the art, and art you cannot read
-   in the source is art nobody will fix.
+   %d glyphs, each a grid of at most %d×%d written out as strings, for the
+   same reason src/type.js writes its letterforms out rather than packing
+   them — this is the art, and art you cannot read in the source is art
+   nobody will fix. '1' is a lit square, '2' is the building's own ground —
+   a window, a doorway, and the one-square plinth every glyph stands on —
+   and '0' is the town around it.
 
-   Every lit square becomes one diamond at stamp time (src/kinds.js), which
-   is what keeps a landmark the same material as the ground under it. */
+   Every '1' becomes one diamond at stamp time (src/kinds.js) and every '2'
+   a square of dark cover, which is what keeps a landmark the same material
+   as the ground under it and stops that ground showing through it.
+
+   `sets` says which kind offers which glyphs; a glyph in no set is the
+   landmark's. */
 
 const Glyphs = (() => {
 const D =
 """
 
 FOOTER = """;
-  const names = Object.keys(D.glyphs);
-  return {grid: D.grid, names, has: n => !!D.glyphs[n], rows: n => D.glyphs[n]};
+  const names = Object.keys(D.glyphs), sets = D.sets || {};
+  const taken = new Set([].concat(...Object.values(sets)));
+  /* the names a kind offers: its set, or — for the landmark, which is
+     every building nobody else claimed — whatever is left */
+  const of = set => sets[set] ? sets[set] : names.filter(n => !taken.has(n));
+  return {grid: D.grid, names, sets, of, has: n => !!D.glyphs[n], rows: n => D.glyphs[n]};
 })();
 """
 

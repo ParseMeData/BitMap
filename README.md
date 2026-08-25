@@ -584,8 +584,16 @@ a rule that could produce it would be a rule with one output.
 
 So the shape is authored. `assets/buildings-a.png` and `-b.png` are pixel
 art, sixty-odd buildings between eleven and sixteen pixels square, and
-`tools/glyphs.py` slices them into grids of lit squares and writes the grids
-to `src/glyphs.js`. That file is what ships. Nothing in `src/` ever opens a
+`tools/glyphs.py` slices them into grids and writes the grids to
+`src/glyphs.js`. That file is what ships. A square in it is one of three
+things: lit (`1`), the building's own ground (`2`) — a window, a doorway,
+and the one-square plinth the slicer grows around every silhouette — or
+the town around it (`0`). The sheet cannot tell the second from the third,
+since both are black; the slicer can, because sky reaches the edge of the
+sprite's box and a window does not. Own ground is drawn as dark cover, so
+the grass never shows through a building; the town around it draws
+nothing, so a building sits on whatever is there. This is the slicer's
+rule, so it holds for every sheet imported from now on. Nothing in `src/` ever opens a
 PNG: at stamp time every lit square becomes one diamond in the same instance
 stream as the roads and the grass — exactly what the typeface does with a
 letterform, and for the same reason. There is no sprite on the plate. A
@@ -600,31 +608,39 @@ the only thing on the screen.
 The palette draws each building as its own chip, so you choose by sight:
 sixty words nobody can map back to a shape is a worse picker than none.
 The chips are read off `Glyphs` at load, so re-slicing the sheet is the
-only step in adding a building.
+only step in adding a building. Two kinds draw from the sheets, both on
+the Buildings layer: **Houses** takes the set the slicer was told is
+houses (`--set houses=…`), and **Landmark** takes everything left. The
+district textures that used to sit on this layer — Blocks and Housing —
+are on **Terrain** now, because a field of housing drawn from a rule is
+ground cover, and a drawn building is a thing standing on it.
 
 A landmark is born at **one lattice cell per drawn pixel**, which is the
 smallest it can be and still be the building you picked, and the size a
-tile-measured default was four times too big for. The glyph is fitted
-inside the shape's box by its own aspect, so a corner grip scales the
-building and never distorts it — the box is a frame you size, not a shape
-you deform. From there a resize lands only on **whole multiples**: 2×, 3×,
-never 1½×, because at any other pitch some pixels get two cells and some
-get one and the strokes come out uneven. Drag a corner and it snaps to the
-nearest multiple; `[` and `]` step down and up by one. When it *is* shrunk
-below its art — a plan arriving whole can do that — a cell takes the OR of
-every pixel it covers, so a one-pixel spire is not the first thing to
-vanish.
+tile-measured default was four times too big for. That is also **as big as
+it gets**: a fourteen-pixel building blown up to twice that is the same
+fourteen pixels with the gaps showing, and a town where one cathedral is
+drawn at a different scale from the next has no scale at all. Drag a
+corner outward and nothing happens. Inward it shrinks, held to whole cells
+at the glyph's own aspect — the glyph is fitted inside the box by aspect,
+so a grip scales and never distorts — and a cell takes the OR of every
+pixel it covers, so a one-pixel spire is not the first thing to vanish.
+`[` and `]` step a cell at a time.
 
 Re-slicing, when a sheet changes:
 
-    tools/glyphs.py assets/buildings-a.png --cols 6 --rows 5 --prefix a
-    tools/glyphs.py assets/buildings-b.png --cols 6 --rows 6 --prefix b --append
+    tools/glyphs.py assets/buildings-a.png --cols 6 --rows 5 --prefix a \
+        --set houses=a01-a24
+    tools/glyphs.py assets/buildings-b.png --cols 6 --rows 6 --prefix b --append \
+        --set houses=b11,b25-b28,b30,b32
 
 The upscale factor the art was exported at is detected rather than asked
 for (`--pitch` overrides it), `--thr` is the grey level that counts as lit,
 and `--preview` prints every glyph as text and writes nothing — the way to
-check a slice before committing it. ImageMagick does the decoding, because
-it is on the box and PIL is not.
+check a slice before committing it. `--pad` is the plinth, in squares
+(default 1), and `--set houses=a01-a24,b11` names which glyphs the Houses
+kind offers; the current split is in the two commands above. ImageMagick
+does the decoding, because it is on the box and PIL is not.
 
 ### Adding a kind
 
@@ -665,10 +681,10 @@ at. `Kinds.use(scope)` is the whole of the swap. A few extra columns are
 available to either of them: `w0`/`h0`/`len0` say how big one of the thing is
 when it is born, because a district is a field of housing and a bed is one
 bed; `hollow` makes an area shape its own perimeter; `walkTol` widens what a
-route opens in the walk grid. `glyphs: true` replaces a `variants` list: the
-kind's choices are then whatever `src/glyphs.js` holds, drawn as pictures in
-the palette rather than words, and the shape is born at the glyph's own size
-— see *Landmark*.
+route opens in the walk grid. `glyphs: 'houses'` replaces a `variants` list: the
+kind's choices are then that set from `src/glyphs.js` (`'landmark'` is
+whatever no set claimed), drawn as pictures in the palette rather than
+words, and the shape is born at the glyph's own size — see *Landmark*.
 
 ## Tracing a real place
 

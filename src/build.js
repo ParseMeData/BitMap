@@ -134,7 +134,7 @@ const Build = (() => {
      one place they are drawn. `variant` is still just a string on the
      shape, which is what keeps a saved town readable either way. */
   const variantsOf = k => !k ? null
-    : (k.glyphs ? (typeof Glyphs === 'undefined' ? null : Glyphs.names) : k.variants) || null;
+    : (k.glyphs ? (typeof Glyphs === 'undefined' ? null : Glyphs.of(k.glyphs)) : k.variants) || null;
   const firstVariant = k => { const l = variantsOf(k); return l ? l[0] : 'mixed'; };
   /* ── a line whose ends are anchors ──────────────────────────────────────
      A river is one line bent in many places with its two ends staying put,
@@ -368,16 +368,28 @@ const Build = (() => {
      other is a crisp building with a margin of nothing around it, and the
      margin is what the grips would then be moving. Returns null for a
      kind that is not a landmark, so callers can fall through to the tile
-     snap everything else uses. */
+     snap everything else uses.
+
+     The birth size is also the ceiling. A building drawn at fourteen
+     pixels is a fourteen-pixel building; blown up to twice that it is the
+     same fourteen pixels with the gaps showing, and a town where one
+     cathedral is drawn at a different scale from the next is a town with
+     no scale at all. So there is no 2×: `n` is 1 or less. Below 1× the
+     glyph is resampled — lossy, and allowed, because a small building in
+     the distance is a thing a map does — and the box is held to whole
+     cells with the glyph's own aspect, since a box wider than the glyph
+     it holds is only margin. */
   function glyphSnap(s, w, h){
     const k = Kinds.by[s.kind];
     if (!k || !k.glyphs || typeof Glyphs === 'undefined') return null;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return null;
     const c = cellSize(), M = rows[0].length, N = rows.length;
-    const nmax = Math.max(1, Math.floor(MAXSPAN() / (Math.max(M, N) * c)));
-    const n = clamp(Math.round(Math.min(w / (M * c), h / (N * c))), 1, nmax);
-    return {w: n * M * c, h: n * N * c, n};
+    const f = Math.min(w / (M * c), h / (N * c));
+    if (f >= 1) return {w: M * c, h: N * c, n: 1};
+    const mw = Math.max(3, Math.round(f * M));
+    const mh = Math.max(3, Math.round(mw * N / M));
+    return {w: mw * c, h: mh * c, n: mw / M};
   }
 
   /* ── a plan arriving whole ──────────────────────────────────────────────
@@ -515,12 +527,13 @@ const Build = (() => {
     } else if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
     else {
-      /* a landmark steps by one multiple of itself, not by fifteen
-         percent: at 1× the next crisp size up is 2×, and 1.15× is nothing */
+      /* a drawn building steps by one cell of width, not by fifteen
+         percent, which on a fourteen-cell building is nothing; and never
+         above the size it was drawn at */
       const gs = glyphSnap(sel, sel.w, sel.h);
       if (gs){
-        const m = (gs.n + (f > 1 ? 1 : -1)) / gs.n;
-        const g2 = glyphSnap(sel, gs.w * m, gs.h * m);
+        const c = cellSize(), d = f > 1 ? c : -c;
+        const g2 = glyphSnap(sel, gs.w + d, gs.h + d * gs.h / gs.w);
         sel.w = g2.w; sel.h = g2.h;
       } else {
         sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());

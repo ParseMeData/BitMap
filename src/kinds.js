@@ -1013,6 +1013,10 @@ const Kinds = (() => {
     if (!rows || !rows.length) return;
     const N = rows.length, M = rows[0].length;
     const lit = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '1';
+    /* '2' is the building's own ground: a window, a doorway, the plinth the
+       slicer grows around every silhouette. Drawn as dark cover so the grass
+       does not show through the building, and never as a lit square. */
+    const own = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '2';
     /* ── the glyph keeps its proportions ─────────────────────────────────
        A glyph is stored at whatever size it was drawn — twelve by fourteen,
        nine by twenty — so mapping it straight onto the shape's box would
@@ -1041,11 +1045,22 @@ const Kinds = (() => {
          cell genuinely spans more than a pixel. */
       const gx1 = stepx <= 1 ? gx0 : Math.floor(fx + stepx - 1e-9);
       const gy1 = stepy <= 1 ? gy0 : Math.floor(fy + stepy - 1e-9);
-      let on = false, open = 0;
+      let on = false, open = 0, ground = false;
       for (let gy = gy0; gy <= gy1 && !on; gy++)
-        for (let gx = gx0; gx <= gx1; gx++)
+        for (let gx = gx0; gx <= gx1; gx++){
           if (lit(gx, gy)){ on = true; break; }
-      if (!on) return;
+          if (own(gx, gy)) ground = true;
+        }
+      if (!on){
+        if (!ground) return;
+        /* the building's own ground: flat, dark, a shade off the plate so
+           the plinth reads as a footprint and not as a hole. Oversized so
+           the squares knit into cover with nothing between them. */
+        const rg = hash(u, v, s.seed + 85);
+        const gcol = shade(C.wallDim, 0.62 + rg * 0.1);
+        buf.cell(x, y, gcol, 0.92 * fade, 1.18, 0, 0.9 * fade, 1.14, 0, 0.01, rg);
+        return;
+      }
       /* how much of the building's own outline this cell sits on. Taken
          from the block's rim rather than from one square, so an edge
          survives being resampled down alongside the thing it edges. */
@@ -1449,6 +1464,10 @@ const Kinds = (() => {
     {id: 'roads',  label: 'Roads',     z: 3, solo: true, start: true},
     {id: 'ground', label: 'Ground',    z: 0},
     {id: 'trees',  label: 'Trees',     z: 1},
+    /* the district textures — a field of housing drawn from a rule — and
+       the drawn buildings are two layers, because they are two ways of
+       saying "built": one is ground cover and one is a thing on it */
+    {id: 'terrain', label: 'Terrain',  z: 2},
     {id: 'built',  label: 'Buildings', z: 2}
   ];
 
@@ -1506,12 +1525,20 @@ const Kinds = (() => {
      walk: 2, stamp: 6, gen: road,      swatch: '#FFFFFF',
      bright0: 1.3, feather0: 0, pad0: 1.2, padFade0: 0.8, padBreak0: 0.3,
      connects: true},
-    {id: 'buildings', label: 'Buildings', layer: 'built',  types: AREA,
+    /* relabelled Blocks and Housing when they moved under Terrain, so the
+       word Houses is free for the drawn ones; the ids stay, because every
+       saved town names its shapes by id */
+    {id: 'buildings', label: 'Blocks',    layer: 'terrain', types: AREA,
      variants: ['mixed', 'towers', 'blocks', 'sheds'],
      walk: 0, stamp: 1, gen: buildings, swatch: '#B7B0A5'},
-    {id: 'houses',    label: 'Houses',    layer: 'built',  types: AREA,
+    {id: 'houses',    label: 'Housing',   layer: 'terrain', types: AREA,
      variants: ['mixed', 'detached', 'terraced'],
      walk: 0, stamp: 2, gen: houses,    swatch: '#C9A488'},
+    /* one drawn house, from the same sheets and the same generator as the
+       landmark; `glyphs` names the set it picks from (see src/glyphs.js) */
+    {id: 'house',     label: 'Houses',    layer: 'built',  types: ['rect'],
+     glyphs: 'houses', w0: 3, h0: 3, feather0: 0,
+     walk: 0, stamp: 0, gen: landmark,  swatch: '#C9A488'},
     /* ── the landmark ──────────────────────────────────────────────────
        `glyphs: true` rather than a `variants` list, and the difference is
        the whole reason the palette grew a new control. A variant is a word
@@ -1539,7 +1566,7 @@ const Kinds = (() => {
        build.js — these numbers are only what it falls back to if the glyph
        table failed to load, and they are in tiles like every other kind's. */
     {id: 'landmark',  label: 'Landmark',  layer: 'built',  types: ['rect'],
-     glyphs: true, w0: 4, h0: 4, feather0: 0,
+     glyphs: 'landmark', w0: 4, h0: 4, feather0: 0,
      walk: 0, stamp: 0, gen: landmark,  swatch: '#D8D2C6'},
     /* ── the demolish area ─────────────────────────────────────────────
        Not deletion and not occlusion: a MODIFIER, and the engine's third
@@ -1625,8 +1652,9 @@ const Kinds = (() => {
     {label: 'Park',       kind: 'park',      type: 'rect'},
     {label: 'Road',       kind: 'road',      type: 'line'},
     {label: 'Roundabout', kind: 'road',      type: 'ring'},
-    {label: 'Buildings',  kind: 'buildings', type: 'rect'},
-    {label: 'Houses',     kind: 'houses',    type: 'rect'},
+    {label: 'Blocks',     kind: 'buildings', type: 'rect'},
+    {label: 'Housing',    kind: 'houses',    type: 'rect'},
+    {label: 'Houses',     kind: 'house',     type: 'rect'},
     {label: 'Landmark',   kind: 'landmark',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
     /* an oval by default: a town thins out into the country in every

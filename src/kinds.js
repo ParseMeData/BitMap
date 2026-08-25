@@ -84,6 +84,30 @@ const Kinds = (() => {
     return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
             u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
   }
+  /* ── a warp is an oval that stopped being one ───────────────────────
+     A closed run of points in the shape's own frame — like `quad`, so
+     `rot` still turns it and `x`/`y` still move it — with a Catmull-Rom
+     through all of them, wrapping, so the last leg bends into the first.
+     Born as eight points on the oval it replaces and pulled into whatever
+     the ground actually does. Flattened once and cached like a line's
+     bows; everything downstream measures the polygon. */
+  function blobAt(s, i, t){
+    const P = s.blob, n = P.length;
+    const p0 = P[(i - 1 + n) % n], p1 = P[i], p2 = P[(i + 1) % n], p3 = P[(i + 2) % n];
+    const t2 = t * t, t3 = t2 * t;
+    const f = k => 0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t
+                 + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2
+                 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3);
+    return [f(0), f(1)];
+  }
+  function blobFlat(s){
+    if (s._flat) return s._flat;
+    const out = [];
+    for (let i = 0; i < s.blob.length; i++)
+      for (let k = 0; k < FLAT; k++) out.push(blobAt(s, i, k / FLAT));
+    s._flat = out;
+    return out;
+  }
   function flatten(s){
     if (s._flat) return s._flat;
     const out = [s.pts[0]];
@@ -122,7 +146,7 @@ const Kinds = (() => {
      measured in cells means the same thing on a dragged quad as on a rect */
   function polyDepth(q, x, y){
     let best = Infinity, inside = false;
-    for (let i = 0, j = 3; i < 4; j = i++){
+    for (let i = 0, j = q.length - 1; i < q.length; j = i++){
       const a = q[j], b = q[i];
       best = Math.min(best, segDist(x, y, a, b));
       if ((a[1] > y) !== (b[1] > y) &&
@@ -132,7 +156,7 @@ const Kinds = (() => {
   }
   const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 
-  const geo = {along, smooth, 
+  const geo = {along, smooth, blobAt, blobFlat, 
     flat: flatten,
     corners,
     bbox(s){
@@ -148,6 +172,17 @@ const Kinds = (() => {
       if (s.type === 'ring'){
         const R = s.r + s.width / 2;
         return [s.x - R, s.y - R, s.x + R, s.y + R];
+      }
+      if (s.type === 'warp' && s.blob){
+        const c = Math.cos(s.rot || 0), sn = Math.sin(s.rot || 0);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const q of blobFlat(s)){
+          const wx = s.x + q[0] * c - q[1] * sn, wy = s.y + q[0] * sn + q[1] * c;
+          x0 = Math.min(x0, wx); y0 = Math.min(y0, wy);
+          x1 = Math.max(x1, wx); y1 = Math.max(y1, wy);
+        }
+        const e = hollow(s) ? (s.width || 0) / 2 : 0;
+        return [x0 - e, y0 - e, x1 + e, y1 + e];
       }
       if (s.quad){
         const c = Math.cos(s.rot || 0), sn = Math.sin(s.rot || 0);
@@ -205,6 +240,8 @@ const Kinds = (() => {
       let d;
       if (s.quad){
         d = polyDepth(s.quad, l[0], l[1]);
+      } else if (s.type === 'warp' && s.blob){
+        d = polyDepth(blobFlat(s), l[0], l[1]);
       } else if (s.type === 'ellipse'){
         const u = l[0] / (s.w / 2 || 1), v = l[1] / (s.h / 2 || 1);
         d = (1 - Math.hypot(u, v)) * Math.min(s.w, s.h) / 2;
@@ -1584,7 +1621,7 @@ const Kinds = (() => {
     {id: 'built',  label: 'Buildings', z: 2}
   ];
 
-  const AREA = ['rect', 'ellipse'];
+  const AREA = ['rect', 'ellipse', 'warp'];
   const WOOD = ['mixed', 'conifer', 'broadleaf'];
   const LIST = [
     {id: 'grass',     label: 'Grass',     layer: 'ground', types: AREA,
@@ -1920,8 +1957,14 @@ const Kinds = (() => {
     {label: 'Door',    kind: 'door',    type: 'line'},
     {label: 'Stairs',  kind: 'stairs',  type: 'rect'}
   ];
+  /* Warp took Ring's place on the row: an oval you can pull into any
+     shape is what a ring was reached for on an area. Ring itself stays,
+     last, for the two kinds that are a ring of something — a roundabout
+     is a ring of road and a moat is a ring of creek — and is dimmed for
+     every other kind. */
   const SHAPES = [{id: 'rect', label: 'Rect'}, {id: 'ellipse', label: 'Oval'},
-                  {id: 'line', label: 'Line'}, {id: 'ring', label: 'Ring'}];
+                  {id: 'warp', label: 'Warp'}, {id: 'line', label: 'Line'},
+                  {id: 'ring', label: 'Ring'}];
 
   /* ── two registries, one editor ────────────────────────────────────────
      Everything downstream — the palette, the layer rows, the walk-grid

@@ -344,6 +344,19 @@ reaches any further out than Clear does. Roads are born with 1.2 cells of it, so
 side of itself, all the way along, including around a roundabout. Set it to
 none and the terrain closes right up to the kerb.
 
+### Warp
+
+The Shape row's third chip. A **warp** is an oval that stopped being one:
+pick it and the oval you had becomes eight points on itself, each a grip,
+with a grip in the middle of every leg that births a new point when you
+pull it — the same gesture as a stream, wrapped round. A Catmull-Rom runs
+through all of them, so a lake, a field or a district can be the blob the
+ground actually is rather than the box it fits in. Every area kind takes
+it; the points live in the shape's own frame, so it still moves, turns and
+scales as one thing, and `Size` scales the run. Warp took Ring's place on
+the row: Ring stays, last and dimmed for everything but the two kinds that
+are a ring of something — a roundabout of road, a moat of creek.
+
 ### The other grounds
 
 Rock, Cement, Dirt, Desert, Gravel, Mud, Scrub and Snow sit beside Grass

@@ -126,6 +126,27 @@ const Build = (() => {
   /* a drawn building: one size, the size it was drawn at, and no grips —
      it is placed like a print, moved whole, and that is the whole of it */
   const isPrint = s => !!(s && (Kinds.by[s.kind] || {}).glyphs);
+  /* ── a warp's points ─────────────────────────────────────────────────
+     Born as eight on the oval the shape was, in its own frame; `w`/`h`
+     are kept as the run's own extent, the way they shadow a quad, because
+     the size slider, the cell scan and every bbox test read them. */
+  const blobFrom = (w, h) => {
+    const out = [];
+    for (let i = 0; i < 8; i++){
+      const a = i / 8 * Math.PI * 2;
+      out.push([Math.cos(a) * w / 2, Math.sin(a) * h / 2]);
+    }
+    return out;
+  };
+  function normBlob(s){
+    if (!s.blob) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const q of s.blob){
+      x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]);
+      x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1]);
+    }
+    s.w = Math.max(cellSize() * 2, x1 - x0); s.h = Math.max(cellSize() * 2, y1 - y0);
+  }
   /* ── the choices a kind offers, however it offers them ─────────────────
      Most kinds carry a short written list. A landmark carries `glyphs`
      instead, and its list is whatever tools/glyphs.py last sliced — read
@@ -200,8 +221,10 @@ const Build = (() => {
       s.width = snapW(s.width || cellSize() * 2);
     } else {
       s.x = snapC(C0[0]); s.y = snapC(C0[1]);
-      s.w = snapS(span);
-      s.h = snapS(span * 0.78);
+      if (!(s.w > 0 && s.h > 0)){ s.w = snapS(span); s.h = snapS(span * 0.78); }
+      /* coming to a warp, the oval you had becomes eight points on itself;
+         leaving one, the run is dropped and its extent is the new box */
+      s.blob = type === 'warp' ? blobFrom(s.w, s.h) : null;
     }
     return s;
   }
@@ -322,6 +345,7 @@ const Build = (() => {
       s.x = snapC(wx); s.y = snapC(wy);
       if (k.w0){ s.w = snapS(g * k.w0); s.h = snapS(g * (k.h0 || k.w0)); }
       glyphSize(s, k);
+      if (type === 'warp') s.blob = blobFrom(s.w, s.h);
     }
   }
 
@@ -438,7 +462,9 @@ const Build = (() => {
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || firstVariant(k), tone: d.tone || 'stone',
+                 blob: Array.isArray(d.blob) ? d.blob.map(q => [q[0], q[1]]) : null,
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
+      if (s.type === 'warp' && !s.blob) s.blob = blobFrom(s.w, s.h);
       aimFall(s);
       G.shapes.push(s);
       return s;
@@ -525,8 +551,13 @@ const Build = (() => {
     } else if (sel.type === 'line' || sel.type === 'ring')
       sel.width = snapW(sel.width * f);
     else {
+      const w0 = sel.w, h0 = sel.h;
       sel.w = clamp(snapS(sel.w * f), g, MAXSPAN());
       sel.h = clamp(snapS(sel.h * f), g, MAXSPAN());
+      if (sel.blob){
+        const fx = sel.w / Math.max(w0, 1), fy = sel.h / Math.max(h0, 1);
+        for (const q of sel.blob){ q[0] *= fx; q[1] *= fy; }
+      }
     }
     changed(sel);
     if (room && typeof Palace !== 'undefined') Palace.refit(room);
@@ -902,6 +933,16 @@ const Build = (() => {
   const isStream = s => !!(Kinds.by[s.kind] || {}).smooth && s.type === 'line';
   function handles(s){
     if (isPrint(s)) return [];
+    if (s.type === 'warp' && s.blob){
+      /* every point is a grip, and the middle of every leg is a point
+         waiting to be born — the same gesture as a stream, wrapped */
+      const out = s.blob.map((q, i) => Object.assign(rotpt(s, q[0], q[1]), {tag: 'p' + i, kind: 'point'}));
+      for (let i = 0; i < s.blob.length; i++){
+        const m = Kinds.geo.blobAt(s, i, 0.5);
+        out.push(Object.assign(rotpt(s, m[0], m[1]), {tag: 'a' + i, kind: 'bend'}));
+      }
+      return out;
+    }
     if (s.type === 'line'){
       /* The anchors are still SHOWN — an end you cannot see is an end you
          will keep trying to grab — they are simply not targets. What happens
@@ -1234,8 +1275,13 @@ const Build = (() => {
           if (tag.charAt(0) === 'a'){
             /* born under the grip, then dragged as the point it now is */
             const i = +tag.slice(1);
-            sel.pts.splice(i + 1, 0, [snapC(best.x), snapC(best.y)]);
-            if (sel.ctrl) sel.ctrl.splice(i, 1, null, null);
+            if (sel.type === 'warp'){
+              const l = Kinds.geo.local(sel, best.x, best.y);
+              sel.blob.splice(i + 1, 0, [l[0], l[1]]);
+            } else {
+              sel.pts.splice(i + 1, 0, [snapC(best.x), snapC(best.y)]);
+              if (sel.ctrl) sel.ctrl.splice(i, 1, null, null);
+            }
             changed(sel);
             tag = 'p' + (i + 1);
           }
@@ -1381,6 +1427,11 @@ const Build = (() => {
         s.ctrl[i] = Math.hypot(M[0] - mid[0], M[1] - mid[1]) < grid() * 0.7
           ? null
           : [2 * M[0] - mid[0], 2 * M[1] - mid[1]];
+      } else if (s.type === 'warp' && s.blob){
+        /* in the shape's own frame, held to the cell grid like a corner */
+        const l = Kinds.geo.local(s, p[0], p[1]), c = cellSize();
+        s.blob[+drag.mode.slice(1)] = [Math.round(l[0] / c) * c, Math.round(l[1] / c) * c];
+        normBlob(s);
       } else {
         s.pts[+drag.mode.slice(1)] = [snapC(p[0]), snapC(p[1])];
       }
@@ -1764,9 +1815,9 @@ const Build = (() => {
       /* the quad IS the shape, so a size that moved without it would be a
          size the shape does not have — scale the corners by the same two
          factors and w/h stay the shadow they are meant to be */
-      if (sel.quad){
+      if (sel.quad || sel.blob){
         const fx = sel.w / Math.max(w0, 1), fy = sel.h / Math.max(h0, 1);
-        for (const c of sel.quad){ c[0] *= fx; c[1] *= fy; }
+        for (const c of (sel.quad || sel.blob)){ c[0] *= fx; c[1] *= fy; }
       }
     }
     changed(sel);
@@ -2228,7 +2279,7 @@ const Build = (() => {
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
-        fall: s.fall || 0, out: s.out || 0, quad: s.quad || null,
+        fall: s.fall || 0, out: s.out || 0, quad: s.quad || null, blob: s.blob || null,
         core: s.core === undefined ? 0.35 : s.core,
         aim: s.aim ? [s.aim[0], s.aim[1]] : null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
@@ -2317,6 +2368,7 @@ const Build = (() => {
           core: s.core === undefined ? (k.core0 === undefined ? 0.35 : k.core0) : s.core,
           aim: (Array.isArray(s.aim) && s.aim.length === 2) ? [s.aim[0], s.aim[1]] : null,
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
+          blob: (Array.isArray(s.blob) && s.blob.length >= 3) ? s.blob.map(q => [q[0], q[1]]) : null,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
@@ -2329,6 +2381,7 @@ const Build = (() => {
     /* a cut drawn before cuts were held to the cell grid is corrected on
        the way in, rather than waiting for someone to nudge it */
     G.shapes.forEach(alignFine);
+    for (const s of G.shapes) if (s.type === 'warp' && !s.blob) s.blob = blobFrom(s.w, s.h);
     if (adopt()) save();
   }
 

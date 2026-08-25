@@ -279,6 +279,15 @@ through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
 
+**A warp is a quad with more corners and a curve through them.** `blob`
+is a closed run of points in the shape's own frame, exactly as `quad` is,
+so rotation, movement, `local()` and every pattern address go on working
+untold; `w`/`h` are its extent and shadow it, as they shadow a quad.
+`polyDepth` was generalised from four points to N for it, and the closed
+spline is flattened once and cached in `_flat` like a line's bows. Saved
+as `blob`; a warp that arrives without one is given eight points on its
+oval on the way in.
+
 **Water bends through its points; a road bends between them.** A `smooth`
 kind ignores its per-segment bows and runs a Catmull-Rom through every
 point, so its mid-segment grips are not bows but births: take one and a

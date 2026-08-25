@@ -344,6 +344,15 @@ function tryStep(dx, dy){
   }
   G.face = [sx, sy];
   const nx = G.x + sx, ny = G.y + sy;
+  /* ── off the plate ───────────────────────────────────────────────────
+     The map never pans: a road that runs to the edge runs onto the next
+     plate, and the atlas says whether there is one. Only from a road
+     tile, and only straight off — a diagonal fallback never leaves. */
+  if (typeof Atlas !== 'undefined' && wAt(G.x, G.y) && !(sx && sy) &&
+      (nx < 0 || ny < 0 || nx >= G.terr.tw || ny >= G.terr.th)){
+    const dir = nx < 0 ? 'w' : nx >= G.terr.tw ? 'e' : ny < 0 ? 'n' : 's';
+    if (Atlas.edge(dir, [G.x, G.y])) return;
+  }
   G.stepT = 0; G.moving = true;
   G.stepScale = (sx && sy) ? 1.414 : 1;      // a diagonal is a longer stride
   const from = toWorld(G.x, G.y);
@@ -735,6 +744,7 @@ function boot(img){
   Palace.init();
   Basemap.init();
   Hud.init();
+  if (typeof Atlas !== 'undefined') Atlas.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

@@ -1,0 +1,215 @@
+'use strict';
+/* ── the atlas: one town is many plates ───────────────────────────────
+   The rule the whole interface is built on is that the map never pans and
+   never zooms: what is on screen is the town, and if the town needs more
+   room, the town gets another plate. A plate is exactly what the home town
+   already is — a set of shapes under a storage key, markers under another
+   — so a second one is the same machinery mounted on a second pair of
+   keys, which is what going inside a building already does.
+
+   Plates are joined by their edges. Walk a road off the north edge of one
+   and you arrive on the south edge of the plate joined there; walk off an
+   edge nothing is joined to and you are asked whether to open a plate. The
+   compass at the bottom of the HUD draws them as a mind map, laid out by
+   how they join, and jumps.
+
+   `hq.atlas` holds the graph and which plate you are on. The home plate
+   keeps the keys it always had, so a town saved before the atlas existed
+   is the home plate of a one-plate atlas without being touched. */
+
+const Atlas = (() => {
+  const KEY = 'hq.atlas';
+  const OPP = {n: 's', s: 'n', e: 'w', w: 'e'};
+  const skey = id => id === 'home' ? 'hq.shapes' : 'hq.shapes.' + id;
+  const mkey = id => id === 'home' ? 'hq.markers' : 'hq.markers.' + id;
+
+  let A = load();
+  function load(){
+    try {
+      const a = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (a && a.areas && a.areas.home) return a;
+    } catch (e){}
+    return {areas: {home: {name: 'Home', links: {}}}, current: 'home'};
+  }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(A)); } catch (e){} }
+  const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
+
+  /* ── where a crossing lands ───────────────────────────────────────────
+     Off the north edge at column x is onto the south edge at column x of
+     the plate beyond: the two plates share the edge, so the road carries
+     straight on. */
+  function entry(dir, at){
+    const t = G.terr;
+    if (dir === 'n') return [at[0], t.th - 1];
+    if (dir === 's') return [at[0], 0];
+    if (dir === 'e') return [0, at[1]];
+    return [t.tw - 1, at[1]];
+  }
+
+  /* ── standing on another plate ───────────────────────────────────────
+     Commit here, mount there, stand the walker where asked — or where
+     spawn() would put it, when the jump came from the map rather than
+     from an edge. Never from inside a building: a plan is not a plate. */
+  function go(id, at){
+    if (!A.areas[id] || !G.terr) return false;
+    if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    if (id === A.current && !at) return true;
+    Build.commit(); Markers.commit();
+    A.current = id; save();
+    Markers.mount(mkey(id));
+    Build.mount('map', skey(id));               // restamps the walk grid
+    if (at){
+      G.x = G.tx = at[0]; G.y = G.ty = at[1];
+      const w = toWorld(G.x, G.y);
+      G.fx = w[0]; G.fy = w[1]; G.moving = false; G.bump = false;
+      /* the crossing tile is road on a plate opened from a road; on one
+         joined by hand it may not be, and a walker standing on nothing
+         reaches nothing — so the nearest road, as after any edit */
+      if (typeof revalidate === 'function') revalidate(); else floodReach();
+    } else spawn();
+    G.round = 1; G.msg = ''; G.over = false;
+    scatterSparks();
+    note(A.areas[id].name);
+    closeMap();
+    return true;
+  }
+
+  /* ── a plate beyond an edge ──────────────────────────────────────────
+     Opened joined both ways, with a stub of road running in from the
+     crossing so the walker arrives on ground rather than on nothing, and
+     the road you were on visibly continues. The stub is written straight
+     into the new plate's storage in the shape the builder saves, before
+     the plate is mounted, so the builder loads it like anything else. */
+  function add(dir, at){
+    const cur = A.areas[A.current];
+    if (cur.links[dir]) return go(cur.links[dir], entry(dir, at));
+    const id = 'a' + Date.now().toString(36);
+    const n = Object.keys(A.areas).length;
+    A.areas[id] = {name: 'Plate ' + (n + 1), links: {}};
+    A.areas[id].links[OPP[dir]] = A.current;
+    cur.links[dir] = id;
+    save();
+    const t = G.terr, z = t.tsz, e = entry(dir, at);
+    const dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0;
+    const a = [(e[0] + 0.5) * z - dx * z, (e[1] + 0.5) * z - dy * z];   // half a tile past the edge, so the crossing tile is covered
+    const b = [(e[0] + 0.5) * z + dx * z * 5, (e[1] + 0.5) * z + dy * z * 5];
+    const stub = {kind: 'road', type: 'line', seed: (Math.random() * 1e6) | 0, variant: 'mixed', rot: 0,
+                  label: '', n: 0, room: 0, feather: 0, bright: 1.3, mask: false,
+                  grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0, quad: null, blob: null,
+                  core: 0.35, aim: null, pad: 1.2, padFade: 0.8, padBreak: 0.3,
+                  x: a[0], y: a[1], w: z * 6, h: z * 5, r: z * 0.25, pts: [a, b], ctrl: null, width: z * 0.5};
+    try { localStorage.setItem(skey(id), JSON.stringify([stub])); } catch (err){}
+    return go(id, e);
+  }
+
+  /* ── the edge ────────────────────────────────────────────────────────
+     Called by the walker when a step would leave the plate. Joined: cross.
+     Not joined: ask, in a prompt that holds the keys until answered. */
+  const NAME = {n: 'north', s: 'south', e: 'east', w: 'west'};
+  let asking = null;
+  function edge(dir, at){
+    const cur = A.areas[A.current];
+    if (cur.links[dir]) return go(cur.links[dir], entry(dir, at));
+    if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    asking = {dir, at};
+    const el = prompt();
+    el.querySelector('b').textContent = NAME[dir];
+    el.hidden = false;
+    return true;
+  }
+  function prompt(){
+    let el = document.getElementById('edge');
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = 'edge';
+    el.className = 'glass';
+    el.innerHTML = '<div class="plabel">The edge of the plate</div>' +
+      '<div>the road runs off to the <b></b> and there is no plate there yet</div>' +
+      '<div class="erow"><button id="edgeyes">open a plate</button><button id="edgeno">stay</button></div>' +
+      '<div class="knote">enter opens &middot; esc stays</div>';
+    document.body.appendChild(el);
+    el.querySelector('#edgeyes').onclick = yes;
+    el.querySelector('#edgeno').onclick = no;
+    return el;
+  }
+  function yes(){ if (!asking) return; const q = asking; asking = null; prompt().hidden = true; add(q.dir, q.at); }
+  function no(){ asking = null; prompt().hidden = true; }
+  addEventListener('keydown', e => {
+    if (asking){
+      if (e.code === 'Enter' || e.code === 'NumpadEnter'){ e.preventDefault(); e.stopPropagation(); yes(); }
+      else if (e.code === 'Escape'){ e.preventDefault(); e.stopPropagation(); no(); }
+      else if (/^(Key[WASD]|Arrow)/.test(e.code)){ e.preventDefault(); e.stopPropagation(); no(); }
+      return;
+    }
+    if (mapOpen() && e.code === 'Escape'){ e.preventDefault(); e.stopPropagation(); closeMap(); }
+  }, true);
+
+  /* ── the mind map ────────────────────────────────────────────────────
+     Plates laid out by how they join: home in the middle, each neighbour
+     one step in its direction, breadth first, so the picture is the town
+     as it is walked and not a list. The one you are on is inverted, like
+     every selection in this game. Click one to stand on it. */
+  function place(){
+    const pos = {home: [0, 0]}, q = ['home'];
+    const D = {n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0]};
+    while (q.length){
+      const id = q.shift();
+      for (const dir in A.areas[id].links){
+        const to = A.areas[id].links[dir];
+        if (pos[to]) continue;
+        pos[to] = [pos[id][0] + D[dir][0], pos[id][1] + D[dir][1]];
+        q.push(to);
+      }
+    }
+    for (const id in A.areas) if (!pos[id]) pos[id] = [0, Object.keys(pos).length]; // an orphan, listed below
+    return pos;
+  }
+  function openMap(){
+    let el = document.getElementById('atlas');
+    if (!el){
+      el = document.createElement('div');
+      el.id = 'atlas'; el.className = 'glass';
+      document.body.appendChild(el);
+    }
+    const pos = place();
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const id in pos){ x0 = Math.min(x0, pos[id][0]); y0 = Math.min(y0, pos[id][1]); x1 = Math.max(x1, pos[id][0]); y1 = Math.max(y1, pos[id][1]); }
+    const CW = 96, CH = 56;
+    let html = '<div class="plabel">The plates</div><div class="amap" style="width:' + ((x1 - x0 + 1) * CW) +
+               'px;height:' + ((y1 - y0 + 1) * CH) + 'px">';
+    for (const id in pos){
+      const [x, y] = pos[id];
+      const a = A.areas[id];
+      for (const dir in a.links){        // a joint, drawn once from the side that is above/left
+        if (dir === 's') html += '<i class="ajoin v" style="left:' + ((x - x0) * CW + CW / 2 - 1) + 'px;top:' + ((y - y0) * CH + CH - 8) + 'px"></i>';
+        if (dir === 'e') html += '<i class="ajoin h" style="left:' + ((x - x0) * CW + CW - 8) + 'px;top:' + ((y - y0) * CH + CH / 2 - 1) + 'px"></i>';
+      }
+      html += '<div class="achip' + (id === A.current ? ' sel' : '') + '" data-id="' + id + '" style="left:' +
+              ((x - x0) * CW + 8) + 'px;top:' + ((y - y0) * CH + 8) + 'px">' + a.name + '</div>';
+    }
+    html += '</div><div class="knote">click a plate to stand on it &middot; walk a road off an edge to open the next &middot; esc closes</div>';
+    el.innerHTML = html;
+    el.querySelectorAll('.achip').forEach(c => { c.onclick = () => go(c.dataset.id, null); });
+    el.hidden = false;
+  }
+  const mapOpen = () => { const el = document.getElementById('atlas'); return !!el && !el.hidden; };
+  function closeMap(){ const el = document.getElementById('atlas'); if (el) el.hidden = true; }
+  function toggleMap(){ if (mapOpen()) closeMap(); else openMap(); }
+
+  function init(){
+    /* the home plate is where the walker wakes; a town saved before the
+       atlas existed is that plate, so nothing here mounts anything on
+       boot — only a current plate that is not home needs mounting */
+    if (A.current !== 'home' && A.areas[A.current]){
+      Markers.mount(mkey(A.current));
+      Build.mount('map', skey(A.current));
+    }
+    if (typeof Hud !== 'undefined') Hud.onTowns = toggleMap;
+  }
+
+  return {init, go, add, edge, openMap, closeMap, toggleMap,
+          current: () => A.current, areas: () => A.areas,
+          name: () => A.areas[A.current].name,
+          rename: v => { A.areas[A.current].name = v; save(); },
+          skey, mkey};
+})();

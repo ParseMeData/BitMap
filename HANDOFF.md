@@ -279,6 +279,31 @@ through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
 
+**A plate is the interior's trick pointed sideways.** Going inside a
+building mounts the builder and the markers on another pair of keys and
+swaps the registry; a plate mounts them on another pair of keys and keeps
+it. `hq.atlas` is the graph — `{areas: {id: {name, links: {n,e,s,w}}},
+current}` — and the home plate keeps `hq.shapes`/`hq.markers`, so a town
+saved before the atlas existed is the home plate of a one-plate atlas
+without being touched. Plates are never entered from inside a building:
+`Atlas.go` refuses while `Interior.inside()`.
+
+**Crossing an edge is a step the walker asks about.** `tryStep` in
+`game.js` hands a straight step off the grid, from a road tile, to
+`Atlas.edge(dir, [x, y])` and returns if it was taken; a diagonal fallback
+never leaves the plate. The landing tile is the same column or row on the
+opposite edge, so the road carries straight on; a plate opened from a road
+gets a stub laid from the crossing inward, written into its storage in the
+shape `save()` writes before the plate is mounted, so the builder loads it
+like anything else. Land on a tile that is not road and `revalidate()`
+rescues, as after any edit.
+
+**A stranded road is said, not fixed.** Eden chose connectivity over
+"any road walkable": the route is one flood from the walker, and a road
+the flood does not reach is framed in gold with the reason in the palette.
+Auto-connecting was considered and rejected — a connector the tool draws
+is a road nobody asked for.
+
 **A warp is a quad with more corners and a curve through them.** `blob`
 is a closed run of points in the shape's own frame, exactly as `quad` is,
 so rotation, movement, `local()` and every pattern address go on working

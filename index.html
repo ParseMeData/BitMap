@@ -74,6 +74,23 @@ body.mapping #hud{display:none}
   text-align:center;z-index:5;background:rgba(8,8,11,.86);letter-spacing:.28em;
   text-transform:uppercase;font-size:11px}
 #fatal{color:var(--flare);z-index:9;background:var(--ground)}
+/* the atlas: the edge prompt and the mind map, both panels, both centred */
+#edge,#atlas{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;
+  padding:14px 16px;display:flex;flex-direction:column;gap:9px;max-width:80vw;max-height:80vh;overflow:auto}
+#edge b{color:var(--gold)}
+.erow{display:flex;gap:6px}
+.erow button{flex:1;background:var(--well);color:var(--bone);border:1px solid rgba(237,234,227,.3);
+  font:400 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;padding:8px;cursor:pointer}
+.erow button:hover{background:var(--bone);color:var(--ground)}
+.amap{position:relative}
+.achip{position:absolute;width:80px;height:40px;display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(237,234,227,.3);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  cursor:pointer;text-align:center;padding:2px}
+.achip:hover{background:rgba(237,234,227,.12)}
+.achip.sel{background:var(--bone);color:var(--ground)}
+.ajoin{position:absolute;background:var(--dim)}
+.ajoin.v{width:2px;height:16px}
+.ajoin.h{width:16px;height:2px}
 #toast{position:fixed;left:16px;bottom:14px;z-index:8;max-width:70ch;padding:9px 12px;
   background:rgba(8,8,11,.9);border:1px solid var(--flare);color:var(--flare);
   font:400 10px/1.5 var(--mono);letter-spacing:.06em;white-space:pre-wrap}
@@ -432,13 +449,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 55, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 56, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

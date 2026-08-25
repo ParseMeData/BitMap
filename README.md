@@ -232,6 +232,9 @@ stale.
     src/hud.js           the four ways in, drawn on the plate out of diamonds
                          rather than in CSS: a hub and four rings, pinned to
                          the screen and recomputed from the camera each frame
+    src/atlas.js         the plates: a town as many static screens joined
+                         at their edges, the edge prompt, the mind map the
+                         compass opens
     src/game.js          state, input, camera, entities, frame loop
     platformer.html      the runner, which takes this route as its deck when
                          there is one (see Playing it). A vendored copy of
@@ -1376,6 +1379,28 @@ a movement key and it **wakes**: the camera goes back to following the walker
 and the hint at the bottom fades out. Stop steering for `?sleep` seconds and
 it drowses back into the drift on its own, which is the only reason the hint
 is there to read again.
+
+## Plates
+
+The map never pans and never zooms: what is on screen is the town. When
+the town needs more room it gets another **plate** — a second screen the
+same size as this one, joined to it along an edge. Walk a road off the
+north edge of one and you arrive on the south edge of the plate joined
+there, on the same road, which continues. Walk off an edge nothing is
+joined to and a prompt asks whether to open a plate there (`Enter` opens,
+`Esc` stays); a new plate arrives with a stub of the road you were on
+running in from the crossing, so you are standing on ground. Each plate
+is its own town under its own keys — shapes, markers, sparks — and the
+palaces inside markers are shared by all of them. The **compass** at the
+bottom of the HUD opens the mind map: every plate laid out by how it
+joins, the one you are on inverted, click to stand on another. The home
+plate is the town you had before plates existed, untouched.
+
+Only the route carries the walker, and the route is one flood from where
+the walker stands, so a road laid somewhere that flood does not reach is
+a road nothing can walk. Build mode says so: a road not joined to the
+network is framed in gold, and selecting it puts the reason in the palette.
+Join it to a road the walker can reach and both go away.
 
 ## Walking
 

@@ -126,6 +126,25 @@ const Build = (() => {
   /* a drawn building: one size, the size it was drawn at, and no grips —
      it is placed like a print, moved whole, and that is the whole of it */
   const isPrint = s => !!(s && (Kinds.by[s.kind] || {}).glyphs);
+  /* ── a road that has not joined the network ─────────────────────────
+     Only the route carries the walker, and the route is one flood from
+     where the walker stands. A road laid somewhere that flood does not
+     reach is a road nothing can walk — not a bug in the grid, a gap in
+     the drawing — so it is said, and left to you to join up. Asked of the
+     walk tiles the road stamps, so it agrees with what the walker sees
+     and not with what the pointer sees. */
+  function stranded(s){
+    const k = Kinds.by[s.kind];
+    if (!k || k.walk !== 2 || !G.terr || !G.reach || Kinds.scope() !== 'map') return false;
+    let any = false, hit = false;
+    tiles(s, G.terr, i => { if (!G.terr.path[i]) return; any = true; if (G.reach[i]) hit = true; },
+          banded(s) ? G.terr.tsz * (k.walkTol || 0.62) : 0);
+    return any && !hit;
+  }
+  function syncStrand(){
+    const el = $('#kstrand');
+    if (el) el.hidden = !(sel && stranded(sel));
+  }
   /* ── a warp's points ─────────────────────────────────────────────────
      Born as eight on the oval the shape was, in its own frame; `w`/`h`
      are kept as the run's own extent, the way they shadow a quad, because
@@ -1028,7 +1047,11 @@ const Build = (() => {
        treatment: it puts no diamonds of its own on the plate, so a mark on
        every cell it covers is the only way to see what it has hold of. */
     const bare = (!!isGap(s) || isMod(s)) && s.type !== 'line';
-    const col = bare ? AQUA : (isSel ? FLARE : IDLE);
+    /* a road nothing can walk to is drawn in gold: the network is what
+       carries the walker, and a road that has not joined it is scenery
+       until it does. Said in the frame, where you are looking, rather
+       than only in the panel. */
+    const col = bare ? AQUA : (isSel ? FLARE : (stranded(s) ? [1, 0.76, 0.31] : IDLE));
     const al = isSel ? 0.85 : (bare ? 0.5 : 0.3);
     /* ── but a boundary does not hatch, and must not ────────────────────
        The mark on every covered cell means "this is what will go", which
@@ -1568,6 +1591,8 @@ const Build = (() => {
       '<div id="kvariants" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly" id="ktonelabel">Tone</div>' +
       '<div id="ktones" class="kgrid fitonly"></div>' +
+      '<div class="knote fitonly" id="kstrand" hidden>this road is not joined to the ' +
+      'network &middot; nothing can walk it until it meets a road the walker can reach</div>' +
       '<div class="plabel fitonly">Adjust</div><div id="ktune" class="fitonly"></div>' +
       '<div class="kfoot fitonly"><button class="btn" id="kmask">Mask</button>' +
       '<button class="btn" id="kclearlayer">Clear layer</button></div>' +
@@ -2203,6 +2228,7 @@ const Build = (() => {
     syncKinds();
     syncVariants();
     syncTones();
+    syncStrand();
     syncTune();
     syncRoute();
     const allowed = sel ? (Kinds.by[sel.kind].types || []) : [];

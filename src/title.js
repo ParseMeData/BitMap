@@ -174,7 +174,10 @@ const Title = (() => {
     const left = mt.actualBoundingBoxLeft || 0, right = mt.actualBoundingBoxRight || mt.width;
     const asc = mt.actualBoundingBoxAscent || 70, desc = mt.actualBoundingBoxDescent || 20;
     const w100 = Math.max(1, left + right), h100 = Math.max(1, asc + desc);
-    const cols = clamp(Math.round(name.length * PERCH), MINC, MAXC);
+    /* a caller may name the width outright — a card's label is one
+       glyph and would otherwise be read at the floor for a whole name */
+    const cols = t && t.cols ? clamp(Math.round(t.cols), 8, MAXC)
+               : clamp(Math.round(name.length * PERCH), MINC, MAXC);
     const fs = 100 * (cols * SS) / w100;
     const rows = Math.max(1, Math.ceil(h100 * fs / 100 / SS));
     const W = (cols + 2) * SS, H = (rows + 2) * SS;
@@ -235,7 +238,8 @@ const Title = (() => {
     const e = fonts.get(family);
     if (!e){ load(family); return null; }
     if (e.state !== 'ready') return null;
-    const k = family + '\n' + name + '\n' + tuned(t, 'detail') + '\n' + tuned(t, 'dither');
+    const k = family + '\n' + name + '\n' + tuned(t, 'detail') + '\n' + tuned(t, 'dither') +
+              '\n' + (t && t.cols ? Math.round(t.cols) : '');
     let f = faces.get(k);
     if (f === undefined){
       try { f = build(name, family, t); } catch (err){ f = null; }
@@ -275,6 +279,48 @@ const Title = (() => {
   }
   const cost = f => f.cells.length;
 
+  /* ── the same face, off the plate ──────────────────────────────────────
+     The bag is a page rather than the plate, so its cards cannot reach
+     the instance stream — but a face is only cells, and cells can be
+     drawn as anything. Here they are an inline SVG of rhombi, one per
+     cell, filled with `currentColor` so the card's own colour states —
+     dim, bone once done, inverted when held, the hover wash — carry
+     through untouched, and sized by the viewBox so the card's CSS decides
+     how big it is. Weight and Tone are honoured the way `emit` honours
+     them; the shake is not, because a card is not the lattice and a
+     label knocked off its seat on a still page would read as broken. */
+  function svg(f, t){
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = document.createElementNS(NS, 'svg');
+    const cols = f.cols + 2, rows = f.rows + 2;
+    el.setAttribute('viewBox', '0 0 ' + cols + ' ' + rows);
+    el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    const hs = FAT * tuned(t, 'weight'), tone = tuned(t, 'tone');
+    const FLAT_AL = .92, FLAT_SZ = 1.5;
+    /* one path per alpha step rather than one element per cell: a label
+       is a few hundred cells and the DOM does not want a few hundred
+       nodes per card times fifteen cards */
+    const byAl = new Map();
+    for (const c of f.cells){
+      const ca = FLAT_AL + (c.al - FLAT_AL) * tone, cs = FLAT_SZ + (c.sz - FLAT_SZ) * tone;
+      const r = hs * cs, x = c.x + 1.5, y = c.y + 1.5;
+      const a = Math.round(ca * 20) / 20;
+      const d = 'M' + (x - r).toFixed(2) + ' ' + y.toFixed(2) +
+                'L' + x.toFixed(2) + ' ' + (y - r).toFixed(2) +
+                'L' + (x + r).toFixed(2) + ' ' + y.toFixed(2) +
+                'L' + x.toFixed(2) + ' ' + (y + r).toFixed(2) + 'Z';
+      byAl.set(a, (byAl.get(a) || '') + d);
+    }
+    for (const [a, d] of byAl){
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'currentColor');
+      path.setAttribute('fill-opacity', String(a));
+      el.appendChild(path);
+    }
+    return el;
+  }
+
   /* ── the shelf ─────────────────────────────────────────────────────────
      The faces on offer, by Google's name for each, in the order the menu
      shows them. A list rather than a free field because a field needs
@@ -295,6 +341,6 @@ const Title = (() => {
     'Monoton'
   ];
 
-  return {load, state, face, emit, cost, fonts: FONTS.slice(), DEFAULT: FONTS[0],
+  return {load, state, face, emit, cost, svg, fonts: FONTS.slice(), DEFAULT: FONTS[0],
           tune: TUNE, tuned};
 })();

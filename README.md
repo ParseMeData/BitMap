@@ -1275,6 +1275,13 @@ at the tool's values (Size at 1×); Weight rests at 1.2×, past the corners, bec
 lattice through a stroke was the first thing seen and the tool's 1× is one
 notch back. Stored as `hq.title.<name>`.
 
+The bag's row cards wear the same face: a card's number or letter is the
+heading's font read through the same recipe, drawn as an inline SVG of
+rhombi in the card's own colour (`Title.svg`), so the bag and the plate
+say the same word the same way. The bag is a page rather than the plate,
+which is why it is SVG there and instances here; the text stays under it
+until the font lands. Stack cards keep their small corner tag.
+
 The font is fetched from Google the first time it is named, so it needs the
 network once per session. Until it lands the 5×7 type draws; a family Google
 does not have leaves the 5×7 type standing and says so, and the menu is

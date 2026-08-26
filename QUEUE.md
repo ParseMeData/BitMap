@@ -25,6 +25,13 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The bag's labels in the heading's face** — 2026-08-26. Row cards
+  draw their number/letter via `Title.face` (a `cols` override for a
+  one-glyph face) as `Title.svg` — rhombi grouped by alpha into a few
+  paths, `currentColor`, viewBox-sized — under `.bagcard.glyph`; the text
+  tag stays hidden beneath for the moment before the font lands (`Title.
+  load` re-renders the row). Stack cards keep the corner tag. BUILD 86.
+  Verified on a throwaway: 5 glyph cards on both systems, Fleur De Leah.
 - [x] **Titles in a real font, the whole arc** — 2026-08-26, seven
   commits `ecd5dbc`…`ce163f2`, cherry-picked from the `Loci Bitmap V7.0`
   clone (which had been cloned at v7.0 and diverged; only BUILD collided,

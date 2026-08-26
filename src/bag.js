@@ -348,6 +348,30 @@ const Bag = (() => {
     return el;
   }
 
+  /* the heading's font and tune, asked for at draw time: they are the
+     town's dress, kept by Palace, and a bag that captured them would go
+     stale the moment the menu moved */
+  function dress(){
+    if (typeof Palace === 'undefined' || !Palace.heading || typeof Title === 'undefined') return null;
+    const h = Palace.heading();
+    return h.font ? h : null;
+  }
+  function glyph(c, label){
+    const h = dress();
+    if (!h) return;
+    /* a one-glyph face is read at a fixed width rather than the floor a
+       whole name gets, and letters a little wider than digits */
+    const t = Object.assign({}, h.tune, {cols: /[A-Z]/.test(label) ? 30 : 26});
+    const f = Title.face(label, h.font, t);
+    if (!f){
+      /* not here yet — draw the row again once it is, if the bag is still up */
+      if (Title.state(h.font) === 'loading') Title.load(h.font, ok => { if (ok && system) render(); });
+      return;
+    }
+    c.classList.add('glyph');
+    c.append(Title.svg(f, h.tune));
+  }
+
   function card(sys, i, slot, shown, k){
     k = k || key(sys, i, slot);
     const c = document.createElement('div');
@@ -358,6 +382,13 @@ const Bag = (() => {
     tag.textContent = shown ? NAMES[slot] + ' · ' + SYSTEMS[sys].label(i)
                             : SYSTEMS[sys].label(i);
     c.append(tag);
+    /* A row card's label in the heading's face, as diamonds — the same
+       face the town's name wears, so the bag and the plate say the same
+       word the same way. The text stays in the tag underneath for the
+       moment before the font lands and for whenever it cannot; the
+       class is what hides it. A stack card keeps its small corner tag:
+       there the picture is the card and the label is a caption. */
+    if (!shown) glyph(c, SYSTEMS[sys].label(i));
     if (shown && Loci.has(k)){
       c.classList.add('face');
       Loci.get(k).then(url => { if (url && c.isConnected) c.style.backgroundImage = 'url("' + url + '")'; });

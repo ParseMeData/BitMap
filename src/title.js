@@ -545,12 +545,14 @@ const Title = (() => {
     const ox = (W - f.cols * px) / 2, oy = (H - f.rows * px) / 2;
     const weight = t && t.weight !== undefined ? t.weight : 1;
     const shade = t && t.shade !== undefined ? t.shade : 0;
+    const tint = t && t.tint ? t.tint : null;     // one ink for every cell, normalised rgb
     for (const c of f.cells){
       const cx = ox + (c.x + 0.5) * px, cy = oy + (c.y + 0.5) * px;
       const r = px * PLATE * c.sz * weight;
       const a = c.al * (1 - shade * (c.y + 1) / (f.rows + 1));
-      const col = 'rgba(' + Math.round(c.rgb[0] * 255) + ',' + Math.round(c.rgb[1] * 255) + ',' +
-                  Math.round(c.rgb[2] * 255) + ',' + a.toFixed(3) + ')';
+      const rgb = tint || c.rgb;
+      const col = 'rgba(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' +
+                  Math.round(rgb[2] * 255) + ',' + a.toFixed(3) + ')';
       x.beginPath();
       x.moveTo(cx - r, cy); x.lineTo(cx, cy - r); x.lineTo(cx + r, cy); x.lineTo(cx, cy + r); x.closePath();
       if (c.hollow){ x.strokeStyle = col; x.lineWidth = Math.max(0.6, r * 0.32); x.stroke(); }

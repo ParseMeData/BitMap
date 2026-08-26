@@ -7,19 +7,30 @@
    turn it and it is yours instead, at whatever heading you leave it;
    double-click it and it is the map's again.
 
-   Five masks out of one drawing (`tools/compass.py`): the rose is one
+   Five cuts out of one drawing (`tools/compass.py`): the rose is one
    element with a transform, and each letter is its own element placed
    at the rose's turned point every time the angle moves, upright — a
    letter that turned with the rose would be a letter read on its side.
-   They wear bone through the mask, so the compass is chrome in the
-   chrome's colour and never a picture laid on the plate. */
+   Each cut goes through the same tone pass as a card's picture and is
+   painted as diamonds, in bone with the titles' sheen down it — so the
+   compass is made of what the plate is made of, at the plate's pitch,
+   and never a picture laid on it. Flare while it is turned by hand. */
 
 const Compass = (() => {
   const KEY = 'hq.compass';                    // {manual, deg}
   const BOX = 200;                             // the element, CSS px (index.html agrees)
-  const OUT = 82;                              // letter centre from the rose's centre, clear of its rim
+  const OUT = 84;                              // letter centre from the rose's centre, clear of its rim
   let el = null, rose = null, pts = {}, state = {manual: false, deg: 0};
-  let shown = -1, last = null, drag = null, raf = 0;
+  let shown = -1, last = null, drag = null, raf = 0, faces = {}, painted = null;
+  /* the pitch: about three CSS pixels a diamond, which is the plate's own
+     cell at the zoom the town is read at; each cut is read at as many
+     cells as fit its width at that pitch, and painted at 2× for the
+     screen */
+  const PITCH = 2.2, SCALE = 2;
+  const SIZE = {rose: [120, 120], n: [50, 30], e: [40, 30], s: [40, 30], w: [40, 30]};
+  const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635];
+  const SHEEN = 0.35;
+  const url = k => COMPASS_ART[k].replace(/^url\("(.*)"\)$/, '$1');
 
   function load(){
     try {
@@ -44,20 +55,41 @@ const Compass = (() => {
     el = document.createElement('div');
     el.id = 'compass';
     el.title = 'drag to turn · double-click for the map’s north';
-    rose = document.createElement('div');
+    rose = document.createElement('canvas');
     rose.className = 'rose';
-    rose.style.webkitMaskImage = rose.style.maskImage = COMPASS_ART.rose;
+    rose.width = SIZE.rose[0] * SCALE; rose.height = SIZE.rose[1] * SCALE;
     el.append(rose);
     for (const k of ['n', 'e', 's', 'w']){
-      const p = document.createElement('div');
+      const p = document.createElement('canvas');
       p.className = 'pt pt-' + k;
-      p.style.webkitMaskImage = p.style.maskImage = COMPASS_ART[k];
+      p.width = SIZE[k][0] * SCALE; p.height = SIZE[k][1] * SCALE;
+      p.style.width = SIZE[k][0] + 'px'; p.style.height = SIZE[k][1] + 'px';
+      p.style.margin = (-SIZE[k][1] / 2) + 'px 0 0 ' + (-SIZE[k][0] / 2) + 'px';
       el.append(p);
       pts[k] = p;
     }
     document.body.append(el);
     wire();
+    read();
     return el;
+  }
+  /* every cut through the tone pass once — bone ink, no edges, the tone
+     flat — kept as cells, and painted whenever the ink changes */
+  function read(){
+    if (typeof Title === 'undefined' || !Title.picture) return;
+    const all = ['rose', 'n', 'e', 's', 'w'].map(k =>
+      Title.picture(url(k), Math.round(SIZE[k][0] / PITCH), {ink: 0, edge: 0, con: 1, bri: -0.12})
+        .then(f => { faces[k] = f; }));
+    Promise.all(all).then(() => { painted = null; paint(); }).catch(() => {});
+  }
+  function paint(){
+    const ink = state.manual ? FLARE : BONE;
+    if (painted === ink) return;
+    painted = ink;
+    for (const k in faces){
+      const cv = k === 'rose' ? rose : pts[k];
+      if (cv && faces[k]) Title.paint(cv, faces[k], {weight: 0.8, shade: SHEEN, tint: ink});
+    }
   }
 
   /* the rose turns as one; each letter is set at the turned point, and
@@ -74,6 +106,7 @@ const Compass = (() => {
       pts[k].style.top = (c + Math.sin(a) * OUT) + 'px';
     }
     el.classList.toggle('manual', state.manual);
+    paint();
   }
 
   /* shown by the same rule as the chrome: not on the wallpaper, not under a

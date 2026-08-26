@@ -1592,10 +1592,13 @@ is — and turns with it as the picture is placed. Take hold of the rose
 and turn it and it is yours instead, in flare, at whatever heading you
 leave it; double-click it and it is the map's again, in bone. Kept in
 `hq.compass`. The drawing in `assets/compass.png` had the letters on it;
-`tools/compass.py` cuts it into five masks — the rose, and N, E, S, W —
-so the rose is one element with a transform and each letter is set at
-the rose's turned point, upright: a letter that turned with the rose
-would be a letter read on its side. Re-run the tool when the art changes.
+`tools/compass.py` cuts it into five — the rose, and N, E, S, W — and
+each cut goes through the same tone pass as a card's picture and is
+painted as diamonds, in bone with the titles' sheen down it (flare while
+it is yours), so the compass is made of what the plate is made of. The
+rose is one element with a transform and each letter is set at the
+rose's turned point, upright: a letter that turned with the rose would be
+a letter read on its side. Re-run the tool when the art changes.
 
 ### The journal
 

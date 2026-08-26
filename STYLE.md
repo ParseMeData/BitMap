@@ -68,10 +68,10 @@ a grey of its own:
     .18 .2 .22     borders
     .3  .5         a border that is emphasised, or selected
 
-One hairline is a gradient: the bag's card edge runs from `.5` at the
-top-left to `.12` at the bottom-right — two alphas from the family above,
-with the fade between them, drawn as a 1px ring under the card. It is still
-bone and still 1px; what it is not is a grey.
+One hairline is a gradient: the bag's card edge sweeps around each card
+from `.6` at the top down both sides to `.08` at the bottom — alphas from
+the family above and below it, with the fade between, drawn as a 1px ring
+under the card. It is still bone; what it is not is a grey.
 
 **Do not introduce a colour.** If something new needs to be distinguished, it
 is distinguished by one of the six, by position, or by weight of alpha. The

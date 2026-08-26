@@ -299,7 +299,7 @@ body.tuning #route{display:none}
 #bagstack{display:flex;flex-direction:column;align-items:flex-end;width:100%;--step:32px}
 #bagstack .bagcard{background-color:var(--bone);color:var(--ground);
   width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7);flex:none}
-#bagstack .bagcard::before{background:linear-gradient(155deg,var(--bone),rgba(237,234,227,.5))}
+#bagstack .bagcard::before{background:conic-gradient(from 180deg at 50% 50%,rgba(237,234,227,.5),var(--bone) 50%,rgba(237,234,227,.5))}
 #bagstack .bagcard + .bagcard{margin-top:calc(var(--step) - ((100vh - 176px) / 3 - 10px))}
 /* the first card of a round stands off the one above: the stack reads in
    threes — person, action, object — and the gap is where one ends */
@@ -374,14 +374,18 @@ body.missions #bag{visibility:hidden}
   max-width:100%;display:grid;place-content:center;cursor:pointer;
   border:1px solid transparent;background:var(--well) center/cover no-repeat;
   font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-/* The edge is a hairline that fades along its run — bone, brighter at the
-   top-left and falling to the faintest hairline at the bottom-right — drawn
-   as a ring under the card's own children, so the real border stays 1px and
-   transparent and nothing moves. Still one colour, bone, at two alphas from
+/* The edge is a hairline that fades AROUND its run — bone, brightest at
+   the top of each card and falling down both sides to the faintest point
+   at the bottom, a conic sweep centred on the card so every card's edge is
+   plainly its own — drawn as a 1px ring under the card's children, so the
+   real border stays 1px and transparent and nothing moves. A half-pixel
+   ring was tried and the mask rounded it to nothing at 1×; a 1px line at
+   a lower alpha is how a hairline gets thinner on a screen that cannot
+   draw less than a pixel. Still one colour, bone, at two alphas from
    the hairline family; the gradient is between them, not to a grey. The
    card's states swap the two alphas for stronger ones on the same sweep. */
 .bagcard::before{content:'';position:absolute;inset:-1px;padding:1px;pointer-events:none;
-  background:linear-gradient(155deg,rgba(237,234,227,.5),rgba(237,234,227,.12));
+  background:conic-gradient(from 180deg at 50% 50%,rgba(237,234,227,.08),rgba(237,234,227,.6) 50%,rgba(237,234,227,.08));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   mask-composite:exclude}
@@ -392,9 +396,9 @@ body.missions #bag{visibility:hidden}
 .bagcard:hover,.bagcard.over{background-color:rgba(237,234,227,.12);color:var(--bone)}
 .bagcard.done{color:var(--bone)}
 /* the keyboard's place in the row: a bone edge on the column it stands on */
-.bagcol.cur .bagcard::before{background:linear-gradient(155deg,var(--bone),rgba(237,234,227,.3))}
+.bagcol.cur .bagcard::before{background:conic-gradient(from 180deg at 50% 50%,rgba(237,234,227,.35),var(--bone) 50%,rgba(237,234,227,.35))}
 .bagcol.sel .bagcard{background-color:var(--bone);color:var(--ground)}
-.bagcol.sel .bagcard::before{background:linear-gradient(155deg,var(--bone),rgba(237,234,227,.5))}
+.bagcol.sel .bagcard::before{background:conic-gradient(from 180deg at 50% 50%,rgba(237,234,227,.5),var(--bone) 50%,rgba(237,234,227,.5))}
 /* the word: typed on the card, along its bottom edge */
 .bagword{position:absolute;left:0;right:0;bottom:0;width:100%;background:rgba(8,8,11,.72);
   border:0;border-top:1px solid rgba(237,234,227,.22);color:var(--bone);
@@ -591,7 +595,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 90, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 92, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/build.js','src/markers.js','src/history.js',

@@ -1654,13 +1654,6 @@ const Build = (() => {
       '<div class="plabel">Heading</div>' +
       '<div class="kfoot"><button class="btn" id="ktreat">Solid</button>' +
       '<button class="btn" id="kborder">No border</button></div>' +
-      /* The face, by name: a Google Font as Google spells it, or nothing
-         for the diamond type. It sits between the two buttons and the two
-         sliders because it is the same kind of thing as all four — the one
-         heading's dress — and a field rather than a cycle because the
-         list it picks from is not ours to enumerate. */
-      '<input id="kfont" type="text" spellcheck="false" autocomplete="off"' +
-      ' placeholder="a Google Font, or blank for the diamond type">' +
       /* The two sliders belong here rather than under Adjust for the reason
          the buttons above them do: what they set is the one heading in
          force, not the shape you are about to place — and here they are
@@ -1772,9 +1765,14 @@ const Build = (() => {
     }; };
     cyc('#ktreat', 'cycleTreatment');
     cyc('#kborder', 'cycleBorder');
-    /* on `change` rather than `input`: every distinct value typed is a
-       stylesheet fetched from Google, and a family typed a letter at a
-       time is a dozen fetches for names that do not exist */
+    /* The face lives in the Town/Palace panel under the name, because the
+       name and the face it is set in are one decision made in one place;
+       the treatment, border and sliders stay here with the rest of the
+       dress. The field is static markup rather than the palette's, so
+       this rewires the same element on every reui — harmless. On `change`
+       rather than `input`: every distinct value typed is a stylesheet
+       fetched from Google, and a family typed a letter at a time is a
+       dozen fetches for names that do not exist. */
     const kf = $('#kfont');
     if (kf){
       kf.onchange = () => { if (typeof Palace !== 'undefined') Palace.setFont(kf.value); syncHead(); };
@@ -2155,7 +2153,10 @@ const Build = (() => {
     if (!box || !on) return;
     const inside = typeof Interior !== 'undefined' && Interior.inside();
     const list = Markers.ordered();
-    lab.textContent = inside ? 'Loci' : 'Rooms';
+    /* the head names the place, not the list: the panel is where the
+       place is named and dressed, and the list under it is what that
+       place holds */
+    lab.textContent = inside ? 'Palace' : 'Town';
     const nm = $('#kname');
     if (nm && typeof Palace !== 'undefined'){
       nm.placeholder = inside ? 'name this palace' : 'name this town';

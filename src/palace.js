@@ -563,9 +563,14 @@ const Palace = (() => {
        So a palace's name is not draggable and there is no offset for it: a
        title block that had wandered off the top of its own drawing would be
        a mistake rather than a choice. */
+    /* and never so close that it lands on the room captions, which stand
+       a gap and a name's height above the top row of rooms: the 5×7 type
+       always cleared them by being tall, and a face with few rows does
+       not, so the clearance is a floor in tiles as well as a share of h */
     if (inside)
       return {name, px, face, w, h, inside: true, alpha: 0.66,
-              x: (box[0] + box[2]) / 2, y: box[1] - h * 1.15};
+              x: (box[0] + box[2]) / 2,
+              y: box[1] - Math.max(h * 1.15, h / 2 + t * (0.55 + NAME_TILES + 0.4))};
     if (!face) px = Math.min(px, Type.pitchFor(name, wide, treat));
     const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
     return {name, px, face, inside: false, alpha: 0.38, home: [cx, cy],

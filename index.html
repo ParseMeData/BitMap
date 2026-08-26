@@ -217,11 +217,6 @@ body.inside #msg{top:98px}
 body.wall #inside,body.wall #enterhint{display:none}
 #kmname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
-/* the heading's font: a name the user typed, so it keeps its case and the
-   quiet tracking; struck through when Google had no such family */
-#kfont{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
-  color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
-#kfont.off{text-decoration:line-through;color:var(--dim)}
 /* the route: the rooms in order, or the loci inside one — the order is the
    thing being authored, so it gets a list rather than living on the plate */
 /* the room order: a list you type, top to bottom, which the plan is laid out
@@ -247,6 +242,12 @@ body.locus #palace{display:none}
 body.tuning #route{display:none}
 #kname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
+/* the face the name is set in, right under it: the user's words again, so
+   the same field; a size down, because the name is the thing and the face is
+   how it is dressed; struck through when Google had no such family */
+#kfont{width:100%;margin-top:4px;background:var(--well);border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 8px;letter-spacing:.06em}
+#kfont.off{text-decoration:line-through;color:var(--dim)}
 /* every field the user types into, in one colour: #kname and #kmname hold the
    same words and are on screen together in build mode, so two greys read as
    two different kinds of field */
@@ -490,6 +491,8 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="route" class="glass" hidden>
   <div class="phead"><span>The <b id="krlabel">route</b></span></div>
   <input id="kname" type="text" spellcheck="false" placeholder="name this place">
+  <input id="kfont" type="text" spellcheck="false" autocomplete="off"
+    placeholder="in a Google Font · blank for the diamond type">
   <div id="kroute"></div>
   <div class="knote" id="krnote"></div>
   <div class="kfoot one"><button class="btn" id="kplay">Play the route</button></div>
@@ -569,7 +572,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 78, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 79, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/build.js','src/markers.js','src/history.js',

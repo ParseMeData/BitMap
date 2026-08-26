@@ -1237,9 +1237,11 @@ did. The tool's screens — dots, Bayer, Floyd — are deliberately not here:
 the diamonds are the halftone, and the recipe Eden settled on had that
 switch at *none*.
 
-Type the family under **Heading** in the build palette, as Google spells it
-— `Fleur De Leah`, `Cinzel`, `Playfair Display` — and blank it for the 5×7
-type again. It is one setting worn by the town's name and every palace's
+Type the family in the **Town** / **Palace** panel in build mode, in the
+field under the name, as Google spells it — `Fleur De Leah`, `Cinzel`,
+`Playfair Display` — and blank it for the 5×7 type again. The name and the
+face it is set in are one decision, so they are made in one place; the
+treatment, border, Bright and Jitter stay under *Heading* in the palette. It is one setting worn by the town's name and every palace's
 name alike, like the treatment and the border, and the border, Bright and
 Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
@@ -1257,8 +1259,10 @@ whatever stands there. One is a hand statue, two is a sculpture of Roman
 faces, three is the television, four is the fireplace. That is the whole of
 the method — the order is fixed, and each place in it holds an image.
 
-Build mode shows **the route** in its own panel, opposite the palette. Out on
-the town it lists the rooms in order; inside one it lists that room's loci.
+Build mode shows **the route** in its own panel, opposite the palette, headed
+**Town** out on the map and **Palace** inside one — the panel names the place
+you are standing in and the face its name is set in, and lists what it
+holds: out on the town the rooms in order, inside one that palace's loci.
 `▲` and `▼` move an entry along the run, and the numbering stays dense and
 1-based — delete the third of five and you have four, not a gap at three. The
 number is drawn beside the marker on the plan, because a memory palace *is*

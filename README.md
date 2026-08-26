@@ -1,4 +1,4 @@
-# Loci Bitmap V7.1
+# Loci Bitmap V7.2
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.1 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.2 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -79,6 +79,14 @@ layer, with a river's ends draggable. And a title in a real font: the
 town's name and a palace's name set in any face on the shelf — Fleur De
 Leah by default — still one diamond per cell of ink, on the plate's own
 pitch, with Size, Detail, Weight, Tone and Dither to tune it.
+
+**v7.2** — the title, tuned: a font title's diamond is the plate's own,
+Size reads a name at more of them, and a name lies on an oval mat that
+dims whatever is under it, feathered from its centre, with a sheen down
+the lettering. The bag's cards wear the heading's face — every number
+and letter read in one box per system, on one baseline — and the floral
+frame, masked in the card's own colour, with an edge that fades around
+each card.
 
 ### The half that is not in the repo
 

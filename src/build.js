@@ -1715,7 +1715,11 @@ const Build = (() => {
        is turned up in. `h` on the key is what keeps them out of the shape
        branches in applySlider and syncTune. */
     for (const [key, label, min, max, step] of
-         [['hbright', 'Bright', 40, 220, 5], ['hjitter', 'Jitter', 0, 150, 5]])
+         [['hbright', 'Bright', 40, 220, 5], ['hjitter', 'Jitter', 0, 150, 5],
+          /* the font's own: ranges are read back off Title.tune in
+             syncHead, so these are placeholders the first sync replaces */
+          ['hdetail', 'Detail', 6, 24, 1], ['hweight', 'Weight', 50, 200, 5],
+          ['htone', 'Tone', 0, 100, 5], ['hdither', 'Dither', 0, 100, 5]])
       $('#khtune').appendChild(slider(key, label, min, max, step));
     $('#kends').onclick = () => {
       if (!anchorable(sel)) return;
@@ -1832,7 +1836,7 @@ const Build = (() => {
        drag is one localStorage write rather than one per frame. */
     inp.onchange = () => {
       if (typeof Palace !== 'undefined' && Palace.storeHeading &&
-          (key === 'hbright' || key === 'hjitter')) Palace.storeHeading();
+          key.charAt(0) === 'h') Palace.storeHeading();
       hstep();
     };
     row._set = (v, text, live, lo, hi) => {
@@ -1859,6 +1863,13 @@ const Build = (() => {
       if (typeof Palace === 'undefined') return;
       if (key === 'hbright') Palace.setBright(v / 100);
       else Palace.setJitter(v / 100);
+      return syncHead();
+    }
+    /* the font's four: whole cells for Detail, hundredths for the rest */
+    if (key.charAt(0) === 'h'){
+      if (typeof Palace === 'undefined' || !Palace.setTune) return;
+      const k = key.slice(1);
+      Palace.setTune(k, k === 'detail' ? v : v / 100);
       return syncHead();
     }
     if (key === 'feather') return set('feather', v);
@@ -2240,11 +2251,21 @@ const Build = (() => {
         const g = h.brightRange;
         r._set(Math.round(h.bright * 100), h.bright.toFixed(2) + '\u00d7', true,
                Math.round(g[0] * 100), Math.round(g[1] * 100));
-      } else {
+      } else if (key === 'hjitter'){
         const g = h.jitterRange;
         r._set(Math.round(h.jitter * 100),
                h.jitter ? h.jitter.toFixed(2) + ' pix' : 'none', true,
                Math.round(g[0] * 100), Math.round(g[1] * 100));
+      } else if (typeof Title !== 'undefined' && h.tune){
+        /* live only while a font is in force: the diamond type has none
+           of these, and a slider that moved nothing would be a dead one */
+        const k = key.slice(1), rg = Title.tune[k], v = h.tune[k];
+        if (!rg || v === undefined) return;
+        const live = !!h.font;
+        if (k === 'detail') r._set(v, v + ' cells', live, rg.lo, rg.hi);
+        else r._set(Math.round(v * 100),
+                    k === 'weight' ? v.toFixed(2) + '\u00d7' : (v ? v.toFixed(2) : 'none'),
+                    live, Math.round(rg.lo * 100), Math.round(rg.hi * 100));
       }
     });
   }

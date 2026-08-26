@@ -28,9 +28,44 @@ const Title = (() => {
   /* how many cells across a name is drawn at: enough that a script face
      keeps its hairlines, and never so many that a long name alone could
      take the instance cap the rooms and the walker also draw from */
-  const MINC = 40, MAXC = 160, PERCH = 14;
+  const MINC = 40, MAXC = 200;
   /* the tool's CFG, minus what only a wallpaper needs (fill, cols) */
   const RECIPE = {bri: -36, con: 76, sharp: 1, gamma: 0.75, lo: 0.04, hi: 0.96};
+
+  /* ── the tune ──────────────────────────────────────────────────────────
+     Four numbers the palette can move, each with its range and the
+     tool's own value as the default — what the recipe drew before there
+     was a slider is what a slider at rest draws:
+
+       detail  cells per letter, which is the resolution the name is read
+               at. More is finer hairlines and more diamonds.
+       weight  a multiplier on every diamond's size. This is the one that
+               closes the plate's own grid: a diamond a shade wider than
+               its cell (FAT) leaves a hole at each cell's corners, and
+               inside a thick stroke those holes line up into a lattice
+               — at working zoom it reads as grid lines drawn through the
+               letter. Past about 1.15 the corners are covered.
+       tone    how far a diamond's size and light follow the ink under it.
+               1 is the tool — an edge cell small and dim, a stroke's body
+               big and bright; 0 is every diamond the same, which reads
+               flatter and cleaner at a distance.
+       dither  how much of the Bayer threshold is applied. 1 is the tool;
+               0 is a plain cut at the middle, no pattern at all.
+
+     `detail` and `dither` change which cells exist, so they are part of
+     the face's cache key; `weight` and `tone` are applied as the face is
+     drawn, so a slider on them costs nothing per frame beyond what the
+     title already cost. */
+  const TUNE = {
+    detail: {lo: 6,   hi: 24,  dflt: 14},
+    weight: {lo: 0.5, hi: 2.0, dflt: 1.2},     // past the corners: no lattice by default
+    tone:   {lo: 0,   hi: 1,   dflt: 1},
+    dither: {lo: 0,   hi: 1,   dflt: 1}
+  };
+  const tuned = (t, k) => {
+    const v = t && isFinite(t[k]) ? +t[k] : TUNE[k].dflt;
+    return clamp(v, TUNE[k].lo, TUNE[k].hi);
+  };
   /* the same fat the 5×7 type uses, and for the same reason: a diamond a
      shade wider than its square so a stroke reads as a stroke */
   const FAT = 0.62;
@@ -123,7 +158,8 @@ const Title = (() => {
      name and family and kept; the position and the pitch are the caller's,
      so the same face is drawn at every zoom without being read again. */
   const faces = new Map();                     // family + '\n' + name → face | null
-  function build(name, family){
+  function build(name, family, t){
+    const PERCH = tuned(t, 'detail'), DITH = tuned(t, 'dither');
     const c = document.createElement('canvas');
     const x = c.getContext('2d', {willReadFrequently: true});
     if (!x) return null;
@@ -177,7 +213,9 @@ const Title = (() => {
          its CFG had it at: a cell is lit past a Bayer threshold, and the
          darker the ink the larger and the brighter the diamond */
       const th = (BAYER[cy & 3][cx & 3] + .5) / 16;
-      if (v <= th * .55 + .04) continue;
+      /* the threshold slides between the tool's Bayer ramp and a flat cut
+         at its middle, so dither 0 keeps the same average ink as 1 */
+      if (v <= (0.5 + (th - 0.5) * DITH) * .55 + .04) continue;
       cells.push({x: cx - 1, y: cy - 1, al: .5 + v * .42, sz: .4 + v * 1.1});
     }
     return {cols, rows, cells};
@@ -185,16 +223,16 @@ const Title = (() => {
   /* the face for a name in a family, or null while the family is loading
      or once it has failed — the caller draws the 5×7 type for null, so a
      title is never missing, only plainer than it will be */
-  function face(name, family){
+  function face(name, family, t){
     family = slug(family); name = String(name || '');
     if (!family || !name) return null;
     const e = fonts.get(family);
     if (!e){ load(family); return null; }
     if (e.state !== 'ready') return null;
-    const k = family + '\n' + name;
+    const k = family + '\n' + name + '\n' + tuned(t, 'detail') + '\n' + tuned(t, 'dither');
     let f = faces.get(k);
     if (f === undefined){
-      try { f = build(name, family); } catch (err){ f = null; }
+      try { f = build(name, family, t); } catch (err){ f = null; }
       if (faces.size > 64) faces.clear();
       faces.set(k, f);
     }
@@ -209,10 +247,13 @@ const Title = (() => {
      way from one frame to the next. */
   const roll = (u, v, s) => (typeof Kinds !== 'undefined' && Kinds.hash
     ? Kinds.hash(u, v, s) : 0.5);
-  function emit(a, m, f, x0, y0, px, col, alpha, cap, jit, seed){
+  function emit(a, m, f, x0, y0, px, col, alpha, cap, jit, seed, t){
     const al = alpha === undefined ? 1 : alpha;
     const amp = (jit || 0) * px, sd = seed || 0;
-    const hs = px * FAT;
+    const hs = px * FAT * tuned(t, 'weight'), tone = tuned(t, 'tone');
+    /* tone 0 is the flat diamond — the tool's own values for a cell of
+       full ink — and tone 1 is each cell as the ink read it */
+    const FLAT_AL = .92, FLAT_SZ = 1.5;
     for (const c of f.cells){
       if (cap !== undefined && m > cap - 1) return m;
       let jx = 0, jy = 0;
@@ -220,8 +261,9 @@ const Title = (() => {
         jx = (roll(c.x, c.y, sd + 771) - 0.5) * amp;
         jy = (roll(c.x, c.y, sd + 772) - 0.5) * amp;
       }
+      const ca = FLAT_AL + (c.al - FLAT_AL) * tone, cs = FLAT_SZ + (c.sz - FLAT_SZ) * tone;
       m = put(a, m, x0 + c.x * px, y0 + c.y * px, col[0], col[1], col[2],
-              al * c.al, hs * c.sz, 0, jx, jy, 1);
+              al * ca, hs * cs, 0, jx, jy, 1);
     }
     return m;
   }
@@ -246,5 +288,6 @@ const Title = (() => {
     'Monoton'
   ];
 
-  return {load, state, face, emit, cost, fonts: FONTS.slice(), DEFAULT: FONTS[0]};
+  return {load, state, face, emit, cost, fonts: FONTS.slice(), DEFAULT: FONTS[0],
+          tune: TUNE, tuned};
 })();

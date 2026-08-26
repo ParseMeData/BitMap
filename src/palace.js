@@ -506,7 +506,7 @@ const Palace = (() => {
       const ink = Type.lift(bone, bright), al = Type.liftA(at.alpha, bright);
       const sd = Type.seed(at.name.toUpperCase());
       m = Type.border(a, m, bd, iw, ih, x0, y0, at.px, ink, al, cap, jitter, sd);
-      return Title.emit(a, m, f, x0, y0, at.px, ink, al, cap, jitter, sd);
+      return Title.emit(a, m, f, x0, y0, at.px, ink, al, cap, jitter, sd, tune);
     }
     if (m + Type.headCost(at.name, tr, bd) > cap){ tr = 'solid'; bd = 'none'; }
     if (m + Type.headCost(at.name, tr, bd) > cap) return m;
@@ -536,7 +536,7 @@ const Palace = (() => {
     const t = G.terr.tsz, z = G.cam[2] || 1;
     /* the name in its font, if one is set and has arrived; null draws the
        5×7 type, which is also what draws while the font is on its way */
-    const face = (font && typeof Title !== 'undefined') ? Title.face(name, font) : null;
+    const face = (font && typeof Title !== 'undefined') ? Title.face(name, font, tune) : null;
     /* sized to the thing it names rather than to the screen, so it is part
        of the drawing — but never so fine that it stops being readable. A
        face is sized the same way, on its own cell counts: as tall as the
@@ -673,6 +673,10 @@ const Palace = (() => {
      5×7 diamond type, which is also what draws until the font arrives and
      whenever it cannot — `title.js` says how a family is fetched. */
   const FONT = 'hq.title.font', FMAX = 48;
+  /* the font's own four, `hq.title.<name>`, ranges and defaults from
+     `Title.tune` so the clamp here and the slider's ends cannot drift */
+  const TUNEK = k => 'hq.title.' + k;
+  let tune = {};
   const BMIN = 0.4, BMAX = 2.2, JMAX = 1.5;      // the plate's own two ranges
   let treat = 'solid', border = 'none', bright = 1, jitter = 0, font = '';
   /* A stored number is read the way a stored name is: checked rather than
@@ -702,6 +706,11 @@ const Palace = (() => {
       /* asked for now rather than on the first frame that wants it, so the
          title is in its face as soon after boot as the network allows */
       if (font && typeof Title !== 'undefined') Title.load(font);
+      if (typeof Title !== 'undefined')
+        for (const k in Title.tune){
+          const r = Title.tune[k];
+          tune[k] = num(localStorage.getItem(TUNEK(k)), r.lo, r.hi, r.dflt);
+        }
     } catch (e){}
   }
   function storeStyle(){
@@ -711,6 +720,7 @@ const Palace = (() => {
       localStorage.setItem(BRIGHT, String(bright));
       localStorage.setItem(JIT, String(jitter));
       localStorage.setItem(FONT, font || 'none');
+      for (const k in tune) localStorage.setItem(TUNEK(k), String(tune[k]));
       if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
   }
@@ -772,6 +782,14 @@ const Palace = (() => {
   function setJitter(v){
     jitter = clampN(isFinite(v) ? +v : 0, 0, JMAX);
     return jitter;
+  }
+  /* the font's sliders set without storing, like Bright and Jitter, and
+     `storeHeading` is the drop */
+  function setTune(k, v){
+    if (typeof Title === 'undefined' || !Title.tune[k]) return;
+    const r = Title.tune[k];
+    tune[k] = clampN(isFinite(v) ? +v : r.dflt, r.lo, r.hi);
+    return tune[k];
   }
   function resetTitle(){
     if (!off) return false;
@@ -939,12 +957,12 @@ const Palace = (() => {
 
   return {init, show, close, sync, overlay, build, rename, named, refit,
           cycleTreatment, cycleBorder, setTreatment, setBorder, setFont, resetTitle,
-          setBright, setJitter, storeHeading: storeStyle,
+          setBright, setJitter, setTune, storeHeading: storeStyle,
           /* what a control that drives the cycle needs to draw itself: the
              two names in force, the two lists to choose from, and whether
              the title is somewhere the user put it */
           heading: () => ({treatment: treat, border: border, moved: !!off,
-                           font: font,
+                           font: font, tune: Object.assign({}, tune),
                            fontState: (font && typeof Title !== 'undefined') ? Title.state(font) : 'none',
                            bright: bright, jitter: jitter,
                            brightRange: [BMIN, BMAX], jitterRange: [0, JMAX]}),

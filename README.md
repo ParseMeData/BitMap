@@ -1251,6 +1251,19 @@ name alike, like the treatment and the border, and the border, Bright and
 Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
 
+Under **Heading** in the palette, below Bright and Jitter, are the font's
+own four, live only while a font is in force: **Detail** is cells per
+letter, the resolution the name is read at; **Weight** scales every
+diamond, and is the one to reach for when a thick stroke shows a lattice
+through it — a diamond a shade wider than its cell leaves a hole at each
+corner, and inside a stroke those holes line up into grid lines, which
+close past about 1.15×; **Tone** is how far a diamond's size and light
+follow the ink under it, 1 the tool's look and 0 every diamond the same;
+**Dither** is how much of the tool's Bayer threshold is applied. Three rest
+at the tool's values; Weight rests at 1.2×, past the corners, because the
+lattice through a stroke was the first thing seen and the tool's 1× is one
+notch back. Stored as `hq.title.<name>`.
+
 The font is fetched from Google the first time it is named, so it needs the
 network once per session. Until it lands the 5×7 type draws; a family Google
 does not have leaves the 5×7 type standing and says so, and the menu is

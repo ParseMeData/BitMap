@@ -384,6 +384,7 @@ const Bag = (() => {
       return;
     }
     c.classList.add('glyph');
+    if (letter) c.classList.add('letter');       // drawn a shade larger than a digit
     c.append(Title.svg(f, t));
   }
 

@@ -25,6 +25,25 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Titles in a real font, the whole arc** — 2026-08-26, seven
+  commits `ecd5dbc`…`ce163f2`, cherry-picked from the `Loci Bitmap V7.0`
+  clone (which had been cloned at v7.0 and diverged; only BUILD collided,
+  stepped 78→84; tag `font-work` marks the source head). New
+  `src/title.js`: the wallpaper tool's lattice-type recipe — Google Font →
+  3× raster → bri/con/sharpen → per-cell ink → one diamond per lit cell
+  via `put`. `hq.title.font` beside the rest of the heading dress
+  (`none` = diamond type on purpose, absent = default Fleur De Leah);
+  `#kfont` is a menu under the name in the top-right panel, whose head now
+  reads **Town** / **Palace**; shelf `FONTS` at the foot of `title.js`
+  (incl. Roboto Slab). `Type.border`/`borderCost`/`lift`/`liftA`/`seed`
+  exported so a font title wears the same border, bright and shake.
+  Five sliders under Heading, live only with a font in force: Size (pitch
+  as × of the plate's cell, 1 = the map's grain), Detail (cells/letter),
+  Weight (rests 1.2× — closes the corner-holes that read as grid lines
+  through a stroke), Tone, Dither; stored `hq.title.<name>`. Palace title
+  block keeps a floor of clearance above the room captions. README
+  `### A title in a font`, HANDOFF decision + storage rows, STYLE atom
+  paragraph.
 - [x] **River and creek: drag the ends** — 2026-08-26, `454c1f5`. `anchored`
   dropped from the creek kind in `src/kinds.js`; the ends are grips like
   any bend. The lock stays in build.js for any kind that wants it.

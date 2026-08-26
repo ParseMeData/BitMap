@@ -1613,6 +1613,9 @@ const Kinds = (() => {
   const LAYERS = [
     {id: 'roads',  label: 'Roads',     z: 3, solo: true, start: true},
     {id: 'ground', label: 'Ground',    z: 0},
+    /* water lies on the ground and under everything else: a creek across
+       snow or rock is drawn over it, and the road bridging it over both */
+    {id: 'water',  label: 'Water',     z: 0.5},
     {id: 'trees',  label: 'Trees',     z: 1},
     /* the district textures — a field of housing drawn from a rule — and
        the drawn buildings are two layers, because they are two ways of
@@ -1643,11 +1646,11 @@ const Kinds = (() => {
      walk: 1, stamp: 3, gen: terrain,   swatch: '#666B42'},
     {id: 'snow',      label: 'Snow',      layer: 'ground', types: AREA,
      walk: 1, stamp: 3, gen: terrain,   swatch: '#C7CCD9'},
-    {id: 'water',     label: 'Water',     layer: 'ground', types: AREA,
+    {id: 'water',     label: 'Water',     layer: 'water',  types: AREA,
      walk: 0, stamp: 0, gen: water,     swatch: '#2E66B8'},
-    {id: 'creek',     label: 'Creek',     layer: 'ground', types: ['line', 'ring'],
+    {id: 'creek',     label: 'Creek',     layer: 'water',  types: ['line', 'ring'],
      walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
-     anchored: true, smooth: true,
+     smooth: true,
      feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
      /* creeks run into one another the way roads do, so a tributary is a
         junction and not two channels with a hole punched where they meet.
@@ -1664,17 +1667,19 @@ const Kinds = (() => {
        a look. Its own id is also what makes it additive — a creek drawn
        before this existed is untouched by it, and the two sit in one town.
 
-       `anchored` is the whole of it: the two ends are grips build mode
-       shows and refuses to take, so the line is shaped from the inside by
-       bending it in as many places as you like while its mouth and its head
-       stay where you put them.
+       `smooth` is the whole of it: the line is shaped from the inside by
+       bending it in as many places as you like. Its ends were once
+       `anchored` — grips build mode showed and refused to take — and that
+       went, because a mouth you cannot drag to where the water starts is a
+       river you have to draw again; the lock is still there in build.js
+       for any kind that wants it.
 
        Born long, and born wide enough to read as a river rather than a
        ditch with the wrong name on it. `connects` for the reason the creek
        has it: a creek running into a river is a confluence rather than two
        channels with a hole punched where they meet, and a road crossing it
        clears nothing and stamps last, which is exactly a bridge. */
-    {id: 'river',     label: 'River',     layer: 'ground', types: ['line'],
+    {id: 'river',     label: 'River',     layer: 'water',  types: ['line'],
      /* creek's swatch, not water's, and not one of its own: the swatch is
         the key a kind's terrain is generated around, and a river's terrain
         is generated around exactly creek's. The two chips matching is the
@@ -1682,7 +1687,7 @@ const Kinds = (() => {
         keeps them apart from Water's stiller, deeper blue on the same
         layer. */
      walk: 0, stamp: 0.5, gen: creek,    swatch: '#3E7FBF',
-     len0: 16, width0: 4, anchored: true, smooth: true,
+     len0: 16, width0: 4, smooth: true,
      feather0: 0.5, pad0: 0.5, padFade0: 0.6, padBreak0: 0.25,
      connects: true},
     {id: 'trees',     label: 'Trees',     layer: 'trees',  types: AREA, variants: WOOD,

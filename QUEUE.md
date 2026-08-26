@@ -19,18 +19,18 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] **River and creek: drag the ends** (asked 2026-08-25). The end
-  points cannot be dragged to where the water should start and end — a
-  drag moves the whole line. Ends must pin where they are put; the whole
-  line still moves from its body.
-- [ ] **Water above every ground terrain, under roads** (asked
-  2026-08-25). Creek and river draw over grass/rock/snow/etc. and under
-  any road.
 
 
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **River and creek: drag the ends** — 2026-08-26, `454c1f5`. `anchored`
+  dropped from the creek kind in `src/kinds.js`; the ends are grips like
+  any bend. The lock stays in build.js for any kind that wants it.
+- [x] **Water above every ground terrain, under roads** — 2026-08-26,
+  `454c1f5`. A `water` layer at z 0.5 between ground and trees; water and
+  creek moved onto it. Shipped in BUILD 73, live through 77 without error.
 
 - [x] **Save a whole stack as a mission** — 2026-08-26. New `src/missions.js`
   page over the bag: `save` (whole stacks only) moves the cards out as a

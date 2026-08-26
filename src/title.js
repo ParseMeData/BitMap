@@ -286,6 +286,7 @@ const Title = (() => {
     'Pinyon Script',
     'Great Vibes',
     'Cinzel',
+    'Roboto Slab',
     'Playfair Display',
     'Cormorant Garamond',
     'UnifrakturMaguntia',

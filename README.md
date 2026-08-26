@@ -1260,11 +1260,10 @@ Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
 
 Under **Heading** in the palette, below Bright and Jitter, are the font's
-own five, live only while a font is in force: **Size** is the title's
-pitch as a multiple of the plate's own cell — at 1× its diamonds are the
-same grain as the road beside them — and it scales the name without
-touching how finely it is read; **Detail** is cells per letter, the
-resolution, and does not move when Size does; **Weight** scales every
+own five, live only while a font is in force: **Size** is cells per
+letter — the title's diamonds are always the plate's own, the same pitch
+and the same size as the road beside them, so a bigger name is simply
+read at more of them; **Weight** scales every
 diamond, and is the one to reach for when a thick stroke shows a lattice
 through it — a diamond a shade wider than its cell leaves a hole at each
 corner, and inside a stroke those holes line up into grid lines, which
@@ -1274,10 +1273,10 @@ follow the ink under it, 1 the tool's look and 0 every diamond the same;
 how far the plate under the name is dimmed so it reads over whatever it
 lies across — a field of ground-coloured diamonds over the name's box,
 fading out at its edges, and the first thing dropped if the instance cap
-is short. Weight rests at 1 and Tone at 0: at Size 1× a title diamond *is*
-a plate diamond, the same pitch and the same three-quarter-cell size the
-lattice is drawn at, so a name is made of exactly the stuff the road beside
-it is. Stored as `hq.title.<name>`.
+is short. Weight rests at 1 and Tone at 0: a title diamond *is* a plate
+diamond, the same pitch and the same three-quarter-cell size the lattice
+is drawn at, so a name is made of exactly the stuff the road beside it
+is. Stored as `hq.title.<name>`.
 
 The bag's row cards wear the same face: a card's number or letter is the
 heading's font read through the same recipe, drawn as an inline SVG of

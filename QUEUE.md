@@ -25,6 +25,12 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Size is cells per letter; the pitch never moves** — 2026-08-26.
+  The pitch multiplier (`size` tune) is gone — it shrank the diamonds with
+  the name, and the diamond is the thing that must not change. `detail`
+  (4–30, default 14) is the one control, labelled **Size** in the palette;
+  `px = G.A.cell` always. BUILD 96. Verified on a throwaway at 7 / 14 /
+  24 cells per letter: name grows, diamonds identical.
 - [x] **A title diamond is a plate diamond, and a mat under the name** —
   2026-08-26. `Title.emit` half-size is `px × 0.75` (the shader's own
   lattice size) × weight; weight rests at 1, tone at 0. `Title.mat`: a

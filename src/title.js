@@ -37,13 +37,12 @@ const Title = (() => {
      tool's own value as the default — what the recipe drew before there
      was a slider is what a slider at rest draws:
 
-       size    the pitch, as a multiple of the plate's own cell: at 1 a
-               title is made of the same-sized stuff as the road beside
-               it, and it is a size without being a resolution — the
-               cells per letter do not move when it does.
-       detail  cells per letter, which is the resolution the name is read
-               at. More is finer hairlines and more diamonds, at whatever
-               size the title is.
+       detail  cells per letter — and, because the pitch is the plate's
+               cell and never moves, the SIZE of the name: a bigger name
+               is read at more cells, each the same diamond. The palette
+               calls it Size. (A pitch multiplier was tried and taken
+               out: it made the diamonds smaller with the name, and a
+               diamond is not the thing that is meant to change.)
        weight  a multiplier on every diamond's size. This is the one that
                closes the plate's own grid: a diamond a shade wider than
                its cell (FAT) leaves a hole at each cell's corners, and
@@ -62,8 +61,7 @@ const Title = (() => {
      drawn, so a slider on them costs nothing per frame beyond what the
      title already cost. */
   const TUNE = {
-    size:   {lo: 0.25, hi: 2.0, dflt: 1},
-    detail: {lo: 6,   hi: 24,  dflt: 14},
+    detail: {lo: 4,   hi: 30,  dflt: 14},
     /* weight 1 and tone 0: at Size 1 every diamond of a title IS a plate
        diamond — same pitch, same three-quarter-cell half-size the vertex
        shader draws the lattice at — so a name is made of exactly the

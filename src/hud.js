@@ -66,10 +66,11 @@ const Hud = (() => {
      with a hair between, and only while the hub is at rest: the four
      ways in gather where the hub stood and would land on it */
   const JX = HUB * 2 + 12;
-  /* and build's, in bone, on a row of its own below the two — centred
-     under them, a step down: three ways in at rest, flare for the four
-     and aqua for the journal on one level, bone for the tools beneath */
-  const BX = JX / 2, BY = JX;
+  /* and build's, in bone, a half-step across and a half-step down from
+     the pair — the third point of the diamonds' own diagonal lattice, so
+     its edges run with theirs and the three nest point to point: flare
+     for the four and aqua for the journal on one level, bone beneath */
+  const BX = JX / 2, BY = JX / 2;
 
   /* ── the diamond of dots ───────────────────────────────────────────────
      A button is a diamond of dots on a square grid: every grid point with

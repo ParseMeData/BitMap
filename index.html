@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
-<title>Loci Bitmap V7.2</title>
+<title>Loci Bitmap V7.3</title>
 <!-- a Chromium app-mode window takes its window and taskbar icon from the
      page favicon, so without this the window wears the browser's own -->
 <link rel="icon" href="assets/icon.png">
@@ -679,7 +679,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 112, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 113, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

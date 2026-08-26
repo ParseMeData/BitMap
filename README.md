@@ -1,4 +1,4 @@
-# Loci Bitmap V7.2
+# Loci Bitmap V7.3
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.2 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.3 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -87,6 +87,14 @@ the lettering. The bag's cards wear the heading's face — every number
 and letter read in one box per system, on one baseline — and the floral
 frame, masked in the card's own colour, with an edge that fades around
 each card.
+
+**v7.3** — pictures through the tone pass: a card's picture is lattice,
+read by the same two stages as the map; a card keeps a hand of pictures
+and the still walks them, tunes the halftone with the wallpaper tool's
+own knobs, and Keep deals one. The stack layers as a stack again and a
+card's tag is its word with a slot mark. And the journal: an aqua diamond
+beside the hub opens tabs of sub-tabs of rows of letters, a note behind
+every one.
 
 ### The half that is not in the repo
 

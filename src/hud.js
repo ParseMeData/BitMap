@@ -66,9 +66,10 @@ const Hud = (() => {
      with a hair between, and only while the hub is at rest: the four
      ways in gather where the hub stood and would land on it */
   const JX = HUB * 2 + 12;
-  /* and build's, one more step along, in bone: three ways in at rest —
-     flare for the four, aqua for the journal, bone for the tools */
-  const BX = JX * 2;
+  /* and build's, in bone, on a row of its own below the two — centred
+     under them, a step down: three ways in at rest, flare for the four
+     and aqua for the journal on one level, bone for the tools beneath */
+  const BX = JX / 2, BY = JX;
 
   /* ── the diamond of dots ───────────────────────────────────────────────
      A button is a diamond of dots on a square grid: every grid point with
@@ -240,7 +241,7 @@ const Hud = (() => {
          face is what the plate uses for 'here but open', and a tool that
          is out should read as out */
       const on = typeof Build !== 'undefined' && Build.active && Build.active();
-      return put(a, m, g.x + BX * g.u, g.y, BONE[0], BONE[1], BONE[2],
+      return put(a, m, g.x + BX * g.u, g.y + BY * g.u, BONE[0], BONE[1], BONE[2],
                  hov === 'build' ? 1 : 0.9, HUB * g.u, on ? 1 : 0, 0, 0, 1);
     }
 
@@ -304,7 +305,7 @@ const Hud = (() => {
     if (!open){
       if (Math.abs(p[0] - g.x) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'hub';
       if (Math.abs(p[0] - (g.x + JX * g.u)) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'journal';
-      if (Math.abs(p[0] - (g.x + BX * g.u)) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'build';
+      if (Math.abs(p[0] - (g.x + BX * g.u)) + Math.abs(p[1] - (g.y + BY * g.u)) <= (HUB + 4) * g.u) return 'build';
       return null;
     }
     const r = GRAB * g.u;

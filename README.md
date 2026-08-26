@@ -1576,7 +1576,7 @@ Join it to a road the walker can reach and both go away.
 ### The journal
 
 Beside the hub's flare diamond stand two more: an **aqua** one for the
-journal, below, and a **bone** one that is the `B` key — build on, or off
+journal, and on a row beneath the pair a **bone** one that is the `B` key — build on, or off
 again — drawn hollow while build is on, the plate's own face for "here
 but open". Aqua, because it is STYLE.md's one cool note: asked for as
 blue, and aqua is the blue this palette has. Press the aqua one and the

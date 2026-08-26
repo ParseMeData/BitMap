@@ -503,12 +503,12 @@ const Palace = (() => {
       const x0 = at.x - iw * at.px / 2, y0 = at.y - ih * at.px / 2;
       /* the mat first, under everything, and the first thing dropped
          when the cap is short: a name without its mat is still a name */
-      const cover = Title.tuned(tune, 'mat');
-      const mc = cover > 0 ? Title.matCost(f.cols, f.rows) : 0;
+      const cover = Title.tuned(tune, 'mat'), fe = Math.round(Title.tuned(tune, 'feather'));
+      const mc = cover > 0 ? Title.matCost(f.cols, f.rows, fe) : 0;
       if (m + Title.cost(f) + Type.borderCost(bd, iw, ih) > cap) bd = 'none';
       if (m + Title.cost(f) > cap) return m;
       if (cover > 0 && m + mc + Title.cost(f) <= cap)
-        m = Title.mat(a, m, f.cols, f.rows, x0, y0, at.px, cover, cap);
+        m = Title.mat(a, m, f.cols, f.rows, x0, y0, at.px, cover, cap, fe);
       const ink = Type.lift(bone, bright), al = Type.liftA(at.alpha, bright);
       const sd = Type.seed(at.name.toUpperCase());
       m = Type.border(a, m, bd, iw, ih, x0, y0, at.px, ink, al, cap, jitter, sd);

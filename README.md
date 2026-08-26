@@ -1272,8 +1272,8 @@ follow the ink under it, 1 the tool's look and 0 every diamond the same;
 **Dither** is how much of the tool's Bayer threshold is applied; **Mat** is
 how far the plate under the name is dimmed so it reads over whatever it
 lies across — a field of ground-coloured diamonds over the name's box,
-fading out at its edges, and the first thing dropped if the instance cap
-is short. Weight rests at 1 and Tone at 0: a title diamond *is* a plate
+fading out at its edges over **Feather** cells (0 for a hard edge), and
+the first thing dropped if the instance cap is short. Weight rests at 1 and Tone at 0: a title diamond *is* a plate
 diamond, the same pitch and the same three-quarter-cell size the lattice
 is drawn at, so a name is made of exactly the stuff the road beside it
 is. Stored as `hq.title.<name>`.

@@ -1720,7 +1720,7 @@ const Build = (() => {
              syncHead, so these are placeholders the first sync replaces */
           ['hdetail', 'Size', 4, 30, 1], ['hweight', 'Weight', 50, 200, 5],
           ['htone', 'Tone', 0, 100, 5], ['hdither', 'Dither', 0, 100, 5],
-          ['hmat', 'Mat', 0, 100, 5]])
+          ['hmat', 'Mat', 0, 100, 5], ['hfeather', 'Feather', 0, 24, 1]])
       $('#khtune').appendChild(slider(key, label, min, max, step));
     $('#kends').onclick = () => {
       if (!anchorable(sel)) return;
@@ -1870,7 +1870,7 @@ const Build = (() => {
     if (key.charAt(0) === 'h'){
       if (typeof Palace === 'undefined' || !Palace.setTune) return;
       const k = key.slice(1);
-      Palace.setTune(k, k === 'detail' ? v : v / 100);
+      Palace.setTune(k, (k === 'detail' || k === 'feather') ? v : v / 100);
       return syncHead();
     }
     if (key === 'feather') return set('feather', v);
@@ -2264,6 +2264,7 @@ const Build = (() => {
         if (!rg || v === undefined) return;
         const live = !!h.font;
         if (k === 'detail') r._set(v, v + ' / letter', live, rg.lo, rg.hi);
+        else if (k === 'feather') r._set(v, v ? v + ' cells' : 'hard', live, rg.lo, rg.hi);
         else r._set(Math.round(v * 100),
                     k === 'weight' ? v.toFixed(2) + '\u00d7'
                     : (v ? v.toFixed(2) : 'none'),

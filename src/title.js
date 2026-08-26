@@ -70,8 +70,10 @@ const Title = (() => {
     weight: {lo: 0.5, hi: 2.0, dflt: 1},
     tone:   {lo: 0,   hi: 1,   dflt: 0},
     dither: {lo: 0,   hi: 1,   dflt: 1},
-    /* the mat: how far the plate under the name is dimmed, 0 for none */
-    mat:    {lo: 0,   hi: 1,   dflt: 0.7}
+    /* the mat: how far the plate under the name is dimmed, 0 for none,
+       and how many cells past the ink it fades out over */
+    mat:    {lo: 0,   hi: 1,   dflt: 0.7},
+    feather: {lo: 0,  hi: 24,  dflt: 3}
   };
   /* the plate's own diamond: `hs = size * u_unit * 0.75` in render.js for
      a lattice cell of size 1 — so this is the half-size a title diamond
@@ -326,7 +328,10 @@ const Title = (() => {
   const GROUND = [0.031, 0.031, 0.043];        // #08080B
   function mat(a, m, cols, rows, x0, y0, px, cover, cap, margin){
     if (!(cover > 0)) return m;
-    const S = 3, mg = margin === undefined ? 3 : margin;
+    /* the fade runs across `margin` cells past the ink; at 0 the mat
+       stops a cell clear of the ink with a hard edge, and the ramp below
+       is skipped rather than divided by nothing */
+    const S = 3, mg = margin === undefined ? 3 : Math.max(0, margin);
     const per = 1 - Math.sqrt(1 - Math.min(cover, 0.98));
     const gx0 = -1 - mg, gy0 = -1 - mg, gx1 = cols + mg, gy1 = rows + mg;
     for (let gy = gy0; gy <= gy1; gy += S)
@@ -335,14 +340,14 @@ const Title = (() => {
         /* the fade: how far inside the margin this diamond sits, 0 at the
            outer edge and 1 once it is over the ink */
         const dx = Math.min(gx - gx0, gx1 - gx), dy = Math.min(gy - gy0, gy1 - gy);
-        const e = Math.min(1, Math.min(dx, dy) / mg);
+        const e = mg > 0 ? Math.min(1, Math.min(dx, dy) / mg) : 1;
         m = put(a, m, x0 + gx * px, y0 + gy * px, GROUND[0], GROUND[1], GROUND[2],
                 per * e, S * px, 0, 0, 0, 1);
       }
     return m;
   }
   const matCost = (cols, rows, margin) => {
-    const S = 3, mg = margin === undefined ? 3 : margin;
+    const S = 3, mg = margin === undefined ? 3 : Math.max(0, margin);
     return (Math.floor((cols + 2 * mg + 1) / S) + 1) * (Math.floor((rows + 2 * mg + 1) / S) + 1);
   };
 

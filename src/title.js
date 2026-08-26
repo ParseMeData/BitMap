@@ -172,8 +172,25 @@ const Title = (() => {
     x.font = '100px "' + family + '"';
     const mt = x.measureText(name);
     const left = mt.actualBoundingBoxLeft || 0, right = mt.actualBoundingBoxRight || mt.width;
-    const asc = mt.actualBoundingBoxAscent || 70, desc = mt.actualBoundingBoxDescent || 20;
-    const w100 = Math.max(1, left + right), h100 = Math.max(1, asc + desc);
+    /* THE BOX. A title is fitted to its own ink. A glyph on a card is
+       not: `t.ref` names the whole set it belongs to — every letter, or
+       every digit — and the box is measured over all of them at once,
+       widest and tallest, with one baseline. So an A and an E are read
+       at the same size and stand on the same line, which is what makes
+       a row of cards read as a row rather than as five different
+       stamps. */
+    let asc = mt.actualBoundingBoxAscent || 70, desc = mt.actualBoundingBoxDescent || 20;
+    let w100 = Math.max(1, left + right);
+    if (t && t.ref){
+      w100 = 1; asc = 0; desc = 0;
+      for (const ch of String(t.ref)){
+        const m = x.measureText(ch);
+        w100 = Math.max(w100, (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight || m.width));
+        asc = Math.max(asc, m.actualBoundingBoxAscent || 0);
+        desc = Math.max(desc, m.actualBoundingBoxDescent || 0);
+      }
+    }
+    const h100 = Math.max(1, asc + desc);
     /* a caller may name the width outright — a card's label is one
        glyph and would otherwise be read at the floor for a whole name */
     const cols = t && t.cols ? clamp(Math.round(t.cols), 8, MAXC)
@@ -185,7 +202,9 @@ const Title = (() => {
     x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);
     x.font = fs + 'px "' + family + '"';
     x.fillStyle = '#111'; x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-    x.fillText(name, SS + left * fs / 100, SS + asc * fs / 100);
+    /* in a shared box the glyph is centred across it; alone it fills it */
+    const slack = t && t.ref ? (cols * SS - (left + right) * fs / 100) / 2 : 0;
+    x.fillText(name, SS + slack + left * fs / 100, SS + asc * fs / 100);
     const d = x.getImageData(0, 0, W, H).data;
     const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; i < gray.length; i++, p += 4)
@@ -239,7 +258,7 @@ const Title = (() => {
     if (!e){ load(family); return null; }
     if (e.state !== 'ready') return null;
     const k = family + '\n' + name + '\n' + tuned(t, 'detail') + '\n' + tuned(t, 'dither') +
-              '\n' + (t && t.cols ? Math.round(t.cols) : '');
+              '\n' + (t && t.cols ? Math.round(t.cols) : '') + '\n' + (t && t.ref ? t.ref : '');
     let f = faces.get(k);
     if (f === undefined){
       try { f = build(name, family, t); } catch (err){ f = null; }

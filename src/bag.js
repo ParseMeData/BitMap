@@ -359,9 +359,19 @@ const Bag = (() => {
   function glyph(c, label){
     const h = dress();
     if (!h) return;
-    /* a one-glyph face is read at a fixed width rather than the floor a
-       whole name gets, and letters a little wider than digits */
-    const t = Object.assign({}, h.tune, {cols: /[A-Z]/.test(label) ? 40 : 34});
+    /* Read COARSE on purpose — a card is a halftone, and the halftone is
+       the point: fewer cells means bigger diamonds and the tone showing.
+       And read in a box shared by the whole system (`ref`), so every
+       letter is the same size on the same line as every other; a
+       digit's box is the ten digits', a letter's the twenty-six. */
+    const letter = /[A-Z]/.test(label);
+    const t = Object.assign({}, h.tune, {
+      /* a letter's box is the widest swash capital's, so the rest sit
+         small inside it and need more cells across than a digit does */
+      cols: letter ? 36 : 18,
+      ref: letter ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789',
+      dither: 1, tone: 1                       // the tool's halftone, whatever the title wears
+    });
     const f = Title.face(label, h.font, t);
     if (!f){
       /* not here yet — draw the row again once it is, if the bag is still up */
@@ -369,7 +379,7 @@ const Bag = (() => {
       return;
     }
     c.classList.add('glyph');
-    c.append(Title.svg(f, h.tune));
+    c.append(Title.svg(f, t));
   }
 
   function card(sys, i, slot, shown, k){

@@ -32,6 +32,12 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **HUD folds into the hub** — 2026-08-26. At rest only the flare hub
+  shows; pressing it hides the hub and brings the four out at SPAN 30; a
+  press on one of them, or anywhere else (plate or panel), closes them and
+  is swallowed. BUILD 75. Verified over CDP: closed → open → click-away →
+  closed, and hub → home → 'the whole town' → closed.
+
 - [x] **HUD rings → filled halftone diamonds** — 2026-08-26. `src/hud.js`: the four
   buttons are diamonds of dots on a 3.2px grid (|i|+|j| ≤ 7), ground dots
   shrinking from full at the centre to .42 at the edge; the rim is the grid's

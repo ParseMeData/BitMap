@@ -13,7 +13,9 @@
    diamond, halftoned — dots on a grid, fat at the centre and thinning to
    the edge — so the one motif the game is made of is also what you press.
    They were circles of diamonds once, and a circle was the one shape on the
-   plate that nothing else was; now there is none.
+   plate that nothing else was; now there is none. And they are not out at
+   rest: the hub is, alone, and the four come when it is pressed — see
+   `closed and open`.
 
    The four rings are the letter system (up), the number system (left), home
    (right) and the towns (down). Each is wired to a named seam rather than
@@ -46,7 +48,11 @@ const Hud = (() => {
   const EDGE = 16;           // the inset every chrome panel sits at (index.html)
   const LIFT = 132;          // the hub, above the bottom edge of the canvas
   const HUB = 16;            // half-size of the middle diamond
-  const SPAN = 46;           // hub centre → ring centre
+  /* hub centre → button centre. Tight, because the hub is not there when the
+     four are: they gather where it stood, near enough to read as one thing
+     and far enough apart (12px, point to point) that a press cannot land on
+     two. */
+  const SPAN = 30;
   const RIM = 24;            // button half-extent, centre to point
   const DOT = 2.3;           // half-size of one dot on the rim, at full size
   const TXT = 2.0;           // letterform pitch for ABC and 123
@@ -127,6 +133,15 @@ const Hud = (() => {
      can be found again after the camera has moved beneath a still pointer */
   let ptr = null;
 
+  /* ── closed and open ───────────────────────────────────────────────────
+     At rest the HUD is the hub alone: one flare diamond in the corner, and
+     nothing else on the plate. Press it and it goes, and the four ways in
+     stand where it was; press one of them, or anywhere that is not one of
+     them, and the hub is back. So the corner costs one diamond of the plate
+     until the moment you want more of it, and the four never sit under
+     your eye while you are walking. */
+  let open = false;
+
   /* ── when the HUD is not there ─────────────────────────────────────────
      `index.html` hides the chrome under `body.wall` (wallpaper duty: no
      chrome at all) and under `body.locus` (one photograph owns the screen);
@@ -203,7 +218,9 @@ const Hud = (() => {
 
     /* the hub wears the flare, the way a panel head does: it is the one part
        that says this cluster is chrome rather than another spark */
-    m = put(a, m, g.x, g.y, FLARE[0], FLARE[1], FLARE[2], 0.9, HUB * g.u, 0, 0, 0, 1);
+    if (!open)
+      return put(a, m, g.x, g.y, FLARE[0], FLARE[1], FLARE[2], hov === 'hub' ? 1 : 0.9,
+                 HUB * g.u, 0, 0, 0, 1);
 
     for (const ring of RINGS){
       const c = centre(g, ring);
@@ -262,6 +279,8 @@ const Hud = (() => {
      that answers where it does not look. */
   function pick(g, p){
     if (!p || !g) return null;
+    if (!open)
+      return Math.abs(p[0] - g.x) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u ? 'hub' : null;
     const r = GRAB * g.u;
     for (const ring of RINGS){
       const c = centre(g, ring);
@@ -294,9 +313,25 @@ const Hud = (() => {
       const g = geom();
       if (!g) return;
       const key = pick(g, toWorld(e, g));
-      if (!key) return;
+      /* A press away from the four, while they are out, closes them and is
+         nothing else: the press was an answer to the HUD, and letting it
+         through as well would make closing a menu also grab whatever shape
+         lay under it. */
+      if (!key){
+        if (!open) return;
+        open = false;
+        e.stopPropagation();
+        return;
+      }
       e.stopPropagation();
+      if (key === 'hub'){ open = true; return; }
+      open = false;
       tap(key);
+    }, true);
+    /* the same rule for a press that lands on a panel rather than the plate:
+       it is a press away, so the four fold back */
+    addEventListener('pointerdown', e => {
+      if (open && e.button === 0 && e.target !== canvas) open = false;
     }, true);
 
     /* Hover is tracked in client coordinates rather than world ones: the

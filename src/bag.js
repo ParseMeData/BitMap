@@ -161,8 +161,34 @@ const Bag = (() => {
     x.className = 'chip'; x.id = 'bagclear'; x.textContent = 'clear';
     u.addEventListener('click', undo);
     x.addEventListener('click', clear);
-    el.append(u, x);
+    /* and the way out of the bag for a stack that is whole: save it as a
+       mission (`src/missions.js`), which takes the cards and clears the
+       stack for the next; `saved` is the page of them, any time */
+    const sv = document.createElement('div'), ls = document.createElement('div');
+    sv.className = 'chip'; sv.id = 'bagsave'; sv.textContent = 'save';
+    ls.className = 'chip'; ls.id = 'bagsaved'; ls.textContent = 'saved';
+    sv.addEventListener('click', saveStack);
+    ls.addEventListener('click', () => Missions.show());
+    el.append(u, x, sv, ls);
     return el;
+  }
+  function saveStack(){
+    if (!Missions.whole(seq)){ note('a stack saves in rounds of three — person, action, object'); return false; }
+    const m = Missions.add(seq);
+    if (!m) return false;
+    seq = [];
+    saveSeq();
+    render();
+    Missions.show();
+    return true;
+  }
+  /* a mission's cards, dealt back in as the stack — how a run is read */
+  function load(cards){
+    seq = (cards || []).filter(d => d && SYSTEMS[d.sys]).map(d => ({sys: d.sys, i: d.i}));
+    saveSeq();
+    if (!system) open('numbers'); else render();
+    const el = document.getElementById('bagright');
+    if (el) el.scrollTop = 0;
   }
   /* the stack is dealt from the row, and taken back from the top; there
      is no pulling a card out of the middle, because the middle is the
@@ -393,11 +419,14 @@ const Bag = (() => {
     stack();
     el.querySelector('#bagundo').classList.toggle('off', !seq.length);
     el.querySelector('#bagclear').classList.toggle('off', !seq.length);
+    el.querySelector('#bagsave').classList.toggle('off', !Missions.whole(seq));
+    el.querySelector('#bagsaved').classList.toggle('off', !Missions.count());
     const next = NAMES[slotAt(seq.length)];
     el.querySelector('#bagnote').textContent =
       zone === 'switch' ? '←→ the other system · ↓ back to the cards · esc closes'
             : 'the next card dealt is ' + (next === 'action' ? 'an ' : 'a ') + next + ' · ←→ and enter deal a card · ↑↓ another row, ↑ past the top for the switch'
               + (seq.length ? ' · backspace takes the last card back · click a stack card for its picture, or drop one on it · type its word' : '')
+              + (Missions.whole(seq) ? ' · save keeps it as a mission' : '')
               + ' · esc closes';
   }
 
@@ -450,6 +479,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, step, move, enter, undo, clear, count, key, keyAt, word, setWord, filled,
+  return {open, close, back, opened, step, move, enter, undo, clear, load, count, key, keyAt, word, setWord, filled,
           at: () => at, system: () => system, seq: () => seq.slice(), SYSTEMS, SLOTS};
 })();

@@ -245,6 +245,8 @@ stale.
                          compass opens
     src/bag.js           the bag: the number system and the letter system,
                          one page of cards, opened by the 123 and abc rings
+    src/missions.js      the missions: saved stacks, what each is for, which
+                         palace, and how often it has been run
     src/game.js          state, input, camera, entities, frame loop
     platformer.html      the runner, which takes this route as its deck when
                          there is one (see Playing it). A vendored copy of
@@ -1470,6 +1472,21 @@ The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
 their own, `bag:numbers:3:action`, the words into `hq.bag`, and the
 stack into `hq.bagseq`, so a
 snapshot carries both.
+
+### The missions
+
+A stack that is whole — rounds of three, nothing left over — can be
+**saved**, with the `save` chip above the stack. Saving takes the cards
+out of the bag and into a **mission** on the missions page
+(`src/missions.js`; `saved`, beside `save`, opens the page any time). A
+mission is the cards in their order, and around them what the bag never
+asks: what it is **for** — birthday, ID number, workflow, reminder,
+other, and a line of your own — which **palace** it is walked in (any
+marker on the town), **notes** of any length, and the count: the day it
+was **added**, how many times it has been **run through**, and the
+**last run**. `run` counts a run and deals the cards back into the bag to
+be read; `delete` asks twice. `Esc` is back to the bag. Missions live
+under `hq.missions`, so a snapshot carries them.
 
 ## Walking
 

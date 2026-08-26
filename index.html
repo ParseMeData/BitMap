@@ -295,9 +295,45 @@ body.tuning #route{display:none}
    threes — person, action, object — and the gap is where one ends */
 #bagstack .bagcard.gap{margin-top:calc(var(--step) + 18px - ((100vh - 176px) / 3 - 10px))}
 /* undo and clear, above the stack; greyed when there is nothing to do */
-.bagtools{display:flex;gap:6px;width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7)}
-.bagtools .chip{flex:1;font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+.bagtools{display:flex;flex-wrap:wrap;gap:6px;width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7)}
+.bagtools .chip{flex:1 0 40%;font-size:10px;letter-spacing:.22em;text-transform:uppercase}
 .bagtools .chip.off{opacity:.35;pointer-events:none}
+/* ── the missions: the page of saved stacks, over the bag ── */
+#missions{position:fixed;inset:16px;z-index:9;padding:14px 16px;display:flex;
+  flex-direction:column;gap:14px}
+#missions .phead .btn{padding:4px 7px;font-size:8px}
+#missions .phead em{color:var(--dim);font-style:normal;margin-left:10px}
+#msbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+#msbody::-webkit-scrollbar{width:6px}
+#msbody::-webkit-scrollbar-thumb{background:var(--thumb)}
+.msempty{color:var(--dim);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:24px 0}
+/* one mission to a row: the cards, what it is for, the count */
+.mission{display:grid;grid-template-columns:minmax(0,1fr) 300px 190px;gap:16px;
+  padding:12px;border:1px solid rgba(237,234,227,.18);background:var(--well)}
+.msstrip{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.mscard{position:relative;width:44px;aspect-ratio:5/7;flex:none;background:var(--bone) center/cover no-repeat;
+  color:var(--ground);display:grid;place-content:center;font-size:16px;letter-spacing:.06em}
+.mscard.gap{margin-left:14px}
+.mscard.face .mstag{position:absolute;left:0;top:0;padding:2px 4px;font-size:8px;
+  color:var(--bone);background:rgba(8,8,11,.72)}
+.msabout{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mschips{display:flex;flex-wrap:wrap;gap:4px}
+.mschips .chip{flex:1 0 30%;padding:5px 0;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+.msfield{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:start;
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.msfield span{padding-top:6px}
+.msfield input,.msfield select,.msfield textarea{width:100%;background:var(--ground);color:var(--bone);
+  border:1px solid rgba(237,234,227,.22);font:400 11px/1.4 var(--mono);padding:5px 7px;
+  letter-spacing:.04em;outline:0;text-transform:none;resize:vertical}
+.msfield input:focus,.msfield select:focus,.msfield textarea:focus{border-color:var(--flare)}
+.msmeta{display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.msmeta dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase}
+.msmeta dt{color:var(--dim)}
+.msmeta dd{margin:0;color:var(--bone);font-variant-numeric:tabular-nums}
+.msacts{display:flex;gap:6px}
+.msacts .chip{flex:1;font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+body.missions #bag{visibility:hidden}
 /* on a stack card the tag is always in the corner — that corner is all
    that shows of a covered card, and it has to say which card it is */
 #bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
@@ -528,13 +564,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 76, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 77, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

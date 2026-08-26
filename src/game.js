@@ -404,6 +404,12 @@ addEventListener('keydown', e => {
   if (e.repeat) return;
   /* the bag owns the screen while it is up; the only key it answers is the
      way out, and nothing under it walks */
+  /* the missions page sits over the bag: Esc is back to the bag, and every
+     other key waits */
+  if (typeof Missions !== 'undefined' && Missions.opened()){
+    if (e.code === 'Escape') Missions.close();
+    return;
+  }
   if (typeof Bag !== 'undefined' && Bag.opened()){
     if (e.code === 'Escape') Bag.back();
     else if (e.code === 'ArrowUp') Bag.step(-1);

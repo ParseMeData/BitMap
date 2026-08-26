@@ -32,6 +32,13 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Save a whole stack as a mission** — 2026-08-26. New `src/missions.js`
+  page over the bag: `save` (whole stacks only) moves the cards out as a
+  mission with purpose chips, title, palace (a marker), notes, added /
+  runs / last run; `run` counts and deals it back into the bag; `delete`
+  asks twice; `saved` opens the page; Esc back. `hq.missions`. BUILD 77.
+  Verified over CDP end to end.
+
 - [x] **The stack is a dealt sequence** — 2026-08-26. `src/bag.js`: the
   stack is `hq.bagseq`, a list of {sys,i}; each row press appends that
   number's card at slot k%3 (person, action, object), from either system;

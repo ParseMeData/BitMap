@@ -149,7 +149,7 @@ Storage, all under `hq.`:
                          hand-placed offset), treat, border, bright, jitter,
                          font — a Google Fonts family name, `none` for the
                          diamond type, or absent for the default — and the
-                         font's detail (Size), weight, tone, dither, mat and feather
+                         font's detail (Size), weight, tone, dither, mat, feather and shade
     hq.bagsel            which number's stack is open in the bag
     hq.lastError         the last runtime slip; nothing ever clears it
     hq.loads             reload stamps, to catch a relaunch loop

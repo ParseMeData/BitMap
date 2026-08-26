@@ -1275,7 +1275,8 @@ lies across — an oval of ground-coloured diamonds around the name, full
 at its centre and falling off toward its rim; **Feather** is where that
 fall-off begins, from a hard edge at the rim (0) to a fade that starts at
 the word's very centre (24). The first thing dropped if the instance cap
-is short. Weight rests at 1 and Tone at 0: a title diamond *is* a plate
+is short. **Shade** is a sheen down the lettering — how much darker the
+foot of a word is than its top — worn by the bag's cards as well. Weight rests at 1 and Tone at 0: a title diamond *is* a plate
 diamond, the same pitch and the same three-quarter-cell size the lattice
 is drawn at, so a name is made of exactly the stuff the road beside it
 is. Stored as `hq.title.<name>`.

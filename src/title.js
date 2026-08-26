@@ -73,8 +73,13 @@ const Title = (() => {
     /* the mat: how far the plate under the name is dimmed, 0 for none,
        and where its oval starts to fade — 0 at the rim, 24 at the centre */
     mat:    {lo: 0,   hi: 1,   dflt: 0.7},
-    feather: {lo: 0,  hi: 24,  dflt: 10}
+    feather: {lo: 0,  hi: 24,  dflt: 10},
+    /* the shade: how much darker the foot of a word is than its top —
+       a sheen down the lettering, on the plate and on the cards alike */
+    shade:  {lo: 0,   hi: 0.7, dflt: 0.25}
   };
+  /* 1 along the top row of a face, 1 − shade along its bottom */
+  const sheen = (f, y, t) => 1 - tuned(t, 'shade') * (y + 1) / (f.rows + 1);
   /* the plate's own diamond: `hs = size * u_unit * 0.75` in render.js for
      a lattice cell of size 1 — so this is the half-size a title diamond
      takes at Size 1, weight 1, and `FAT` stays the cards' and the 5×7's */
@@ -307,7 +312,7 @@ const Title = (() => {
       }
       const ca = FLAT_AL + (c.al - FLAT_AL) * tone, cs = FLAT_SZ + (c.sz - FLAT_SZ) * tone;
       m = put(a, m, x0 + c.x * px, y0 + c.y * px, col[0], col[1], col[2],
-              al * ca, hs * cs, 0, jx, jy, 1);
+              al * ca * sheen(f, c.y, t), hs * cs, 0, jx, jy, 1);
     }
     return m;
   }
@@ -391,7 +396,7 @@ const Title = (() => {
     for (const c of f.cells){
       const ca = FLAT_AL + (c.al - FLAT_AL) * tone, cs = FLAT_SZ + (c.sz - FLAT_SZ) * tone;
       const r = hs * cs, x = c.x + 1.5, y = c.y + 1.5;
-      const a = Math.round(ca * 20) / 20;
+      const a = Math.round(ca * sheen(f, c.y, t) * 20) / 20;
       const d = 'M' + (x - r).toFixed(2) + ' ' + y.toFixed(2) +
                 'L' + x.toFixed(2) + ' ' + (y - r).toFixed(2) +
                 'L' + (x + r).toFixed(2) + ' ' + y.toFixed(2) +

@@ -1720,7 +1720,8 @@ const Build = (() => {
              syncHead, so these are placeholders the first sync replaces */
           ['hdetail', 'Size', 4, 30, 1], ['hweight', 'Weight', 50, 200, 5],
           ['htone', 'Tone', 0, 100, 5], ['hdither', 'Dither', 0, 100, 5],
-          ['hmat', 'Mat', 0, 100, 5], ['hfeather', 'Feather', 0, 24, 1]])
+          ['hmat', 'Mat', 0, 100, 5], ['hfeather', 'Feather', 0, 24, 1],
+          ['hshade', 'Shade', 0, 70, 5]])
       $('#khtune').appendChild(slider(key, label, min, max, step));
     $('#kends').onclick = () => {
       if (!anchorable(sel)) return;

@@ -1,4 +1,4 @@
-# Loci Bitmap V7.4
+# Loci Bitmap V7.6
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.4 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.6 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -99,6 +99,11 @@ every one.
 **v7.4** — three ways in at rest: the flare hub for the four, the aqua
 diamond for the journal, and a bone one that is the `B` key, hollow while
 build is on, set on the diamonds' own diagonal lattice beneath the pair.
+
+**v7.6** — the compass: top-left, a rose that follows the map or your
+hand and four letters that stay upright, all read through the tone pass
+and painted as diamonds, bone running to grey, tuned in the Tune panel
+beside the plate. (There is no v7.5; the number was Eden's.)
 
 ### The half that is not in the repo
 

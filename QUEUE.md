@@ -19,18 +19,16 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] **Strip the temporary card-halftone tuning strip** once Eden has
-  settled the numbers: fold the values from `hq.bagtune` into `glyph()`
-  in `src/bag.js`, delete `btune/btPanel/btSync` + `BTK/BTD/BTR`, the
-  `btPanel().hidden` line in `render()`, the `#bagtunep` CSS block, and
-  remove the key. `Title.build`'s `t.recipe` override can stay.
-
 
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **Card halftone settled, strip removed** — 2026-08-26. Eden's values
+  (letters 21 cells, digits 34, weight .65, tone 0, dither 0, bright −48,
+  contrast 108, sharpen 3, gamma 1) folded into `glyph()` in `bag.js`;
+  panel, CSS and `hq.bagtune` gone (the key is removed on next load).
 - [x] **The bag's labels in the heading's face** — 2026-08-26. Row cards
   draw their number/letter via `Title.face` (a `cols` override for a
   one-glyph face) as `Title.svg` — rhombi grouped by alpha into a few

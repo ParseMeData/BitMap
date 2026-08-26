@@ -365,14 +365,19 @@ const Bag = (() => {
        letter is the same size on the same line as every other; a
        digit's box is the ten digits', a letter's the twenty-six. */
     const letter = /[A-Z]/.test(label);
-    const b = btune();
+    /* THE CARD RECIPE, settled by eye on 2026-08-26 with a tuning strip
+       that has since gone: read coarse for letters and finer for digits
+       (a digit's box is narrower, so it takes more cells to show the
+       same stroke), small flat diamonds — weight .65, tone and dither
+       off — so a card is a plain stipple rather than a graded one, and
+       the ink pushed hard (bright −48, contrast 108, sharpen 3, gamma 1)
+       so a thin script still cuts. Different from the title's numbers on
+       purpose: a title is a name on the plate, a card is a stamp. */
     const t = Object.assign({}, h.tune, {
-      /* a letter's box is the widest swash capital's, so the rest sit
-         small inside it and need more cells across than a digit does */
-      cols: letter ? b.lcols : b.dcols,
+      cols: letter ? 21 : 34,
       ref: letter ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789',
-      weight: b.weight, tone: b.tone, dither: b.dither,
-      recipe: {bri: b.bri, con: b.con, sharp: b.sharp, gamma: b.gamma}
+      weight: 0.65, tone: 0, dither: 0,
+      recipe: {bri: -48, con: 108, sharp: 3, gamma: 1}
     });
     const f = Title.face(label, h.font, t);
     if (!f){
@@ -382,80 +387,6 @@ const Bag = (() => {
     }
     c.classList.add('glyph');
     c.append(Title.svg(f, t));
-  }
-
-  /* ── TEMPORARY: the card halftone's tuning strip ───────────────────────
-     Every number the card recipe has, as a slider in a small glass panel
-     at the foot of the page while the bag is up, so the look can be found
-     by eye rather than by edit-reload. Saved under `hq.bagtune` so a
-     reload keeps the last position. When the numbers are settled, fold
-     them into `glyph()` above and delete this block, its CSS (`#bagtunep`)
-     and the key — that is the whole of the removal. */
-  const BTK = 'hq.bagtune';
-  const BTD = {lcols: 36, dcols: 18, weight: 1.2, tone: 1, dither: 1,
-               bri: -36, con: 76, sharp: 1, gamma: 0.75};
-  const BTR = [ // key, label, min, max, step
-    ['lcols', 'letter cells', 8, 60, 1], ['dcols', 'digit cells', 8, 60, 1],
-    ['weight', 'weight', 0.5, 2, 0.05], ['tone', 'tone', 0, 1, 0.05],
-    ['dither', 'dither', 0, 1, 0.05], ['bri', 'bright', -120, 120, 2],
-    ['con', 'contrast', -100, 120, 2], ['sharp', 'sharpen', 0, 3, 0.1],
-    ['gamma', 'gamma', 0.3, 2, 0.05]];
-  let bt = null;
-  function btune(){
-    if (bt) return bt;
-    bt = Object.assign({}, BTD);
-    try {
-      const raw = JSON.parse(localStorage.getItem(BTK) || '{}');
-      for (const k in BTD) if (isFinite(raw[k])) bt[k] = +raw[k];
-    } catch (e){}
-    return bt;
-  }
-  function btPanel(){
-    let el = document.getElementById('bagtunep');
-    if (el) return el;
-    el = document.createElement('div');
-    el.id = 'bagtunep'; el.className = 'glass';
-    const head = document.createElement('div');
-    head.className = 'phead';
-    head.innerHTML = '<span>Card <b>halftone</b> · temporary</span>';
-    const reset = document.createElement('button');
-    reset.className = 'btn'; reset.textContent = 'reset';
-    reset.addEventListener('click', () => {
-      bt = Object.assign({}, BTD);
-      try { localStorage.removeItem(BTK); } catch (e){}
-      btSync(); if (system) render();
-    });
-    head.append(reset);
-    el.append(head);
-    for (const [k, label, lo, hi, step] of BTR){
-      const row = document.createElement('div');
-      row.className = 'prow'; row.dataset.key = k;
-      row.innerHTML = '<label>' + label + '</label><input type="range" min="' + lo +
-        '" max="' + hi + '" step="' + step + '"><span class="pv"></span>';
-      const inp = row.querySelector('input');
-      inp.addEventListener('input', () => {
-        btune()[k] = +inp.value;
-        row.querySelector('.pv').textContent = inp.value;
-        if (system) render();
-      });
-      inp.addEventListener('change', () => {
-        try { localStorage.setItem(BTK, JSON.stringify(btune())); } catch (e){}
-      });
-      el.append(row);
-    }
-    document.body.append(el);
-    btSync();
-    return el;
-  }
-  function btSync(){
-    const el = document.getElementById('bagtunep');
-    if (!el) return;
-    const b = btune();
-    el.querySelectorAll('.prow').forEach(r => {
-      const k = r.dataset.key;
-      r.querySelector('input').value = b[k];
-      r.querySelector('.pv').textContent = String(b[k]);
-    });
   }
 
   function card(sys, i, slot, shown, k){
@@ -515,7 +446,6 @@ const Bag = (() => {
   function render(){
     const el = page();
     el.hidden = !system;
-    btPanel().hidden = !system;              // TEMPORARY, see btPanel
     document.body.classList.toggle('bag', !!system);
     if (!system) return;
     const S = SYSTEMS[system];

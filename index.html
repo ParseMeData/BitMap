@@ -408,15 +408,6 @@ body.missions #bag{visibility:hidden}
 /* the tag: the label sits in the corner of a card with a face on it */
 .bagcard.face .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
   letter-spacing:.2em;color:var(--bone);background:rgba(8,8,11,.72)}
-/* TEMPORARY: the card halftone's tuning strip, foot of the bag page */
-#bagtunep{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:9;
-  width:520px;padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px}
-#bagtunep .phead{margin-bottom:3px}
-#bagtunep .phead .btn{padding:4px 7px;font-size:8px}
-#bagtunep .prow{display:flex;align-items:center;gap:7px}
-#bagtunep .prow label{width:78px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-#bagtunep .prow input[type=range]{flex:1;height:14px}
-#bagtunep .prow .pv{width:44px;font-size:9px;text-align:right;color:var(--bone);font-variant-numeric:tabular-nums}
 body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
 body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
@@ -604,7 +595,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 93, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 94, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/build.js','src/markers.js','src/history.js',

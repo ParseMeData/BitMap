@@ -25,6 +25,14 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The journal, behind an aqua diamond** — 2026-08-26. `src/journal.js`
+  (page `#journal`, `body.journal` clears the chrome, `SECTIONS` frame,
+  notes in `hq.journal`, stored on change). `hud.js`: a second hub
+  diamond at `JX = HUB*2+12` to the right, AQUA, only while the four are
+  folded; `pick` answers 'journal'; `Hud.onJournal` seam; cost +1.
+  `game.js`: gate (Esc closes, ← → tabs unless typing) and the seam.
+  BUILD 112. Verified on a throwaway: hit test, press opens, note kept,
+  → changes tab, Esc closes.
 - [x] **A card's hand of pictures, and the still** — 2026-08-26. `Title.
   picture(url, cols, tune)` takes the tool's knobs (`PICTUNE`: bri, con,
   inv on the pixels, edge, cols, ink, weight). `bag.js`: `hand()`/

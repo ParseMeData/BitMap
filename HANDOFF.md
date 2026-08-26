@@ -145,6 +145,7 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
+    hq.journal           the journal's notes, "Tab/Sub/row/col" → {word, note}
     hq.bagpics           each card's hand of pictures: how many, which is
                          dealt, and its halftone tune (the pictures are
                          <key>:alt:<n> in the locus store)

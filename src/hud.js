@@ -40,6 +40,10 @@ const Hud = (() => {
   const BONE = [0.93, 0.92, 0.89];
   const FLARE = [1, 0.373, 0.635];
   const GROUND = [0.031, 0.031, 0.043];
+  /* the journal's diamond: aqua, STYLE.md's one cool note, the same triple
+     `build.js` spends on the route dots — asked for as blue, and aqua is
+     the blue this palette has; an eleventh colour is not the answer */
+  const AQUA = [0.47, 0.88, 0.85];
 
   /* Everything below is in CSS pixels, the same unit the panels are laid out
      in, and is turned into world units once a frame. Sized so the ring's
@@ -58,6 +62,10 @@ const Hud = (() => {
   const TXT = 2.0;           // letterform pitch for ABC and 123
   const ART = 3.0;           // letterform pitch for the house and the rose
   const GRAB = RIM + 4;      // what counts as a press: the diamond, and a hair more
+  /* the journal's diamond stands to the right of the hub, point to point
+     with a hair between, and only while the hub is at rest: the four
+     ways in gather where the hub stood and would land on it */
+  const JX = HUB * 2 + 12;
 
   /* ── the diamond of dots ───────────────────────────────────────────────
      A button is a diamond of dots on a square grid: every grid point with
@@ -200,7 +208,7 @@ const Hud = (() => {
   let budget = 0;
   function cost(){
     if (budget) return budget;
-    let n = 1 + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
+    let n = 2 + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
     for (const r of RINGS){
       if (r.text) n += Type.cost(r.text);
       else for (const row of r.art)
@@ -218,9 +226,14 @@ const Hud = (() => {
 
     /* the hub wears the flare, the way a panel head does: it is the one part
        that says this cluster is chrome rather than another spark */
-    if (!open)
-      return put(a, m, g.x, g.y, FLARE[0], FLARE[1], FLARE[2], hov === 'hub' ? 1 : 0.9,
-                 HUB * g.u, 0, 0, 0, 1);
+    if (!open){
+      m = put(a, m, g.x, g.y, FLARE[0], FLARE[1], FLARE[2], hov === 'hub' ? 1 : 0.9,
+              HUB * g.u, 0, 0, 0, 1);
+      /* and the journal beside it, in the cool note, so the two read as
+         two things and not as a hub and its shadow */
+      return put(a, m, g.x + JX * g.u, g.y, AQUA[0], AQUA[1], AQUA[2],
+                 hov === 'journal' ? 1 : 0.9, HUB * g.u, 0, 0, 0, 1);
+    }
 
     for (const ring of RINGS){
       const c = centre(g, ring);
@@ -279,8 +292,11 @@ const Hud = (() => {
      that answers where it does not look. */
   function pick(g, p){
     if (!p || !g) return null;
-    if (!open)
-      return Math.abs(p[0] - g.x) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u ? 'hub' : null;
+    if (!open){
+      if (Math.abs(p[0] - g.x) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'hub';
+      if (Math.abs(p[0] - (g.x + JX * g.u)) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'journal';
+      return null;
+    }
     const r = GRAB * g.u;
     for (const ring of RINGS){
       const c = centre(g, ring);
@@ -326,7 +342,7 @@ const Hud = (() => {
       e.stopPropagation();
       if (key === 'hub'){ open = true; return; }
       open = false;
-      tap(key);
+      tap(key);                                // 'journal' included: it has a seam
     }, true);
     /* the same rule for a press that lands on a panel rather than the plate:
        it is a press away, so the four fold back */
@@ -382,6 +398,9 @@ const Hud = (() => {
     if (key === 'towns')
       return api.onTowns ? api.onTowns()
         : note('the towns list is not built yet — Hud.onTowns is where it opens');
+    if (key === 'journal')
+      return api.onJournal ? api.onJournal()
+        : note('the journal is not built yet — Hud.onJournal is where it opens');
     return home();
   }
 
@@ -414,6 +433,7 @@ const Hud = (() => {
   function init(){ wire(); return cost(); }
 
   const api = {init, overlay, hit, cost,
-               onLetters: null, onNumbers: null, onTowns: null, onHome: null};
+               onLetters: null, onNumbers: null, onTowns: null, onHome: null,
+               onJournal: null};
   return api;
 })();

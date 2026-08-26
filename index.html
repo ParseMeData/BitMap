@@ -458,6 +458,40 @@ body.missions #bag{visibility:hidden}
 #bagstill .chips .chip{flex:1;text-align:center;font-size:9px;letter-spacing:.2em;text-transform:uppercase}
 #bagstill .kfoot{display:flex;gap:6px}
 #bagstill .kfoot .btn{flex:1}
+/* the journal: one pane over the plate, the chrome cleared under it, as
+   the bag is; tabs and sub-tabs are chips, a letter is a square cell, the
+   chosen one inverted, and the note is the well */
+#journal{position:fixed;inset:16px;z-index:8;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+#journal .phead .btn{padding:4px 7px;font-size:8px}
+#journal .jtabs{display:flex;gap:0}
+#journal .jtabs .chip{flex:1;text-align:center;margin-right:-1px;padding:9px 6px;letter-spacing:.26em}
+#journal .jwin{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:18px;overflow:auto}
+#journal .jcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+#journal .jright{border-left:1px solid rgba(237,234,227,.22);padding-left:18px}
+#journal .jsubs{display:flex;flex-wrap:wrap;gap:6px}
+#journal .jsubs .chip{padding:6px 12px}
+#journal .jgrid{display:flex;flex-direction:column;gap:12px}
+#journal .jblock{display:grid;gap:6px;padding-bottom:12px;border-bottom:1px solid rgba(237,234,227,.14)}
+#journal .jblock:last-child{border-bottom:none}
+#journal .jrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,72px)}
+#journal .jletter{aspect-ratio:1;margin-right:-1px;background:transparent;border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 14px/1 var(--mono);cursor:pointer;transition:background .12s,color .12s}
+#journal .jletter:hover{color:var(--flare)}
+#journal .jletter.sel{background:var(--bone);color:var(--ground);border-color:var(--bone)}
+#journal .jblurb{color:var(--dim);text-align:right;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+#journal .jdetail{border:1px solid rgba(237,234,227,.22);padding:14px;display:flex;flex-direction:column;gap:12px}
+#journal .jtop{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
+#journal .jbig{width:44px;height:44px;background:var(--bone);color:var(--ground);display:grid;place-items:center;font-size:18px}
+#journal #jword{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
+#journal #jnote{width:100%;min-height:200px;flex:1;resize:vertical;background:var(--well);border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 11px/1.6 var(--mono);padding:8px 10px;letter-spacing:.04em}
+#journal #jword:focus,#journal #jnote:focus{outline:0;border-color:var(--flare)}
+#journal #jword::placeholder,#journal #jnote::placeholder{color:var(--faint)}
+#journal .jfrom{color:var(--dim);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:5px}
+#journal .jempty{color:var(--dim);text-align:center;margin:30px 0;font-size:9px;letter-spacing:.22em;text-transform:uppercase}
+body.journal #hud,body.journal #keys,body.journal #palette,body.journal #inside,body.journal #enterhint,
+body.journal #msg,body.journal #mapbar,body.journal #route,body.journal #palace,body.journal #tune{display:none}
 body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
 body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
@@ -645,13 +679,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 110, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 112, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/journal.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

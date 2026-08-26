@@ -410,6 +410,15 @@ addEventListener('keydown', e => {
     if (e.code === 'Escape') Missions.close();
     return;
   }
+  /* the journal owns the screen while it is up: Esc closes, ← → change
+     the tab unless a note is being typed, and nothing under it walks */
+  if (typeof Journal !== 'undefined' && Journal.opened()){
+    const typing = e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+    if (e.code === 'Escape') Journal.close();
+    else if (!typing && e.code === 'ArrowLeft') Journal.move(-1);
+    else if (!typing && e.code === 'ArrowRight') Journal.move(1);
+    return;
+  }
   if (typeof Bag !== 'undefined' && Bag.opened()){
     if (e.code === 'Escape') Bag.back();
     else if (e.code === 'ArrowUp') Bag.step(-1);
@@ -795,6 +804,8 @@ function boot(img){
     Hud.onNumbers = () => Bag.open('numbers');
     Hud.onLetters = () => Bag.open('letters');
   }
+  /* the aqua diamond beside the hub opens the journal */
+  if (typeof Journal !== 'undefined') Hud.onJournal = () => Journal.open();
   if (typeof Atlas !== 'undefined') Atlas.init();
   applyPlate();
   spawn(); scatterSparks();

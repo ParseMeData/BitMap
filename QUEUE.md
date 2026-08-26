@@ -25,6 +25,14 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The compass** — 2026-08-26. `assets/compass.png` (Eden's
+  map-pointer) → `tools/compass.py` cuts rose + N/E/S/W (white keyed to
+  alpha, halved) → `src/compass-art.js`. `src/compass.js`: `#compass`
+  top-left, rose rotates by `Basemap.rot()` (new seam) or by drag
+  (`hq.compass` {manual,deg}, flare while manual, dblclick follows the
+  map again); letters placed at the turned points each change, upright;
+  hidden under wall/bag/journal/locus/missions/mapping. BUILD 118.
+  Verified on a throwaway: 0° and 40°, set/follow, hidden under the bag.
 - [x] **A bone diamond for build** — 2026-08-26. Third diamond at `BX =
   JX*2`, bone, drawn hollow (the ◇ face) while `Build.active()`; `pick`
   answers 'build', `Hud.onBuild` seam → `Build.setOn(!Build.active())` in

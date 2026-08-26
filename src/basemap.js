@@ -625,5 +625,8 @@ const Basemap = (() => {
 
   return {init, sync, find, setShown, setSrc, freeze, thaw, take, suspend,
           active: () => shown, bar: () => barOpen, placing: () => placing,
-          at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey};
+          at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,
+          /* which way the traced picture is turned, radians clockwise — the
+             one number here that says where north is, read by the compass */
+          rot: () => (place ? place.rot : 0)};
 })();

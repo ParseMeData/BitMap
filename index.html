@@ -60,6 +60,20 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #hud b{color:var(--dim);font-weight:400;margin-right:6px}
 #hud span{font-variant-numeric:tabular-nums}
 #hsparks{color:var(--gold)}
+/* the compass: top-left under the sparks, a rose that turns and four
+   letters that stay upright, all bone through masks (src/compass.js) */
+#compass{position:fixed;left:8px;top:58px;width:200px;height:200px;z-index:3;pointer-events:none}
+#compass .rose{position:absolute;left:40px;top:40px;width:120px;height:120px;pointer-events:auto;cursor:grab;
+  background:var(--bone);opacity:.55;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+  transition:opacity .12s}
+#compass .rose:hover{opacity:.85}
+#compass .rose:active{cursor:grabbing}
+#compass.manual .rose{background:var(--flare);opacity:.7}
+#compass .pt{position:absolute;width:34px;height:26px;margin:-13px 0 0 -17px;background:var(--bone);opacity:.8;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+#compass .pt-n{width:42px;height:26px;margin-left:-21px}
+body.mapping #compass,body.wall #compass{display:none}
 /* the map bar is centred in the same top lane as the HUD and runs to about
    1260px wide, so below roughly 1400px the two collide and the bar wraps
    down onto #msg. While it is open, the HUD is the one that gives way. */
@@ -679,13 +693,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 117, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 118, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/journal.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/journal.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

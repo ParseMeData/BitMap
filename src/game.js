@@ -798,6 +798,7 @@ function boot(img){
   Loci.init().then(() => Build.sync());
   Palace.init();
   Basemap.init();
+  if (typeof Compass !== 'undefined') Compass.init();
   Hud.init();
   /* the left and top rings open the bag: one page, two sets of labels */
   if (typeof Bag !== 'undefined'){

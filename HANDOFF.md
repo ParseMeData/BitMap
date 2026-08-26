@@ -145,6 +145,9 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
+    hq.bagpics           each card's hand of pictures: how many, which is
+                         dealt, and its halftone tune (the pictures are
+                         <key>:alt:<n> in the locus store)
     hq.title.*           how the heading is dressed: off (the town name's
                          hand-placed offset), treat, border, bright, jitter,
                          font — a Google Fonts family name, `none` for the

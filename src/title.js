@@ -464,10 +464,31 @@ const Title = (() => {
      `look: 1`. Sizes are in cells, so the same face draws at any card. */
   const PIC = {bri: 0, con: 1, edge: 0, ink: -1, churn: 0, scatter: 0,
                szv: 0.5, cvar: 0, sat: 1.15, path: 0};
-  const pics = new Map();                      // url + cols → Promise<face>
-  function picture(url, cols){
-    cols = cols || 56;
-    const k = cols + '\n' + url;
+  /* the knobs a picture can be tuned by, the wallpaper tool's, with the
+     tool's rest values: tone (`bri`), contrast, invert, edge, cells across
+     (`cols`), ink (−1 colour per cell, 0 bone) and the diamond's weight */
+  const PICTUNE = {
+    bri:    {lo: -0.4, hi: 0.4, dflt: 0},
+    con:    {lo: 0.5,  hi: 2.2, dflt: 1},
+    inv:    {lo: 0,    hi: 1,   dflt: 0},
+    edge:   {lo: 0,    hi: 2,   dflt: 0},
+    cols:   {lo: 24,   hi: 120, dflt: 56},
+    ink:    {lo: -1,   hi: 0,   dflt: -1},
+    weight: {lo: 0.5,  hi: 2,   dflt: 1}
+  };
+  const ptuned = (t, k) => {
+    const v = t && isFinite(t[k]) ? +t[k] : PICTUNE[k].dflt;
+    return clamp(v, PICTUNE[k].lo, PICTUNE[k].hi);
+  };
+  const pics = new Map();                      // url + tune → Promise<face>
+  function picture(url, cols, t){
+    t = t || {};
+    if (cols) t = Object.assign({}, t, {cols});
+    const o = Object.assign({}, PIC, {bri: ptuned(t, 'bri'), con: ptuned(t, 'con'),
+                                     edge: ptuned(t, 'edge'), ink: ptuned(t, 'ink') < -0.5 ? -1 : 0});
+    const inv = ptuned(t, 'inv');
+    cols = Math.round(ptuned(t, 'cols'));
+    const k = JSON.stringify([cols, o.bri, o.con, o.edge, o.ink, inv]) + '\n' + url;
     let p = pics.get(k);
     if (p) return p;
     p = new Promise((res, rej) => {
@@ -482,8 +503,18 @@ const Title = (() => {
       c.width = W; c.height = H;
       const x = c.getContext('2d', {willReadFrequently: true});
       x.drawImage(im, 0, 0);
-      const A = Lattice.analyse(x.getImageData(0, 0, W, H).data, W, H, cols, PIC);
-      const buf = Lattice.compose(A, PIC);
+      const px = x.getImageData(0, 0, W, H).data;
+      /* invert on the pixels — the lattice's analyse has no such knob — so
+         a dark figure on a light ground can become bright diamonds on the
+         plate's night, which is how the wallpaper tool's own still reads;
+         a fraction is a blend toward the inverse, as in the tool */
+      if (inv > 0)
+        for (let i = 0; i < px.length; i += 4){
+          px[i] += (255 - 2 * px[i]) * inv; px[i + 1] += (255 - 2 * px[i + 1]) * inv;
+          px[i + 2] += (255 - 2 * px[i + 2]) * inv;
+        }
+      const A = Lattice.analyse(px, W, H, cols, o);
+      const buf = Lattice.compose(A, o);
       const cells = [];
       for (let i = 0; i + 16 < buf.length; i += 17){
         /* the second face is the dense one: alpha at 10, signed size at 11
@@ -528,6 +559,7 @@ const Title = (() => {
   }
 
   return {load, state, face, emit, cost, svg, mat, matCost, picture, paint,
+          pictune: PICTUNE, ptuned,
           fonts: FONTS.slice(), DEFAULT: FONTS[0],
           tune: TUNE, tuned, recipe: Object.assign({}, RECIPE)};
 })();

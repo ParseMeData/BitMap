@@ -1311,6 +1311,20 @@ locus preview's (`PIC` in `src/title.js`): a picture should arrive here
 looking as it does there. Read at 56 cells across, kept per card key so a
 deal does not read it again; attaching a new picture reads it afresh.
 
+A card keeps a **hand** of pictures, not only the last one. Click a stack
+card that has a picture and **the still** opens: the picture large, ◀ ▶
+(or ← →) to walk the hand, and the wallpaper tool's own knobs under it —
+Tone, Contrast, Invert, Edge, Detail, Weight, and Full colour or Bone.
+**Keep** (or Enter) deals the picture you are looking at, at that tune,
+onto the card; nothing on the card changes until then, and ✕ or Esc
+leaves it as it was. **Add a picture** puts a file into the hand without
+dealing it; dropping a file on a card outside the still still deals it at
+once. **Drop this one** takes a picture out of the hand (a card keeps at
+least one). The hand lives under `<key>:alt:<n>` in the picture store and
+`hq.bagpics` says how many, which is dealt and how it is tuned; the dealt
+one is also written under the card's own key, so everything that reads one
+picture per card goes on doing so.
+
 Every card wears the floral frame in `assets/card-frame.png` — as a mask,
 not a picture: the shape is the PNG's alpha and the ink is the card's own
 colour, so it is dim at rest, bone once done, and inverts with a held

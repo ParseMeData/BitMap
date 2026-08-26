@@ -25,6 +25,17 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A card's hand of pictures, and the still** — 2026-08-26. `Title.
+  picture(url, cols, tune)` takes the tool's knobs (`PICTUNE`: bri, con,
+  inv on the pixels, edge, cols, ink, weight). `bag.js`: `hand()`/
+  `setHand()` over `hq.bagpics`, alternates at `<key>:alt:<n>` via
+  `Loci.attach`, `adoptHand` folds a pre-hand picture into alt 0;
+  `still` panel (`#bagstill`) opens from a face card: cycle, sliders,
+  ink chips, Add / Drop / Keep; ←→ Enter Esc routed through `Bag.move/
+  enter/back` while it is up. Keep copies the alt to the card's key and
+  stores the tune; the card canvas cache drops. BUILD 109. Verified on a
+  throwaway: adopt, drop a second picture, cycle, invert+80 cells, Enter
+  keeps, survives reload; Esc closes.
 - [x] **A card's picture through the tone pass** — 2026-08-26. `Title.
   picture(url, cols)` → `Lattice.analyse`/`compose` with the locus
   preview's tune (`PIC`), dense face decoded from the compose buffer

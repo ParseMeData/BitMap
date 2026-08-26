@@ -418,8 +418,9 @@ const Bag = (() => {
         cv.className = 'bagpic';
         cv.width = 304; cv.height = 426;              // the card's 5:7, at 2×
         pics.set(k, cv);
-        Loci.get(k).then(url => url && Title.picture(url, 56))
-          .then(f => { if (f) Title.paint(cv, f, {weight: 1, shade: 0}); })
+        const t = tuneOf(k);
+        Loci.get(k).then(url => url && Title.picture(url, 0, t))
+          .then(f => { if (f) Title.paint(cv, f, {weight: Title.ptuned(t, 'weight'), shade: 0}); })
           .catch(e => note(e.message || String(e)));
       }
       c.append(cv);
@@ -444,7 +445,9 @@ const Bag = (() => {
         deal(sys, i);
         return;
       }
-      pick(k);                               // a stack card asks for its picture
+      /* a stack card with a picture opens its still — the hand, and the
+         tune; one without asks for a picture, as before */
+      if (Loci.has(k)) still.open(k); else pick(k);
     });
     c.addEventListener('dragover', e => { e.preventDefault(); c.classList.add('over'); });
     c.addEventListener('dragleave', () => c.classList.remove('over'));
@@ -456,6 +459,147 @@ const Bag = (() => {
     });
     return c;
   }
+
+  /* ── the still ─────────────────────────────────────────────────────────
+     A card's picture, large, with its hand and its tune: ◀ ▶ (or the
+     arrow keys) cycle the hand, the sliders are the wallpaper tool's own,
+     and KEEP deals the picture you are looking at, at that tune, onto the
+     card — nothing changes on the card until then, and ✕ or Esc leaves it
+     as it was. ADD puts a file into the hand; DROP takes the one you are
+     looking at out of it. */
+  const still = (() => {
+    let k = null, h = null, cur = 0, tune = null, el = null, cv = null, tmr = 0, tok = 0;
+    const ROWS = [ // key, label, min, max, step, scale
+      ['bri', 'tone', -40, 40, 2, 100], ['con', 'contrast', 50, 220, 5, 100],
+      ['inv', 'invert', 0, 100, 5, 100], ['edge', 'edge', 0, 200, 10, 100],
+      ['cols', 'detail', 24, 120, 4, 1], ['weight', 'weight', 50, 200, 5, 100]];
+    function build(){
+      if (el) return el;
+      el = document.createElement('div');
+      el.id = 'bagstill'; el.className = 'glass'; el.hidden = true;
+      el.innerHTML =
+        '<div class="phead"><span>The <b>still</b> <em id="stillwho"></em></span>' +
+        '<button class="btn" id="stillx">&#10005;</button></div>' +
+        '<div class="stillmid"><div class="chip" id="stillprev">&#9664;</div>' +
+        '<canvas id="stillcv" width="300" height="420"></canvas>' +
+        '<div class="chip" id="stillnext">&#9654;</div></div>' +
+        '<div class="knote" id="stillat"></div>' +
+        '<div id="stilltune"></div>' +
+        '<div class="chips" id="stillink"><div class="chip" data-ink="-1">Full colour</div>' +
+        '<div class="chip" data-ink="0">Bone</div></div>' +
+        '<div class="kfoot"><button class="btn" id="stilladd">Add a picture</button>' +
+        '<button class="btn" id="stilldrop">Drop this one</button>' +
+        '<button class="btn" id="stillkeep">Keep</button></div>';
+      document.body.append(el);
+      cv = el.querySelector('#stillcv');
+      for (const [key, label, lo, hi, step, sc] of ROWS){
+        const row = document.createElement('div');
+        row.className = 'prow'; row.dataset.key = key;
+        row.innerHTML = '<label>' + label + '</label><input type="range" min="' + lo +
+          '" max="' + hi + '" step="' + step + '"><span class="pv"></span>';
+        row.querySelector('input').addEventListener('input', e => {
+          tune[key] = +e.target.value / sc; sync(); redraw();
+        });
+        el.querySelector('#stilltune').append(row);
+      }
+      el.querySelectorAll('#stillink .chip').forEach(c => c.addEventListener('click', () => {
+        tune.ink = +c.dataset.ink; sync(); redraw();
+      }));
+      el.querySelector('#stillx').addEventListener('click', close);
+      el.querySelector('#stillprev').addEventListener('click', () => move(-1));
+      el.querySelector('#stillnext').addEventListener('click', () => move(1));
+      el.querySelector('#stilladd').addEventListener('click', () => {
+        /* through the page's one file input, answered below by attach(),
+           which adds to the hand and re-renders; the still follows */
+        pick(k);
+      });
+      el.querySelector('#stilldrop').addEventListener('click', drop);
+      el.querySelector('#stillkeep').addEventListener('click', keep);
+      return el;
+    }
+    function open(key){
+      k = key;
+      adoptHand(k).then(hh => {
+        if (!hh){ pick(k); return; }
+        h = hh; cur = h.cur; tune = Object.assign({}, h.tune || {});
+        build().hidden = false;
+        el.querySelector('#stillwho').textContent = k.split(':').slice(1).join(' · ');
+        sync(); redraw();
+      });
+    }
+    const isOpen = () => !!(el && !el.hidden);
+    function close(){ if (el) el.hidden = true; k = null; }
+    function sync(){
+      if (!el) return;
+      el.querySelector('#stillat').textContent = 'picture ' + (cur + 1) + ' of ' + h.n +
+        (cur === h.cur ? ' · the one on the card' : '');
+      for (const [key, , , , , sc] of ROWS){
+        const r = el.querySelector('.prow[data-key="' + key + '"]');
+        const v = Title.ptuned(tune, key);
+        r.querySelector('input').value = Math.round(v * sc);
+        r.querySelector('.pv').textContent = key === 'cols' ? v + ' cells'
+          : key === 'inv' ? Math.round(v * 100) + '%' : (v > 0 && key === 'bri' ? '+' : '') + v.toFixed(2);
+      }
+      const ink = Title.ptuned(tune, 'ink') < -0.5 ? -1 : 0;
+      el.querySelectorAll('#stillink .chip').forEach(c => c.classList.toggle('sel', +c.dataset.ink === ink));
+    }
+    function redraw(){
+      clearTimeout(tmr);
+      tmr = setTimeout(() => {
+        const my = ++tok;
+        Loci.get(altKey(k, cur)).then(url => url && Title.picture(url, 0, tune)).then(f => {
+          if (my !== tok || !f || !isOpen()) return;
+          Title.paint(cv, f, {weight: Title.ptuned(tune, 'weight'), shade: 0});
+        }).catch(e => note(e.message || String(e)));
+      }, 120);
+    }
+    function move(d){
+      if (!isOpen() || !h || h.n < 2) return;
+      cur = ((cur + d) % h.n + h.n) % h.n;
+      sync(); redraw();
+    }
+    function keep(){
+      if (!isOpen()) return;
+      const key = k, at = cur, t = Object.assign({}, tune);
+      Loci.get(altKey(key, at)).then(url => fetch(url)).then(r => r.blob())
+        .then(b => Loci.attach({uid: key}, new File([b], 'picture', {type: b.type})))
+        .then(ok => {
+          if (!ok) return;
+          setHand(key, {n: h.n, cur: at, tune: t});
+          pics.delete(key);
+          note('kept · picture ' + (at + 1) + ' at this tune');
+          close();
+          if (system) render();
+        });
+    }
+    /* the alternates above the dropped one slide down a place, so the
+       hand stays dense and `n` stays true */
+    function drop(){
+      if (!isOpen() || !h) return;
+      if (h.n < 2){ note('a card keeps at least one picture · add another first'); return; }
+      const key = k, at = cur;
+      const moves = [];
+      for (let i = at + 1; i < h.n; i++)
+        moves.push(Loci.get(altKey(key, i)).then(url => fetch(url)).then(r => r.blob())
+          .then(b => Loci.attach({uid: altKey(key, i - 1)}, new File([b], 'picture', {type: b.type}))));
+      Promise.all(moves).then(() => {
+        Loci.detach({uid: altKey(key, h.n - 1)});
+        const wasCur = h.cur;
+        h = {n: h.n - 1, cur: wasCur > at ? wasCur - 1 : Math.min(wasCur, h.n - 2), tune: h.tune};
+        if (wasCur === at) h.cur = Math.min(at, h.n - 1);
+        setHand(key, h);
+        cur = Math.min(at, h.n - 1);
+        sync(); redraw();
+      });
+    }
+    /* when a file lands while the still is up, it went into the hand:
+       show it */
+    function landed(key){
+      if (!isOpen() || key !== k) return;
+      h = hand(k); cur = h.n - 1; sync(); redraw();     // look at the one that just came
+    }
+    return {open, close, isOpen, move, keep, landed, key: () => k};
+  })();
 
   function render(){
     const el = page();
@@ -513,10 +657,60 @@ const Bag = (() => {
     });
   }
   const pics = new Map();                        // key → the painted canvas
+
+  /* ── the hand ──────────────────────────────────────────────────────────
+     A card keeps every picture ever put on it, not only the last: they are
+     its HAND, stored under `<key>:alt:<n>` in the same picture store, and
+     `hq.bagpics` says how many a card holds, which one is dealt, and how
+     that one is tuned. The dealt one is also written under the card's own
+     key, exactly as before, so `filled`, the count, the missions and the
+     platformer go on reading one picture per card and never learn there
+     is a hand behind it. */
+  const HK = 'hq.bagpics';
+  let hands = null;
+  function hand(k){
+    if (!hands){
+      try { hands = JSON.parse(localStorage.getItem(HK) || '{}') || {}; } catch (e){ hands = {}; }
+    }
+    return hands[k] || null;
+  }
+  function setHand(k, h){
+    hand(k); hands[k] = h;
+    try { localStorage.setItem(HK, JSON.stringify(hands)); } catch (e){ note('the hand could not be saved'); }
+  }
+  const altKey = (k, i) => k + ':alt:' + i;
+  /* a file into the hand: one more alternate, dealt at once, and the card's
+     own key written too so the card is filled */
+  /* With the still up for this card the file only joins the hand, and
+     KEEP is the one thing that changes the card; dropped on a card
+     without the still, it is dealt at once, as a drop always was. */
+  function addToHand(k, file){
+    const h = hand(k) || {n: 0, cur: 0, tune: {}};
+    const i = h.n;
+    const deal = !(still.isOpen() && still.key() === k) || !Loci.has(k);
+    return Loci.attach({uid: altKey(k, i)}, file).then(ok => {
+      if (!ok) return false;
+      setHand(k, {n: i + 1, cur: deal ? i : h.cur, tune: h.tune || {}});
+      return deal ? Loci.attach({uid: k}, file) : true;
+    });
+  }
+  /* a card that had a picture before there were hands: its one picture
+     becomes a hand of one, copied under alt 0 the first time it is asked */
+  function adoptHand(k){
+    const h = hand(k);
+    if (h) return Promise.resolve(h);
+    if (!Loci.has(k)) return Promise.resolve(null);
+    return Loci.get(k).then(url => fetch(url)).then(r => r.blob())
+      .then(b => Loci.attach({uid: altKey(k, 0)}, new File([b], 'picture', {type: b.type})))
+      .then(ok => { if (!ok) return null; const h2 = {n: 1, cur: 0, tune: {}}; setHand(k, h2); return h2; });
+  }
+  const tuneOf = k => { const h = hand(k); return h && h.tune ? h.tune : {}; };
+
   function attach(k, file){
-    return Loci.attach({uid: k}, file).then(ok => {
+    return addToHand(k, file).then(ok => {
       if (ok) pics.delete(k);                    // a new picture, read afresh
       if (ok && system) render();
+      if (ok) still.landed(k);
       return ok;
     });
   }
@@ -532,17 +726,22 @@ const Bag = (() => {
      touch the stack — the stack stays until it is cleared. */
   function back(){
     if (!system) return false;
+    if (still.isOpen()){ still.close(); return true; }
     if (zone === 'switch'){ zone = 'row'; render(); return true; }
     return close();
   }
   function close(){
     if (!system) return false;
+    still.close();
     system = null; pending = null; zone = 'row';
     render();
     return true;
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, step, move, enter, undo, clear, load, count, key, keyAt, word, setWord, filled,
+  /* while the still is up the keys are its: ←/→ walk the hand, Enter keeps */
+  const moveK = d => (still.isOpen() ? (still.move(d), true) : move(d));
+  const enterK = () => (still.isOpen() ? (still.keep(), true) : enter());
+  return {open, close, back, opened, step, move: moveK, enter: enterK, undo, clear, load, count, key, keyAt, word, setWord, filled,
           at: () => at, system: () => system, seq: () => seq.slice(), SYSTEMS, SLOTS};
 })();

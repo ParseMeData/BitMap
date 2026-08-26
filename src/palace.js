@@ -504,7 +504,7 @@ const Palace = (() => {
       /* the mat first, under everything, and the first thing dropped
          when the cap is short: a name without its mat is still a name */
       const cover = Title.tuned(tune, 'mat'), fe = Math.round(Title.tuned(tune, 'feather'));
-      const mc = cover > 0 ? Title.matCost(f.cols, f.rows, fe) : 0;
+      const mc = cover > 0 ? Title.matCost(f.cols, f.rows) : 0;
       if (m + Title.cost(f) + Type.borderCost(bd, iw, ih) > cap) bd = 'none';
       if (m + Title.cost(f) > cap) return m;
       if (cover > 0 && m + mc + Title.cost(f) <= cap)

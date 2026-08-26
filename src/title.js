@@ -71,9 +71,9 @@ const Title = (() => {
     tone:   {lo: 0,   hi: 1,   dflt: 0},
     dither: {lo: 0,   hi: 1,   dflt: 1},
     /* the mat: how far the plate under the name is dimmed, 0 for none,
-       and how many cells past the ink it fades out over */
+       and where its oval starts to fade — 0 at the rim, 24 at the centre */
     mat:    {lo: 0,   hi: 1,   dflt: 0.7},
-    feather: {lo: 0,  hi: 24,  dflt: 3}
+    feather: {lo: 0,  hi: 24,  dflt: 10}
   };
   /* the plate's own diamond: `hs = size * u_unit * 0.75` in render.js for
      a lattice cell of size 1 — so this is the half-size a title diamond
@@ -314,41 +314,56 @@ const Title = (() => {
   const cost = f => f.cells.length;
 
   /* ── the mat ───────────────────────────────────────────────────────────
-     The plate under a name, dimmed so the name reads over it: a field of
-     ground-coloured diamonds laid over the box the face occupies, fading
-     out across a margin. Diamonds on a square grid at a spacing equal to
-     their own half-size cover the plane exactly twice, everywhere — so
-     the field is even, and one alpha `a` per diamond makes a cover of
-     1 − (1 − a)². Spaced at three cells so a title's mat is a few
-     hundred instances rather than a few thousand: the cap is shared
-     with the rooms and the walker, and a mat is the first thing to give.
-     Drawn in the chrome's ground rather than black, because the plate is
-     that colour and a mat that was blacker than the plate would read as
-     a hole. */
+     The plate under a name, dimmed so the name reads over it: an OVAL of
+     ground-coloured diamonds around the word, full at its centre and
+     falling off toward the rim. Diamonds on a square grid at a spacing
+     equal to their own half-size cover the plane exactly twice,
+     everywhere — so the field is even, and one alpha `a` per diamond
+     makes a cover of 1 − (1 − a)². Spaced at three cells so a title's
+     mat is a few hundred instances rather than a few thousand: the cap
+     is shared with the rooms and the walker, and a mat is the first
+     thing to give. Drawn in the chrome's ground rather than black,
+     because the plate is that colour and a mat that was blacker than
+     the plate would read as a hole.
+
+     `feather` is where the fade begins, 0..24: at 0 the oval is full to
+     its rim and stops there hard, at 24 it starts falling away from the
+     word's very centre. The rim itself is the word's box with a little
+     clear, stretched so the ends of a long name are still under it. */
   const GROUND = [0.031, 0.031, 0.043];        // #08080B
-  function mat(a, m, cols, rows, x0, y0, px, cover, cap, margin){
+  const FEATHER_MAX = 24;
+  function oval(cols, rows){
+    const cx = (cols - 1) / 2, cy = (rows - 1) / 2;
+    return {cx, cy, rx: cols / 2 * 1.12 + 4, ry: rows / 2 * 1.45 + 4};
+  }
+  function mat(a, m, cols, rows, x0, y0, px, cover, cap, feather){
     if (!(cover > 0)) return m;
-    /* the fade runs across `margin` cells past the ink; at 0 the mat
-       stops a cell clear of the ink with a hard edge, and the ramp below
-       is skipped rather than divided by nothing */
-    const S = 3, mg = margin === undefined ? 3 : Math.max(0, margin);
+    const S = 3, o = oval(cols, rows);
     const per = 1 - Math.sqrt(1 - Math.min(cover, 0.98));
-    const gx0 = -1 - mg, gy0 = -1 - mg, gx1 = cols + mg, gy1 = rows + mg;
+    const f0 = 1 - clamp((feather === undefined ? 10 : feather) / FEATHER_MAX, 0, 1);
+    const gx0 = Math.floor(o.cx - o.rx), gx1 = Math.ceil(o.cx + o.rx);
+    const gy0 = Math.floor(o.cy - o.ry), gy1 = Math.ceil(o.cy + o.ry);
     for (let gy = gy0; gy <= gy1; gy += S)
       for (let gx = gx0; gx <= gx1; gx += S){
+        const r = Math.hypot((gx - o.cx) / o.rx, (gy - o.cy) / o.ry);
+        if (r >= 1) continue;
         if (cap !== undefined && m > cap - 1) return m;
-        /* the fade: how far inside the margin this diamond sits, 0 at the
-           outer edge and 1 once it is over the ink */
-        const dx = Math.min(gx - gx0, gx1 - gx), dy = Math.min(gy - gy0, gy1 - gy);
-        const e = mg > 0 ? Math.min(1, Math.min(dx, dy) / mg) : 1;
+        /* 1 inside the start of the fade, easing to 0 at the rim */
+        let e = 1;
+        if (r > f0){
+          const t = (1 - r) / Math.max(1e-6, 1 - f0);
+          e = t * t * (3 - 2 * t);
+        }
         m = put(a, m, x0 + gx * px, y0 + gy * px, GROUND[0], GROUND[1], GROUND[2],
                 per * e, S * px, 0, 0, 0, 1);
       }
     return m;
   }
-  const matCost = (cols, rows, margin) => {
-    const S = 3, mg = margin === undefined ? 3 : Math.max(0, margin);
-    return (Math.floor((cols + 2 * mg + 1) / S) + 1) * (Math.floor((rows + 2 * mg + 1) / S) + 1);
+  /* the grid's box over the oval, which over-counts the corners: a cap
+     check that errs on the safe side */
+  const matCost = (cols, rows) => {
+    const S = 3, o = oval(cols, rows);
+    return (Math.floor(2 * o.rx / S) + 2) * (Math.floor(2 * o.ry / S) + 2);
   };
 
   /* ── the same face, off the plate ──────────────────────────────────────

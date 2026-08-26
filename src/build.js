@@ -2264,7 +2264,7 @@ const Build = (() => {
         if (!rg || v === undefined) return;
         const live = !!h.font;
         if (k === 'detail') r._set(v, v + ' / letter', live, rg.lo, rg.hi);
-        else if (k === 'feather') r._set(v, v ? v + ' cells' : 'hard', live, rg.lo, rg.hi);
+        else if (k === 'feather') r._set(v, v ? Math.round(v / rg.hi * 100) + '% in' : 'hard', live, rg.lo, rg.hi);
         else r._set(Math.round(v * 100),
                     k === 'weight' ? v.toFixed(2) + '\u00d7'
                     : (v ? v.toFixed(2) : 'none'),

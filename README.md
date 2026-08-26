@@ -1252,8 +1252,10 @@ Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
 
 Under **Heading** in the palette, below Bright and Jitter, are the font's
-own four, live only while a font is in force: **Detail** is cells per
-letter, the resolution the name is read at; **Weight** scales every
+own four, live only while a font is in force: **Size** is cells per
+letter — the title's diamonds sit on the plate's own cell pitch, the same
+grain as the road beside them, so this is how big the name is in the
+world rather than how finely it is read; **Weight** scales every
 diamond, and is the one to reach for when a thick stroke shows a lattice
 through it — a diamond a shade wider than its cell leaves a hole at each
 corner, and inside a stroke those holes line up into grid lines, which
@@ -1269,7 +1271,9 @@ network once per session. Until it lands the 5×7 type draws; a family Google
 does not have leaves the 5×7 type standing and says so, and the menu is
 struck through. `hq.title.font` holds the family, or `none` for the diamond
 type chosen on purpose; a profile with no key at all gets the default. A name is drawn at most 160 cells across, so a long name in
-a fine script will be finer than a short one.
+a fine script will be finer than a short one. A name too wide for the
+town at the plate's pitch is let shrink, because a title off both edges
+names nothing.
 
 ## The route, and playing it
 

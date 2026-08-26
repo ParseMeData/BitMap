@@ -37,8 +37,10 @@ const Title = (() => {
      tool's own value as the default — what the recipe drew before there
      was a slider is what a slider at rest draws:
 
-       detail  cells per letter, which is the resolution the name is read
-               at. More is finer hairlines and more diamonds.
+       detail  cells per letter. The pitch is locked to the plate's own
+               cell (palace.js), so this is the SIZE of the name in the
+               world — more is a bigger title with finer hairlines — and
+               the palette labels it Size.
        weight  a multiplier on every diamond's size. This is the one that
                closes the plate's own grid: a diamond a shade wider than
                its cell (FAT) leaves a hole at each cell's corners, and

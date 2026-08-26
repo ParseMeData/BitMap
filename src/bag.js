@@ -361,7 +361,7 @@ const Bag = (() => {
     if (!h) return;
     /* a one-glyph face is read at a fixed width rather than the floor a
        whole name gets, and letters a little wider than digits */
-    const t = Object.assign({}, h.tune, {cols: /[A-Z]/.test(label) ? 30 : 26});
+    const t = Object.assign({}, h.tune, {cols: /[A-Z]/.test(label) ? 40 : 34});
     const f = Title.face(label, h.font, t);
     if (!f){
       /* not here yet — draw the row again once it is, if the bag is still up */

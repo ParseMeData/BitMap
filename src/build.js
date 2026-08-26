@@ -1718,7 +1718,8 @@ const Build = (() => {
          [['hbright', 'Bright', 40, 220, 5], ['hjitter', 'Jitter', 0, 150, 5],
           /* the font's own: ranges are read back off Title.tune in
              syncHead, so these are placeholders the first sync replaces */
-          ['hdetail', 'Size', 6, 24, 1], ['hweight', 'Weight', 50, 200, 5],
+          ['hsize', 'Size', 25, 200, 5], ['hdetail', 'Detail', 6, 24, 1],
+          ['hweight', 'Weight', 50, 200, 5],
           ['htone', 'Tone', 0, 100, 5], ['hdither', 'Dither', 0, 100, 5]])
       $('#khtune').appendChild(slider(key, label, min, max, step));
     $('#kends').onclick = () => {
@@ -2264,7 +2265,9 @@ const Build = (() => {
         const live = !!h.font;
         if (k === 'detail') r._set(v, v + ' / letter', live, rg.lo, rg.hi);
         else r._set(Math.round(v * 100),
-                    k === 'weight' ? v.toFixed(2) + '\u00d7' : (v ? v.toFixed(2) : 'none'),
+                    k === 'weight' ? v.toFixed(2) + '\u00d7'
+                    : k === 'size' ? v.toFixed(2) + '\u00d7 cell'
+                    : (v ? v.toFixed(2) : 'none'),
                     live, Math.round(rg.lo * 100), Math.round(rg.hi * 100));
       }
     });

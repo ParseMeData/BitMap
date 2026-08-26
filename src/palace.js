@@ -546,16 +546,17 @@ const Palace = (() => {
     const wide = (box[2] - box[0]) * (inside ? 0.8 : 0.62);
     let px;
     if (face){
-      /* ON THE LATTICE'S OWN PITCH. A face is one diamond per cell of
-         ink, and the cell is the plate's cell — `G.A.cell`, the unit
-         every diamond on the map is drawn at — so a title is made of
-         the same-sized stuff as the road beside it at every zoom, and
-         its size in the world is its size in cells, which is what Size
-         in the palette sets. It was fitted to the town's width before
+      /* ON THE LATTICE'S OWN PITCH, TIMES SIZE. A face is one diamond per
+         cell of ink, and the cell is the plate's cell — `G.A.cell`, the
+         unit every diamond on the map is drawn at — so at Size 1 a title
+         is made of the same-sized stuff as the road beside it at every
+         zoom. Size scales that pitch and nothing else: the cells per
+         letter are Detail's, so a title can be made smaller without
+         being read coarser. It was fitted to the town's width before
          this, which made it a different grain from the map it lay on.
          The one give: a name too wide for the town at that pitch is
          let shrink, because a title off both edges names nothing. */
-      px = G.A && G.A.cell ? G.A.cell : t / 4;
+      px = (G.A && G.A.cell ? G.A.cell : t / 4) * Title.tuned(tune, 'size');
       if (face.cols * px > wide * 1.3) px = wide * 1.3 / face.cols;
     } else {
       px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8, treat));

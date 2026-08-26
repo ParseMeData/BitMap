@@ -1252,17 +1252,18 @@ Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
 
 Under **Heading** in the palette, below Bright and Jitter, are the font's
-own four, live only while a font is in force: **Size** is cells per
-letter — the title's diamonds sit on the plate's own cell pitch, the same
-grain as the road beside them, so this is how big the name is in the
-world rather than how finely it is read; **Weight** scales every
+own five, live only while a font is in force: **Size** is the title's
+pitch as a multiple of the plate's own cell — at 1× its diamonds are the
+same grain as the road beside them — and it scales the name without
+touching how finely it is read; **Detail** is cells per letter, the
+resolution, and does not move when Size does; **Weight** scales every
 diamond, and is the one to reach for when a thick stroke shows a lattice
 through it — a diamond a shade wider than its cell leaves a hole at each
 corner, and inside a stroke those holes line up into grid lines, which
 close past about 1.15×; **Tone** is how far a diamond's size and light
 follow the ink under it, 1 the tool's look and 0 every diamond the same;
 **Dither** is how much of the tool's Bayer threshold is applied. Three rest
-at the tool's values; Weight rests at 1.2×, past the corners, because the
+at the tool's values (Size at 1×); Weight rests at 1.2×, past the corners, because the
 lattice through a stroke was the first thing seen and the tool's 1× is one
 notch back. Stored as `hq.title.<name>`.
 

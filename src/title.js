@@ -37,10 +37,13 @@ const Title = (() => {
      tool's own value as the default — what the recipe drew before there
      was a slider is what a slider at rest draws:
 
-       detail  cells per letter. The pitch is locked to the plate's own
-               cell (palace.js), so this is the SIZE of the name in the
-               world — more is a bigger title with finer hairlines — and
-               the palette labels it Size.
+       size    the pitch, as a multiple of the plate's own cell: at 1 a
+               title is made of the same-sized stuff as the road beside
+               it, and it is a size without being a resolution — the
+               cells per letter do not move when it does.
+       detail  cells per letter, which is the resolution the name is read
+               at. More is finer hairlines and more diamonds, at whatever
+               size the title is.
        weight  a multiplier on every diamond's size. This is the one that
                closes the plate's own grid: a diamond a shade wider than
                its cell (FAT) leaves a hole at each cell's corners, and
@@ -59,6 +62,7 @@ const Title = (() => {
      drawn, so a slider on them costs nothing per frame beyond what the
      title already cost. */
   const TUNE = {
+    size:   {lo: 0.25, hi: 2.0, dflt: 1},
     detail: {lo: 6,   hi: 24,  dflt: 14},
     weight: {lo: 0.5, hi: 2.0, dflt: 1.2},     // past the corners: no lattice by default
     tone:   {lo: 0,   hi: 1,   dflt: 1},

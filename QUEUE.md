@@ -19,6 +19,12 @@ may run straight into the next without waiting.
 
 ## Queue
 
+- [ ] **Strip the temporary card-halftone tuning strip** once Eden has
+  settled the numbers: fold the values from `hq.bagtune` into `glyph()`
+  in `src/bag.js`, delete `btune/btPanel/btSync` + `BTK/BTD/BTR`, the
+  `btPanel().hidden` line in `render()`, the `#bagtunep` CSS block, and
+  remove the key. `Title.build`'s `t.recipe` override can stay.
+
 
 
 ## Done

@@ -166,6 +166,9 @@ const Title = (() => {
   const faces = new Map();                     // family + '\n' + name → face | null
   function build(name, family, t){
     const PERCH = tuned(t, 'detail'), DITH = tuned(t, 'dither');
+    /* the recipe itself may be overridden per call — a tuning strip's
+       business, while the numbers are still being found */
+    const R = Object.assign({}, RECIPE, t && t.recipe ? t.recipe : {});
     const c = document.createElement('canvas');
     const x = c.getContext('2d', {willReadFrequently: true});
     if (!x) return null;
@@ -209,8 +212,8 @@ const Title = (() => {
     const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; i < gray.length; i++, p += 4)
       gray[i] = .299 * d[p] + .587 * d[p + 1] + .114 * d[p + 2];
-    briCon(gray, RECIPE.bri, RECIPE.con);
-    if (RECIPE.sharp > 0) sharpen(gray, W, H, RECIPE.sharp * .5);
+    briCon(gray, R.bri, R.con);
+    if (R.sharp > 0) sharpen(gray, W, H, R.sharp * .5);
 
     /* read back a cell at a time — the tool draws its screened canvas into
        a canvas the size of the lattice and lets the browser average, which
@@ -230,13 +233,13 @@ const Title = (() => {
     /* the tool normalises to the 4th and 96th percentile of what is there
        and then bends it by the gamma of the `t = 1` look it locks to */
     vals.sort((p, q) => p - q);
-    const lo = vals[Math.floor(vals.length * RECIPE.lo)];
-    const rng = Math.max(.05, vals[Math.floor(vals.length * RECIPE.hi)] - lo);
+    const lo = vals[Math.floor(vals.length * R.lo)];
+    const rng = Math.max(.05, vals[Math.floor(vals.length * R.hi)] - lo);
     const cells = [];
     for (let cy = 0; cy < CH; cy++) for (let cx = 0; cx < CW; cx++){
       const v0 = raw[cy * CW + cx];
       if (v0 <= 0.02) continue;
-      const v = Math.pow(clamp((v0 - lo) / rng, 0, 1), RECIPE.gamma);
+      const v = Math.pow(clamp((v0 - lo) / rng, 0, 1), R.gamma);
       /* the tool's `photo` mode with its edge term at zero, which is what
          its CFG had it at: a cell is lit past a Bayer threshold, and the
          darker the ink the larger and the brighter the diamond */
@@ -258,7 +261,8 @@ const Title = (() => {
     if (!e){ load(family); return null; }
     if (e.state !== 'ready') return null;
     const k = family + '\n' + name + '\n' + tuned(t, 'detail') + '\n' + tuned(t, 'dither') +
-              '\n' + (t && t.cols ? Math.round(t.cols) : '') + '\n' + (t && t.ref ? t.ref : '');
+              '\n' + (t && t.cols ? Math.round(t.cols) : '') + '\n' + (t && t.ref ? t.ref : '') +
+              '\n' + (t && t.recipe ? JSON.stringify(t.recipe) : '');
     let f = faces.get(k);
     if (f === undefined){
       try { f = build(name, family, t); } catch (err){ f = null; }
@@ -361,5 +365,5 @@ const Title = (() => {
   ];
 
   return {load, state, face, emit, cost, svg, fonts: FONTS.slice(), DEFAULT: FONTS[0],
-          tune: TUNE, tuned};
+          tune: TUNE, tuned, recipe: Object.assign({}, RECIPE)};
 })();

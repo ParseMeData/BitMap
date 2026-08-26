@@ -147,7 +147,8 @@ Storage, all under `hq.`:
     hq.bag               the bag's words, card key → text
     hq.title.*           how the heading is dressed: off (the town name's
                          hand-placed offset), treat, border, bright, jitter,
-                         and font — a Google Fonts family name, or absent
+                         and font — a Google Fonts family name, `none` for
+                         the diamond type, or absent for the default
     hq.bagsel            which number's stack is open in the bag
     hq.lastError         the last runtime slip; nothing ever clears it
     hq.loads             reload stamps, to catch a relaunch loop

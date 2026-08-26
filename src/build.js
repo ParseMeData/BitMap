@@ -1775,8 +1775,16 @@ const Build = (() => {
        dozen fetches for names that do not exist. */
     const kf = $('#kfont');
     if (kf){
-      kf.onchange = () => { if (typeof Palace !== 'undefined') Palace.setFont(kf.value); syncHead(); };
-      kf.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') kf.blur(); };
+      if (!kf.options.length && typeof Title !== 'undefined'){
+        for (const f of Title.fonts){
+          const o = document.createElement('option'); o.value = f; o.textContent = f;
+          kf.appendChild(o);
+        }
+        const o = document.createElement('option'); o.value = ''; o.textContent = 'The diamond type';
+        kf.appendChild(o);
+      }
+      kf.onchange = () => { if (typeof Palace !== 'undefined') Palace.setFont(kf.value); syncHead(); kf.blur(); };
+      kf.onkeydown = e => e.stopPropagation();
     }
     syncHead();
     /* a marker with a name is a place you can be told you are standing
@@ -2212,8 +2220,16 @@ const Build = (() => {
     if (bb) bb.textContent = h.border === 'none' ? 'No border' : cap(h.border);
     /* not while it is being typed in — the field would fight the caret */
     const kf = $('#kfont');
-    if (kf && document.activeElement !== kf) kf.value = h.font || '';
-    if (kf) kf.classList.toggle('off', h.fontState === 'failed');
+    if (kf){
+      /* a family set by hand in storage that is not on the shelf still
+         has to be shown as what is in force, so it is given a row */
+      if (h.font && ![...kf.options].some(o => o.value === h.font)){
+        const o = document.createElement('option'); o.value = h.font; o.textContent = h.font;
+        kf.insertBefore(o, kf.lastElementChild);
+      }
+      kf.value = h.font || '';
+      kf.classList.toggle('off', h.fontState === 'failed');
+    }
     /* Read in the same words the Adjust rows use for the same two things,
        and the ranges come from Palace rather than from a second copy of
        them here, so the clamp that guards a stored value and the ends of

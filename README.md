@@ -1237,19 +1237,25 @@ did. The tool's screens — dots, Bayer, Floyd — are deliberately not here:
 the diamonds are the halftone, and the recipe Eden settled on had that
 switch at *none*.
 
-Type the family in the **Town** / **Palace** panel in build mode, in the
-field under the name, as Google spells it — `Fleur De Leah`, `Cinzel`,
-`Playfair Display` — and blank it for the 5×7 type again. The name and the
-face it is set in are one decision, so they are made in one place; the
-treatment, border, Bright and Jitter stay under *Heading* in the palette. It is one setting worn by the town's name and every palace's
+Pick the face in the **Town** / **Palace** panel in build mode, from the
+menu under the name. The shelf is `FONTS` at the foot of `src/title.js` —
+Fleur De Leah first, which is what a profile that has never chosen gets —
+and adding a face is adding Google's name for it to that list; the last
+row, *The diamond type*, is the 5×7 face. It is a list rather than a field
+because a family has to be spelt exactly as Google spells it, and a name
+one letter off draws the diamond type with no way to tell why. The name
+and the face it is set in are one decision, so they are made in one place;
+the treatment, border, Bright and Jitter stay under *Heading* in the
+palette. It is one setting worn by the town's name and every palace's
 name alike, like the treatment and the border, and the border, Bright and
 Jitter go on round a font title exactly as they do round the diamond type;
 only the treatment steps aside, because a face carries its own tone.
 
 The font is fetched from Google the first time it is named, so it needs the
 network once per session. Until it lands the 5×7 type draws; a family Google
-does not have leaves the 5×7 type standing and says so, and the field is
-struck through. A name is drawn at most 160 cells across, so a long name in
+does not have leaves the 5×7 type standing and says so, and the menu is
+struck through. `hq.title.font` holds the family, or `none` for the diamond
+type chosen on purpose; a profile with no key at all gets the default. A name is drawn at most 160 cells across, so a long name in
 a fine script will be finer than a short one.
 
 ## The route, and playing it

@@ -691,7 +691,14 @@ const Palace = (() => {
       if (b && Type.hasBorder(b)) border = b;
       bright = num(localStorage.getItem(BRIGHT), BMIN, BMAX, 1);
       jitter = num(localStorage.getItem(JIT), 0, JMAX, 0);
-      font = String(localStorage.getItem(FONT) || '').trim().slice(0, FMAX);
+      /* Three readings of the key: absent is a profile that has never
+         chosen, and gets the shelf's first face; `none` is the diamond
+         type chosen on purpose; anything else is a family. The sentinel
+         is what keeps "chose the diamond type" from reading as "never
+         chose" after a reload, which would put the default back. */
+      const raw = localStorage.getItem(FONT);
+      font = raw === null ? ((typeof Title !== 'undefined' && Title.DEFAULT) || '')
+           : raw === 'none' ? '' : String(raw).trim().slice(0, FMAX);
       /* asked for now rather than on the first frame that wants it, so the
          title is in its face as soon after boot as the network allows */
       if (font && typeof Title !== 'undefined') Title.load(font);
@@ -703,7 +710,7 @@ const Palace = (() => {
       localStorage.setItem(BORD, border);
       localStorage.setItem(BRIGHT, String(bright));
       localStorage.setItem(JIT, String(jitter));
-      if (font) localStorage.setItem(FONT, font); else localStorage.removeItem(FONT);
+      localStorage.setItem(FONT, font || 'none');
       if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
   }
@@ -735,10 +742,10 @@ const Palace = (() => {
     if (!Type.hasBorder(name)) return border;
     border = name; storeStyle(); return border;
   }
-  /* A family name as Google Fonts spells it — "Fleur De Leah", not a URL.
-     Stored before it is known to exist, because the store is what the
-     field reads back and a name that vanished on a slow network would read
-     as a field that does not keep what you type; what it says about the
+  /* A family name as Google Fonts spells it — "Fleur De Leah", not a URL;
+     the menu offers `Title.fonts`, and this takes any family so a key
+     written by hand still works. Stored before it is known to exist,
+     because the store is what the menu reads back; what it says about the
      outcome is said in the note, once the family has answered. */
   function setFont(v){
     const s = String(v || '').trim().replace(/\s+/g, ' ').slice(0, FMAX);

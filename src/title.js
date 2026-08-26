@@ -227,5 +227,24 @@ const Title = (() => {
   }
   const cost = f => f.cells.length;
 
-  return {load, state, face, emit, cost};
+  /* ── the shelf ─────────────────────────────────────────────────────────
+     The faces on offer, by Google's name for each, in the order the menu
+     shows them. A list rather than a free field because a field needs
+     the family spelt exactly as Google spells it, and a name one letter
+     off draws the diamond type with no way to tell why. Adding a face is
+     adding a line here; the first is the default a fresh profile gets. */
+  const FONTS = [
+    'Fleur De Leah',           // the wallpaper's own, and the default
+    'Pinyon Script',
+    'Great Vibes',
+    'Cinzel',
+    'Playfair Display',
+    'Cormorant Garamond',
+    'UnifrakturMaguntia',
+    'Special Elite',
+    'Rye',
+    'Monoton'
+  ];
+
+  return {load, state, face, emit, cost, fonts: FONTS.slice(), DEFAULT: FONTS[0]};
 })();

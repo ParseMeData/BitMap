@@ -380,9 +380,24 @@ const Type = (() => {
     const b = bright === undefined ? 1 : bright;
     const ink = lift(col, b);
     const al = liftA(alpha === undefined ? 1 : alpha, b);
-    const hs = px * FAT * tr.fat;
-    const amp = (jit || 0) * px, sd = seedOf(s);
-    for (const seg of edges(bd, inkW(s, tr), H - 1)){
+    const sd = seedOf(s);
+    m = border(a, m, bd, inkW(s, tr), H - 1, x, y0, px, ink, al, cap, jit, sd, tr.fat);
+    if (cap !== undefined && m > cap - 2) return m;
+    return text(a, m, s, x, cy, px, ink, al, cap, treat, jit, sd);
+  }
+
+  /* ── the border on its own ─────────────────────────────────────────────
+     Split out of `heading` so a title set in a font (`title.js`) can wear
+     the same rule, brackets or box as one set in the 5×7 face: the border
+     is drawn round an ink extent, `iw` by `ih` in cells, and does not care
+     what put the ink there. `x`, `y0` is the centre of the ink's top-left
+     cell in world units. Brightness is the caller's to have applied — the
+     ink handed in is the ink drawn — and the shake is keyed and seeded the
+     way the letters' is. */
+  function border(a, m, bd, iw, ih, x, y0, px, ink, al, cap, jit, sd, fat){
+    const hs = px * FAT * (fat || 1);
+    const amp = (jit || 0) * px;
+    for (const seg of edges(bd, iw, ih)){
       const n = segN(seg);
       for (let i = seg[4]; i <= n; i++){
         if (cap !== undefined && m > cap - 2) return m;
@@ -393,14 +408,19 @@ const Type = (() => {
         const bv = seg[1] + (seg[3] - seg[1]) * i / n;
         let jx = 0, jy = 0;
         if (amp){
-          jx = (roll(Math.round(bu), Math.round(bv), sd + 771) - 0.5) * amp;
-          jy = (roll(Math.round(bu), Math.round(bv), sd + 772) - 0.5) * amp;
+          jx = (roll(Math.round(bu), Math.round(bv), (sd || 0) + 771) - 0.5) * amp;
+          jy = (roll(Math.round(bu), Math.round(bv), (sd || 0) + 772) - 0.5) * amp;
         }
         m = put(a, m, x + bu * px, y0 + bv * px,
                 ink[0], ink[1], ink[2], al, hs, 0, jx, jy, 1);
       }
     }
-    return text(a, m, s, x, cy, px, ink, al, cap, treat, jit, sd);
+    return m;
+  }
+  function borderCost(bd, iw, ih){
+    let n = 0;
+    for (const seg of edges(bd, iw, ih)) n += segN(seg) + 1 - seg[4];
+    return n;
   }
 
   /* what that heading costs, whole: the letters under their treatment plus
@@ -409,13 +429,11 @@ const Type = (() => {
      of a box. */
   function headCost(str, treat, bd){
     const s = String(str).toUpperCase();
-    let n = cost(s, treat);
-    for (const seg of edges(bd, inkW(s, pick(treat)), H - 1))
-      n += segN(seg) + 1 - seg[4];
-    return n;
+    return cost(s, treat) + borderCost(bd, inkW(s, pick(treat)), H - 1);
   }
 
   return {text, centred, width, height, cost, pitchFor, heading, headCost,
+          border, borderCost, lift, liftA, seed: seedOf,
           treatments: ORDER.slice(), borders: BORDER_ORDER.slice(),
           hasTreatment: t => !!TREATS[t], hasBorder: b => !!BORDERS[b],
           has: ch => !!F[String(ch).toUpperCase()]};

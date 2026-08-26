@@ -232,6 +232,8 @@ stale.
                          plays
     src/type.js          the diamond typeface: a letter is a 5x7 grid and
                          every lit square is one more diamond in the stream
+    src/title.js         a title in a real font: the wallpaper tool's
+                         lattice-type recipe, one diamond per cell of ink
     src/palace.js        the room list, the layout it generates, the fit-out
                          that follows a wall, the names drawn on the plan
     src/doors.js         the one part of a plan that moves: leaves that swing
@@ -1217,6 +1219,36 @@ town's name is a map label and lies *across* the ground it names: put above
 the town it would sit off the edge of everything you had drawn, which is to
 say somewhere you would have to go looking for it. The field at the head of
 the route panel names whichever of the two you are standing in.
+
+### A title in a font
+
+The 5×7 face is the working type, and at five by seven there is no room for
+a second one. A *title* is the one word on the plate that gets to be
+lettering rather than a label, and lettering has a face — so the heading
+can be set in any Google Font, and it is still made of diamonds.
+
+`src/title.js` is the wallpaper tool's lattice-type recipe, lifted whole:
+the name is drawn in the font onto a canvas at three times the cell
+resolution, lifted in brightness and contrast, sharpened, and read back one
+cell at a time as ink; every cell with ink in it becomes one diamond, sized
+and lit by how dark it is, through the same `put` the roads and the walker
+go through. The letterform came from a font; nothing that reaches the plate
+did. The tool's screens — dots, Bayer, Floyd — are deliberately not here:
+the diamonds are the halftone, and the recipe Eden settled on had that
+switch at *none*.
+
+Type the family under **Heading** in the build palette, as Google spells it
+— `Fleur De Leah`, `Cinzel`, `Playfair Display` — and blank it for the 5×7
+type again. It is one setting worn by the town's name and every palace's
+name alike, like the treatment and the border, and the border, Bright and
+Jitter go on round a font title exactly as they do round the diamond type;
+only the treatment steps aside, because a face carries its own tone.
+
+The font is fetched from Google the first time it is named, so it needs the
+network once per session. Until it lands the 5×7 type draws; a family Google
+does not have leaves the 5×7 type standing and says so, and the field is
+struck through. A name is drawn at most 160 cells across, so a long name in
+a fine script will be finer than a short one.
 
 ## The route, and playing it
 

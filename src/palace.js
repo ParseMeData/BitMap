@@ -492,10 +492,26 @@ const Palace = (() => {
        STYLE.md's rule is that new work is flair on top of the plate — so
        when there is not room for both, the plate wins. */
     let tr = treat, bd = border;
+    const bone = [0.93, 0.92, 0.89];
+    /* In a font, when there is one: the face carries its own tone, so the
+       treatment steps aside, and the border, the brightness and the shake
+       go on exactly as they would round the 5×7 type — same ink, same
+       seed, same border function — because a title that changed its rule
+       when it changed its face would be two titles. */
+    if (at.face){
+      const f = at.face, iw = f.cols - 1, ih = f.rows - 1;
+      const x0 = at.x - iw * at.px / 2, y0 = at.y - ih * at.px / 2;
+      if (m + Title.cost(f) + Type.borderCost(bd, iw, ih) > cap) bd = 'none';
+      if (m + Title.cost(f) > cap) return m;
+      const ink = Type.lift(bone, bright), al = Type.liftA(at.alpha, bright);
+      const sd = Type.seed(at.name.toUpperCase());
+      m = Type.border(a, m, bd, iw, ih, x0, y0, at.px, ink, al, cap, jitter, sd);
+      return Title.emit(a, m, f, x0, y0, at.px, ink, al, cap, jitter, sd);
+    }
     if (m + Type.headCost(at.name, tr, bd) > cap){ tr = 'solid'; bd = 'none'; }
     if (m + Type.headCost(at.name, tr, bd) > cap) return m;
     return Type.heading(a, m, at.name, at.x, at.y, at.px,
-                        [0.93, 0.92, 0.89], at.alpha, cap, tr, bd, bright, jitter);
+                        bone, at.alpha, cap, tr, bd, bright, jitter);
   }
 
   /* ── where the title goes ──────────────────────────────────────────────
@@ -518,10 +534,26 @@ const Palace = (() => {
     if (!box) box = built();
     if (!box) return null;
     const t = G.terr.tsz, z = G.cam[2] || 1;
+    /* the name in its font, if one is set and has arrived; null draws the
+       5×7 type, which is also what draws while the font is on its way */
+    const face = (font && typeof Title !== 'undefined') ? Title.face(name, font) : null;
     /* sized to the thing it names rather than to the screen, so it is part
-       of the drawing — but never so fine that it stops being readable */
-    let px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8, treat));
-    px = Math.max(px, 2.2 / z);
+       of the drawing — but never so fine that it stops being readable. A
+       face is sized the same way, on its own cell counts: as tall as the
+       5×7 type is at its biggest plus the room a script's ascenders and
+       tails take, as wide as the town allows, and never under a cell and a
+       half of screen, which is where a hairline stops being a line. */
+    const wide = (box[2] - box[0]) * (inside ? 0.8 : 0.62);
+    let px;
+    if (face){
+      px = Math.min(t * 3.4 / face.rows, wide / face.cols);
+      px = Math.max(px, 1.5 / z);
+    } else {
+      px = Math.min(t * 2.2 / 7, Type.pitchFor(name, (box[2] - box[0]) * 0.8, treat));
+      px = Math.max(px, 2.2 / z);
+    }
+    const w = face ? face.cols * px : Type.width(name, px, treat);
+    const h = face ? face.rows * px : Type.height(px);
     /* A palace's name is a title block: it goes above the plan, clear of it,
        the way a name goes at the top of a drawing. A town's name is a map
        label, and a map label lies ACROSS the ground it names — put above the
@@ -532,11 +564,12 @@ const Palace = (() => {
        title block that had wandered off the top of its own drawing would be
        a mistake rather than a choice. */
     if (inside)
-      return {name, px, inside: true, alpha: 0.66,
-              x: (box[0] + box[2]) / 2, y: box[1] - Type.height(px) * 1.15};
-    px = Math.min(px, Type.pitchFor(name, (box[2] - box[0]) * 0.62, treat));
+      return {name, px, face, w, h, inside: true, alpha: 0.66,
+              x: (box[0] + box[2]) / 2, y: box[1] - h * 1.15};
+    if (!face) px = Math.min(px, Type.pitchFor(name, wide, treat));
     const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
-    return {name, px, inside: false, alpha: 0.38, home: [cx, cy],
+    return {name, px, face, inside: false, alpha: 0.38, home: [cx, cy],
+            w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};
   }
   /* everything that has been drawn, which is what a town's name goes over */
@@ -629,8 +662,14 @@ const Palace = (() => {
      why the default is exactly 1 and not something near it. */
   const TREAT = 'hq.title.treat', BORD = 'hq.title.border';
   const BRIGHT = 'hq.title.bright', JIT = 'hq.title.jitter';
+  /* The font is one more of these: the face a title is set in is how the
+     one heading in force is dressed, and it is worn by the town's name and
+     a palace's name alike for the reason the treatment is. Empty means the
+     5×7 diamond type, which is also what draws until the font arrives and
+     whenever it cannot — `title.js` says how a family is fetched. */
+  const FONT = 'hq.title.font', FMAX = 48;
   const BMIN = 0.4, BMAX = 2.2, JMAX = 1.5;      // the plate's own two ranges
-  let treat = 'solid', border = 'none', bright = 1, jitter = 0;
+  let treat = 'solid', border = 'none', bright = 1, jitter = 0, font = '';
   /* A stored number is read the way a stored name is: checked rather than
      trusted, because a key edited by hand or written by an older build is
      the one that would otherwise draw nothing at all. */
@@ -647,6 +686,10 @@ const Palace = (() => {
       if (b && Type.hasBorder(b)) border = b;
       bright = num(localStorage.getItem(BRIGHT), BMIN, BMAX, 1);
       jitter = num(localStorage.getItem(JIT), 0, JMAX, 0);
+      font = String(localStorage.getItem(FONT) || '').trim().slice(0, FMAX);
+      /* asked for now rather than on the first frame that wants it, so the
+         title is in its face as soon after boot as the network allows */
+      if (font && typeof Title !== 'undefined') Title.load(font);
     } catch (e){}
   }
   function storeStyle(){
@@ -655,6 +698,7 @@ const Palace = (() => {
       localStorage.setItem(BORD, border);
       localStorage.setItem(BRIGHT, String(bright));
       localStorage.setItem(JIT, String(jitter));
+      if (font) localStorage.setItem(FONT, font); else localStorage.removeItem(FONT);
       if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
   }
@@ -685,6 +729,24 @@ const Palace = (() => {
   function setBorder(name){
     if (!Type.hasBorder(name)) return border;
     border = name; storeStyle(); return border;
+  }
+  /* A family name as Google Fonts spells it — "Fleur De Leah", not a URL.
+     Stored before it is known to exist, because the store is what the
+     field reads back and a name that vanished on a slow network would read
+     as a field that does not keep what you type; what it says about the
+     outcome is said in the note, once the family has answered. */
+  function setFont(v){
+    const s = String(v || '').trim().replace(/\s+/g, ' ').slice(0, FMAX);
+    if (s === font) return font;
+    font = s; storeStyle();
+    if (!font){ note('headings · the diamond type'); return font; }
+    if (typeof Title === 'undefined'){ note('no font loader on this build'); return font; }
+    const asked = font;
+    Title.load(font, ok => {
+      if (font !== asked) return;              // superseded while it loaded
+      note(ok ? 'headings · ' + font : 'no font called ' + font + ' · the diamond type stands in');
+    });
+    return font;
   }
   /* The two sliders set without storing, and `storeHeading` is the drop.
      Same reason `storeOff` waits for pointerup: a range fires all the way
@@ -736,7 +798,7 @@ const Palace = (() => {
     if (!grabbable()) return null;
     const at = titleAt(null);
     if (!at || at.inside) return null;
-    const w = Type.width(at.name, at.px, treat), h = Type.height(at.px);
+    const w = at.w, h = at.h;
     return {at, b: [at.x - w / 2 - at.px, at.y - h / 2 - at.px,
                     at.x + w / 2 + at.px, at.y + h / 2 + at.px]};
   }
@@ -785,7 +847,7 @@ const Palace = (() => {
       /* the town cannot change under a drag, so where the default is and how
          big the letters are is settled here rather than asked every move */
       drag = {ox: p[0] - hit.at.x, oy: p[1] - hit.at.y,
-              home: hit.at.home, px: hit.at.px, was: off};
+              home: hit.at.home, h: hit.at.h, was: off};
     }, true);
 
     addEventListener('pointermove', e => {
@@ -815,7 +877,7 @@ const Palace = (() => {
        position goes with it. That is the way back to the default you can
        find without being told about it, and the tolerance is the title's
        own height so it scales with the town rather than with the zoom. */
-    const back = off && Math.hypot(off.dx, off.dy) < Type.height(drag.px);
+    const back = off && Math.hypot(off.dx, off.dy) < drag.h;
     if (back) off = null;
     const moved = !drag.was && off;
     drag = null;
@@ -864,12 +926,14 @@ const Palace = (() => {
   }
 
   return {init, show, close, sync, overlay, build, rename, named, refit,
-          cycleTreatment, cycleBorder, setTreatment, setBorder, resetTitle,
+          cycleTreatment, cycleBorder, setTreatment, setBorder, setFont, resetTitle,
           setBright, setJitter, storeHeading: storeStyle,
           /* what a control that drives the cycle needs to draw itself: the
              two names in force, the two lists to choose from, and whether
              the title is somewhere the user put it */
           heading: () => ({treatment: treat, border: border, moved: !!off,
+                           font: font,
+                           fontState: (font && typeof Title !== 'undefined') ? Title.state(font) : 'none',
                            bright: bright, jitter: jitter,
                            brightRange: [BMIN, BMAX], jitterRange: [0, JMAX]}),
           treatments: () => Type.treatments, borders: () => Type.borders,

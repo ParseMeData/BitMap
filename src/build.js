@@ -1654,6 +1654,13 @@ const Build = (() => {
       '<div class="plabel">Heading</div>' +
       '<div class="kfoot"><button class="btn" id="ktreat">Solid</button>' +
       '<button class="btn" id="kborder">No border</button></div>' +
+      /* The face, by name: a Google Font as Google spells it, or nothing
+         for the diamond type. It sits between the two buttons and the two
+         sliders because it is the same kind of thing as all four — the one
+         heading's dress — and a field rather than a cycle because the
+         list it picks from is not ours to enumerate. */
+      '<input id="kfont" type="text" spellcheck="false" autocomplete="off"' +
+      ' placeholder="a Google Font, or blank for the diamond type">' +
       /* The two sliders belong here rather than under Adjust for the reason
          the buttons above them do: what they set is the one heading in
          force, not the shape you are about to place — and here they are
@@ -1765,6 +1772,14 @@ const Build = (() => {
     }; };
     cyc('#ktreat', 'cycleTreatment');
     cyc('#kborder', 'cycleBorder');
+    /* on `change` rather than `input`: every distinct value typed is a
+       stylesheet fetched from Google, and a family typed a letter at a
+       time is a dozen fetches for names that do not exist */
+    const kf = $('#kfont');
+    if (kf){
+      kf.onchange = () => { if (typeof Palace !== 'undefined') Palace.setFont(kf.value); syncHead(); };
+      kf.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') kf.blur(); };
+    }
     syncHead();
     /* a marker with a name is a place you can be told you are standing
        outside of, and be told you are inside once you are */
@@ -2194,6 +2209,10 @@ const Build = (() => {
     const cap = s => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
     if (tb) tb.textContent = cap(h.treatment);
     if (bb) bb.textContent = h.border === 'none' ? 'No border' : cap(h.border);
+    /* not while it is being typed in — the field would fight the caret */
+    const kf = $('#kfont');
+    if (kf && document.activeElement !== kf) kf.value = h.font || '';
+    if (kf) kf.classList.toggle('off', h.fontState === 'failed');
     /* Read in the same words the Adjust rows use for the same two things,
        and the ranges come from Palace rather than from a second copy of
        them here, so the clamp that guards a stored value and the ends of

@@ -23,7 +23,10 @@ Everything is made of it, and that is the whole style. Grass is diamonds. A
 road is diamonds. A wall is diamonds. A **letter** is a five-by-seven grid of
 them, emitted into the same instance stream as the roads and the furniture
 (`src/type.js`) — so a name on a plan is made *of* the town rather than
-printed *on* it, and it breathes at the same rate.
+printed *on* it, and it breathes at the same rate. A **title** may be set in a
+real font (`src/title.js`), and the rule holds: the font is read back one cell
+at a time and every cell of ink is one diamond in the same stream. The
+letterform is the font's; the material is the plate's.
 
 Nothing is ever drawn as a sprite, an icon font, an emoji or an SVG on the
 plate. The moment something is drawn out of a different material it reads as a

@@ -145,6 +145,9 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
+    hq.title.*           how the heading is dressed: off (the town name's
+                         hand-placed offset), treat, border, bright, jitter,
+                         and font — a Google Fonts family name, or absent
     hq.bagsel            which number's stack is open in the bag
     hq.lastError         the last runtime slip; nothing ever clears it
     hq.loads             reload stamps, to catch a relaunch loop
@@ -411,6 +414,24 @@ pictures already in it answer to it; renaming the key would orphan them for
 a word. Cycle keys are `character2`, `action2`, `object2`, … — the first
 cycle carries no number, so what was stored before there were cycles is the
 first cycle.
+
+**A title in a font is still diamonds, and the font is fetched, not
+bundled.** `title.js` rasterises a Google Font and hands one diamond per
+cell of ink to the same `put` everything else uses, which is the only way a
+face gets onto the plate without breaking the one-material rule STYLE.md
+opens with. The family is fetched by `<link>` from fonts.googleapis.com the
+first time it is named and never again that session; nothing is bundled,
+because a font file in the tree is a licence question the project has not
+answered (see *There is no LICENSE*). Two consequences to hold on to: the
+5×7 type draws until the font lands and whenever it cannot, so a title is
+never missing, only plainer; and a family is `ready` only once
+`document.fonts.load` hands back a face — the link's own `load` fires for an
+unknown family too, with a stylesheet that declares nothing, and trusting
+it would draw the fallback monospace on the plate under the name of a font.
+The face is built once per name and family and kept; position and pitch
+are the caller's. The border goes round a font title through
+`Type.border`, split out of `heading` for exactly this, so a title that
+changed its rule when it changed its face cannot happen.
 
 **The bag is one page, and its pictures live with the loci.** The `123` and
 `abc` rings open the same `Bag.open(system)`; `SYSTEMS` in `src/bag.js` is

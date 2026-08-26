@@ -474,7 +474,12 @@ const Title = (() => {
     edge:   {lo: 0,    hi: 2,   dflt: 0},
     cols:   {lo: 24,   hi: 120, dflt: 56},
     ink:    {lo: -1,   hi: 0,   dflt: -1},
-    weight: {lo: 0.5,  hi: 2,   dflt: 1}
+    weight: {lo: 0.5,  hi: 2,   dflt: 1},
+    /* the lattice's own two: scatter throws each diamond off its cell,
+       size variance lets the tone map size them — the map's Scatter and
+       Size var, for a picture */
+    scatter: {lo: 0,   hi: 2,   dflt: 0},
+    szv:    {lo: 0,    hi: 2,   dflt: 0.5}
   };
   const ptuned = (t, k) => {
     const v = t && isFinite(t[k]) ? +t[k] : PICTUNE[k].dflt;
@@ -485,10 +490,11 @@ const Title = (() => {
     t = t || {};
     if (cols) t = Object.assign({}, t, {cols});
     const o = Object.assign({}, PIC, {bri: ptuned(t, 'bri'), con: ptuned(t, 'con'),
-                                     edge: ptuned(t, 'edge'), ink: ptuned(t, 'ink') < -0.5 ? -1 : 0});
+                                     edge: ptuned(t, 'edge'), ink: ptuned(t, 'ink') < -0.5 ? -1 : 0,
+                                     scatter: ptuned(t, 'scatter'), szv: ptuned(t, 'szv')});
     const inv = ptuned(t, 'inv');
     cols = Math.round(ptuned(t, 'cols'));
-    const k = JSON.stringify([cols, o.bri, o.con, o.edge, o.ink, inv]) + '\n' + url;
+    const k = JSON.stringify([cols, o.bri, o.con, o.edge, o.ink, inv, o.scatter, o.szv]) + '\n' + url;
     let p = pics.get(k);
     if (p) return p;
     p = new Promise((res, rej) => {
@@ -523,6 +529,7 @@ const Title = (() => {
         if (al <= 0.02) continue;
         cells.push({x: buf[i] / A.cell - 0.5, y: buf[i + 1] / A.cell - 0.5,
                     al, sz: Math.abs(buf[i + 11]), hollow: buf[i + 11] < 0,
+                    jx: buf[i + 12] / A.cell, jy: buf[i + 13] / A.cell,   // the dense face's throw
                     rgb: [buf[i + 2], buf[i + 3], buf[i + 4]]});
       }
       return {cols: A.cols, rows: A.rows, cells};
@@ -546,11 +553,16 @@ const Title = (() => {
     const weight = t && t.weight !== undefined ? t.weight : 1;
     const shade = t && t.shade !== undefined ? t.shade : 0;
     const tint = t && t.tint ? t.tint : null;     // one ink for every cell, normalised rgb
+    const tint2 = t && t.tint2 ? t.tint2 : null;  // and a second at the foot, blended by row
     for (const c of f.cells){
-      const cx = ox + (c.x + 0.5) * px, cy = oy + (c.y + 0.5) * px;
+      const cx = ox + (c.x + 0.5 + (c.jx || 0)) * px, cy = oy + (c.y + 0.5 + (c.jy || 0)) * px;
       const r = px * PLATE * c.sz * weight;
       const a = c.al * (1 - shade * (c.y + 1) / (f.rows + 1));
-      const rgb = tint || c.rgb;
+      let rgb = tint || c.rgb;
+      if (tint && tint2){
+        const k = (c.y + 1) / (f.rows + 1);
+        rgb = [tint[0] + (tint2[0] - tint[0]) * k, tint[1] + (tint2[1] - tint[1]) * k, tint[2] + (tint2[2] - tint[2]) * k];
+      }
       const col = 'rgba(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' +
                   Math.round(rgb[2] * 255) + ',' + a.toFixed(3) + ')';
       x.beginPath();

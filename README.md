@@ -1594,8 +1594,12 @@ leave it; double-click it and it is the map's again, in bone. Kept in
 `hq.compass`. The drawing in `assets/compass.png` had the letters on it;
 `tools/compass.py` cuts it into five — the rose, and N, E, S, W — and
 each cut goes through the same tone pass as a card's picture and is
-painted as diamonds, in bone with the titles' sheen down it (flare while
-it is yours), so the compass is made of what the plate is made of. The
+painted as diamonds, bone at the top running to a quiet grey at the foot
+(flare toward grey while it is yours), so the compass is made of what the
+plate is made of. It is tuned where the plate is: press `T` and under the
+plate's rows is a **Compass** block — Detail (the pitch), Weight (the
+diamond's size, which is the gap), Scatter and Jitter (the lattice's
+throw and size variance), Tone — kept with the heading in `hq.compass`. The
 rose is one element with a transform and each letter is set at the
 rose's turned point, upright: a letter that turned with the rose would be
 a letter read on its side. Re-run the tool when the art changes.

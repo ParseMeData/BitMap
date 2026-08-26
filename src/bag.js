@@ -407,7 +407,22 @@ const Bag = (() => {
     if (!shown) glyph(c, SYSTEMS[sys].label(i));
     if (shown && Loci.has(k)){
       c.classList.add('face');
-      Loci.get(k).then(url => { if (url && c.isConnected) c.style.backgroundImage = 'url("' + url + '")'; });
+      /* the picture as lattice, not as a photograph: through the same
+         tone pass as the locus preview and painted as diamonds into a
+         canvas under the frame. The canvas is kept per key, because
+         render() rebuilds the page on every deal and a picture read
+         again on every deal is a stutter; `attach` drops it. */
+      let cv = pics.get(k);
+      if (!cv){
+        cv = document.createElement('canvas');
+        cv.className = 'bagpic';
+        cv.width = 304; cv.height = 426;              // the card's 5:7, at 2×
+        pics.set(k, cv);
+        Loci.get(k).then(url => url && Title.picture(url, 56))
+          .then(f => { if (f) Title.paint(cv, f, {weight: 1, shade: 0}); })
+          .catch(e => note(e.message || String(e)));
+      }
+      c.append(cv);
     }
     if (!shown && complete(sys, i)) c.classList.add('done');
     if (shown){
@@ -497,8 +512,10 @@ const Bag = (() => {
       if (f && k) attach(k, f);
     });
   }
+  const pics = new Map();                        // key → the painted canvas
   function attach(k, file){
     return Loci.attach({uid: k}, file).then(ok => {
+      if (ok) pics.delete(k);                    // a new picture, read afresh
       if (ok && system) render();
       return ok;
     });

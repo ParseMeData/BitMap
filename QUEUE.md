@@ -25,6 +25,21 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A card's picture through the tone pass** — 2026-08-26. `Title.
+  picture(url, cols)` → `Lattice.analyse`/`compose` with the locus
+  preview's tune (`PIC`), dense face decoded from the compose buffer
+  (alpha@10, signed size@11, rgb@2..4) into cells; `Title.paint(canvas,
+  face)` draws rhombi (stroked for the ◇ face) at the plate's ¾ cell.
+  `bag.js`: a `.face` stack card gets a `.bagpic` canvas (2×, 5:7) under
+  the frame, cached per key in `pics`, dropped on `attach`. Face cards are
+  dark ground with dim ink so the frame reads. BUILD 108. Verified on a
+  throwaway with two pictures seeded under bag keys via the snapshot
+  tool's WRITE_LOCI (its full `restore` dies on a fresh profile at the
+  `hq.basemap` store — pre-existing, noted below).
+- [ ] **`snapshot.py restore` on a fresh profile**: `WRITE_PIC` opens
+  `hq.basemap` at version 1 and the fresh profile's DB lacks the `pic`
+  store → "One of the specified object stores was not found". Bump the
+  open to the app's version or create the store on upgrade regardless.
 - [x] **Size is cells per letter; the pitch never moves** — 2026-08-26.
   The pitch multiplier (`size` tune) is gone — it shrank the diamonds with
   the name, and the diamond is the thing that must not change. `detail`

@@ -348,6 +348,10 @@ body.missions #bag{visibility:hidden}
    that shows of a covered card, and it has to say which card it is */
 #bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
   letter-spacing:.2em;color:var(--ground);background:rgba(237,234,227,.9)}
+/* a card with a picture is dark ground under lattice, as the plate is: the
+   picture's diamonds carry their own colour and want the night behind them */
+#bagstack .bagcard.face{background-color:var(--well);color:var(--dim)}
+.bagcard .bagpic{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 #bagstack .bagcard.face .bagtag{color:var(--bone);background:rgba(8,8,11,.72)}
 #bagstack .bagcard:hover,#bagstack .bagcard:focus-within{z-index:2}
 .bagswitch .chip{font-size:10px;letter-spacing:.22em;text-transform:uppercase}
@@ -618,7 +622,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 107, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 108, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

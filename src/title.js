@@ -452,6 +452,82 @@ const Title = (() => {
     'Monoton'
   ];
 
-  return {load, state, face, emit, cost, svg, mat, matCost, fonts: FONTS.slice(), DEFAULT: FONTS[0],
+  /* ── a picture, through the same pass ──────────────────────────────────
+     A card's picture is not shown as a photograph: it goes through the
+     two stages the map and the locus preview go through — `Lattice.
+     analyse` for tone and edges, `Lattice.compose` to pick each cell's
+     faces and colour — and comes back as cells, the way a name does. The
+     tune is the locus preview's, because a picture should arrive here
+     looking like it does there: colour per cell from the source, edges
+     off, no scatter, no churn (a card does not breathe). Of the two faces
+     compose writes, the dense one is taken, which is the wallpaper tool's
+     `look: 1`. Sizes are in cells, so the same face draws at any card. */
+  const PIC = {bri: 0, con: 1, edge: 0, ink: -1, churn: 0, scatter: 0,
+               szv: 0.5, cvar: 0, sat: 1.15, path: 0};
+  const pics = new Map();                      // url + cols → Promise<face>
+  function picture(url, cols){
+    cols = cols || 56;
+    const k = cols + '\n' + url;
+    let p = pics.get(k);
+    if (p) return p;
+    p = new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => rej(new Error('the stored picture would not load'));
+      im.src = url;
+    }).then(im => {
+      if (typeof Lattice === 'undefined') throw new Error('no lattice to read a picture with');
+      const W = im.naturalWidth || 1, H = im.naturalHeight || 1;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d', {willReadFrequently: true});
+      x.drawImage(im, 0, 0);
+      const A = Lattice.analyse(x.getImageData(0, 0, W, H).data, W, H, cols, PIC);
+      const buf = Lattice.compose(A, PIC);
+      const cells = [];
+      for (let i = 0; i + 16 < buf.length; i += 17){
+        /* the second face is the dense one: alpha at 10, signed size at 11
+           (negative is the outline diamond), colour at 2..4 */
+        const al = buf[i + 10];
+        if (al <= 0.02) continue;
+        cells.push({x: buf[i] / A.cell - 0.5, y: buf[i + 1] / A.cell - 0.5,
+                    al, sz: Math.abs(buf[i + 11]), hollow: buf[i + 11] < 0,
+                    rgb: [buf[i + 2], buf[i + 3], buf[i + 4]]});
+      }
+      return {cols: A.cols, rows: A.rows, cells};
+    });
+    if (pics.size > 128) pics.clear();
+    pics.set(k, p);
+    return p;
+  }
+  /* drawn into a canvas rather than an SVG: a picture's cells each carry
+     their own colour, and a path per colour is a path per cell. The
+     face is fitted inside the canvas and centred; a diamond is drawn at
+     the plate's own three-quarter cell, times its size, and an outline
+     cell as a stroked rhombus the way the shader draws the ◇ face. */
+  function paint(cv, f, t){
+    const x = cv.getContext('2d');
+    if (!x) return;
+    const W = cv.width, H = cv.height;
+    x.clearRect(0, 0, W, H);
+    const px = Math.min(W / f.cols, H / f.rows);
+    const ox = (W - f.cols * px) / 2, oy = (H - f.rows * px) / 2;
+    const weight = t && t.weight !== undefined ? t.weight : 1;
+    const shade = t && t.shade !== undefined ? t.shade : 0;
+    for (const c of f.cells){
+      const cx = ox + (c.x + 0.5) * px, cy = oy + (c.y + 0.5) * px;
+      const r = px * PLATE * c.sz * weight;
+      const a = c.al * (1 - shade * (c.y + 1) / (f.rows + 1));
+      const col = 'rgba(' + Math.round(c.rgb[0] * 255) + ',' + Math.round(c.rgb[1] * 255) + ',' +
+                  Math.round(c.rgb[2] * 255) + ',' + a.toFixed(3) + ')';
+      x.beginPath();
+      x.moveTo(cx - r, cy); x.lineTo(cx, cy - r); x.lineTo(cx + r, cy); x.lineTo(cx, cy + r); x.closePath();
+      if (c.hollow){ x.strokeStyle = col; x.lineWidth = Math.max(0.6, r * 0.32); x.stroke(); }
+      else { x.fillStyle = col; x.fill(); }
+    }
+  }
+
+  return {load, state, face, emit, cost, svg, mat, matCost, picture, paint,
+          fonts: FONTS.slice(), DEFAULT: FONTS[0],
           tune: TUNE, tuned, recipe: Object.assign({}, RECIPE)};
 })();

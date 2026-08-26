@@ -1300,6 +1300,17 @@ say the same word the same way. The bag is a page rather than the plate,
 which is why it is SVG there and instances here; the text stays under it
 until the font lands. Stack cards keep their small corner tag.
 
+A card's **picture** is lattice too. A stack card with a picture attached
+does not show the photograph: the picture goes through the same two stages
+the locus preview and the map go through — `Lattice.analyse` for tone and
+edges, `Lattice.compose` for each cell's face and colour — and
+`Title.picture` reads the dense face back as cells, which `Title.paint`
+draws as diamonds into a canvas on the card, colour per cell from the
+source, on the plate's own dark ground under the frame. The tune is the
+locus preview's (`PIC` in `src/title.js`): a picture should arrive here
+looking as it does there. Read at 56 cells across, kept per card key so a
+deal does not read it again; attaching a new picture reads it afresh.
+
 Every card wears the floral frame in `assets/card-frame.png` — as a mask,
 not a picture: the shape is the PNG's alpha and the ink is the card's own
 colour, so it is dim at rest, bone once done, and inverts with a held

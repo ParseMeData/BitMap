@@ -394,7 +394,7 @@ body.missions #bag{visibility:hidden}
 .bagcard.glyph .bagtag{position:absolute;opacity:0;pointer-events:none}
 /* the card's own height formula again rather than a percentage: the card
    is a grid whose track is auto-sized to this, so a percentage here is 0 */
-.bagcard.glyph svg{height:calc(((100vh - 176px) / 3 - 10px) * .5);width:auto;max-width:58%;
+.bagcard.glyph svg{height:calc(((100vh - 176px) / 3 - 10px) * .5);width:auto;max-width:72%;
   display:block;margin:auto}
 /* a letter a shade larger than a digit: its box is the widest swash
    capital's, so at the digit's height most letters come out smaller */
@@ -618,7 +618,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 104, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 105, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

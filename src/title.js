@@ -212,9 +212,16 @@ const Title = (() => {
     const h100 = Math.max(1, asc + desc);
     /* a caller may name the width outright — a card's label is one
        glyph and would otherwise be read at the floor for a whole name */
-    const cols = t && t.cols ? clamp(Math.round(t.cols), 8, MAXC)
-               : clamp(Math.round(name.length * PERCH), MINC, MAXC);
+    let cols = t && t.cols ? clamp(Math.round(t.cols), 8, MAXC)
+             : clamp(Math.round(name.length * PERCH), MINC, MAXC);
     const fs = 100 * (cols * SS) / w100;
+    /* in a shared box the scale is the set's, but the width is the
+       label's own if it is wider — "10" is two of the digits the box was
+       measured on, and a box one digit wide cut its second one off */
+    if (t && t.ref){
+      const need = Math.ceil((left + right) * fs / 100 / SS) + 1;
+      if (need > cols) cols = Math.min(MAXC, need);
+    }
     const rows = Math.max(1, Math.ceil(h100 * fs / 100 / SS));
     const W = (cols + 2) * SS, H = (rows + 2) * SS;
     c.width = W; c.height = H;

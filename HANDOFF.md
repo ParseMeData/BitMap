@@ -435,6 +435,15 @@ are the caller's. The border goes round a font title through
 `Type.border`, split out of `heading` for exactly this, so a title that
 changed its rule when it changed its face cannot happen.
 
+**A `file://` image cannot be a CSS mask, so the card frame ships as
+data.** Chromium fetches `mask-image` with CORS and every `file://` URL is
+its own opaque origin, so `mask: url(assets/card-frame.png)` resolves to
+nothing — the overlay painted red without the mask and not at all with it,
+which is how it was found. The same wall taints a canvas an asset is drawn
+on, so reading the PNG at run time is out too. `tools/frame.py` bakes the
+alpha into `src/frame.js` as a data: URI set on `--frame`, the way
+`glyphs.py` bakes the sheets: read once, offline, commit what it writes.
+
 **The bag is one page, and its pictures live with the loci.** The `123` and
 `abc` rings open the same `Bag.open(system)`; `SYSTEMS` in `src/bag.js` is
 the whole of the difference between them (a title, a cap, a label function),

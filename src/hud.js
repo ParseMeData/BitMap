@@ -66,6 +66,9 @@ const Hud = (() => {
      with a hair between, and only while the hub is at rest: the four
      ways in gather where the hub stood and would land on it */
   const JX = HUB * 2 + 12;
+  /* and build's, one more step along, in bone: three ways in at rest —
+     flare for the four, aqua for the journal, bone for the tools */
+  const BX = JX * 2;
 
   /* ── the diamond of dots ───────────────────────────────────────────────
      A button is a diamond of dots on a square grid: every grid point with
@@ -208,7 +211,7 @@ const Hud = (() => {
   let budget = 0;
   function cost(){
     if (budget) return budget;
-    let n = 2 + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
+    let n = 3 + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
     for (const r of RINGS){
       if (r.text) n += Type.cost(r.text);
       else for (const row of r.art)
@@ -231,8 +234,14 @@ const Hud = (() => {
               HUB * g.u, 0, 0, 0, 1);
       /* and the journal beside it, in the cool note, so the two read as
          two things and not as a hub and its shadow */
-      return put(a, m, g.x + JX * g.u, g.y, AQUA[0], AQUA[1], AQUA[2],
-                 hov === 'journal' ? 1 : 0.9, HUB * g.u, 0, 0, 0, 1);
+      m = put(a, m, g.x + JX * g.u, g.y, AQUA[0], AQUA[1], AQUA[2],
+              hov === 'journal' ? 1 : 0.9, HUB * g.u, 0, 0, 0, 1);
+      /* build's diamond: bone, and hollow while build is on — the outline
+         face is what the plate uses for 'here but open', and a tool that
+         is out should read as out */
+      const on = typeof Build !== 'undefined' && Build.active && Build.active();
+      return put(a, m, g.x + BX * g.u, g.y, BONE[0], BONE[1], BONE[2],
+                 hov === 'build' ? 1 : 0.9, HUB * g.u, on ? 1 : 0, 0, 0, 1);
     }
 
     for (const ring of RINGS){
@@ -295,6 +304,7 @@ const Hud = (() => {
     if (!open){
       if (Math.abs(p[0] - g.x) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'hub';
       if (Math.abs(p[0] - (g.x + JX * g.u)) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'journal';
+      if (Math.abs(p[0] - (g.x + BX * g.u)) + Math.abs(p[1] - g.y) <= (HUB + 4) * g.u) return 'build';
       return null;
     }
     const r = GRAB * g.u;
@@ -401,6 +411,9 @@ const Hud = (() => {
     if (key === 'journal')
       return api.onJournal ? api.onJournal()
         : note('the journal is not built yet — Hud.onJournal is where it opens');
+    if (key === 'build')
+      return api.onBuild ? api.onBuild()
+        : note('build has no switch here — Hud.onBuild is where it goes');
     return home();
   }
 
@@ -434,6 +447,6 @@ const Hud = (() => {
 
   const api = {init, overlay, hit, cost,
                onLetters: null, onNumbers: null, onTowns: null, onHome: null,
-               onJournal: null};
+               onJournal: null, onBuild: null};
   return api;
 })();

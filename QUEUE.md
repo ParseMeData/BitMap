@@ -25,6 +25,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A bone diamond for build** — 2026-08-26. Third diamond at `BX =
+  JX*2`, bone, drawn hollow (the ◇ face) while `Build.active()`; `pick`
+  answers 'build', `Hud.onBuild` seam → `Build.setOn(!Build.active())` in
+  game.js; cost +1. BUILD 114. Verified on a throwaway: hit test, press
+  turns build on, palette rises.
 - [x] **The journal, behind an aqua diamond** — 2026-08-26. `src/journal.js`
   (page `#journal`, `body.journal` clears the chrome, `SECTIONS` frame,
   notes in `hq.journal`, stored on change). `hud.js`: a second hub

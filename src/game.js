@@ -806,6 +806,8 @@ function boot(img){
   }
   /* the aqua diamond beside the hub opens the journal */
   if (typeof Journal !== 'undefined') Hud.onJournal = () => Journal.open();
+  /* the bone diamond is the B key: build on, or off again */
+  Hud.onBuild = () => Build.setOn(!Build.active());
   if (typeof Atlas !== 'undefined') Atlas.init();
   applyPlate();
   spawn(); scatterSparks();

@@ -384,8 +384,20 @@ const Title = (() => {
   function svg(f, t){
     const NS = 'http://www.w3.org/2000/svg';
     const el = document.createElementNS(NS, 'svg');
-    const cols = f.cols + 2, rows = f.rows + 2;
-    el.setAttribute('viewBox', '0 0 ' + cols + ' ' + rows);
+    /* The viewBox is the face's full HEIGHT and this glyph's own WIDTH:
+       a face read in a shared box (`ref`) has one scale and one baseline
+       for the whole set, and keeping the full height keeps that scale —
+       while cropping to the ink's own width stops the widest swash
+       capital in the set from deciding how small every other letter is
+       drawn. The card fits it by height, so an I and an M are the same
+       size on the same line and each fills what it can. */
+    let x0 = 0, x1 = f.cols - 1;
+    if (f.cells.length){
+      x0 = Infinity; x1 = -Infinity;
+      for (const c of f.cells){ if (c.x < x0) x0 = c.x; if (c.x > x1) x1 = c.x; }
+    }
+    const cols = x1 - x0 + 3, rows = f.rows + 2;
+    el.setAttribute('viewBox', (x0 - 0.5) + ' 0 ' + cols + ' ' + rows);
     el.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     const hs = FAT * tuned(t, 'weight'), tone = tuned(t, 'tone');
     const FLAT_AL = .92, FLAT_SZ = 1.5;

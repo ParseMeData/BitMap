@@ -366,15 +366,13 @@ const Bag = (() => {
        digit's box is the ten digits', a letter's the twenty-six. */
     const letter = /[A-Z]/.test(label);
     /* THE CARD RECIPE, settled by eye on 2026-08-26 with a tuning strip
-       that has since gone: read coarse for letters and finer for digits
-       (a digit's box is narrower, so it takes more cells to show the
-       same stroke), small flat diamonds — weight .65, tone and dither
+       that has since gone: read at 44 cells for letters and 34 for digits — a letter's box is the widest swash capital's, so it takes more cells for the same ink, small flat diamonds — weight .65, tone and dither
        off — so a card is a plain stipple rather than a graded one, and
        the ink pushed hard (bright −48, contrast 108, sharpen 3, gamma 1)
        so a thin script still cuts. Different from the title's numbers on
        purpose: a title is a name on the plate, a card is a stamp. */
     const t = Object.assign({}, h.tune, {
-      cols: letter ? 21 : 34,
+      cols: letter ? 44 : 34,
       ref: letter ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789',
       weight: 0.65, tone: 0, dither: 0,
       recipe: {bri: -48, con: 108, sharp: 3, gamma: 1}

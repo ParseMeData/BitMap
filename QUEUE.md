@@ -32,6 +32,14 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The stack is a dealt sequence** — 2026-08-26. `src/bag.js`: the
+  stack is `hq.bagseq`, a list of {sys,i}; each row press appends that
+  number's card at slot k%3 (person, action, object), from either system;
+  a gap every three; undo/Backspace and clear; holds until cleared.
+  `hq.bagsel` is migrated once. Cycle keys (`…:action2`) are no longer
+  written. BUILD 76. Verified over CDP: 1 5 B 3, undo, backspace, clear,
+  persistence across reload.
+
 - [x] **HUD folds into the hub** — 2026-08-26. At rest only the flare hub
   shows; pressing it hides the hub and brings the four out at SPAN 30; a
   press on one of them, or anywhere else (plate or panel), closes them and

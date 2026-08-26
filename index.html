@@ -291,6 +291,13 @@ body.tuning #route{display:none}
 #bagstack .bagcard{background-color:var(--bone);color:var(--ground);border-color:var(--bone);
   width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7);flex:none}
 #bagstack .bagcard + .bagcard{margin-top:calc(var(--step) - ((100vh - 176px) / 3 - 10px))}
+/* the first card of a round stands off the one above: the stack reads in
+   threes — person, action, object — and the gap is where one ends */
+#bagstack .bagcard.gap{margin-top:calc(var(--step) + 18px - ((100vh - 176px) / 3 - 10px))}
+/* undo and clear, above the stack; greyed when there is nothing to do */
+.bagtools{display:flex;gap:6px;width:calc(((100vh - 176px) / 3 - 10px) * 5 / 7)}
+.bagtools .chip{flex:1;font-size:10px;letter-spacing:.22em;text-transform:uppercase}
+.bagtools .chip.off{opacity:.35;pointer-events:none}
 /* on a stack card the tag is always in the corner — that corner is all
    that shows of a covered card, and it has to say which card it is */
 #bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
@@ -521,7 +528,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 75, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 76, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/build.js','src/markers.js','src/history.js',

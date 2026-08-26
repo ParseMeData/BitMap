@@ -16,19 +16,23 @@
    back exactly as it was — so it is opened through the HUD's seams
    (`Hud.onNumbers`, `Hud.onLetters`, filled in game.js).
 
-   Each label is a stack of cards, laid down the right rail the way a
-   solitaire column is — each card a step below the last, so what shows of
-   a covered card is its tag. The row card is the PERSON; select it and the
-   stack opens beside the row: the person, then the ACTION, then the
-   OBJECT, then a person again, and round — as many as you want, in that
-   order and no other, one card at a time: the next appears once the last
-   is filled. A card that is not selected shows its label and nothing
-   else. Every card takes a picture — click it, or drop one on it — and the
-   picture is its face from then on; and a word, typed on the card. That is the method the whole game is
-   built on (a place, and a picture of what stands there), applied to a
-   number: five columns of three is fifteen pictures. The page shows one
-   row of five at a time, and the slider down the left is the way between
-   rows — 1 at the top, 100 at the bottom (Z, for the letters).
+   Down the right rail is the STACK, laid the way a solitaire column is —
+   each card a step below the last, so what shows of a covered card is its
+   tag. It is a sequence, and the row deals into it: the first card you
+   press goes down as its PERSON, the next — whatever number, from either
+   system — as its ACTION, the next as its OBJECT, and then a gap, and a
+   person again, and round. So `1 5 3` is 1's person doing 5's action to
+   3's object, and `1 1 1` is 1's own three, stacked; the only time one
+   label sits over itself is when you dealt it twice. Every number has one
+   person, one action and one object — the method the whole game is built
+   on (a place, and a picture of what stands there), applied to a number —
+   and the stack is the order you drew them in. Every card takes a picture
+   — click it, or drop one on it — and the picture is its face from then
+   on; and a word, typed on the card. The stack holds until it is cleared:
+   through other rows, the other system, the page closing, the game
+   closing. The page shows one row of five at a time, and the slider down
+   the left is the way between rows — 1 at the top, 100 at the bottom (Z,
+   for the letters).
 
    The pictures live in the locus store (`Loci`, IndexedDB `hq.loci/img`)
    under keys of their own — `bag:numbers:3:action` — rather than in a
@@ -51,27 +55,40 @@ const Bag = (() => {
   const DEAL = 5;            // columns in a row
 
   let system = null;     // which set of labels is up, or null when closed
-  /* the stack's owner: which system and which index. It is not the row's
-     selection — it outlives the row, the system and the page, so the
-     stack you were building is there when you come back. Saved under
-     `hq.bagsel`, an hq. key, so a snapshot carries it. */
-  const HELD = 'hq.bagsel';
-  let held = null;       // {sys, i}, or null
-  try { held = JSON.parse(localStorage.getItem(HELD) || 'null'); } catch (e){ held = null; }
-  if (held && !SYSTEMS[held.sys]) held = null;
-  const sel = () => (held && held.sys === system ? held.i : -1);   // as the row sees it
+  /* the stack: the deals, in order, each {sys, i}. Card k is that number's
+     slot k%3. It is not the row's selection — it outlives the row, the
+     system and the page, so the stack you were building is there when you
+     come back. Saved under `hq.bagseq`, an hq. key, so a snapshot carries
+     it. `hq.bagsel` was the one held number before the stack was a
+     sequence; it is read once, as a stack of one, and then let go. */
+  const SEQ = 'hq.bagseq';
+  let seq = [];
+  try {
+    seq = JSON.parse(localStorage.getItem(SEQ) || 'null');
+    if (!Array.isArray(seq)){
+      const old = JSON.parse(localStorage.getItem('hq.bagsel') || 'null');
+      seq = old ? [old] : [];
+    }
+  } catch (e){ seq = []; }
+  seq = seq.filter(d => d && SYSTEMS[d.sys] && d.i >= 0 && d.i < SYSTEMS[d.sys].cap);
+  function saveSeq(){
+    try { seq.length ? localStorage.setItem(SEQ, JSON.stringify(seq)) : localStorage.removeItem(SEQ); }
+    catch (e){ note('could not save the stack — storage is full'); }
+    try { localStorage.removeItem('hq.bagsel'); } catch (e){}
+  }
+  /* whether a row card is in the stack, as the row sees it */
+  const dealt = i => seq.some(d => d.sys === system && d.i === i);
   let at = 1;            // the slider: which number is in view, 1-based
   let cur = 0;           // the keyboard's place in the row, 0..4; ←/→ move it
   let zone = 'row';      // where the keyboard is: the row of cards, or the switch above it
   let pending = null;    // the key the file picker was opened for
 
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
-  /* the k-th card in a stack: slot k%3 of cycle k/3. The first cycle's
-     keys carry no number, so what was stored before there were cycles is
-     the first cycle. */
-  const key = (sys, i, slot, cyc) =>
-    'bag:' + sys + ':' + SYSTEMS[sys].label(i) + ':' + slot + (cyc ? String(cyc + 1) : '');
-  const keyAt = (sys, i, k) => key(sys, i, SLOTS[k % SLOTS.length], Math.floor(k / SLOTS.length));
+  /* a number's card for a slot. The store keeps one person, one action
+     and one object per number; the stack only orders them. */
+  const key = (sys, i, slot) => 'bag:' + sys + ':' + SYSTEMS[sys].label(i) + ':' + slot;
+  const slotAt = k => SLOTS[k % SLOTS.length];
+  const keyAt = k => key(seq[k].sys, seq[k].i, slotAt(k));
 
   /* ── the words ─────────────────────────────────────────────────────────
      Each card carries a word as well as a picture — the character's name,
@@ -123,18 +140,51 @@ const Bag = (() => {
   }
 
   /* ── the stack ─────────────────────────────────────────────────────────
-     The open number's cards, each `STEP` below the last. Card k is shown
-     if it is the first or the one before it is filled, so the stack is
-     always exactly one card longer than what has been done — the next
-     thing to fill, and never a blank run of them. */
+     Every deal, in order, each `STEP` below the last; the first card of
+     each round of three stands off the one above it, so the stack reads
+     as sentences and not as one run. Above it, the two things you can do
+     to it: take the last card back, or clear it. */
   function stack(){
     const el = document.getElementById('bagstack');
     el.innerHTML = '';
-    if (!held) return;
-    for (let k = 0; ; k++){
-      if (k > 0 && !filled(keyAt(held.sys, held.i, k - 1))) break;
-      el.append(card(held.sys, held.i, SLOTS[k % SLOTS.length], true, keyAt(held.sys, held.i, k)));
+    for (let k = 0; k < seq.length; k++){
+      const c = card(seq[k].sys, seq[k].i, slotAt(k), true, keyAt(k));
+      if (k && k % SLOTS.length === 0) c.classList.add('gap');
+      el.append(c);
     }
+  }
+  function tools(){
+    const el = document.createElement('div');
+    el.className = 'bagtools';
+    const u = document.createElement('div'), x = document.createElement('div');
+    u.className = 'chip'; u.id = 'bagundo'; u.textContent = 'undo';
+    x.className = 'chip'; x.id = 'bagclear'; x.textContent = 'clear';
+    u.addEventListener('click', undo);
+    x.addEventListener('click', clear);
+    el.append(u, x);
+    return el;
+  }
+  /* the stack is dealt from the row, and taken back from the top; there
+     is no pulling a card out of the middle, because the middle is the
+     order and the order is the point */
+  function deal(sys, i){
+    seq.push({sys, i});
+    saveSeq();
+    render();
+  }
+  function undo(){
+    if (!seq.length) return false;
+    seq.pop();
+    saveSeq();
+    if (system) render();
+    return true;
+  }
+  function clear(){
+    if (!seq.length) return false;
+    seq = [];
+    saveSeq();
+    if (system) render();
+    return true;
   }
 
   /* ── the slider ────────────────────────────────────────────────────────
@@ -213,8 +263,7 @@ const Bag = (() => {
   function enter(){
     if (!system) return false;
     if (zone === 'switch') return move(1);
-    const i = first() + cur;
-    select(sel() === i ? -1 : i);
+    deal(system, first() + cur);
     return true;
   }
   function placeThumb(){
@@ -262,7 +311,7 @@ const Bag = (() => {
     right.id = 'bagright';
     const stack = document.createElement('div');
     stack.id = 'bagstack';
-    right.append(stack);
+    right.append(tools(), stack);
     mid.append(left, row, right);
     const foot = document.createElement('div');
     foot.className = 'knote';
@@ -295,16 +344,16 @@ const Bag = (() => {
       w.value = word(k);
       w.addEventListener('click', e => e.stopPropagation());
       w.addEventListener('input', () => setWord(k, w.value));
-      /* the next card appears once this one is filled — after the word is
-         done, not on every keystroke, or the field would jump under you */
+      /* the count in the head follows the word once it is done, not on
+         every keystroke, or the field would jump under you */
       w.addEventListener('change', () => { if (system) render(); });
       w.addEventListener('keydown', e => { if (e.key === 'Enter') w.blur(); });
       c.append(w);
     }
     c.addEventListener('click', () => {
-      if (!shown){                           // a row card: the press selects it
+      if (!shown){                           // a row card: the press deals it
         cur = i - first();                   // the keyboard follows the pointer
-        select(sel() === i ? -1 : i);
+        deal(sys, i);
         return;
       }
       pick(k);                               // a stack card asks for its picture
@@ -337,22 +386,19 @@ const Bag = (() => {
     const f0 = first();
     for (let i = f0; i < Math.min(f0 + DEAL, S.cap); i++){
       const col = document.createElement('div');
-      col.className = 'bagcol' + (i === sel() ? ' sel' : '') + (zone === 'row' && i === f0 + cur ? ' cur' : '');
+      col.className = 'bagcol' + (dealt(i) ? ' sel' : '') + (zone === 'row' && i === f0 + cur ? ' cur' : '');
       col.append(card(system, i, 'character', false));
       row.append(col);
     }
     stack();
+    el.querySelector('#bagundo').classList.toggle('off', !seq.length);
+    el.querySelector('#bagclear').classList.toggle('off', !seq.length);
+    const next = NAMES[slotAt(seq.length)];
     el.querySelector('#bagnote').textContent =
       zone === 'switch' ? '←→ the other system · ↓ back to the cards · esc closes'
-            : !held ? '←→ and enter pick a card · ↑↓ another row, ↑ past the top for the switch · esc closes'
-              : SYSTEMS[held.sys].label(held.i) + ' · the stack: click a card for its picture, or drop one on it · type its word · enter on its card folds it';
-  }
-
-  function select(i){
-    held = i < 0 ? null : {sys: system, i};
-    try { held ? localStorage.setItem(HELD, JSON.stringify(held)) : localStorage.removeItem(HELD); }
-    catch (e){}
-    render();
+            : 'the next card dealt is ' + (next === 'action' ? 'an ' : 'a ') + next + ' · ←→ and enter deal a card · ↑↓ another row, ↑ past the top for the switch'
+              + (seq.length ? ' · backspace takes the last card back · click a stack card for its picture, or drop one on it · type its word' : '')
+              + ' · esc closes';
   }
 
   /* ── the picker ────────────────────────────────────────────────────────
@@ -390,7 +436,7 @@ const Bag = (() => {
     return true;
   }
   /* Esc is back: off the switch first, then out of the page. It does not
-     fold the stack — the stack stays until another card is opened. */
+     touch the stack — the stack stays until it is cleared. */
   function back(){
     if (!system) return false;
     if (zone === 'switch'){ zone = 'row'; render(); return true; }
@@ -404,6 +450,6 @@ const Bag = (() => {
   }
   const opened = () => !!system;
 
-  return {open, close, back, opened, step, move, enter, count, key, keyAt, word, setWord, filled, at: () => at,
-          system: () => system, selected: sel, held: () => held, SYSTEMS, SLOTS};
+  return {open, close, back, opened, step, move, enter, undo, clear, count, key, keyAt, word, setWord, filled,
+          at: () => at, system: () => system, seq: () => seq.slice(), SYSTEMS, SLOTS};
 })();

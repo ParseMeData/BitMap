@@ -1434,36 +1434,41 @@ The HUD's left ring, `123`, opens the **number system**; its top ring,
 `abc`, opens the **letter system**. They are one page — `src/bag.js` —
 with a different set of labels on the cards, and nothing else differs.
 
-The page lays a row of cards over the town, one per number or letter. A
-card that is not selected shows only its label. Click one — or walk
-to it with `←`/`→` and press `Enter` — and its **stack** opens down the
-right rail, laid like a solitaire column: each card a step below the
-last, so a covered card shows its tag. The row card is the **person**,
-and the stack runs person, **action**, **object**, then person again,
-and round — as many cards as you want, always in that order, dealt one at
-a time: the next appears once the last is filled. Every card takes a
-picture and a word: click it in the stack, or drop an image on it, and
-the picture is the card's face from then on with the tag kept in its
-corner; the word is typed along its bottom edge (`Enter` to finish).
-Either one fills a card. The stack stays — through other rows, the other
-system, and closing the page — until you open another card, or press
-`Enter` on its own card to fold it. Every card is one size, at 5:7. The row sits
-between two **rails**: the left holds the switch between `123` and `abc`
-and the slider; the right holds the stack.
+The page lays a row of cards over the town, one per number or letter,
+and down the right rail runs the **stack**, laid like a solitaire column:
+each card a step below the last, so a covered card shows its tag. The
+row deals into the stack. The first card you press — click it, or walk
+to it with `←`/`→` and press `Enter` — goes down as its **person**; the
+next, whatever number and from either system, as its **action**; the
+next as its **object**; then a gap, and a person again, and round. So
+`1 5 3` is 1's person doing 5's action to 3's object, `1 B 3` borrows
+its action from the letters, and `1 1 1` is 1's own three — the only
+time one label sits over itself is when you dealt it twice. Every
+number has one person, one action and one object; the stack is the
+order you drew them in. Every card takes a picture and a word: click it
+in the stack, or drop an image on it, and the picture is the card's face
+from then on with the tag kept in its corner; the word is typed along
+its bottom edge (`Enter` to finish). The stack holds — through other
+rows, the other system, closing the page, closing the game — until you
+take it back: `undo` or `Backspace` for the last card, `clear` for all
+of it. A row card that is in the stack shows in bone. Every card is one
+size, at 5:7. The row sits between two **rails**: the left holds the
+switch between `123` and `abc` and the slider; the right holds the
+stack.
 
 The page shows one row of five at a time, and the **slider** down the
 left rail is the way between rows: `1` at the top, `100` at the bottom
 (`A` to `Z` for the letters) — drag the thumb, press the track, press the
 `▲`/`▼` at its ends or `↑`/`↓` on the keyboard for the next row of five,
 and the row holding that number comes up. `↑` past the top row puts the
-keyboard on the switch, where `←`/`→` change system and `↓` comes back. A column with all three cards
-filled shows its label in bone. The head counts what is filled out of
-the whole system. `Esc` folds an open column, and closes the page from
-the row; the ✕ closes it outright. The town underneath is exactly where
+keyboard on the switch, where `←`/`→` change system and `↓` comes back.
+The head counts what is filled out of the whole system. `Esc` closes the
+page from the row (off the switch first); the ✕ closes it outright. The town underneath is exactly where
 you left it.
 
 The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
-their own, `bag:numbers:3:action` (`…:action2` for the second time round), and the words into `hq.bag`, so a
+their own, `bag:numbers:3:action`, the words into `hq.bag`, and the
+stack into `hq.bagseq`, so a
 snapshot carries both.
 
 ## Walking

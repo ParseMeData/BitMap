@@ -411,6 +411,11 @@ addEventListener('keydown', e => {
     else if (e.code === 'ArrowLeft') Bag.move(-1);
     else if (e.code === 'ArrowRight') Bag.move(1);
     else if (e.code === 'Enter' || e.code === 'NumpadEnter'){ e.preventDefault(); Bag.enter(); }
+    /* the last card back — from the page, not from a word being typed,
+       where backspace is backspace */
+    else if (e.code === 'Backspace' && !(e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName))){
+      e.preventDefault(); Bag.undo();
+    }
     return;
   }
   keys.add(e.code);

@@ -501,8 +501,14 @@ const Palace = (() => {
     if (at.face){
       const f = at.face, iw = f.cols - 1, ih = f.rows - 1;
       const x0 = at.x - iw * at.px / 2, y0 = at.y - ih * at.px / 2;
+      /* the mat first, under everything, and the first thing dropped
+         when the cap is short: a name without its mat is still a name */
+      const cover = Title.tuned(tune, 'mat');
+      const mc = cover > 0 ? Title.matCost(f.cols, f.rows) : 0;
       if (m + Title.cost(f) + Type.borderCost(bd, iw, ih) > cap) bd = 'none';
       if (m + Title.cost(f) > cap) return m;
+      if (cover > 0 && m + mc + Title.cost(f) <= cap)
+        m = Title.mat(a, m, f.cols, f.rows, x0, y0, at.px, cover, cap);
       const ink = Type.lift(bone, bright), al = Type.liftA(at.alpha, bright);
       const sd = Type.seed(at.name.toUpperCase());
       m = Type.border(a, m, bd, iw, ih, x0, y0, at.px, ink, al, cap, jitter, sd);
@@ -577,13 +583,16 @@ const Palace = (() => {
        a gap and a name's height above the top row of rooms: the 5×7 type
        always cleared them by being tall, and a face with few rows does
        not, so the clearance is a floor in tiles as well as a share of h */
+    /* A 5×7 label lies quiet across the ground, .38 out on the town and
+       .66 over a plan. A face is lettering with a mat under it, and lies
+       bright, or the mat has dimmed the town for nothing. */
     if (inside)
-      return {name, px, face, w, h, inside: true, alpha: 0.66,
+      return {name, px, face, w, h, inside: true, alpha: face ? 0.92 : 0.66,
               x: (box[0] + box[2]) / 2,
               y: box[1] - Math.max(h * 1.15, h / 2 + t * (0.55 + NAME_TILES + 0.4))};
     if (!face) px = Math.min(px, Type.pitchFor(name, wide, treat));
     const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
-    return {name, px, face, inside: false, alpha: 0.38, home: [cx, cy],
+    return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};
   }

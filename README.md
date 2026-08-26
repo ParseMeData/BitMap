@@ -1270,10 +1270,14 @@ through it — a diamond a shade wider than its cell leaves a hole at each
 corner, and inside a stroke those holes line up into grid lines, which
 close past about 1.15×; **Tone** is how far a diamond's size and light
 follow the ink under it, 1 the tool's look and 0 every diamond the same;
-**Dither** is how much of the tool's Bayer threshold is applied. Three rest
-at the tool's values (Size at 1×); Weight rests at 1.2×, past the corners, because the
-lattice through a stroke was the first thing seen and the tool's 1× is one
-notch back. Stored as `hq.title.<name>`.
+**Dither** is how much of the tool's Bayer threshold is applied; **Mat** is
+how far the plate under the name is dimmed so it reads over whatever it
+lies across — a field of ground-coloured diamonds over the name's box,
+fading out at its edges, and the first thing dropped if the instance cap
+is short. Weight rests at 1 and Tone at 0: at Size 1× a title diamond *is*
+a plate diamond, the same pitch and the same three-quarter-cell size the
+lattice is drawn at, so a name is made of exactly the stuff the road beside
+it is. Stored as `hq.title.<name>`.
 
 The bag's row cards wear the same face: a card's number or letter is the
 heading's font read through the same recipe, drawn as an inline SVG of

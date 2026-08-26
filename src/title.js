@@ -64,10 +64,21 @@ const Title = (() => {
   const TUNE = {
     size:   {lo: 0.25, hi: 2.0, dflt: 1},
     detail: {lo: 6,   hi: 24,  dflt: 14},
-    weight: {lo: 0.5, hi: 2.0, dflt: 1.2},     // past the corners: no lattice by default
-    tone:   {lo: 0,   hi: 1,   dflt: 1},
-    dither: {lo: 0,   hi: 1,   dflt: 1}
+    /* weight 1 and tone 0: at Size 1 every diamond of a title IS a plate
+       diamond — same pitch, same three-quarter-cell half-size the vertex
+       shader draws the lattice at — so a name is made of exactly the
+       stuff the road beside it is. The corner-hole lattice that 1.2 was
+       covering does not arise at three quarters of a cell. */
+    weight: {lo: 0.5, hi: 2.0, dflt: 1},
+    tone:   {lo: 0,   hi: 1,   dflt: 0},
+    dither: {lo: 0,   hi: 1,   dflt: 1},
+    /* the mat: how far the plate under the name is dimmed, 0 for none */
+    mat:    {lo: 0,   hi: 1,   dflt: 0.7}
   };
+  /* the plate's own diamond: `hs = size * u_unit * 0.75` in render.js for
+     a lattice cell of size 1 — so this is the half-size a title diamond
+     takes at Size 1, weight 1, and `FAT` stays the cards' and the 5×7's */
+  const PLATE = 0.75;
   const tuned = (t, k) => {
     const v = t && isFinite(t[k]) ? +t[k] : TUNE[k].dflt;
     return clamp(v, TUNE[k].lo, TUNE[k].hi);
@@ -283,10 +294,10 @@ const Title = (() => {
   function emit(a, m, f, x0, y0, px, col, alpha, cap, jit, seed, t){
     const al = alpha === undefined ? 1 : alpha;
     const amp = (jit || 0) * px, sd = seed || 0;
-    const hs = px * FAT * tuned(t, 'weight'), tone = tuned(t, 'tone');
-    /* tone 0 is the flat diamond — the tool's own values for a cell of
-       full ink — and tone 1 is each cell as the ink read it */
-    const FLAT_AL = .92, FLAT_SZ = 1.5;
+    const hs = px * PLATE * tuned(t, 'weight'), tone = tuned(t, 'tone');
+    /* tone 0 is the flat diamond — one plate diamond per cell of ink, at
+       full light — and tone 1 is each cell as the ink read it */
+    const FLAT_AL = 1, FLAT_SZ = 1;
     for (const c of f.cells){
       if (cap !== undefined && m > cap - 1) return m;
       let jx = 0, jy = 0;
@@ -301,6 +312,41 @@ const Title = (() => {
     return m;
   }
   const cost = f => f.cells.length;
+
+  /* ── the mat ───────────────────────────────────────────────────────────
+     The plate under a name, dimmed so the name reads over it: a field of
+     ground-coloured diamonds laid over the box the face occupies, fading
+     out across a margin. Diamonds on a square grid at a spacing equal to
+     their own half-size cover the plane exactly twice, everywhere — so
+     the field is even, and one alpha `a` per diamond makes a cover of
+     1 − (1 − a)². Spaced at three cells so a title's mat is a few
+     hundred instances rather than a few thousand: the cap is shared
+     with the rooms and the walker, and a mat is the first thing to give.
+     Drawn in the chrome's ground rather than black, because the plate is
+     that colour and a mat that was blacker than the plate would read as
+     a hole. */
+  const GROUND = [0.031, 0.031, 0.043];        // #08080B
+  function mat(a, m, cols, rows, x0, y0, px, cover, cap, margin){
+    if (!(cover > 0)) return m;
+    const S = 3, mg = margin === undefined ? 3 : margin;
+    const per = 1 - Math.sqrt(1 - Math.min(cover, 0.98));
+    const gx0 = -1 - mg, gy0 = -1 - mg, gx1 = cols + mg, gy1 = rows + mg;
+    for (let gy = gy0; gy <= gy1; gy += S)
+      for (let gx = gx0; gx <= gx1; gx += S){
+        if (cap !== undefined && m > cap - 1) return m;
+        /* the fade: how far inside the margin this diamond sits, 0 at the
+           outer edge and 1 once it is over the ink */
+        const dx = Math.min(gx - gx0, gx1 - gx), dy = Math.min(gy - gy0, gy1 - gy);
+        const e = Math.min(1, Math.min(dx, dy) / mg);
+        m = put(a, m, x0 + gx * px, y0 + gy * px, GROUND[0], GROUND[1], GROUND[2],
+                per * e, S * px, 0, 0, 0, 1);
+      }
+    return m;
+  }
+  const matCost = (cols, rows, margin) => {
+    const S = 3, mg = margin === undefined ? 3 : margin;
+    return (Math.floor((cols + 2 * mg + 1) / S) + 1) * (Math.floor((rows + 2 * mg + 1) / S) + 1);
+  };
 
   /* ── the same face, off the plate ──────────────────────────────────────
      The bag is a page rather than the plate, so its cards cannot reach
@@ -364,6 +410,6 @@ const Title = (() => {
     'Monoton'
   ];
 
-  return {load, state, face, emit, cost, svg, fonts: FONTS.slice(), DEFAULT: FONTS[0],
+  return {load, state, face, emit, cost, svg, mat, matCost, fonts: FONTS.slice(), DEFAULT: FONTS[0],
           tune: TUNE, tuned, recipe: Object.assign({}, RECIPE)};
 })();

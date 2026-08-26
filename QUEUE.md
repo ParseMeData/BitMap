@@ -25,6 +25,17 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A title diamond is a plate diamond, and a mat under the name** —
+  2026-08-26. `Title.emit` half-size is `px × 0.75` (the shader's own
+  lattice size) × weight; weight rests at 1, tone at 0. `Title.mat`: a
+  field of ground-coloured (#08080B) diamonds spaced 3 cells at half-size
+  3 cells — a square grid at spacing = half-size covers the plane exactly
+  twice, so one alpha per diamond gives an even cover of 1−(1−a)² — over
+  the face's box plus a 3-cell margin that fades; first thing dropped
+  when the cap is short. `mat` in `Title.tune` (0–1, .7), **Mat** slider
+  under Heading. A font title lies bright over its mat (.88 town / .92
+  palace; the 5×7 keeps .38/.66). BUILD 95. Measured on a throwaway:
+  grass under the name 61 → 37 mean brightness with the mat.
 - [x] **Card halftone settled, strip removed** — 2026-08-26. Eden's values
   (letters 21 cells, digits 34, weight .65, tone 0, dither 0, bright −48,
   contrast 108, sharpen 3, gamma 1) folded into `glyph()` in `bag.js`;

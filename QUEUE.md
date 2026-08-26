@@ -1,0 +1,184 @@
+# Work queue
+
+Claude works these top to bottom, one at a time. An item is picked up only
+when the previous one is finished and ticked. Edit, reorder, or add freely —
+the file is re-read before every item.
+
+**Working rules (learned 2026-08-25):** snapshot the town with
+`tools/snapshot.py save <file>` before any live test; verify in the running
+game over CDP (`tools/cdp.py`, `Page.captureScreenshot`) and revert test
+shapes — shapes with ids you did not create are Eden's, leave them; there is
+no git identity on this box, commit with `GIT_AUTHOR_NAME=Eden
+GIT_AUTHOR_EMAIL=eden@customer.mlbeaus1.isp.starlink.com` (and COMMITTER)
+as env vars; bump `BUILD` in `index.html` on every change so the cache-bust
+reloads; keep README/HANDOFF current in the project's voice.
+
+**Mode: stop between items.** After finishing an item, tick it, summarise what
+changed, and wait for review before starting the next. Items marked `[auto]`
+may run straight into the next without waiting.
+
+## Queue
+
+- [ ] **River and creek: drag the ends** (asked 2026-08-25). The end
+  points cannot be dragged to where the water should start and end — a
+  drag moves the whole line. Ends must pin where they are put; the whole
+  line still moves from its body.
+- [ ] **Water above every ground terrain, under roads** (asked
+  2026-08-25). Creek and river draw over grass/rock/snow/etc. and under
+  any road.
+
+
+## Done
+
+(ticked items move here with the date)
+
+- [x] **HUD rings → filled halftone diamonds** — 2026-08-26. `src/hud.js`: the four
+  buttons are diamonds of dots on a 3.2px grid (|i|+|j| ≤ 7), ground dots
+  shrinking from full at the centre to .42 at the edge; the rim is the grid's
+  outermost step. `pick()` is taxicab. `cost()` still exact (813). BUILD 74.
+  Verified over CDP: rest, hover wash, press → 'the whole town'.
+
+- [x] **The bag, part 10: the stack stays** — 2026-08-25, `4eca984`. `held`
+  {sys,i} replaces `sel` as the stack's owner, saved in `hq.bagsel`;
+  `sel()` derives the row's inverted card from it. Rows/slider/switch/
+  close no longer clear it; Esc no longer folds; Enter or click on the
+  held card folds. Verified over CDP incl. a page reload.
+- [x] **The bag, part 9: the keyboard reaches the switch** — 2026-08-25,
+  `3d1302a`. `zone` 'row'|'switch': ↑ at row 1 → switch (`.bagswitch.cur`
+  bone edge, row highlight off); ←/→/Enter there → `open(other)` keeping
+  the zone; ↓ or Esc → row. Verified over CDP.
+- [x] **The bag, part 8: the switch on the left, the stack on the right**
+  — 2026-08-25, `9a46966`. `.bagswitch` (row of two chips) atop the left rail
+  above the slider; right rail 190px holds `#bagstack`: flow column with
+  `margin-top: 32px − cardH` between cards, hover/focus-within raises;
+  tags always in the corner ("person · 2"). `keyAt(sys,i,k)` → slot k%3,
+  cycle k/3; first cycle keys unchanged, then `character2`… `stack()`
+  shows card k if k−1 is filled. Row cards no longer unfold. Verified over
+  CDP: 5 test words on 2 → six cards person…object twice, all 121×170,
+  tops 32px apart; test words removed, Eden's words for 1 intact.
+- [x] **The bag, part 7: ←/→ and Enter** — 2026-08-25, `47dfd48`. `cur`
+  0..4 in the row, `.bagcol.cur` bone edge; `Bag.move(±1)` clamps to the
+  row, `Bag.enter()` toggles select; click sets `cur` too; ↑↓/slider/
+  switch reset it to 0. game.js gate routes ←→ Enter. Verified over CDP.
+- [x] **The bag, part 6: the slider steps by arrow** — 2026-08-25,
+  `0486a92`. `.bagstep` chips (▲ above, ▼ below the track) and `Bag.step(±1)`;
+  game.js keydown gate answers ArrowUp/ArrowDown while the bag is up.
+  Verified over CDP: 5×↓ → 6 (row 6–10), ↑ → 5, buttons step, floor 1.
+  *Follow-up* `0a1b4b7`: a press moves a **row** (5), landing on its first —
+  1 → 6 → 11; cap lands on 96 / Z.
+- [x] **The bag, part 5: one card size, and a slider down the left** —
+  2026-08-25, `cb921c4`. `.bagcard` height `(100vh − 176px)/3 − 10px` for
+  every card, width from 5:7 (121×170 here, open or closed, overflow 0).
+  `#bagslide` in the left rail: drawn track + flare square thumb, pointer
+  capture, `at` 1..cap; `first()` = row of five holding `at`; readout
+  above. `dealt()` removed — slider replaces the deal (HANDOFF says why).
+  Verified over CDP: drag → 41 shows 41–45, bottom → 100 / Z. Eden's words
+  for 1 intact.
+- [x] **The bag, part 4: rails either side, and a system toggle** —
+  2026-08-25, `40c4338`. `#bagmid` grid `150px | 1fr | 150px`; `#bagleft`
+  empty (reserved), `#bagright` holds `.bagswitch` (two `.chip`s, 123 /
+  abc, `.sel` on the one up; `open()` is a no-op on the side already up).
+  `.bagcard` max-width 150px; open column `width:auto` from height so
+  5:7 holds. Measured over CDP: 0.714 open and closed, overflow 0. Eden's
+  own words for `1` (Han Solo / Shooting) seen in `hq.bag` and left alone.
+- [x] **The bag, part 3: words, one card at a time, all three on screen**
+  — 2026-08-25, `e902e3c`. `.bagword` input on every open card (placeholders
+  who / does what / to what; Enter blurs; `change` re-renders so the next
+  card appears when the word is done, not per keystroke); words in
+  `hq.bag` {key: text}, `Bag.word/setWord/filled`. `filled` = picture or
+  word, used for the reveal, `done`, and the deal. Open column: character
+  → action once filled → object once filled. `.bagcol.sel .bagcard` drops
+  its aspect for `(100vh − 176px)/3 − 10px`; measured over CDP: last card
+  bottom 593 in a row ending 654, overflow 0. README/HANDOFF updated.
+- [x] **Document the bag** — 2026-08-25, `f3821be`. README `### The bag`
+  (before *Walking*), `src/bag.js` file-table row, Esc row; HANDOFF
+  decision *The bag is one page, and its pictures live with the loci* +
+  storage-table note on the `bag:` keys; `hud.js` header and seam
+  comments say what fills `onLetters`/`onNumbers`/`onTowns`. BUILD 62.
+- [x] **The bag, part 2: character · action · object, and the next five**
+  — 2026-08-25, `6df4987`. The row card is the character; `.bagcol.sel`
+  unfolds action and object beneath. Click a card in an open column (or
+  drop a file on it) → `#lfile`, shared with the loci, each side with its
+  own `pending`. Pictures go through `Loci.attach({uid})` into
+  `hq.loci/img` as `bag:<system>:<label>:<slot>` — snapshot.py dumps
+  that store key for key, so nothing to change there (its "locus pictures"
+  count now includes bag cards). `Loci.get` exported. `dealt()`: 5, +5
+  per full set of five complete from the start (numbers cap 100, letters
+  26); done columns show their label in bone; head counts `n of dealt×3`.
+  Esc → `Bag.back()`: fold, then close. Verified live over CDP with 15
+  canvas pictures (faces, 10 dealt, 5 done), then detached — store clean.
+- [x] **The bag, part 1: the page and its five cards** — 2026-08-25,
+  `86e5451`. New `src/bag.js`: `Bag.open('numbers'|'letters')`, one page,
+  `SYSTEMS` holds the two label sets; `#bag` glass page built on first
+  use (atlas pattern), `body.bag` clears the chrome, `.bagcard` 5:7
+  cards in a 5-column grid, `.sel` = bone inversion. `game.js` fills
+  `Hud.onNumbers`/`Hud.onLetters`; keydown gate: only Esc answers
+  while it is up. Labels are chrome text (mono, uppercase) — `Type`
+  letterforms live in the GL stream, not in a DOM page, so that line of
+  the ask was dropped. Verified live over CDP: ring press opens, card
+  click inverts, Esc/✕ close, no pause, shape count unchanged. BUILD 60.
+- [x] **Walkable map: reachability, add-area at road ends, compass mind map,
+  static map that extends** — 2026-08-25. Investigation: the walk grid was
+  not broken (every road tile reachable); the unreachable screen was roadless
+  in Blank mode. Eden chose *keep connectivity, warn* → stranded roads framed
+  gold + palette note. *Linked screens* → `src/atlas.js`: plates joined at
+  edges, edge prompt (Enter opens a plate with a road stub, Esc stays),
+  crossings land on the same column/row, compass opens the mind map, click
+  to jump. Home plate keeps its keys. Verified live over CDP.
+  *Follow-up:* trigger moved from the screen edge to the **end of the road**
+  (dead end = ≤1 road neighbour, pressed away from it); links kept per end so
+  many roads can each lead to a plate (`9ec6128` → next commit).
+- [x] **Warp shape replaces Ring on the Shape row** (asked 2026-08-25, done
+  same day). Closed Catmull-Rom blob: 8 points from the oval, mid-leg grips
+  insert, points drag; `blob` saved. Ring kept only for road/creek.
+- [x] **Click-to-place** (asked 2026-08-25): chip arms, map click places,
+  Esc disarms; nothing lands at a default spot any more.
+- [x] **Separate terrain options in the Ground section** — 2026-08-25. Rock,
+  Cement, Dirt, Desert, Gravel, Mud, Scrub, Snow: one `terrain()` generator,
+  recipes in `GROUNDS`; all walkable, stamp with grass.
+- [x] **Settle whether the game window closes on its own** — 2026-08-25.
+  Relaunched 13:20:44 as PID 13032 with CDP; untouched by Eden throughout,
+  driven only over CDP (a dozen reloads, screenshots, synthetic input). Alive
+  at 1h21 — past the 1h14 of the run that closed before — `hq.lastError`
+  null, no crash/OOM in the journal. Conclusion: earlier closes were Eden's;
+  no evidence the game closes itself. Exit watch left armed in case.
+- [x] **River/stream laid as a locked line with bends between** — 2026-08-25.
+  Creek and river are `smooth` kinds: Catmull-Rom through every point, ends
+  anchored (creek now too); the mid-run grip inserts a point and drags it.
+  Shift-click still works. Existing 2-point bowed creeks unchanged.
+- [x] **More colour options for the building assets** — 2026-08-25. `tone`
+  on every print: Stone (default, unchanged), Brick, Slate, Moss, Sand, Rose;
+  Tone chip row under the picker; saved/loaded; `TONES` in kinds.js.
+- [x] **Building assets: transparent outside, dark inside, padding; palette
+  reorganised** — 2026-08-25. Slicer writes '2' for interior dark + 1-ring
+  plinth (flood fill from the sprite edge), `landmark()` draws '2' as dark
+  cover; size capped at birth (shrink allowed, cell steps); new Terrain layer
+  holds Blocks/Housing (ids `buildings`/`houses` unchanged); Buildings layer
+  holds Houses (new `house` kind, 31 glyphs via `--set houses=a01-a24,b11,
+  b25-b28,b30,b32`) and Landmark (35). Verified live over CDP.
+  *Follow-ups same day:* interior dark → plate colour (`264db5e`); then
+  padding ring removed, box occlusion → per-ink occlusion via `glyphAt()`,
+  and prints made fixed-size with no grips (`[`/`]`/Size row inert).
+- [x] **Document the landmark kind and `tools/glyphs.py`** — 2026-08-25,
+  commit `README.md`/`HANDOFF.md`: file-table rows for the two sheets,
+  `src/glyphs.js`, `tools/glyphs.py`; `### Landmark` under *Building*;
+  `glyphs: true` note under *Adding a kind*; two HANDOFF decisions, a
+  re-slice note under *Working on it*, an open thread for the eight
+  old-box landmarks.
+- [x] **Split the working tree into commits** — 2026-08-25. `2287b78` "A
+  boundary is a demolisher pointed outwards" (build.js/kinds.js boundary
+  hunks only, incl. the Modify row, `core`, `isRadial`, plate-wide cache
+  invalidation) then `64adc71` "A landmark is one named building, drawn from
+  a glyph" (everything else: sheets, glyphs.py, glyphs.js, picker CSS, BUILD
+  46, glyphSnap). Verified: boundary version has 0 landmark mentions, the
+  landmark diff has 0 boundary lines. No git identity on this box — commits
+  carry Eden's identity from history via env vars, config untouched.
+  QUEUE.md left untracked.
+- [x] **Resize snapping in whole glyph multiples** — 2026-08-25. New
+  `glyphSnap()` in `src/build.js` beside `glyphSize()`; routed through it:
+  corner/edge drag, `[`/`]` (`scaleSel`, now steps 1×→2×→3× instead of
+  ×1.15), and the size field. Verified live over CDP: a01 12×14 lands on
+  37.8×44.1 / 75.5×88.1 / 113.3×132.2, floors at 1×, drag holds the far edge.
+  `kinds.js` untouched — its fit already resamples at whatever pitch the box
+  gives. Pre-existing landmarks keep their old tile-snapped boxes until next
+  resized (harmless: the glyph is fitted inside, slack draws nothing).

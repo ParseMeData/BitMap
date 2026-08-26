@@ -237,8 +237,9 @@ stale.
     src/doors.js         the one part of a plan that moves: leaves that swing
     src/basemap.js       the tracing underlay, live tiles and frozen picture
     src/hud.js           the four ways in, drawn on the plate out of diamonds
-                         rather than in CSS: a hub and four rings, pinned to
-                         the screen and recomputed from the camera each frame
+                         rather than in CSS: a hub and four halftoned diamonds,
+                         pinned to the screen and recomputed from the camera
+                         each frame
     src/atlas.js         the plates: a town as many static screens joined
                          at their edges, the edge prompt, the mind map the
                          compass opens

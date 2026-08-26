@@ -4,13 +4,16 @@
 
    Every other floating thing in this game is a panel: a bordered pane of
    glass with words in it, laid over the plate. This one is not. It is a hub
-   diamond with four rings of diamonds sitting just outside its four points,
-   emitted into the entity stream, so it breathes on the shader's own clock
-   and reads as part of the town rather than as a control panel parked on
-   top of it. That was the choice, made deliberately: a ring done in CSS is a
-   rounded corner taken all the way round, and STYLE.md allows a rounded
-   corner nowhere — the square corner is the signature. Drawing the rings out
-   of diamonds keeps that rule whole instead of carving an exception in it.
+   diamond with four diamonds of diamonds sitting just outside its four
+   points, emitted into the entity stream, so it breathes on the shader's
+   own clock and reads as part of the town rather than as a control panel
+   parked on top of it. That was the choice, made deliberately: a button done
+   in CSS is a rounded corner or a box, and STYLE.md allows a rounded corner
+   nowhere — the square corner is the signature. Each button is a filled
+   diamond, halftoned — dots on a grid, fat at the centre and thinning to
+   the edge — so the one motif the game is made of is also what you press.
+   They were circles of diamonds once, and a circle was the one shape on the
+   plate that nothing else was; now there is none.
 
    The four rings are the letter system (up), the number system (left), home
    (right) and the towns (down). Each is wired to a named seam rather than
@@ -44,38 +47,40 @@ const Hud = (() => {
   const LIFT = 132;          // the hub, above the bottom edge of the canvas
   const HUB = 16;            // half-size of the middle diamond
   const SPAN = 46;           // hub centre → ring centre
-  const RIM = 24;            // ring radius
-  const DOT = 2.3;           // half-size of one dot on the rim
+  const RIM = 24;            // button half-extent, centre to point
+  const DOT = 2.3;           // half-size of one dot on the rim, at full size
   const TXT = 2.0;           // letterform pitch for ABC and 123
   const ART = 3.0;           // letterform pitch for the house and the rose
-  const GRAB = RIM + 4;      // what counts as a press: the ring, and a hair more
+  const GRAB = RIM + 4;      // what counts as a press: the diamond, and a hair more
 
-  /* A rim is a circle made of diamonds, which is how this codebase already
-     draws a circle (`build.js`'s outline helper steps j/n around 2π and
-     drops a dot at each step). The offsets are computed once rather than
-     every frame, because they never change — only their scale does — and
-     because a fixed-length table is a worst case you can count. */
-  const rim = (rad, n) => {
-    const out = [];
-    for (let j = 0; j < n; j++){
-      const th = j / n * 6.283185307;
-      out.push([Math.cos(th) * rad, Math.sin(th) * rad]);
-    }
-    return out;
-  };
-  const RIMO = rim(RIM, 30);
+  /* ── the diamond of dots ───────────────────────────────────────────────
+     A button is a diamond of dots on a square grid: every grid point with
+     |i| + |j| ≤ K is in it, and the points with |i| + |j| = K are its edge.
+     That is the diamond's own lattice — the edge falls exactly on grid
+     points, so the rim and the ground are cut from the one table and the
+     rim is the ground's last step and not a separate shape laid over it.
 
-  /* Selection here is the contract's inversion — a pressed ring becomes a
-     hole punched in the plate, bone ground with the label cut out of it in
-     the ground colour — so the fill is a stack of concentric rims rather
-     than a tint over the top. Concentric because the fill is then made of
-     the same helper as the edge, and stops at the edge exactly. */
+     The ground is a halftone: every dot is a diamond, and its size falls off
+     from the centre toward the edge, so the middle — where the label sits —
+     is solid, and the button thins into the plate rather than stopping at a
+     wall. `s` is that size, as a fraction of a full dot: 1 at the hub of the
+     button, `THIN` at its edge. Computed once — the tables never change,
+     only their scale does — and a fixed-length table is a worst case you
+     can count. */
+  const PITCH = 3.2;                       // grid step, the old fill's ring spacing
+  const K = Math.floor(RIM / PITCH);       // steps from centre to edge
+  const THIN = 0.42;                       // dot size at the edge, as a fraction of the centre's
   const FILLO = (() => {
-    const out = [[0, 0]];
-    for (let r = 3.2; r < RIM - 2.4; r += 3.2)
-      for (const p of rim(r, Math.max(6, Math.round(6.283185307 * r / 3.2)))) out.push(p);
+    const out = [];
+    for (let j = -K; j <= K; j++)
+      for (let i = -K; i <= K; i++){
+        const d = Math.abs(i) + Math.abs(j);
+        if (d > K) continue;
+        out.push([i * PITCH, j * PITCH, 1 - (1 - THIN) * d / K]);
+      }
     return out;
   })();
+  const RIMO = FILLO.filter(o => Math.abs(o[0]) + Math.abs(o[1]) >= K * PITCH - 0.01);
 
   /* ── the house and the rose ────────────────────────────────────────────
      Written out as grids, for the reason `type.js` writes its font out: this
@@ -210,7 +215,7 @@ const Hud = (() => {
          bone over a white road is not dim, it is gone. */
       for (const o of FILLO)
         m = put(a, m, c[0] + o[0] * g.u, c[1] + o[1] * g.u,
-                GROUND[0], GROUND[1], GROUND[2], 0.72, DOT * 1.5 * g.u, 0, 0, 0, 1);
+                GROUND[0], GROUND[1], GROUND[2], 0.72, DOT * 1.5 * o[2] * g.u, 0, 0, 0, 1);
       /* Hover is the faintest bone wash and nothing more. Inversion is what
          selection means here, and a ring you are merely pointing at is not
          selected — spend inversion on hover and there is nothing left to say
@@ -218,7 +223,7 @@ const Hud = (() => {
       if (on)
         for (const o of FILLO)
           m = put(a, m, c[0] + o[0] * g.u, c[1] + o[1] * g.u,
-                  BONE[0], BONE[1], BONE[2], 0.12, DOT * 1.5 * g.u, 0, 0, 0, 1);
+                  BONE[0], BONE[1], BONE[2], 0.12, DOT * 1.5 * o[2] * g.u, 0, 0, 0, 1);
       for (const o of RIMO)
         m = put(a, m, c[0] + o[0] * g.u, c[1] + o[1] * g.u,
                 BONE[0], BONE[1], BONE[2], on ? 1 : 0.55, DOT * g.u, 0, 0, 0, 1);
@@ -251,15 +256,16 @@ const Hud = (() => {
   }
 
   /* ── the pointer ───────────────────────────────────────────────────────
-     Which ring a world point is in, or null. Distance rather than a box,
-     because the thing being hit is drawn as a circle and a square target
-     over a round button is a button that answers where it does not look. */
+     Which button a world point is in, or null. The taxicab distance rather
+     than a box or a circle, because the thing being hit is drawn as a
+     diamond and a target that is not the button's own shape is a button
+     that answers where it does not look. */
   function pick(g, p){
     if (!p || !g) return null;
     const r = GRAB * g.u;
     for (const ring of RINGS){
       const c = centre(g, ring);
-      if (Math.hypot(p[0] - c[0], p[1] - c[1]) <= r) return ring.key;
+      if (Math.abs(p[0] - c[0]) + Math.abs(p[1] - c[1]) <= r) return ring.key;
     }
     return null;
   }

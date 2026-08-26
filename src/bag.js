@@ -395,8 +395,17 @@ const Bag = (() => {
     c.dataset.key = k;
     const tag = document.createElement('span');
     tag.className = 'bagtag';
-    tag.textContent = shown ? NAMES[slot] + ' · ' + SYSTEMS[sys].label(i)
-                            : SYSTEMS[sys].label(i);
+    /* a stack card's tag is its WORD, with the slot as a mark on the
+       left — ◆ a person, ▲ an action, ● an object — and only when there
+       is no word yet does it fall back to saying the slot and the number;
+       a row card's tag is its label, under the glyph */
+    const MARK = {character: '\u25c6', action: '\u25b2', object: '\u25cf'};
+    const tagText = () => {
+      if (!shown) return SYSTEMS[sys].label(i);
+      const w = (word(k) || '').trim();
+      return MARK[slot] + '\u2002' + (w || NAMES[slot] + ' \u00b7 ' + SYSTEMS[sys].label(i));
+    };
+    tag.textContent = tagText();
     c.append(tag);
     /* A row card's label in the heading's face, as diamonds — the same
        face the town's name wears, so the bag and the plate say the same
@@ -432,7 +441,7 @@ const Bag = (() => {
       w.placeholder = slot === 'character' ? 'who' : slot === 'action' ? 'does what' : 'to what';
       w.value = word(k);
       w.addEventListener('click', e => e.stopPropagation());
-      w.addEventListener('input', () => setWord(k, w.value));
+      w.addEventListener('input', () => { setWord(k, w.value); tag.textContent = tagText(); });
       /* the count in the head follows the word once it is done, not on
          every keystroke, or the field would jump under you */
       w.addEventListener('change', () => { if (system) render(); });

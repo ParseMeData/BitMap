@@ -1311,6 +1311,11 @@ locus preview's (`PIC` in `src/title.js`): a picture should arrive here
 looking as it does there. Read at 56 cells across, kept per card key so a
 deal does not read it again; attaching a new picture reads it afresh.
 
+A stack card's corner tag is its **word**, with the slot as a mark on the
+left — ◆ a person, ▲ an action, ● an object — and says the slot and the
+number only until there is a word. The stack lays each new card over the
+last, so the newest is whole and the rest show their tags.
+
 A card keeps a **hand** of pictures, not only the last one. Click a stack
 card that has a picture and **the still** opens: the picture large, ◀ ▶
 (or ← →) to walk the hand, and the wallpaper tool's own knobs under it —

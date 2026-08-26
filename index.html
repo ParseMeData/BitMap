@@ -346,7 +346,7 @@ body.tuning #route{display:none}
 body.missions #bag{visibility:hidden}
 /* on a stack card the tag is always in the corner — that corner is all
    that shows of a covered card, and it has to say which card it is */
-#bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;
+#bagstack .bagtag{position:absolute;left:0;top:0;padding:3px 7px;font-size:9px;text-transform:none;
   letter-spacing:.2em;color:var(--ground);background:rgba(237,234,227,.9)}
 /* a card with a picture is dark ground under lattice, as the plate is: the
    picture's diamonds carry their own colour and want the night behind them */
@@ -374,7 +374,11 @@ body.missions #bag{visibility:hidden}
 .bagcol{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
 /* one size for every card, open or not: the height three can stack in
    with their gaps, and the width a 5:7 card has at that height */
-.bagcard{position:relative;aspect-ratio:5/7;height:calc((100vh - 176px) / 3 - 10px);min-height:96px;
+/* isolation: the tag, the word and the glyph are layered INSIDE a card
+   (z-index 1 over the frame at 0), and without a stacking context of the
+   card's own those layers escaped and painted over the next card in the
+   stack — an earlier card's word strip sat in front of the one on top */
+.bagcard{position:relative;isolation:isolate;aspect-ratio:5/7;height:calc((100vh - 176px) / 3 - 10px);min-height:96px;
   max-width:100%;display:grid;place-content:center;cursor:pointer;
   border:1px solid transparent;background:var(--well) center/cover no-repeat;
   font-size:44px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
@@ -641,7 +645,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 109, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 110, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

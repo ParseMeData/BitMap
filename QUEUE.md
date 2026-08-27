@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Only the acronym's letters in the font** — 2026-08-27. `stamp()`
+  takes the font only when the text entry says so (the column's letters);
+  the row's letters, the item's name and the word are mono again at
+  their old sizes (`diagonal()` is mono only). BUILD 163.
 - [x] **The focus types in Roboto Slab, halftoned** — 2026-08-27.
   `type()` → `Title.face(text, 'Roboto Slab', {cols[, ref]})` painted once
   at the plate's pitch (`Title.paint`, tint, weight .85 letters / .7

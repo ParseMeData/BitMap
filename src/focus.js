@@ -191,9 +191,9 @@ const Focus = (() => {
     return cv;
   }
   /* a glyph centred at x, y (CSS px), its cap height about `px` */
-  function stamp(text, x, y, px, rgb, al){
+  function stamp(text, x, y, px, rgb, al, font){
     const one = text.length === 1;
-    const cv = type(text, colsFor(text, Math.max(4, Math.round(px / pitch())), one ? ALPHA : null), rgb, one ? ALPHA : null, .85);
+    const cv = font ? type(text, colsFor(text, Math.max(4, Math.round(px / pitch())), one ? ALPHA : null), rgb, one ? ALPHA : null, .85) : null;
     const c = ctx;
     c.globalAlpha = al;
     if (cv){ c.drawImage(cv, x * DPR - cv.width / 2, y * DPR - cv.height / 2); return true; }
@@ -204,20 +204,18 @@ const Focus = (() => {
     return false;
   }
   /* a word set along the −45° diagonal from x, y, its foot on the line */
+  /* a word set along the −45° diagonal from x, y, in the chrome's mono,
+     letters spaced — the type of the panels, not of the plate */
   function diagonal(text, x, y, px, rgb, al){
-    const cv = type(text, colsFor(text, Math.max(5, Math.round(px / pitch())), null), rgb, null, .7);
     const c = ctx;
     c.save();
     c.globalAlpha = al;
     c.translate(x * DPR, y * DPR);
     c.rotate(-Math.PI / 4);
-    if (cv) c.drawImage(cv, 0, -cv.height);
-    else {
-      c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
-      c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-      c.font = '400 ' + Math.round(px * DPR) + 'px ' + tok('mono');
-      c.fillText(text.split('').join(' '), 0, 0);
-    }
+    c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = '400 ' + Math.round(px * DPR) + 'px ' + tok('mono');
+    c.fillText(text.split('').join(' '), 0, 0);
     c.restore();
   }
   const picked = k => P && F && F.ids[k] === P.id;
@@ -299,7 +297,7 @@ const Focus = (() => {
     for (const g of order){
       const col = [lerp(bone[0], dim[0], g.dull), lerp(bone[1], dim[1], g.dull), lerp(bone[2], dim[2], g.dull)];
       if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, col);
-      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy, px: g.r * .85, col: tok('ground'), al: Math.min(1, g.al)});
+      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy, px: g.r * .85, col: tok('ground'), al: Math.min(1, g.al), font: true});
     }
     /* the pick diamond, growing out of the collapsing letters */
     if (P && fd > 0){
@@ -320,7 +318,7 @@ const Focus = (() => {
     }
     Title.paint(cv, face, {weight: 1});
 
-    for (const t of text) stamp(t.s, t.x, t.y, t.px, rgbOf(t.col), t.al);
+    for (const t of text) stamp(t.s, t.x, t.y, t.px, rgbOf(t.col), t.al, !!t.font);
     x.globalAlpha = 1;
 
     /* a bracket over and under the open letter, as on the lead item */
@@ -345,7 +343,7 @@ const Focus = (() => {
       if (wshow < 1 && say0 < 0) dwelling = true;
       /* from above the row's first diamond, rising to the right, clear of the letter */
       if (word && wshow > 0)
-        diagonal(word.toUpperCase(), h.x + h.r * 1.05 - (1 - wshow) * h.r * .3, g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3, 24, bone, (1 - fd) * wshow);
+        diagonal(word.toUpperCase(), h.x + h.r * 1.05 - (1 - wshow) * h.r * .3, g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3, 14, bone, (1 - fd) * wshow);
     }
     /* the item's name, with the row */
     if (row && fd < 1){
@@ -374,7 +372,7 @@ const Focus = (() => {
       if (shown > 0){
         /* the item's name rises from its own diamond on the same diagonal
            as the word, so the two read as one hand of type */
-        diagonal(items[say].toUpperCase(), row.x0 + say * row.step + row.rr * .6, g.cy - row.rr * 1.2, 26, rgbOf(TONES[say % TONES.length]), ro * shown);
+        diagonal(items[say].toUpperCase(), row.x0 + say * row.step + row.rr * .6, g.cy - row.rr * 1.2, 10, rgbOf(TONES[say % TONES.length]), ro * shown);
       }
       if (!items.length){
         x.textBaseline = 'middle';

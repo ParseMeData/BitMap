@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The closing row flashed on the next letter** — 2026-08-27. The
+  row sliding back after ↓ read its letter from `lastOpen`, already the
+  new one; `rowK` now remembers which letter the row was opened on (set
+  on → and on unfold) and the closing row draws there. BUILD 165.
+  Verified: ink beside the next letter 0 at 60/120/400 ms after ↓.
 - [x] **The pick keeps its tone and the font** — 2026-08-27. The folded
   diamond stays in the item's TONE (no blend to bone) and its letter is
   stamped through the font like the acronym's, in ground or bone by

@@ -37,7 +37,7 @@ const Focus = (() => {
   const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
-  let open = -1, rowOpen = false, hoverItem = -1, cursor = -1, folded = false, hubSel = null, painted = '', F = null, P = null, DPR = 1;
+  let open = -1, rowOpen = false, rowK = -1, hoverItem = -1, cursor = -1, folded = false, hubSel = null, painted = '', F = null, P = null, DPR = 1;
   let hits = [], row = null, fold = null;     // geometry in CSS px, for the pointer
 
   /* ── motion ────────────────────────────────────────────────────────────
@@ -119,9 +119,10 @@ const Focus = (() => {
       hits.push({x: AXIS, y: cur.y[k], r: size / 2, k, ty: ys[k], tal: als[k]});
     }
     row = null;
-    /* a row is drawn for the open letter — or, while it is still sliding
-       back in, for the letter that was open */
-    const k = (open >= 0 && rowOpen) ? open : (T.row && val('row') > 0 ? lastOpen : -1);
+    /* a row is drawn for the letter it was opened on — `rowK` — while it
+       is out, and while it is still sliding back in after the letter has
+       changed; never for the letter just arrived at */
+    const k = (open >= 0 && rowOpen) ? open : (T.row && val('row') > 0 ? rowK : -1);
     if (k >= 0 && hits[k]){
       const h = hits[k], rr = h.r * ROW, step = rr * 1.15, x0 = h.x + h.r * 1.35 + rr;
       row = {k, h, rr, step, x0, n: (F.items[k] || []).length};
@@ -431,7 +432,7 @@ const Focus = (() => {
     const [x, y] = at(ev);
     if (foldAt(x, y)){
       ev.stopPropagation(); ev.preventDefault();
-      folded = false; open = F.ids.indexOf(P.id); rowOpen = true; hoverItem = -1; cursor = -1; painted = '';
+      folded = false; open = F.ids.indexOf(P.id); rowOpen = true; rowK = open; hoverItem = -1; cursor = -1; painted = '';
       return;
     }
     const l = letterAt(x, y);
@@ -500,7 +501,7 @@ const Focus = (() => {
       else open = Math.min(n - 1, open + 1);
       cursor = -1; rowOpen = false;
     }
-    else if (code === 'ArrowRight' || code === 'KeyD'){ rowOpen = true; if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
+    else if (code === 'ArrowRight' || code === 'KeyD'){ rowOpen = true; rowK = open; if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
     else if (code === 'ArrowLeft' || code === 'KeyA'){ cursor = Math.max(-1, cursor - 1); if (cursor < 0) rowOpen = false; }
     else if (code === 'Enter' || code === 'NumpadEnter'){
       if (cursor >= 0 && items[cursor] && typeof Journal !== 'undefined' && Journal.setPick){

@@ -161,20 +161,21 @@ Storage, all under `hq.`:
                          following the map, and how it is read and drawn
     hq.bagpics           each card's hand of pictures: how many, which is
                          dealt, and its halftone tune (the pictures are
-                         <key>:alt:<n> in the locus store)
+                         card:…:alt:<n> in the picture store)
     hq.title.*           how the heading is dressed: off (the town name's
                          hand-placed offset), treat, border, bright, jitter,
                          font — a Google Fonts family name, `none` for the
                          diamond type, or absent for the default — and the
                          font's detail (Size), weight, tone, dither, mat, feather and shade
-    hq.bagsel            which number's stack is open in the bag
     hq.lastError         the last runtime slip; nothing ever clears it
     hq.loads             reload stamps, to catch a relaunch loop
-    hq.best              nothing here writes it — a leftover carried in the
-                         profile since the fork from Haunt Quest, and kept by
-                         `save` only because `save` takes every `hq.` key
-    IndexedDB hq.loci    the locus pictures — and the bag's cards, under
-                         keys of their own (bag:<system>:<label>:<slot>)
+    IndexedDB hq.loci    every picture, one store, each row named for its
+                         tenant: locus:<uid>, card:<system>:<label>:<slot>,
+                         card:…:alt:<n>. Callers still pass a uid or a
+                         bag:… key; `Loci` turns it into the row. (Rows
+                         without a prefix are pre-v7.8 and are moved on the
+                         first survey. hq.bagsel and Haunt Quest's hq.best
+                         are taken out by the store's ladder, step 1.)
     IndexedDB hq.basemap the frozen tracing picture
     hq.basemap.img       the same frozen picture, when IndexedDB refused it
 

@@ -19,7 +19,8 @@
      plates    id  → {name, markers: [uid]}
      palaces   uid → {plate, name, n, plan, order, loci: [uid]}
      loci      uid → {palace, n, name, picture}
-     pictures  key → {kind: 'locus'|'card'|'alt', owner}
+     pictures  row → {kind: 'locus'|'card'|'alt', owner}   (store rows:
+               locus:<uid>, card:<sys>:<label>:<slot>[:alt:<n>])
      missions  id  → {palace}
      orphans   what nothing points at: palaces with no marker on any
                plate, loci under such a palace, pictures no locus holds,
@@ -80,11 +81,12 @@ const Index = (() => {
        as the bag exists, so those are never orphans here. */
     const keys = typeof Loci !== 'undefined' && Loci.keys ? Loci.keys() : [];
     for (const k of keys){
-      if (k.indexOf('bag:') === 0){
+      if (k.indexOf('card:') === 0){
         pictures[k] = {kind: k.indexOf(':alt:') > 0 ? 'alt' : 'card', owner: 'bag'};
       } else {
-        pictures[k] = {kind: 'locus', owner: loci[k] ? loci[k].palace : null};
-        if (loci[k]) loci[k].picture = true; else orphans.pictures.push(k);
+        const uid = k.indexOf('locus:') === 0 ? k.slice(6) : k;
+        pictures[k] = {kind: 'locus', owner: loci[uid] ? loci[uid].palace : null};
+        if (loci[uid]) loci[uid].picture = true; else orphans.pictures.push(k);
       }
     }
     for (const m of Store.json('hq.missions', [])){

@@ -19,16 +19,22 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] `[auto]` **v7.8 · 5 · The picture store, namespaced** — `hq.loci/img`
-  keys become `locus:<uid>`, `card:<sys>:<label>:<slot>`, `card:…:alt:<n>`;
-  loci, bag, platformer and snapshot.py read the new names; migration
-  rewrites IDB keys once. Snapshot first; verified on a throwaway restored
-  from `snapshots/v7.7.json`.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **v7.8 · 5 · The picture store, namespaced** — 2026-08-27. In
+  `loci.js` only: `row(k)` maps a uid → `locus:<uid>` and `bag:…` →
+  `card:…` (alts ride along); `store/get/del` go through it; `survey()`
+  moves unprefixed rows on first boot (read, put, delete, in order —
+  self-describing, no ladder step) and notes it; `keys()` returns rows,
+  `rowOf` exported; `publish()` writes `rows` beside `uids` and
+  `platformer.html` fetches `MQ.rows || MQ.uids`. `index.js` classifies
+  by row prefix. bag.js, missions.js untouched. BUILD 130. Verified on
+  the throwaway: 14 rows moved (12 card, 2 locus), bag reads through,
+  attach/detach round-trips, a v7.7 restore migrates again to 0
+  unprefixed.
 - [x] **v7.8 · 6 · A plate's own underlay** — 2026-08-27. `basemap.js`:
   `handles(id)` sets `KEY`/`IMGKEY`/`PK` (`hq.basemap[.id]`,
   `hq.basemap.img[.id]`, store row `img[.id]`); `boot()` shared by `init`

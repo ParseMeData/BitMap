@@ -22,6 +22,18 @@
 
 const Loci = (() => {
   const DB = 'hq.loci', STORE = 'img', MAX = 1200;
+  /* ── one store, its tenants told apart by the row's name ──────────────
+     A locus's picture is row `locus:<uid>`; a card's is `card:<sys>:<label>:
+     <slot>`, and each picture in its hand `card:…:alt:<n>`. The keys the
+     callers pass are unchanged — a marker's uid, the bag's `bag:…` key —
+     and are turned into rows here, once, so nothing above this needs to
+     know how the store is laid out and nothing can mistake a card for a
+     locus. Rows without a prefix are from before v7.8 and are moved on the
+     first survey; that is self-describing, so it needs no ladder step. */
+  const row = k => k.indexOf('bag:') === 0 ? 'card:' + k.slice(4) : 'locus:' + k;
+  const uidOf = r => r.indexOf('card:') === 0 ? 'bag:' + r.slice(5)
+                   : r.indexOf('locus:') === 0 ? r.slice(6) : r;
+  const isRow = r => r.indexOf('card:') === 0 || r.indexOf('locus:') === 0;
   /* what is attached, without holding the pictures themselves in memory —
      the ring on a marker asks this question once a frame, per marker */
   let have = {}, cache = {}, open = null, pending = null;
@@ -45,22 +57,35 @@ const Loci = (() => {
       q.onerror = () => rej(q.error);
     }));
   }
-  const store = (uid, url) => tx('readwrite', s => s.put(url, uid));
-  const del = uid => tx('readwrite', s => s.delete(uid));
+  const store = (uid, url) => tx('readwrite', s => s.put(url, row(uid)));
+  const del = uid => tx('readwrite', s => s.delete(row(uid)));
   const get = uid => (cache[uid] ? Promise.resolve(cache[uid])
-                                 : tx('readonly', s => s.get(uid))
+                                 : tx('readonly', s => s.get(row(uid)))
                                      .then(v => (v ? (cache[uid] = v) : null)));
 
   /* one pass over the keys at boot, so `has` is a lookup and not a promise */
   function survey(){
     return tx('readonly', s => s.getAllKeys()).then(ks => {
-      have = {};
-      for (const k of ks || []) have[k] = 1;
-      return have;
+      const old = (ks || []).filter(k => !isRow(k));
+      return (old.length ? migrate(old) : Promise.resolve()).then(() => {
+        have = {};
+        for (const k of ks || []) have[uidOf(k)] = 1;
+        return have;
+      });
     }).catch(() => have);
   }
+  /* rows from before v7.8, moved under their prefix one by one: read,
+     write under the new name, then remove the old — so a boot cut short
+     leaves every picture under one name or the other, never neither */
+  function migrate(old){
+    return old.reduce((p, k) => p.then(() =>
+      tx('readonly', s => s.get(k)).then(v => v == null ? null :
+        tx('readwrite', s => s.put(v, row(k))).then(() => tx('readwrite', s => s.delete(k))))
+    ), Promise.resolve()).then(() => { if (typeof hqNote === 'function') hqNote(old.length + ' pictures moved under their names', false); });
+  }
   const has = uid => !!(uid && have[uid]);
-  const keys = () => Object.keys(have);      // every picture key, for the index
+  const keys = () => Object.keys(have).map(row);   // every row in the store, for the index
+  const rowOf = row;
 
   /* ── attaching one ─────────────────────────────────────────────────────
      Down to a long edge of 1200 and re-encoded, because what comes off a
@@ -308,7 +333,7 @@ const Loci = (() => {
           uids.push(l.uid);
           meta.push({room: r.name || '', name: l.name || '', n: l.n});
         }
-    try { Store.set(DECK, JSON.stringify({uids, meta, at: Date.now()})); }
+    try { Store.set(DECK, JSON.stringify({uids, rows: uids.map(row), meta, at: Date.now()})); }
     catch (e){ note('could not hand the route over: ' + e.message); }
     return uids.length;
   }
@@ -331,7 +356,7 @@ const Loci = (() => {
 
   /* `get` is handed out for the bag, which keeps its cards in this store
      under its own keys and reads them back to paint the faces */
-  return {init, has, keys, get, enter, show, close, pick, attach, detach, draw, survey,
+  return {init, has, keys, rowOf, get, enter, show, close, pick, attach, detach, draw, survey,
           route, deck, count, publish, play, opened: () => !!open,
           at: () => (open ? open.mk : null)};
 })();

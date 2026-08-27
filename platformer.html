@@ -3166,7 +3166,9 @@ requestAnimationFrame(() => {
   staticScene(CVS, holderGrid(CVS));
   /* the pictures have to be in PLACE before loadFaces() reads it — the order
      was enough to size everything, but not to draw anything */
-  if (MQ) mqFetch(MQ.uids, PLACE).then(loadFaces); else loadFaces();
+  /* rows are how the store names them since v7.8; a deck written by an
+     older builder has only uids, which were the rows then */
+  if (MQ) mqFetch(MQ.rows || MQ.uids, PLACE).then(loadFaces); else loadFaces();
 });
 </script>
 </body>

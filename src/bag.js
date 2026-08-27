@@ -34,8 +34,9 @@
    the left is the way between rows — 1 at the top, 100 at the bottom (Z,
    for the letters).
 
-   The pictures live in the locus store (`Loci`, IndexedDB `hq.loci/img`)
-   under keys of their own — `bag:numbers:3:action` — rather than in a
+   The pictures live in the picture store (`Loci`, IndexedDB `hq.loci/img`)
+   under keys of their own — `bag:numbers:3:action`, which `Loci` files as
+   the row `card:numbers:3:action` — rather than in a
    store of their own, because the store is already there, already carried
    by `tools/snapshot.py` key for key, and already shrinks a photograph on
    the way in. Nothing in `Loci` walks its keys expecting every one to be

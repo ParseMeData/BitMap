@@ -1744,8 +1744,8 @@ The head counts what is filled out of the whole system. `Esc` closes the
 page from the row (off the switch first); the ✕ closes it outright. The town underneath is exactly where
 you left it.
 
-The pictures go into the locus store (`IndexedDB hq.loci`) under keys of
-their own, `bag:numbers:3:action`, the words into `hq.bag`, and the
+The pictures go into the picture store (`IndexedDB hq.loci`) under rows of
+their own, `card:numbers:3:action`, the words into `hq.bag`, and the
 stack into `hq.bagseq`, so a
 snapshot carries both.
 

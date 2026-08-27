@@ -211,6 +211,27 @@ const Focus = (() => {
     return false;
   }
   /* a word set along the −45° diagonal from x, y, its foot on the line */
+  /* the same word retreating: slid back along its diagonal by `back` px
+     toward the letter, each character fading as a front sweeps through
+     the word from its first letter to its last (`front` 0…1) */
+  function diagonalOut(text, x, y, px, rgb, al, back, front){
+    const c = ctx, chars = text.split('');
+    c.save();
+    c.translate(x * DPR, y * DPR);
+    c.rotate(-Math.PI / 4);
+    c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = '400 ' + Math.round(px * DPR) + 'px ' + tok('mono');
+    const adv = c.measureText('A ').width;
+    let ax = -back * DPR;
+    for (let i = 0; i < chars.length; i++){
+      const at = i / Math.max(1, chars.length - 1);
+      const a = Math.max(0, Math.min(1, (at - front) / .35 + 1)) * al;   // clear behind the front, whole ahead of it
+      if (a > 0){ c.globalAlpha = a; c.fillText(chars[i], ax, 0); }
+      ax += adv;
+    }
+    c.restore();
+  }
   /* a word set along the −45° diagonal from x, y, in the chrome's mono,
      letters spaced — the type of the panels, not of the plate */
   function diagonal(text, x, y, px, rgb, al){
@@ -355,6 +376,18 @@ const Focus = (() => {
       /* from above the row's first diamond, rising to the right, clear of the letter */
       if (word && wshow > 0)
         diagonal(word.toUpperCase(), h.x + h.r * 1.05 - (1 - wshow) * h.r * .3, g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3, 14, bone, (1 - fd) * wshow);
+    }
+    /* the word just left, on its way back into its letter */
+    if (leaving && geo[leaving.k]){
+      const t = (performance.now() - leaving.t0) / RETREAT;
+      if (t >= 1) leaving = null;
+      else {
+        dwelling = true;
+        const g = geo[leaving.k], h = hits[leaving.k];
+        const L = leaving.word.length * 14 * 1.2;                     // about the word's run, in px
+        /* the slide leads, easing out; the fade follows a step behind it */
+        diagonalOut(leaving.word, h.x + h.r * 1.05, g.cy - h.r * 0.85, 14, bone, (1 - fd), outCubic(t) * L * .7, Math.max(0, t - .12) * 1.15);
+      }
     }
     /* the item's name, with the row */
     if (row && fd < 1){
@@ -538,6 +571,8 @@ const Focus = (() => {
   const WORD_WAIT = 2000;                     // ms a letter is open before its word shows
   let foldFrom = null;                        // where the picked diamond set out from, in the row
   let openSince = 0;
+  let leaving = null;                         // {k, word, t0}: the word retreating into the letter just left
+  const RETREAT = 620;                        // ms it takes to slide back in
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
@@ -549,6 +584,9 @@ const Focus = (() => {
     tween('stand', 1, 520, outCubic);
     tween('fold', folded ? 1 : 0, foldFrom ? 520 : (folded ? 380 : 320), foldFrom ? inOutCubic : (folded ? inCubic : outCubic));
     if (open !== lastOpen){
+      /* the word of the letter being left slides back into it */
+      if (lastOpen >= 0 && F && F.words[lastOpen] && (F.words[lastOpen] || '').trim() && performance.now() - openSince > WORD_WAIT)
+        leaving = {k: lastOpen, word: F.words[lastOpen].trim().toUpperCase(), t0: performance.now()};
       if (open >= 0) openSince = performance.now();
       if (open < 0) rowOpen = false;
       lastOpen = open >= 0 ? open : lastOpen;
@@ -564,7 +602,7 @@ const Focus = (() => {
     dwelling = false;
     if (mv || wasMoving) painted = '';
     wasMoving = mv;
-    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, hubSel, typeof Hud !== 'undefined' && Hud.opened && Hud.opened(), P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
+    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, hubSel, !!leaving, typeof Hud !== 'undefined' && Hud.opened && Hud.opened(), P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
     painted = key;

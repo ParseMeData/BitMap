@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The word retreats** — 2026-08-27. On leaving a letter whose word
+  was up, `leaving` {k, word, t0}; `diagonalOut()` draws it char by char
+  slid back along the diagonal (outCubic × .7 of its run) with a
+  transparency front sweeping first → last letter a step behind, 620 ms.
+  BUILD 169.
 - [x] **The acronym's letters in the chrome's mono** — 2026-08-27. Eden
   preferred the row's face: `font: true` dropped from the column's and
   the pick's letters, sizes back to .95 r / 1.15 r; the Title.face path

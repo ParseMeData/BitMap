@@ -1736,7 +1736,8 @@ its last letter just above them, so the letters and the three diamonds
 read as one piece. Press a letter and it opens; press → and its row
 slides out: a diamond for each item under that letter with the item's
 first letter in it, and — two seconds after the letter opened — the word
-the letter stands for set on the diagonal above them;
+the letter stands for set on the diagonal above them (move on and it
+slides back into its letter, fading from its first letter to its last);
 point at an item and it names itself. Press an item and it is **picked** (flare); press it again and
 the journal opens on that letter. Press anywhere else with an item
 picked and the whole acronym folds down to one diamond above the hub,

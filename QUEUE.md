@@ -24,6 +24,12 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The row in tones, opaque; the word steps aside** — 2026-08-27.
+  `TONES` (bone, park, flare, creek, stairs, rug, gold — plate palette,
+  noted in STYLE.md), item alpha 1, colour pulled toward dim by .22 per
+  step from the lead (cap .7); letter in ground or bone by luma; the
+  travelling pick keeps its tone until it lands; the item's name in its
+  tone; the word hidden while any item is the lead. BUILD 150.
 - [x] **The pick travels; the word waits two** — 2026-08-27. `foldFrom`
   taken by `setOut()` at the moment of a pick (Enter or click-away):
   the picked diamond is skipped in the row and drawn on the path from

@@ -123,6 +123,12 @@ from `.42` at the top down both sides to `.08` at the bottom — alphas from
 the family above and below it, with the fade between, drawn as a 1px ring
 under the card. It is still bone; what it is not is a grey.
 
+One thing on the chrome borrows from the plate palette below: the focus
+row's items, which are plate material and wear bone, park, flare, creek,
+stairs, rug and gold in that order (`TONES` in `src/focus.js`) — the lead
+whole, every step away pulled toward dim. Those are the plate's colours,
+not new ones.
+
 **Do not introduce a colour.** If something new needs to be distinguished, it
 is distinguished by one of the six, by position, or by weight of alpha. The
 palette is small on purpose: six colours is a place, twelve is a control panel.

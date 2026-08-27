@@ -66,6 +66,12 @@ const Focus = (() => {
   const lerp = (a, b, k) => a + (b - a) * k;
 
   const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
+  /* the items' tones, in order, from the plate palette (STYLE.md) — the
+     one place on the chrome that borrows the plate's colours, because the
+     row is plate material: bone, park, flare, creek, stairs, rug, gold,
+     and round again. The lead wears its tone whole; every diamond away
+     from it is pulled a step toward dim, opaque throughout */
+  const TONES = ['#EDEAE3', '#7BB86F', '#FF5FA2', '#3E7FBF', '#C39A5C', '#94383F', '#F2C14E'];
   const rgbOf = hex => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
   const pitch = () => (typeof G !== 'undefined' && G.A && G.fitAll ? G.A.cell * G.fitAll : 3.17);
 
@@ -125,7 +131,7 @@ const Focus = (() => {
     if (cv.width !== W || cv.height !== H){ cv.width = W; cv.height = H; cv.style.width = WIDTH + 'px'; cv.style.height = innerHeight + 'px'; }
     const p = pitch() * DPR;
     const face = {cols: Math.ceil(W / p), rows: Math.ceil(H / p), cells: []};
-    const bone = rgbOf(tok('bone')), flare = rgbOf(tok('flare'));
+    const bone = rgbOf(tok('bone')), flare = rgbOf(tok('flare')), dim = rgbOf(tok('dim'));
     const x = ctx;
     const text = [];                          // type is laid after the lattice, in order
     const stand = val('stand');               // 0 down in the hub … 1 standing
@@ -163,10 +169,15 @@ const Focus = (() => {
         /* and the fade follows the layering: full where you stand, and a
            step dimmer for every diamond away from it on either side */
         const away = lead >= 0 ? Math.abs(m - lead) : m;
-        const al = (isPick || m === lead ? 1 : Math.max(.25, .85 - away * .22)) * Math.min(1, st * 2) * (1 - fd);
+        const dull = isPick || m === lead ? 0 : Math.min(.7, away * .22);
+        const tone = rgbOf(TONES[m % TONES.length]);
+        const col = [lerp(tone[0], dim[0], dull), lerp(tone[1], dim[1], dull), lerp(tone[2], dim[2], dull)];
+        const al = Math.min(1, st * 2) * (1 - fd);
         const cx = lerp(g.cx, row.x0 + m * row.step, sk), rr = row.rr * Math.max(0, sk) * (1 - fd);
-        if (rr > 0.5) diamond(face, p, cx * DPR, g.cy * DPR, rr * DPR, al, isPick ? flare : bone);
-        if (st > .6 && rr > 6) text.push({s: (items[m] || '').trim().charAt(0).toUpperCase(), x: cx, y: g.cy + rr * .04, px: rr * .9, col: tok('ground'), al: al});
+        if (rr > 0.5) diamond(face, p, cx * DPR, g.cy * DPR, rr * DPR, al, col);
+        /* the letter in ground on a light tone, bone on a dark one */
+        const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
+        if (st > .6 && rr > 6) text.push({s: (items[m] || '').trim().charAt(0).toUpperCase(), x: cx, y: g.cy + rr * .04, px: rr * .9, col: tok(luma > .5 ? 'ground' : 'bone'), al: al});
       }
     }
     for (const g of geo){
@@ -179,9 +190,11 @@ const Focus = (() => {
         /* the picked diamond itself, carried from its slot in the row down
            to its place above the hub — flare on the way, bone once landed */
         const e = fd, cx = lerp(foldFrom.x, fold.x, e), cy = lerp(foldFrom.y, fold.y, e), r = lerp(foldFrom.r, fold.r, e);
-        const col = [lerp(flare[0], bone[0], e), lerp(flare[1], bone[1], e), lerp(flare[2], bone[2], e)];
+        const tone = rgbOf(TONES[P.item % TONES.length]);
+        const col = [lerp(tone[0], bone[0], e), lerp(tone[1], bone[1], e), lerp(tone[2], bone[2], e)];
         diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, col);
-        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy + r * .04, px: r * 1.1 * lerp(.82, 1, e), col: tok('ground'), al: 1});
+        const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
+        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy + r * .04, px: r * 1.1 * lerp(.82, 1, e), col: tok(luma > .5 ? 'ground' : 'bone'), al: 1});
       } else {
         const r = fold.r * outBack(fd);
         diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, bone);
@@ -205,7 +218,8 @@ const Focus = (() => {
       const ro = outCubic(val('row')) * (1 - fd);
       /* the word waits a second after the letter opens, then fades up */
       const held = open >= 0 ? performance.now() - openSince : WORD_WAIT + RISE;
-      const wshow = Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));
+      const say0 = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
+      const wshow = say0 >= 0 ? 0 : Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));   // the word steps aside for an item
       if (open >= 0 && wshow < 1) dwelling = true;
       if (word && ro > 0 && wshow > 0){
         x.save();
@@ -237,7 +251,7 @@ const Focus = (() => {
         x.translate((row.x0 + say * row.step + row.rr * .6) * DPR, (g.cy - row.rr * 1.2) * DPR);
         x.rotate(-Math.PI / 4);
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-        x.fillStyle = tok(picked(row.k) && P.item === say ? 'flare' : 'bone');
+        x.fillStyle = TONES[say % TONES.length];
         x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
         x.fillText(items[say].toUpperCase().split('').join(' '), 0, 0);
         x.restore();

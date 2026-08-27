@@ -1,4 +1,4 @@
-# Loci Bitmap V7.9
+# Loci Bitmap V8.0
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.9 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V8.0 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -128,6 +128,17 @@ list, and Status carries politics, economics and talking points. And the
 focus: one acronym stood up on the hub as a column of diamonds, a letter
 opening into its items with the word on the diagonal, an item picked and
 the whole thing folded to its first letter, walked by the arrow keys.
+
+**v8.0** — the focus, finished. It stands on the hub and the hub joins
+the walk: ↓ off the last letter onto the three, Enter presses what you
+stand on, the four ways in picked the way they lie. It moves — letters
+rising out of the hub, a row sliding out on →, a pick travelling from
+its slot to its place, a word retreating into its letter — and it is
+made whole of the plate's material: the hub's three as fields of
+diamonds, a rim of ground on every diamond so an overlap shows its
+edge, the row in the plate's tones falling off hard from the one you
+are on, brackets on what you stand on, the column making room for the
+open letter. The journal's letters are diamonds too.
 
 ### The half that is not in the repo
 

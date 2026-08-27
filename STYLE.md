@@ -80,11 +80,11 @@ thing read up close. Add a row here or do not use a new one.
     towns map                 1.00   the land; edges and dots the same
     the hub's three           1.00   hub, journal, build: fields of the
                                      plate's diamonds at PITCH 3.2, dot 0.75
-    focus letters              .85   the acronym's letters in their diamonds
-                                     (Roboto Slab, read in a box measured
-                                     over the alphabet); the row's letters
-                                     and the words on the diagonal are the
-                                     chrome's mono, not lattice
+    focus type                  —    every letter and word on the focus is
+                                     the chrome's mono, drawn as type over
+                                     the diamonds — not lattice. (A path to
+                                     set a letter as lattice through
+                                     Title.face is kept in focus.js, unused.)
 
 **Where it is checked.** `G.A.cell` is the cell; `Title.paint` is the
 chrome path; the compass's *Detail* slider and a title's *Size* both read

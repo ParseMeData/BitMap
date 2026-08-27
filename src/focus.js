@@ -158,6 +158,8 @@ const Focus = (() => {
      per cell of ink at the plate's pitch, painted once into a small
      canvas and stamped where it goes. Until the font has landed the mono
      stands in, and the first paint after it lands replaces it. */
+  /* kept for a letter that asks for it (`font: true` on a text entry);
+     nothing asks today — Eden preferred the chrome's mono */
   const FONT = 'Roboto Slab';
   const glyphs = new Map();
   /* `cols` to Title.face is the text's WIDTH in cells; what is wanted here
@@ -302,7 +304,7 @@ const Focus = (() => {
     for (const g of order){
       const col = [lerp(bone[0], dim[0], g.dull), lerp(bone[1], dim[1], g.dull), lerp(bone[2], dim[2], g.dull)];
       if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, col);
-      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy, px: g.r * .85, col: tok('ground'), al: Math.min(1, g.al), font: true});
+      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy + g.r * .04, px: g.r * .95, col: tok('ground'), al: Math.min(1, g.al)});
     }
     /* the pick diamond, growing out of the collapsing letters */
     if (P && fd > 0){
@@ -317,12 +319,12 @@ const Focus = (() => {
         const col = rgbOf(TONES[P.item % TONES.length]);
         const top = col.map((v, i) => lerp(v, bone[i], .22 * e)), foot = col.map((v, i) => lerp(v, dim[i], .28 * e));
         diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, top, foot);
-        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy, px: r * 1.15 * lerp(.82, 1, e), col: tok('bone'), al: 1, font: true});
+        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy, px: r * 1.15 * lerp(.82, 1, e), col: tok('bone'), al: 1});
       } else {
         const r = fold.r * outBack(fd), col = rgbOf(TONES[P.item % TONES.length]);
         const top = col.map((v, i) => lerp(v, bone[i], .22)), foot = col.map((v, i) => lerp(v, dim[i], .28));
         diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, top, foot);
-        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y, px: r * 1.15, col: tok('bone'), al: (fd - .5) * 2, font: true});
+        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y, px: r * 1.15, col: tok('bone'), al: (fd - .5) * 2});
       }
     }
     Title.paint(cv, face, {weight: 1});

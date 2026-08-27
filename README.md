@@ -1766,10 +1766,8 @@ a few hundred milliseconds each, out with a little overshoot, back easing in
 `hq.journal`, the row's id; the pick is `pick`); press ◆ again to take
 it down. The column is `src/focus.js`, made of the plate's material by
 the rule in `STYLE.md` — every diamond a region of lattice cells at the
-plate's pitch, through `Title.paint` — and the acronym's letters are Roboto Slab read back
-as cells through `Title.face`, one diamond per cell of ink, the way the
-town's title is set (the row's letters and the words on the diagonal are
-the chrome's own mono); and it takes no pointer of its own: only a press that lands on a
+plate's pitch, through `Title.paint` — and every letter and word on it is the
+chrome's own mono, drawn as type over the diamonds; and it takes no pointer of its own: only a press that lands on a
 diamond is its, everything else reaches the plate.
 
 **Edit** (top right) turns the frame into fields: every tab, sub-tab

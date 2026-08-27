@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The acronym's letters in the chrome's mono** — 2026-08-27. Eden
+  preferred the row's face: `font: true` dropped from the column's and
+  the pick's letters, sizes back to .95 r / 1.15 r; the Title.face path
+  stays in focus.js, unused. On this box `--mono` resolves to Noto Sans
+  Mono (nothing named in the stack is installed). BUILD 167.
 - [x] **The pick: bone letter, larger, a slight gradient** — 2026-08-27.
   `diamond()` takes a second colour and runs top point → foot; the pick
   goes tone+22 % bone at the top to tone+28 % dim at the foot; its letter

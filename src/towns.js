@@ -199,10 +199,37 @@ const Towns = (() => {
   const unplaced = () => Object.keys(Atlas.areas()).filter(id => !Atlas.geo(id));
   const within = (sc, d) => sc.depth === 0 || C.holds(sc, d.i);
 
+  /* ── the roads between them ────────────────────────────────────────────
+     Every link in the atlas whose two plates both have an anchor, as one
+     aqua line between their dots — drawn once, from the lower id, so a
+     road joined both ways is one road. Aqua because this is what the map
+     is spent on: the divisions of the country and the joins of the town
+     are the same kind of fact, where one place meets another. A link to a
+     plate with no anchor is not drawn: a line to nowhere says nothing. */
+  function drawLinks(m, ds){
+    const areas = Atlas.areas(), at = {};
+    for (const d of ds) at[d.id] = d;
+    ctx.strokeStyle = tok('aqua'); ctx.lineWidth = Math.max(1, 1.2 * DPR); ctx.globalAlpha = .55;
+    ctx.setLineDash([3 * DPR, 3 * DPR]);
+    ctx.beginPath();
+    for (const id in areas){
+      const a = at[id]; if (!a) continue;
+      for (const l of areas[id].links){
+        const b = at[l.to]; if (!b || l.to < id) continue;
+        const ax = a.c * m.s + m.ox + m.s / 2, ay = a.r * m.s + m.oy + m.s / 2;
+        const bx = b.c * m.s + m.ox + m.s / 2, by = b.r * m.s + m.oy + m.s / 2;
+        ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+      }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+  }
+
   function drawDots(m){
     const ds = dots(), s = m.s;
     const px = Math.max(10 * DPR, s * 1.6);
     const gold = tok('gold'), flare = tok('flare'), ground = tok('ground');
+    drawLinks(m, ds);
     ctx.font = (9 * DPR) + 'px ' + tok('mono');
     ctx.textBaseline = 'middle';
     const placed = [];
@@ -358,6 +385,7 @@ const Towns = (() => {
         row.onclick = () => stand(id);
         box.append(row);
       }
+      box.append(chips());
     }
     const kids = C.childrenOf(scope);
     if (!kids.length){ box.append(facts(scope)); return; }
@@ -378,6 +406,36 @@ const Towns = (() => {
       rowFor.set(k, row);
       box.append(row);
     }
+  }
+  /* the atlas's own picture — plates laid out by which way each road went
+     — kept beneath the list while any plate is off the map, because a
+     plate with no anchor still joins somewhere and this is the only
+     picture that can show where. Placed plates are bone, unplaced dim. */
+  function chips(){
+    const pos = Atlas.layout(), areas = Atlas.areas();
+    const CW = 72, CH = 40;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const id in pos){ x0 = Math.min(x0, pos[id][0]); y0 = Math.min(y0, pos[id][1]); x1 = Math.max(x1, pos[id][0]); y1 = Math.max(y1, pos[id][1]); }
+    const wrap = document.createElement('div'); wrap.className = 'tchips';
+    const map = document.createElement('div'); map.className = 'amap';
+    map.style.width = ((x1 - x0 + 1) * CW) + 'px'; map.style.height = ((y1 - y0 + 1) * CH) + 'px';
+    for (const id in pos){
+      const [x, y] = pos[id], a = areas[id];
+      for (const l of a.links){
+        const q = pos[l.to]; if (!q) continue;
+        const j = document.createElement('i');
+        if (q[1] === y + 1 && q[0] === x){ j.className = 'ajoin v'; j.style.left = ((x - x0) * CW + CW / 2 - 1) + 'px'; j.style.top = ((y - y0) * CH + CH - 8) + 'px'; map.append(j); }
+        if (q[0] === x + 1 && q[1] === y){ j.className = 'ajoin h'; j.style.left = ((x - x0) * CW + CW - 8) + 'px'; j.style.top = ((y - y0) * CH + CH / 2 - 1) + 'px'; map.append(j); }
+      }
+      const c = document.createElement('div');
+      c.className = 'achip' + (id === Atlas.current() ? ' sel' : '') + (Atlas.geo(id) ? '' : ' off');
+      c.style.left = ((x - x0) * CW + 6) + 'px'; c.style.top = ((y - y0) * CH + 6) + 'px';
+      c.textContent = a.name;
+      c.onclick = () => stand(id);
+      map.append(c);
+    }
+    wrap.append(map);
+    return wrap;
   }
   function facts(r){
     const box = document.createElement('div');

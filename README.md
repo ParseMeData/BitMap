@@ -1614,6 +1614,12 @@ anchor, then what is one level down with how many towns each holds. The
 bottom line reads out the cell under the cursor. Esc drops a pin being
 aimed, then goes up a level, then closes. **Pin `<plate>` here** arms a
 click that anchors the plate you are standing on to any cell of land.
+Every road that leads from one plate to another is a dashed aqua line
+between their dots, when both are on the map — so the page shows both
+where a town is and how it joins. While any plate has no anchor, the
+atlas's own picture — the chips laid out by which way each road went —
+sits beneath the unplaced list, the unplaced ones dim, so a plate that
+is off the map can still be found by the road that leads to it.
 
 It is a page of chrome, drawn on a 2D canvas, and never the plate: the
 plate's diamonds are the GL stream and this does not reach it. Nothing

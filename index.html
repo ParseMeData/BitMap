@@ -550,6 +550,9 @@ body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{d
 .tfact span:last-child{color:var(--bone);text-align:right}
 .tnote{color:var(--faint);text-transform:uppercase;padding:10px 0 2px;line-height:1.8}
 .tnote.warn{color:var(--gold)}
+.tchips{padding:8px 0 4px;overflow-x:auto}
+.tchips .achip{width:60px;height:28px;font-size:8px;letter-spacing:.12em}
+.tchips .achip.off{color:var(--dim);border-color:rgba(237,234,227,.14)}
 #tpin{text-align:center;padding:7px}
 #tpin.sel{background:var(--bone);color:var(--ground)}
 #tfoot{display:flex;justify-content:space-between;gap:24px;padding-top:8px;border-top:1px solid rgba(237,234,227,.12);
@@ -744,7 +747,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 124, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 125, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

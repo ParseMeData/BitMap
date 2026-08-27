@@ -19,15 +19,19 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] `[auto]` **The roads between plates, on the map** — every link in
-  `hq.atlas` drawn as an aqua line between the two plates' dots, so the map
-  shows both where a town is and how it joins; the direction-graph chips
-  stay beneath the list for plates with no anchor.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **The roads between plates, on the map** — 2026-08-27. `drawLinks`
+  in `towns.js`: each link in `hq.atlas` whose two plates both have an
+  anchor, one dashed aqua line (drawn from the lower id, so both ways is
+  one road), under the dots. `chips()`: `Atlas.layout()` rendered with the
+  existing `.amap/.achip/.ajoin` CSS at 72×40, beneath the Unplaced list
+  only while a plate has no anchor; `.achip.off` dim for the unplaced,
+  click stands on it. BUILD 125. Verified on a throwaway: Home—Plate 2
+  line drawn; Plate 2's anchor cleared → 1 unplaced row, 2 chips, 1 off.
 - [x] **The towns map is Australia** — 2026-08-27. From
   `~/Projects/loci-australia`: `assets/australia.js` (generated, loaded on
   first open by `Country.load()`), `src/country.js` (its `atlas.js`,

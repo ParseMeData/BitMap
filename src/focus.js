@@ -151,7 +151,10 @@ const Focus = (() => {
         const st = Math.max(0, Math.min(1, (ro * (items.length + 2) - m) / 3));
         const sk = outBack(st);
         const isPick = picked(row.k) && P.item === m;
-        const al = (isPick || hoverItem === m || cursor === m ? 1 : Math.max(.3, .85 - m * .22)) * Math.min(1, st * 2) * (1 - fd);
+        /* and the fade follows the layering: full where you stand, and a
+           step dimmer for every diamond away from it on either side */
+        const away = lead >= 0 ? Math.abs(m - lead) : m;
+        const al = (isPick || m === lead ? 1 : Math.max(.25, .85 - away * .22)) * Math.min(1, st * 2) * (1 - fd);
         const cx = lerp(g.cx, row.x0 + m * row.step, sk), rr = row.rr * Math.max(0, sk) * (1 - fd);
         if (rr > 0.5) diamond(face, p, cx * DPR, g.cy * DPR, rr * DPR, al, isPick ? flare : bone);
         if (st > .6 && rr > 6) text.push({s: (items[m] || '').trim().charAt(0).toUpperCase(), x: cx, y: g.cy + rr * .04, px: rr * .9, col: tok('ground'), al: al});

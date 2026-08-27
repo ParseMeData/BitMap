@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The row fades from the cursor** — 2026-08-27. Item alpha = .85 −
+  .22 × |m − lead| (floor .25), the lead at 1; the pick keeps flare.
+  BUILD 144.
 - [x] **The row fans from the cursor** — 2026-08-27. `focus.js` draw
   order for items: those ahead of the lead far-first, then 0..lead in
   order, so the lead is on top and each crossed item sits over the one

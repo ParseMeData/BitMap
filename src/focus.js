@@ -200,18 +200,27 @@ const Focus = (() => {
       const say = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
       x.globalAlpha = ro;
       x.textAlign = 'left'; x.textBaseline = 'top';
-      if (say >= 0 && items[say]){
+      /* the name waits: it shows only once you have rested on the same
+         item for a moment, then fades up */
+      const lk = say >= 0 ? row.k + ':' + say : '';
+      if (lk !== leadKey){ leadKey = lk; leadSince = performance.now(); }
+      const rest = say >= 0 ? performance.now() - leadSince : 0;
+      const shown = say >= 0 && items[say] ? Math.max(0, Math.min(1, (rest - DWELL) / RISE)) : 0;
+      if (say >= 0 && shown < 1) dwelling = true;
+      if (shown > 0){
         /* the item's name rises from its own diamond on the same diagonal
            as the word, so the two read as one hand of type */
         x.save();
-        x.translate((row.x0 + say * row.step + row.rr * .35) * DPR, (g.cy - row.rr * .95) * DPR);
+        x.globalAlpha = ro * shown;
+        x.translate((row.x0 + say * row.step + row.rr * .6) * DPR, (g.cy - row.rr * 1.2) * DPR);
         x.rotate(-Math.PI / 4);
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok(picked(row.k) && P.item === say ? 'flare' : 'bone');
         x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
         x.fillText(items[say].toUpperCase().split('').join(' '), 0, 0);
         x.restore();
-      } else if (!items.length){
+      }
+      if (!items.length){
         x.textBaseline = 'middle';
         x.fillStyle = tok('dim');
         x.font = '400 ' + Math.round(9 * DPR) + 'px ' + tok('mono');
@@ -313,6 +322,8 @@ const Focus = (() => {
     painted = '';
   }
   let lastOpen = -1, wasMoving = false;
+  let leadKey = '', leadSince = 0, dwelling = false;            // the item under the lead, and when it came to rest there
+  const DWELL = 2000, RISE = 220;             // ms resting before the name shows, and its fade-in
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
@@ -332,7 +343,8 @@ const Focus = (() => {
     /* while a tween runs every frame is drawn — and one more after it
        lands, or the last drawn frame is the one just before the end and
        a fold stops a hair short of folded */
-    const mv = moving();
+    const mv = moving() || dwelling;
+    dwelling = false;
     if (mv || wasMoving) painted = '';
     wasMoving = mv;
     const key = [innerHeight, DPR, open, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),

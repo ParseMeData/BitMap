@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The name waits** — 2026-08-27. `DWELL` 2000 ms on the same lead
+  item before the name shows, `RISE` 220 ms fade; anchor moved to
+  (.6 rr, −1.2 rr); the number dropped. The frame loop keeps drawing
+  while a name is waiting (`dwelling`). BUILD 147. Verified: no name at
+  0.6 s and 1.8 s, present at 2.5 s, gone on moving.
 - [x] **The item's name on the diagonal** — 2026-08-27. From
   (x + .35 rr, y − .95 rr) of the lead item, −45°, spaced like the word;
   the line beneath the row is gone. BUILD 145.

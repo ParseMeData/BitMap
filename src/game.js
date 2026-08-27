@@ -819,6 +819,8 @@ function boot(img){
   /* the compass's fourth diamond opens the towns map, in place of the
      chip grid the atlas drew before the country was here */
   if (typeof Towns !== 'undefined') Towns.init();
+  /* the focus column: one acronym from the journal, stood up on the plate */
+  if (typeof Focus !== 'undefined') Focus.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

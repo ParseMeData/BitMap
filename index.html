@@ -495,7 +495,18 @@ body.missions #bag{visibility:hidden}
 #journal .jletter.has::after{content:"";position:absolute;right:5px;bottom:5px;width:4px;height:4px;background:var(--aqua)}
 #journal .jletter:hover{color:var(--flare)}
 #journal .jletter.sel{background:var(--bone);color:var(--ground);border-color:var(--bone)}
-#journal .jblurb{color:var(--dim);text-align:right;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+#journal .jblurb{color:var(--dim);text-align:right;font-size:9px;letter-spacing:.18em;text-transform:uppercase;display:flex;justify-content:flex-end;gap:14px;align-items:baseline}
+#journal .jfocus{background:transparent;border:1px solid transparent;color:var(--faint);font:400 9px/1 var(--mono);
+  letter-spacing:.18em;text-transform:uppercase;padding:3px 6px;cursor:pointer;margin-right:auto}
+#journal .jfocus:hover{color:var(--flare)}
+#journal .jfocus.on{color:var(--ground);background:var(--bone);border-color:var(--bone)}
+/* the focus: one acronym stood up on the left, under the compass and
+   above the hub; the canvas takes no pointer — focus.js listens on the
+   window and stops only what lands on a diamond */
+#focus{position:fixed;left:0;top:270px;z-index:3;pointer-events:none}
+#focus canvas{display:block}
+body.focus-hit{cursor:pointer}
+body.mapping #focus,body.wall #focus{display:none}
 #journal .jdetail{border:1px solid rgba(237,234,227,.22);padding:14px;display:flex;flex-direction:column;gap:12px}
 #journal .jtop{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
 #journal .jbig{width:56px;height:56px;background:var(--bone);color:var(--ground);display:grid;place-items:center;font-size:26px}
@@ -780,13 +791,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 134, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 135, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/compass-art.js','src/compass.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

@@ -286,6 +286,9 @@ stale.
                          every lit square is one more diamond in the stream
     src/title.js         a title in a real font: the wallpaper tool's
                          lattice-type recipe, one diamond per cell of ink
+    src/focus.js         one acronym from the journal stood up on the left
+                         of the plate as a column of diamonds; a letter
+                         opens into its items and its word
     src/journal.js       the journal: tabs of sub-tabs of rows of letters,
                          a note behind every letter, opened by the aqua
                          diamond beside the hub
@@ -1717,6 +1720,20 @@ behind every letter three things: what it **stands for**, a
 reorder, ✕ removes). A letter with anything behind it wears an aqua
 mark in its corner. ← → change the tab while nothing is being typed;
 Esc closes.
+
+Beside every acronym's caption is **◆ focus**. Press it and that acronym
+stands up on the plate: a column of diamonds down the left, under the
+compass and above the hub, a letter in each — the thing you are holding
+in mind while you walk. Press a letter and it opens: a row of diamonds
+beside it, one for each item under that letter, and the word the letter
+stands for set on the diagonal above them; point at an item and it names
+itself; press one and the journal opens on that letter. Press the
+letter again to fold it. One acronym is in focus at a time (`focus` in
+`hq.journal`, the row's id); press ◆ again to take it down. The column is
+`src/focus.js`, made of the plate's material by the rule in `STYLE.md` —
+every diamond a region of lattice cells at the plate's pitch, through
+`Title.paint` — and it takes no pointer of its own: only a press that
+lands on a diamond is its, everything else reaches the plate.
 
 **Edit** (top right) turns the frame into fields: every tab, sub-tab
 and acronym is typed in place; ‹ › and ▲ ▼ move them; ✕ removes — a

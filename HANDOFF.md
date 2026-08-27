@@ -160,7 +160,8 @@ Storage, all under `hq.`:
                          acronyms, every letter with an id, and notes by
                          that id → {word, note, items}. A pre-v7.8 flat
                          "Tab/Sub/row/col" map is carried across on the
-                         first open (src/journal.js, load)
+                         first open (src/journal.js, load); `focus` is the
+                         id of the acronym stood up on the plate (src/focus.js)
     hq.compass           {manual, deg, tune}: the rose turned by hand or
                          following the map, and how it is read and drawn
     hq.bagpics           each card's hand of pictures: how many, which is
@@ -316,6 +317,13 @@ table. Chrome draws through `Title.paint`, the plate through the GL
 stream, pictures through the tone pass — never a font glyph or a sprite.
 The towns map was the one thing built otherwise (typeset `◆`, its own
 pitch) and was brought into line the same day the rule was written.
+
+**The focus column takes no pointer.** `src/focus.js` draws on a canvas
+with `pointer-events:none` and listens on the window in the capture
+phase, stopping only an event that lands on one of its diamonds. Without
+that the column, which sits over the left of the plate, would swallow
+every click and walk-step under it. The same shape as the compass, which
+also takes none — but the compass has nothing to press.
 
 **Every key goes through the store, and the store has a version.**
 `src/store.js` is first in the boot chain; `Store.get/set/del/put/json/

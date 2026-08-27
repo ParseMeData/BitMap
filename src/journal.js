@@ -65,7 +65,7 @@ const Journal = (() => {
   function load(){
     if (J) return J;
     const raw = Store.json(KEY, {}) || {};
-    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}}; return J; }
+    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}, focus: raw.focus || null}; return J; }
     J = {frame: DEFAULT.map(seedTab), notes: {}};
     let carried = 0;
     for (const k in raw){
@@ -90,6 +90,39 @@ const Journal = (() => {
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the journal', e); }
   }
   const noteOf = id => load().notes[id] || (load().notes[id] = {word: '', note: '', items: []});
+  /* ── the focus ────────────────────────────────────────────────────────
+     One acronym, chosen with the ◆ beside its row, stood up on the plate
+     by `src/focus.js`. Kept as the row's id in `hq.journal.focus`; what
+     the column shows is read back through `focused()` — letters, each
+     letter's word and items — so it is never a second copy. */
+  function rowById(id){
+    for (const t of load().frame) for (const s of t.subs) for (const r of s.rows) if (r.id === id) return {t, s, r};
+    return null;
+  }
+  function setFocus(id){
+    const J = load();
+    J.focus = J.focus === id ? null : id;
+    store(); render();
+  }
+  function focused(){
+    const J = load();
+    const hit = J.focus && rowById(J.focus);
+    if (!hit) return null;
+    const r = hit.r;
+    return {id: r.id, letters: [...r.letters], ids: r.ids.slice(), blurb: r.blurb,
+            tab: hit.t.label, sub: hit.s.name,
+            words: r.ids.map(id => (J.notes[id] || {}).word || ''),
+            items: r.ids.map(id => ((J.notes[id] || {}).items || []).slice())};
+  }
+  /* the page opened on one letter, from the focus column */
+  function openAt(id){
+    const J = load();
+    J.frame.forEach((t, ti) => t.subs.forEach((s, si) => s.rows.forEach(r => { if (r.ids.includes(id)){ active = ti; sub = si; sel = id; } })));
+    editing = false;
+    if (!open){ open = true; }
+    render();
+    const w = el && el.querySelector('#jword'); if (w) w.focus();
+  }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
   const filled = id => { const n = load().notes[id]; return !!n && !!((n.word || '') + (n.note || '') + (n.items || []).join('')).trim(); };
@@ -213,7 +246,7 @@ const Journal = (() => {
                 '<button data-act="down" data-kind="row" data-i="' + ri + '"' + (ri === t.rows.length - 1 ? ' disabled' : '') + '>&#9660;</button>' +
                 '<button data-act="remove" data-kind="row" data-i="' + ri + '">&#10005;</button></span>' +
             '</div>'
-            : '<div class="jblurb">' + esc(r.blurb) + '</div>') +
+            : '<div class="jblurb"><button class="jfocus' + (load().focus === r.id ? ' on' : '') + '" data-focus="' + r.id + '" title="stand this acronym on the plate">&#9670; focus</button>' + esc(r.blurb) + '</div>') +
           '</div>').join('') +
           (editing ? '<div class="jblock jaddrow"><input class="jname jletters" id="jnewrow" spellcheck="false" placeholder="+ ACRONYM, then Enter"></div>' : '') +
         '</div>' : '<div class="jempty">no sub-tabs — press Edit and + sub-tab</div>') +
@@ -262,6 +295,8 @@ const Journal = (() => {
     const grid = win.querySelector('.jgrid');
     if (grid) grid.onclick = e => {
       if (e.target.closest('.jtools, input')) return;
+      const f = e.target.closest('.jfocus');
+      if (f){ setFocus(f.dataset.focus); return; }
       const b = e.target.closest('.jletter');
       if (b){ sel = b.dataset.id; render(); const w = el.querySelector('#jword'); if (w) w.focus(); }
     };
@@ -349,5 +384,5 @@ const Journal = (() => {
   const count = () => { let c = 0; for (const id in load().notes) if (filled(id)) c++; return c; };
 
   return {open: show, close, move, opened: () => open, editing: () => editing, setEdit, count,
-          frame: () => load().frame};
+          frame: () => load().frame, focused, setFocus, openAt};
 })();

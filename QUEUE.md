@@ -24,6 +24,21 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The focus: an acronym stood up on the plate** — 2026-08-27.
+  Journal: `◆ focus` beside each row's caption (`Journal.setFocus`, toggles
+  `hq.journal.focus`; `load()` now carries `focus` — it was dropped, found
+  on the throwaway), `Journal.focused()` → letters/ids/words/items,
+  `Journal.openAt(letterId)`. New `src/focus.js` (after journal.js,
+  `Focus.init()` in game.js): column at left 8 / top 270 / 190 above the
+  bottom, letter diamonds 84 px shrinking to fit, each a lattice region
+  through `Title.paint` at the plate's pitch (STYLE *The lattice*); a
+  pressed letter opens a row of item diamonds (.85 → .3 bone, nearest on
+  top) with the word on the −45° diagonal, hovered item named beneath,
+  item press → `Journal.openAt`; hidden by the compass's rule;
+  `pointer-events:none` + window capture listeners so the plate keeps
+  every click not on a diamond. BUILD 135. Verified on a throwaway:
+  RAITS stood up, A opened with 3 items + ADJECTIVES, empty-canvas click
+  reached the plate, item click opened the journal on A, ◆ toggled.
 - [x] **The journal edits itself** — 2026-08-27. `src/journal.js`
   rewritten: frame as data (`hq.journal` = `{frame, notes}`, ids per
   tab/sub/row/letter, notes by letter id `{word, note, items}`), old

@@ -24,6 +24,14 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The focus types in Roboto Slab, halftoned** — 2026-08-27.
+  `type()` → `Title.face(text, 'Roboto Slab', {cols[, ref]})` painted once
+  at the plate's pitch (`Title.paint`, tint, weight .85 letters / .7
+  words) and stamped (`stamp`, `diagonal`); `colsFor()` derives width
+  from rows wanted and the text's measured proportion — a single letter
+  in a box over the whole alphabet (`ref`), a word to its own ink; mono
+  stands in until `Title.load` lands. The word moved out of the row block
+  (it could never show once the row waited for →). BUILD 162.
 - [x] **The hub's three in the plate's material** — 2026-08-27. `hud.js`
   `HUBO`: grid points |i|+|j| ≤ KH (5) at PITCH 3.2, each a diamond of
   half-size 0.75 × PITCH in the button's colour; build's rim only while

@@ -146,6 +146,80 @@ const Focus = (() => {
       if (Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy) <= rc) f.cells.push({x: i, y: j, al, rgb, sz: 1});
   }
   let GROUND = null;
+
+  /* ── the type ──────────────────────────────────────────────────────────
+     Every letter and word here is set in Roboto Slab and read back as
+     cells through `Title.face`, the way the town's title is: one diamond
+     per cell of ink at the plate's pitch, painted once into a small
+     canvas and stamped where it goes. Until the font has landed the mono
+     stands in, and the first paint after it lands replaces it. */
+  const FONT = 'Roboto Slab';
+  const glyphs = new Map();
+  /* `cols` to Title.face is the text's WIDTH in cells; what is wanted here
+     is a height, so the text's own proportion in the font decides the
+     width — a narrow I stays narrow instead of growing tall to fill */
+  let meas = null;
+  const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  /* a single letter is read in a box measured over the whole alphabet
+     (`ref`, as the bag's cards do), so every letter stands at one size on
+     one line and a narrow one stays narrow; a word is fitted to its own
+     ink. Either way the width in cells follows from the rows wanted. */
+  function colsFor(text, rows, ref){
+    if (!meas) meas = document.createElement('canvas').getContext('2d');
+    meas.font = '100px "' + FONT + '"';
+    let w = 1, asc = 0, desc = 0;
+    for (const ch of (ref || [text])){
+      const m = meas.measureText(ch);
+      w = Math.max(w, (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight || m.width));
+      asc = Math.max(asc, m.actualBoundingBoxAscent || 70); desc = Math.max(desc, m.actualBoundingBoxDescent || 0);
+    }
+    return Math.max(8, Math.round(rows * w / Math.max(1, asc + desc)));
+  }
+  function type(text, cols, rgb, ref, weight){
+    if (typeof Title === 'undefined' || !Title.face) return null;
+    const f = Title.face(text, FONT, ref ? {cols, ref} : {cols});
+    if (!f) return null;
+    const k = text + '|' + cols + '|' + (ref ? 'r' : '') + rgb.join(',') + '|' + DPR + '|' + weight;
+    let cv = glyphs.get(k);
+    if (cv) return cv;
+    if (glyphs.size > 200) glyphs.clear();
+    const p = pitch() * DPR;
+    cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil(f.cols * p)); cv.height = Math.max(1, Math.ceil(f.rows * p));
+    Title.paint(cv, f, {weight: weight || 1, tint: rgb});
+    glyphs.set(k, cv);
+    return cv;
+  }
+  /* a glyph centred at x, y (CSS px), its cap height about `px` */
+  function stamp(text, x, y, px, rgb, al){
+    const one = text.length === 1;
+    const cv = type(text, colsFor(text, Math.max(4, Math.round(px / pitch())), one ? ALPHA : null), rgb, one ? ALPHA : null, .85);
+    const c = ctx;
+    c.globalAlpha = al;
+    if (cv){ c.drawImage(cv, x * DPR - cv.width / 2, y * DPR - cv.height / 2); return true; }
+    c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '400 ' + Math.round(px * DPR) + 'px ' + tok('mono');
+    c.fillText(text, x * DPR, y * DPR);
+    return false;
+  }
+  /* a word set along the −45° diagonal from x, y, its foot on the line */
+  function diagonal(text, x, y, px, rgb, al){
+    const cv = type(text, colsFor(text, Math.max(5, Math.round(px / pitch())), null), rgb, null, .7);
+    const c = ctx;
+    c.save();
+    c.globalAlpha = al;
+    c.translate(x * DPR, y * DPR);
+    c.rotate(-Math.PI / 4);
+    if (cv) c.drawImage(cv, 0, -cv.height);
+    else {
+      c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
+      c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+      c.font = '400 ' + Math.round(px * DPR) + 'px ' + tok('mono');
+      c.fillText(text.split('').join(' '), 0, 0);
+    }
+    c.restore();
+  }
   const picked = k => P && F && F.ids[k] === P.id;
   /* the picked diamond's place in the row, taken the moment it is picked
      so the fold can carry it from there; null means it grows in place */
@@ -225,7 +299,7 @@ const Focus = (() => {
     for (const g of order){
       const col = [lerp(bone[0], dim[0], g.dull), lerp(bone[1], dim[1], g.dull), lerp(bone[2], dim[2], g.dull)];
       if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, col);
-      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy + g.r * .04, px: g.r * .95, col: tok('ground'), al: Math.min(1, g.al)});
+      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy, px: g.r * .85, col: tok('ground'), al: Math.min(1, g.al)});
     }
     /* the pick diamond, growing out of the collapsing letters */
     if (P && fd > 0){
@@ -246,12 +320,7 @@ const Focus = (() => {
     }
     Title.paint(cv, face, {weight: 1});
 
-    x.textAlign = 'center'; x.textBaseline = 'middle';
-    for (const t of text){
-      x.globalAlpha = t.al; x.fillStyle = t.col;
-      x.font = '400 ' + Math.round(t.px * DPR) + 'px ' + tok('mono');
-      x.fillText(t.s, t.x * DPR, t.y * DPR);
-    }
+    for (const t of text) stamp(t.s, t.x, t.y, t.px, rgbOf(t.col), t.al);
     x.globalAlpha = 1;
 
     /* a bracket over and under the open letter, as on the lead item */
@@ -266,28 +335,22 @@ const Focus = (() => {
       const c = at[hubSel];
       if (c) bracket(c[0], c[1], c[2], 5);
     }
-    /* the word on the diagonal, and the item's name: with the row, and
-       gone with the fold */
+    /* the word on the diagonal: the open letter's, two seconds after it
+       opened, and stepping aside while an item is highlighted */
+    if (open >= 0 && geo[open] && fd < 1){
+      const g = geo[open], h = hits[open], word = (F.words[open] || '').trim();
+      const held = performance.now() - openSince;
+      const say0 = hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
+      const wshow = say0 >= 0 ? 0 : Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));
+      if (wshow < 1 && say0 < 0) dwelling = true;
+      /* from above the row's first diamond, rising to the right, clear of the letter */
+      if (word && wshow > 0)
+        diagonal(word.toUpperCase(), h.x + h.r * 1.05 - (1 - wshow) * h.r * .3, g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3, 24, bone, (1 - fd) * wshow);
+    }
+    /* the item's name, with the row */
     if (row && fd < 1){
-      const g = geo[row.k], h = row.h, word = (F.words[row.k] || '').trim(), items = F.items[row.k] || [];
+      const g = geo[row.k], h = row.h, items = F.items[row.k] || [];
       const ro = outCubic(val('row')) * (1 - fd);
-      /* the word waits a second after the letter opens, then fades up */
-      const held = open >= 0 ? performance.now() - openSince : WORD_WAIT + RISE;
-      const say0 = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
-      const wshow = say0 >= 0 ? 0 : Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));   // the word steps aside for an item
-      if (open >= 0 && wshow < 1) dwelling = true;
-      if (word && ro > 0 && wshow > 0){
-        x.save();
-        x.globalAlpha = ro * wshow;
-        /* from above the row's first diamond, rising to the right, clear of the letter */
-        x.translate((h.x + h.r * 1.05 - (1 - wshow) * h.r * .3) * DPR, (g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3) * DPR);
-        x.rotate(-Math.PI / 4);
-        x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-        x.fillStyle = tok('bone');
-        x.font = '400 ' + Math.round(14 * DPR) + 'px ' + tok('mono');
-        x.fillText(word.toUpperCase().split('').join(' '), 0, 0);
-        x.restore();
-      }
       const say = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
       x.globalAlpha = ro;
       /* a bracket over and under the highlighted item: two short bone
@@ -311,15 +374,7 @@ const Focus = (() => {
       if (shown > 0){
         /* the item's name rises from its own diamond on the same diagonal
            as the word, so the two read as one hand of type */
-        x.save();
-        x.globalAlpha = ro * shown;
-        x.translate((row.x0 + say * row.step + row.rr * .6) * DPR, (g.cy - row.rr * 1.2) * DPR);
-        x.rotate(-Math.PI / 4);
-        x.textAlign = 'left'; x.textBaseline = 'alphabetic';
-        x.fillStyle = TONES[say % TONES.length];
-        x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
-        x.fillText(items[say].toUpperCase().split('').join(' '), 0, 0);
-        x.restore();
+        diagonal(items[say].toUpperCase(), row.x0 + say * row.step + row.rr * .6, g.cy - row.rr * 1.2, 26, rgbOf(TONES[say % TONES.length]), ro * shown);
       }
       if (!items.length){
         x.textBaseline = 'middle';
@@ -518,6 +573,7 @@ const Focus = (() => {
     addEventListener('pointerdown', onDown, true);
     addEventListener('mousedown', onDown, true);
     addEventListener('click', onClick, true);
+    if (typeof Title !== 'undefined' && Title.load) Title.load(FONT, () => { glyphs.clear(); painted = ''; });
     read();
     /* a pick that was there when the page opened is carried folded: the
        one thing you were holding, still held */

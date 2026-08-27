@@ -78,6 +78,8 @@ thing read up close. Add a row here or do not use a new one.
     bag card pictures          .65   settled by Eden at v7.1
     compass                    .80   rests; Eden's tune sits at .45 (hq.compass)
     towns map                 1.00   the land; edges and dots the same
+    the hub's three           1.00   hub, journal, build: fields of the
+                                     plate's diamonds at PITCH 3.2, dot 0.75
 
 **Where it is checked.** `G.A.cell` is the cell; `Title.paint` is the
 chrome path; the compass's *Detail* slider and a title's *Size* both read

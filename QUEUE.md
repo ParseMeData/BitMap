@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The hub's three in the plate's material** — 2026-08-27. `hud.js`
+  `HUBO`: grid points |i|+|j| ≤ KH (5) at PITCH 3.2, each a diamond of
+  half-size 0.75 × PITCH in the button's colour; build's rim only while
+  build is on; cost 3 → 3 × 61. Gaps: letter→hub 12, hub→journal 12
+  (point to point); build sits at the HUD's own half-step. BUILD 157.
 - [x] **The hub joins the walk** — 2026-08-27. `Hud.press(key)` /
   `opened()` / `fold()` exported; `focus.js` `hubSel` (hub, journal,
   build; letters, numbers, home, towns while the four are out) reached by

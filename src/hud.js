@@ -100,6 +100,21 @@ const Hud = (() => {
     return out;
   })();
   const RIMO = FILLO.filter(o => Math.abs(o[0]) + Math.abs(o[1]) >= K * PITCH - 0.01);
+  /* The three at rest — hub, journal, build — are the same material as
+     the focus column above them (STYLE.md, *The lattice*): not one solid
+     diamond each but a diamond-shaped field of diamonds at the plate's
+     pitch, each dot 0.75 of the pitch, on ground. KH steps to the edge. */
+  const KH = Math.floor(HUB / PITCH);
+  const HUBO = (() => {
+    const out = [];
+    for (let j = -KH; j <= KH; j++)
+      for (let i = -KH; i <= KH; i++){
+        const d = Math.abs(i) + Math.abs(j);
+        if (d <= KH) out.push([i * PITCH, j * PITCH, d === KH ? 1 : 0]);   // [x, y, on the rim]
+      }
+    return out;
+  })();
+  const HUB_DOT = PITCH * 0.75;
 
   /* ── the house and the rose ────────────────────────────────────────────
      Written out as grids, for the reason `type.js` writes its font out: this
@@ -213,7 +228,7 @@ const Hud = (() => {
   let budget = 0;
   function cost(){
     if (budget) return budget;
-    let n = 3 + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
+    let n = 3 * HUBO.length + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
     for (const r of RINGS){
       if (r.text) n += Type.cost(r.text);
       else for (const row of r.art)
@@ -232,18 +247,22 @@ const Hud = (() => {
     /* the hub wears the flare, the way a panel head does: it is the one part
        that says this cluster is chrome rather than another spark */
     if (!open){
-      m = put(a, m, g.x, g.y, FLARE[0], FLARE[1], FLARE[2], hov === 'hub' ? 1 : 0.9,
-              HUB * g.u, 0, 0, 0, 1);
+      /* each of the three is a field of the plate's diamonds in its colour;
+         build's is only its rim while build is on — the hollow face the
+         plate uses for 'here but open', made the same way */
+      const on = typeof Build !== 'undefined' && Build.active && Build.active();
+      const field = (cx, cy, col, al, rimOnly) => {
+        for (const o of HUBO){
+          if (rimOnly && !o[2]) continue;
+          m = put(a, m, cx + o[0] * g.u, cy + o[1] * g.u, col[0], col[1], col[2], al, HUB_DOT * g.u, 0, 0, 0, 1);
+        }
+      };
+      field(g.x, g.y, FLARE, hov === 'hub' ? 1 : 0.9, false);
       /* and the journal beside it, in the cool note, so the two read as
          two things and not as a hub and its shadow */
-      m = put(a, m, g.x + JX * g.u, g.y, AQUA[0], AQUA[1], AQUA[2],
-              hov === 'journal' ? 1 : 0.9, HUB * g.u, 0, 0, 0, 1);
-      /* build's diamond: bone, and hollow while build is on — the outline
-         face is what the plate uses for 'here but open', and a tool that
-         is out should read as out */
-      const on = typeof Build !== 'undefined' && Build.active && Build.active();
-      return put(a, m, g.x + BX * g.u, g.y + BY * g.u, BONE[0], BONE[1], BONE[2],
-                 hov === 'build' ? 1 : 0.9, HUB * g.u, on ? 1 : 0, 0, 0, 1);
+      field(g.x + JX * g.u, g.y, AQUA, hov === 'journal' ? 1 : 0.9, false);
+      field(g.x + BX * g.u, g.y + BY * g.u, BONE, hov === 'build' ? 1 : 0.9, on);
+      return m;
     }
 
     for (const ring of RINGS){

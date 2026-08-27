@@ -538,6 +538,15 @@ off first, because the builder can be open as `?wallpaper` or carrying a hash.
 Both filters read like over-engineering and neither is. Every tool prints which
 page it actually got, which is the check that they held.
 
+**A reader of the picture database must create the store.** Every opener
+of `hq.basemap` pins version 1 and creates `pic` in `onupgradeneeded`.
+`snapshot.py`'s reader once did not, and on a fresh profile that read —
+the backup a restore takes first — made an empty version-1 database that
+nothing could then add the store to: a bump would strand every reader
+pinned at 1, and a delete is blocked by the page's own open connections.
+That was the "fresh profile restore" failure of v7.1–v7.7. Open it the
+way `basemap.js` does, or not at all.
+
 **One snapshot keeps the Google Maps key.** The strip that guards every
 committed snapshot is turned off for the pre-restore backup, and that is not an
 oversight: the backup is gitignored, so nothing about it reaches a commit, and
@@ -611,6 +620,15 @@ page driven from a terminal is usually paused — come out of it through
 restarts the frame loop and leaves the pause card over the whole viewport and
 in the shot. On the desktop plate neither blur nor `Esc` pauses, so a wallpaper
 page is never the paused case.
+
+**The sweep shows before it takes.** `tools/snapshot.py sweep` asks the
+running page's index for its orphans and prints each with enough beside
+it to judge — a palace's shape count and the rooms it was typed from, a
+picture's size, a mission's title. `--yes` backs the profile up to
+`snapshots/.pre-sweep-<UTC>.json` and then removes them. Run it dry first,
+always: the four orphaned palaces it found at v7.8 are v5.0's typed
+palaces with their markers deleted, and whether those are rubbish is
+Eden's call, not the tool's.
 
 **Snapshot before anything irreversible.**
 

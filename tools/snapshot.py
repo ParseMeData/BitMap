@@ -10,6 +10,7 @@ other half to a file beside it.
     ./play.sh --remote-debugging-port=9222 &
     tools/snapshot.py save snapshots/v3.0.json
     tools/snapshot.py restore snapshots/v3.0.json [--yes]
+    tools/snapshot.py sweep [--yes]          # what nothing points at; --yes removes it
 
 `--port`, defaulting to `$MQ_PORT` then 9222, is how a throwaway profile on its
 own port is worked on instead of the live town. A restore makes the profile
@@ -57,7 +58,14 @@ LIST_KEYS = """(() => {
 
 READ_PIC = """(async () => {
   try {
+    // Opened at version 1 WITH the upgrade that creates the store, the same
+    // as basemap.js opens it. Without that, this very read -- the backup a
+    // restore takes first -- made an empty version-1 database on a fresh
+    // profile, and nothing could add the store to it afterwards without a
+    // version bump every reader is pinned against. That was the fresh-profile
+    // restore failure.
     const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic')) r.result.createObjectStore('pic'); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
     if (!d.objectStoreNames.contains('pic')) return null;
     return await new Promise((res, rej) => { const t = d.transaction('pic', 'readonly');
@@ -92,16 +100,10 @@ WRITE_LOCI = """(async (rows) => {
 })"""
 
 WRITE_PIC = """(async (url) => {
-  // Open at whatever version the profile has. A fresh profile can hold this
-  // database at version 1 with no 'pic' store in it yet, and asking for
-  // version 1 again would not run the upgrade that creates it -- so if the
-  // store is missing, close and reopen one version up, which does.
-  const open = ver => new Promise((res, rej) => { const r = ver ? indexedDB.open('hq.basemap', ver) : indexedDB.open('hq.basemap');
+  const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
     r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic'))
       r.result.createObjectStore('pic'); };
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
-  let d = await open(0);
-  if (!d.objectStoreNames.contains('pic')){ const v = d.version + 1; d.close(); d = await open(v); }
   return await new Promise((res, rej) => { const t = d.transaction('pic', 'readwrite');
     const s = t.objectStore('pic');
     // A snapshot with no frozen picture has to leave the profile with no frozen
@@ -221,17 +223,86 @@ def restore(path, port=PORT, yes=False):
     print(f'restored {path} — the page is reloading')
 
 
+DEL_LOCI = """(async (keys) => {
+  const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.loci', 1);
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
+  if (!d.objectStoreNames.contains('img')) return 0;
+  return await new Promise((res, rej) => { const t = d.transaction('img', 'readwrite');
+    const s = t.objectStore('img');
+    for (const k of keys) s.delete(k);
+    t.oncomplete = () => res(keys.length); t.onerror = () => rej(t.error); });
+})"""
+
+
+def sweep(port=PORT, yes=False):
+    """List what nothing points at any more; with --yes, take it out.
+
+    The index (src/index.js) is asked, fresh, and what it calls an orphan is
+    shown with enough beside it to judge: a palace's plan size and the rooms
+    it was typed from, a picture's size, a mission's title. Nothing is removed
+    unless --yes is given, and then the profile is written out first, the
+    same way a restore backs up what it is about to replace — because an
+    orphan is not always rubbish. At v7.8 the live town's four orphaned
+    palaces were the typed palaces of v5.0 whose markers had been deleted.
+    """
+    p = cdp.attach(port=port)
+    print(f'attached to {p.url}')
+    if not p.js('typeof Index !== "undefined"'):
+        sys.exit('this build has no index — the sweep needs v7.8 or later')
+    o = p.js('(Index.rebuild(), Index.orphans())')
+    n = sum(len(v) for v in o.values())
+    if not n:
+        print('nothing is orphaned.')
+        return
+    for uid in o['palaces']:
+        plan = json.loads(p.js(f'localStorage.getItem({json.dumps("hq.rooms." + uid)})') or '[]')
+        order = (p.js(f'localStorage.getItem({json.dumps("hq.order." + uid)})') or '').strip().replace('\n', ', ')
+        marks = json.loads(p.js(f'localStorage.getItem({json.dumps("hq.marks." + uid)})') or '[]')
+        print(f'  palace  {uid}  {len(plan)} shapes, {len(marks)} loci'
+              + (f'  typed: {order[:70]}' if order else '  (never typed)'))
+    for uid in o['loci']:
+        print(f'  locus   {uid}  inside an orphaned palace')
+    for k in o['pictures']:
+        size = p.js(f'(async () => {{ const d = await new Promise(r => {{ const q = indexedDB.open("hq.loci", 1); q.onsuccess = () => r(q.result); }});'
+                    f' return await new Promise(r => {{ const t = d.transaction("img").objectStore("img").get({json.dumps(k)}); t.onsuccess = () => r((t.result || "").length); }}); }})()')
+        print(f'  picture {k}  {int(size or 0) // 1024} KB, no locus holds it')
+    for mid in o['missions']:
+        m = next((m for m in json.loads(p.js('localStorage.getItem("hq.missions")') or '[]') if m['id'] == mid), {})
+        print(f'  mission {mid}  "{m.get("title", "")}"  names a palace that is gone')
+    print(f'{n} orphaned.')
+    if not yes:
+        print('nothing removed — pass --yes to take these out (the profile is backed up first).')
+        return
+    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    save(str(SNAPS / f'.pre-sweep-{stamp}.json'), page=p, strip=False)
+    for uid in o['palaces']:
+        for pre in ('hq.rooms.', 'hq.order.', 'hq.marks.'):
+            p.js(f'localStorage.removeItem({json.dumps(pre + uid)})')
+    if o['pictures']:
+        p.js(f'({DEL_LOCI})({json.dumps(o["pictures"])})')
+    if o['missions']:
+        p.js('(() => { const ids = ' + json.dumps(o['missions']) + '; const l = JSON.parse(localStorage.getItem("hq.missions") || "[]");'
+             ' for (const m of l) if (ids.includes(m.id)) m.palace = ""; localStorage.setItem("hq.missions", JSON.stringify(l)); })()')
+    p.call('Page.reload')
+    print(f'swept {n} — the page is reloading')
+
+
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('action', choices=('save', 'restore'))
-    ap.add_argument('path')
+    ap.add_argument('action', choices=('save', 'restore', 'sweep'))
+    ap.add_argument('path', nargs='?',
+                    help='the snapshot file (save and restore); the sweep takes none')
     ap.add_argument('--port', type=int, default=PORT,
                     help=f'debugging port to attach to (default {PORT}, $MQ_PORT)')
     ap.add_argument('--yes', action='store_true',
-                    help='restore without being asked to type the word')
+                    help='restore without being asked to type the word; sweep: actually remove')
     a = ap.parse_args()
-    if a.action == 'save':
+    if a.action == 'sweep':
+        sweep(port=a.port, yes=a.yes)
+    elif not a.path:
+        ap.error(f'{a.action} needs a path')
+    elif a.action == 'save':
         save(a.path, port=a.port)
     else:
         restore(a.path, port=a.port, yes=a.yes)

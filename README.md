@@ -326,7 +326,9 @@ stale.
                          diff is in an HTML comment after the file's <title>.
     tools/cdp.py         a few dozen lines of WebSocket — what talks to the
                          running page
-    tools/snapshot.py    the town, out to a file and back in again
+    tools/snapshot.py    the town, out to a file and back in again; and
+                         the sweep — what nothing points at, shown, and
+                         removed only with --yes after a backup
     tools/country.py     the ABS SA3 boundaries in tools/country-data/ →
                          assets/australia.js: rasterised on a window that
                          is an exact refinement of the loci bitmap's grid,

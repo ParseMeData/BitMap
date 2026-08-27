@@ -19,9 +19,6 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] `[auto]` **v7.8 · 4 · The sweep** — `tools/snapshot.py sweep`: orphaned
-  palaces, loci, pictures, missions listed; `--yes` removes. Dry-run default,
-  never at runtime.
 - [ ] `[auto]` **v7.8 · 5 · The picture store, namespaced** — `hq.loci/img`
   keys become `locus:<uid>`, `card:<sys>:<label>:<slot>`, `card:…:alt:<n>`;
   loci, bag, platformer and snapshot.py read the new names; migration
@@ -29,13 +26,26 @@ may run straight into the next without waiting.
   from `snapshots/v7.7.json`.
 - [ ] `[auto]` **v7.8 · 6 · A plate's own underlay** — `hq.basemap.<id>` for
   plates other than home, mounted with the plate; home keeps `hq.basemap`.
-- [ ] `[auto]` **v7.8 · 7 · Lazy plates** — a plate's shapes and markers are
-  parsed when you stand on it, not at boot.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **v7.8 · 7 · Lazy plates** — 2026-08-27, by measurement, no code:
+  `Build.load` and `Markers.load` read one key (the mounted plate's);
+  `Atlas.init` mounts only the current plate; `Interior.survey` checks
+  `hq.rooms.*` strings without parsing them; the index reads every plate's
+  marker list (small) and never a shape. The big blobs — a plate's shapes,
+  a plan — are parsed only when stood on or entered. Already true.
+- [x] **v7.8 · 4 · The sweep** — 2026-08-27. `tools/snapshot.py sweep
+  [--yes] [--port]`: `Index.rebuild()` over CDP, each orphan printed with
+  its plan size / typed rooms / picture KB / mission title; `--yes` saves
+  `snapshots/.pre-sweep-<UTC>.json` (gitignored) then removes the palace
+  keys, the IDB pictures (`DEL_LOCI`), and blanks a mission's palace.
+  Verified on the throwaway: dry run listed 4 palaces + 2 pictures; --yes
+  removed them (rooms keys 5→1, pictures 14→12), rerun said none. Found
+  and fixed the real cause of the fresh-profile restore failure on the way
+  (READ_PIC created an empty v1 database; now creates the store).
 - [x] **v7.8 · 2 + 3 · A palace knows its plate, and the index** —
   2026-08-27, one item: `src/index.js` after loci.js; `Index.init()` once
   `Loci.survey` resolves (game.js); plates → markers, palaces → {plate,

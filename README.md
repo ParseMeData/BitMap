@@ -1,4 +1,4 @@
-# Loci Bitmap V7.6
+# Loci Bitmap V7.7
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.6 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.7 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -104,6 +104,13 @@ build is on, set on the diamonds' own diagonal lattice beneath the pair.
 hand and four letters that stay upright, all read through the tone pass
 and painted as diamonds, bone running to grey, tuned in the Tune panel
 beside the plate. (There is no v7.5; the number was Eden's.)
+
+**v7.7** — the country. The compass's fourth diamond opens Australia, cut
+from the same loci bitmap the overlay draws and spliced by the ABS's own
+lines into states, regions and districts; every plate that knows where it
+is stands on it as a dot, click one and you are there, and the roads
+between plates are drawn as the lines they are. A plate may carry `geo`
+in `hq.atlas`; the home plate takes the underlay's search point.
 
 ### The half that is not in the repo
 

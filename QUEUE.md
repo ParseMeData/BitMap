@@ -24,6 +24,15 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The focus moves** — 2026-08-27. Tweens in `focus.js` (`tween/
+  val/moving`, outBack / inCubic / outCubic): `stand` (520 ms, letters
+  rise from the hub last-first, each on its own slice), `row` (460 ms out
+  / 220 back, items slide from the letter in turn, word fades along the
+  diagonal; the closing row keeps its letter via `row.k`/`lastOpen`),
+  `fold` (380 in / 320 out, letters sink and fade into the pick diamond
+  as it grows). Repaints only while a tween runs. STYLE.md: the one thing
+  that may move is a thing made of the lattice. BUILD 140. Verified on a
+  throwaway with mid-animation frames at 140 ms and 180 ms.
 - [x] **Focus has the keys while a letter is open** — 2026-08-27.
   `Focus.active()` = a letter open and not folded; game.js keydown asks
   it first and returns, so nothing walks; `Focus.key(code)`: ↑↓/WS

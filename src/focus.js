@@ -40,6 +40,30 @@ const Focus = (() => {
   let open = -1, hoverItem = -1, cursor = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
   let hits = [], row = null, fold = null;     // geometry in CSS px, for the pointer
 
+  /* ── motion ────────────────────────────────────────────────────────────
+     STYLE.md: a panel never animates; the lattice may, because it is the
+     lattice moving. Everything here is a tween from 0 to 1 over a few
+     hundred milliseconds — standing up, a row opening, the fold — read
+     each frame and folded into the geometry. Out is quick with a little
+     overshoot, so a diamond pops; back is quicker and eases in, so it
+     drops away rather than shrinking in place. */
+  const T = {};                               // name → {v, from, to, t0, dur, ease}
+  const outBack = t => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+  const inCubic = t => t * t * t;
+  const outCubic = t => 1 - Math.pow(1 - t, 3);
+  function tween(name, to, dur, ease){
+    const cur = T[name] ? val(name) : (to ? 0 : 1);
+    if (T[name] && T[name].to === to) return;
+    T[name] = {from: cur, to, t0: performance.now(), dur, ease: ease || (to ? outBack : inCubic)};
+  }
+  function val(name){
+    const t = T[name]; if (!t) return 1;
+    const k = Math.min(1, (performance.now() - t.t0) / t.dur);
+    return t.from + (t.to - t.from) * t.ease(k);
+  }
+  const moving = () => Object.values(T).some(t => performance.now() - t.t0 < t.dur);
+  const lerp = (a, b, k) => a + (b - a) * k;
+
   const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
   const rgbOf = hex => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
   const pitch = () => (typeof G !== 'undefined' && G.A && G.fitAll ? G.A.cell * G.fitAll : 3.17);
@@ -67,9 +91,12 @@ const Focus = (() => {
       hits.push({x: AXIS, y, r: size / 2, k});
     }
     row = null;
-    if (open >= 0 && hits[open]){
-      const h = hits[open], rr = h.r * ROW, step = rr * 1.15, x0 = h.x + h.r * 1.35 + rr;
-      row = {h, rr, step, x0, n: (F.items[open] || []).length};
+    /* a row is drawn for the open letter — or, while it is still sliding
+       back in, for the letter that was open */
+    const k = open >= 0 ? open : (val('row') > 0 ? lastOpen : -1);
+    if (k >= 0 && hits[k]){
+      const h = hits[k], rr = h.r * ROW, step = rr * 1.15, x0 = h.x + h.r * 1.35 + rr;
+      row = {k, h, rr, step, x0, n: (F.items[k] || []).length};
     }
     fold = {x: AXIS, y: H - HUB_Y - PICK_R, r: PICK_R};
   }
@@ -92,73 +119,86 @@ const Focus = (() => {
     const face = {cols: Math.ceil(W / p), rows: Math.ceil(H / p), cells: []};
     const bone = rgbOf(tok('bone')), flare = rgbOf(tok('flare'));
     const x = ctx;
-    x.textAlign = 'center'; x.textBaseline = 'middle';
+    const text = [];                          // type is laid after the lattice, in order
+    const stand = val('stand');               // 0 down in the hub … 1 standing
+    const fd = val('fold');                   // 0 standing … 1 folded to the pick
+    const hubTop = innerHeight - HUB_Y - HUB_R;
 
-    if (folded && P){
-      /* the one thing you are carrying: the picked item's first letter */
-      diamond(face, p, fold.x * DPR, fold.y * DPR, fold.r * DPR, 1, bone);
-      Title.paint(cv, face, {weight: 1});
-      x.fillStyle = tok('ground');
-      x.font = '400 ' + Math.round(fold.r * 1.1 * DPR) + 'px ' + tok('mono');
-      x.fillText((P.text || '?').trim().charAt(0).toUpperCase(), fold.x * DPR, (fold.y + fold.r * 0.04) * DPR);
-      return;
-    }
-
-    /* the open letter's row: items, first nearest and brightest, each a
-       little under the one before — pushed last-first so the first is
-       painted on top; the picked one in flare */
+    /* the letters: each rises out of the hub in turn, the last first;
+       folding, each sinks into the pick diamond */
+    const n = hits.length;
+    const geo = hits.map(h => {
+      const k = n - 1 - h.k;                  // 0 for the last letter, which moves first
+      const st = Math.max(0, Math.min(1, (stand * (n + 2) - k) / 3));   // its own slice of the stand
+      const sk = outBack(st);
+      let cx = h.x, cy = lerp(hubTop, h.y, sk), r = h.r * Math.max(0, sk), al = (open === h.k ? 1 : .82) * Math.min(1, st * 2);
+      if (fd > 0){ cx = lerp(cx, fold.x, fd); cy = lerp(cy, fold.y, fd); r = lerp(r, fold.r * .4, fd); al *= 1 - fd; }
+      return {cx, cy, r, al, h};
+    });
+    /* the row: items slide out of their letter in turn, and back in */
     if (row){
-      const items = F.items[open] || [];
+      const g = geo[row.k], items = F.items[row.k] || [], ro = val('row');
       for (let m = items.length - 1; m >= 0; m--){
-        const isPick = picked(open) && P.item === m;
-        const al = isPick || hoverItem === m || cursor === m ? 1 : Math.max(.3, .85 - m * .22);
-        diamond(face, p, (row.x0 + m * row.step) * DPR, row.h.y * DPR, row.rr * DPR, al, isPick ? flare : bone);
+        const st = Math.max(0, Math.min(1, (ro * (items.length + 2) - m) / 3));
+        const sk = outBack(st);
+        const isPick = picked(row.k) && P.item === m;
+        const al = (isPick || hoverItem === m || cursor === m ? 1 : Math.max(.3, .85 - m * .22)) * Math.min(1, st * 2) * (1 - fd);
+        const cx = lerp(g.cx, row.x0 + m * row.step, sk), rr = row.rr * Math.max(0, sk) * (1 - fd);
+        if (rr > 0.5) diamond(face, p, cx * DPR, g.cy * DPR, rr * DPR, al, isPick ? flare : bone);
+        if (st > .6 && rr > 6) text.push({s: (items[m] || '').trim().charAt(0).toUpperCase(), x: cx, y: g.cy + rr * .04, px: rr * .9, col: tok('ground'), al: al});
       }
     }
-    for (const h of hits) diamond(face, p, h.x * DPR, h.y * DPR, h.r * DPR, open === h.k ? 1 : .82, bone);
+    for (const g of geo){
+      if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, bone);
+      if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy + g.r * .04, px: g.r * .95, col: tok('ground'), al: Math.min(1, g.al)});
+    }
+    /* the pick diamond, growing out of the collapsing letters */
+    if (P && fd > 0){
+      const r = fold.r * outBack(fd);
+      diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, bone);
+      if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y + r * .04, px: r * 1.1, col: tok('ground'), al: (fd - .5) * 2});
+    }
     Title.paint(cv, face, {weight: 1});
 
-    /* the type over it: a letter in each diamond, the word on the
-       diagonal, an item's text under the row while it is pointed at or
-       picked */
-    x.fillStyle = tok('ground');
-    for (const h of hits){
-      x.font = '400 ' + Math.round(h.r * 0.95 * DPR) + 'px ' + tok('mono');
-      x.fillText(F.letters[h.k], h.x * DPR, (h.y + h.r * 0.04) * DPR);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    for (const t of text){
+      x.globalAlpha = t.al; x.fillStyle = t.col;
+      x.font = '400 ' + Math.round(t.px * DPR) + 'px ' + tok('mono');
+      x.fillText(t.s, t.x * DPR, t.y * DPR);
     }
-    /* each item's first letter, in its diamond */
-    if (row){
-      const items = F.items[open] || [];
-      x.font = '400 ' + Math.round(row.rr * 0.9 * DPR) + 'px ' + tok('mono');
-      for (let m = 0; m < items.length; m++)
-        x.fillText((items[m] || '').trim().charAt(0).toUpperCase(), (row.x0 + m * row.step) * DPR, (row.h.y + row.rr * 0.04) * DPR);
-    }
-    if (row){
-      const h = row.h, word = (F.words[open] || '').trim(), items = F.items[open] || [];
-      if (word){
+    x.globalAlpha = 1;
+
+    /* the word on the diagonal, and the item's name: with the row, and
+       gone with the fold */
+    if (row && fd < 1){
+      const g = geo[row.k], h = row.h, word = (F.words[row.k] || '').trim(), items = F.items[row.k] || [];
+      const ro = outCubic(val('row')) * (1 - fd);
+      if (word && ro > 0){
         x.save();
+        x.globalAlpha = ro;
         /* from above the row's first diamond, rising to the right, clear of the letter */
-        x.translate((h.x + h.r * 1.2) * DPR, (h.y - h.r * 1.0) * DPR);
+        x.translate((h.x + h.r * 1.2 - (1 - ro) * h.r * .6) * DPR, (g.cy - h.r * 1.0 + (1 - ro) * h.r * .6) * DPR);
         x.rotate(-Math.PI / 4);
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok('bone');
         x.font = '400 ' + Math.round(14 * DPR) + 'px ' + tok('mono');
         x.fillText(word.toUpperCase().split('').join(' '), 0, 0);
         x.restore();
-        x.textAlign = 'left'; x.textBaseline = 'top';
       }
-      const say = hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
+      const say = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
+      x.globalAlpha = ro;
       x.textAlign = 'left'; x.textBaseline = 'top';
       if (say >= 0 && items[say]){
-        x.fillStyle = tok(picked(open) && P.item === say ? 'flare' : 'bone');
+        x.fillStyle = tok(picked(row.k) && P.item === say ? 'flare' : 'bone');
         x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
-        x.fillText(String(say + 1) + '  ' + items[say], (h.x + h.r * 1.35) * DPR, (h.y + row.rr + 8) * DPR);
+        x.fillText(String(say + 1) + '  ' + items[say], (h.x + h.r * 1.35) * DPR, (g.cy + row.rr + 8) * DPR);
       } else if (!items.length){
         x.textBaseline = 'middle';
         x.fillStyle = tok('dim');
         x.font = '400 ' + Math.round(9 * DPR) + 'px ' + tok('mono');
-        x.fillText('NO ITEMS YET', (h.x + h.r * 1.35) * DPR, h.y * DPR);
+        x.fillText('NO ITEMS YET', (h.x + h.r * 1.35) * DPR, g.cy * DPR);
       }
+      x.globalAlpha = 1;
     }
   }
 
@@ -245,12 +285,15 @@ const Focus = (() => {
   }
 
   function read(){
+    const had = !!F;
     F = typeof Journal !== 'undefined' && Journal.focused ? Journal.focused() : null;
+    if (F && !had){ T.stand = null; tween('stand', 1, 520, outCubic); }
     P = F && Journal.pick ? Journal.pick() : null;
     if (F && open >= F.letters.length) open = -1;
     if (!P) folded = false;
     painted = '';
   }
+  let lastOpen = -1;
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
@@ -258,6 +301,16 @@ const Focus = (() => {
     el.hidden = !v;
     if (!v) return;
     DPR = Math.min(2, devicePixelRatio || 1);
+    /* the state says where things are going; the tweens say where they are */
+    tween('stand', 1, 520, outCubic);
+    tween('fold', folded ? 1 : 0, folded ? 380 : 320, folded ? inCubic : outCubic);
+    if (open !== lastOpen){
+      /* a new letter: its row starts from nothing */
+      if (open >= 0){ T.row = null; tween('row', 1, 460, outCubic); }
+      else tween('row', 0, 220, inCubic);
+      lastOpen = open;
+    }
+    if (moving()) painted = '';
     const key = [innerHeight, DPR, open, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;

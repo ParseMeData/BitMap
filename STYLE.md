@@ -183,6 +183,12 @@ moves, and nothing has an easing curve. The exception is the wallpaper hint's
 chrome. Do not animate a panel opening. Do not add a spinner. The lattice is
 already moving; anything else that moves competes with it.
 
+The one thing that may move is a thing *made of* the lattice — the focus
+column standing up, its row sliding out, its fold — because that is the
+lattice moving, not something laid over it. Even then: a few hundred
+milliseconds, out with a little overshoot and back easing in, and never a
+CSS transition on a panel, a chip or an input.
+
 ---
 
 ## The plate palette

@@ -1746,7 +1746,12 @@ reload, folded. While a letter is open the column has the keyboard and
 the walker stands still: ↑ ↓ (or W S) walk the letters, ← → (A D) the
 open letter's items, Enter picks the item under the cursor and folds,
 Esc closes the column and gives the keys back. The gap between letters,
-and between the last letter and the hub, is the hub's own 12 px. One acronym is in focus at a time (`focus` in
+and between the last letter and the hub, is the hub's own 12 px. It
+moves: the letters rise out of the hub in turn when an acronym is put in
+focus, a row slides out of its letter and back in, and the fold sinks
+the letters into the pick diamond as it grows — a few hundred
+milliseconds each, out with a little overshoot, back easing in
+(`STYLE.md` says why this, and only this, may move). One acronym is in focus at a time (`focus` in
 `hq.journal`, the row's id; the pick is `pick`); press ◆ again to take
 it down. The column is `src/focus.js`, made of the plate's material by
 the rule in `STYLE.md` — every diamond a region of lattice cells at the

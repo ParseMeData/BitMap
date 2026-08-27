@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Focus, tidied** — 2026-08-27. The word's anchor moved to (1.2 r,
+  −1.0 r) from the letter so the diagonal clears it; each item diamond
+  carries the item's first letter; the fold is `HUB_R × 2` (half 32).
+  BUILD 137. Verified on a throwaway, both states.
 - [x] **The focus stands on the hub, and folds to a pick** — 2026-08-27.
   `focus.js` relaid: column centred on the hub pair's axis (x 92), last
   letter's lower point 8 px above the pair's upper points, stacking

@@ -34,7 +34,7 @@ const Focus = (() => {
   const TOP = 270;                            // under the compass
   const SIZE = 84, GAP = 12;                  // a letter diamond, and the space between two
   const ROW = 0.78;                           // an item diamond, as a fraction of a letter's
-  const PICK_R = 60;                          // the folded diamond's half-size
+  const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
   let open = -1, hoverItem = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
@@ -126,11 +126,19 @@ const Focus = (() => {
       x.font = '400 ' + Math.round(h.r * 0.95 * DPR) + 'px ' + tok('mono');
       x.fillText(F.letters[h.k], h.x * DPR, (h.y + h.r * 0.04) * DPR);
     }
+    /* each item's first letter, in its diamond */
+    if (row){
+      const items = F.items[open] || [];
+      x.font = '400 ' + Math.round(row.rr * 0.9 * DPR) + 'px ' + tok('mono');
+      for (let m = 0; m < items.length; m++)
+        x.fillText((items[m] || '').trim().charAt(0).toUpperCase(), (row.x0 + m * row.step) * DPR, (row.h.y + row.rr * 0.04) * DPR);
+    }
     if (row){
       const h = row.h, word = (F.words[open] || '').trim(), items = F.items[open] || [];
       if (word){
         x.save();
-        x.translate((h.x + h.r * 0.55) * DPR, (h.y - h.r * 0.55) * DPR);
+        /* from above the row's first diamond, rising to the right, clear of the letter */
+        x.translate((h.x + h.r * 1.2) * DPR, (h.y - h.r * 1.0) * DPR);
         x.rotate(-Math.PI / 4);
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok('bone');

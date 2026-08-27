@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The row fans from the cursor** — 2026-08-27. `focus.js` draw
+  order for items: those ahead of the lead far-first, then 0..lead in
+  order, so the lead is on top and each crossed item sits over the one
+  before it; lead = cursor, else hover, else the pick. BUILD 143.
 - [x] **The fold stops short; the focus stands the wrong acronym** —
   2026-08-27, two bugs from Eden's relaunch. (1) `focus.js` repainted only
   while a tween ran, never the settled frame — `wasMoving` draws one more;

@@ -138,7 +138,16 @@ const Focus = (() => {
     /* the row: items slide out of their letter in turn, and back in */
     if (row){
       const g = geo[row.k], items = F.items[row.k] || [], ro = val('row');
-      for (let m = items.length - 1; m >= 0; m--){
+      /* the layering follows you along the row: the one you are on is in
+         front, every one you have crossed stays in front of the one before
+         it, and the ones ahead recede — so the row reads as a hand of
+         cards fanned from where you stand. With no cursor the first is
+         in front, as a closed row */
+      const lead = cursor >= 0 ? cursor : hoverItem >= 0 ? hoverItem : (picked(row.k) ? P.item : -1);
+      const order = [];
+      for (let m = items.length - 1; m > lead; m--) order.push(m);      // ahead: far first, so nearer lands on top
+      for (let m = 0; m <= lead; m++) order.push(m);                      // crossed: each over the last; the lead last of all
+      for (const m of order){
         const st = Math.max(0, Math.min(1, (ro * (items.length + 2) - m) / 3));
         const sk = outBack(st);
         const isPick = picked(row.k) && P.item === m;

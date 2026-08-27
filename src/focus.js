@@ -169,7 +169,7 @@ const Focus = (() => {
         /* and the fade follows the layering: full where you stand, and a
            step dimmer for every diamond away from it on either side */
         const away = lead >= 0 ? Math.abs(m - lead) : m;
-        const dull = isPick || m === lead ? 0 : Math.min(.7, away * .22);
+        const dull = isPick || m === lead ? 0 : Math.min(.88, .35 + away * .3);   // a long way toward dim, at once
         const tone = rgbOf(TONES[m % TONES.length]);
         const col = [lerp(tone[0], dim[0], dull), lerp(tone[1], dim[1], dull), lerp(tone[2], dim[2], dull)];
         const al = Math.min(1, st * 2) * (1 - fd);
@@ -235,6 +235,16 @@ const Focus = (() => {
       }
       const say = open < 0 ? -1 : hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
       x.globalAlpha = ro;
+      /* a bracket over and under the highlighted item: two short bone
+         chevrons following the diamond's edges, a hair clear of its points */
+      if (say >= 0 && items[say] && fd < 1){
+        const cx = row.x0 + say * row.step, cy = g.cy, rr = row.rr, gap = 5, len = rr * .42;
+        x.strokeStyle = tok('bone'); x.lineWidth = Math.max(1, 1.2 * DPR); x.lineCap = 'square';
+        x.beginPath();
+        x.moveTo((cx - len) * DPR, (cy - rr - gap + len) * DPR); x.lineTo(cx * DPR, (cy - rr - gap) * DPR); x.lineTo((cx + len) * DPR, (cy - rr - gap + len) * DPR);
+        x.moveTo((cx - len) * DPR, (cy + rr + gap - len) * DPR); x.lineTo(cx * DPR, (cy + rr + gap) * DPR); x.lineTo((cx + len) * DPR, (cy + rr + gap - len) * DPR);
+        x.stroke();
+      }
       x.textAlign = 'left'; x.textBaseline = 'top';
       /* the name waits: it shows only once you have rested on the same
          item for a moment, then fades up */

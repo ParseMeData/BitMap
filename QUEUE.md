@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Harder fall-off, and a bracket on the lead** — 2026-08-27. Dull
+  = .35 + .3 per step (cap .88); two bone chevrons 5 px clear of the lead
+  item's top and bottom points, .42 rr long. BUILD 151.
 - [x] **The row in tones, opaque; the word steps aside** — 2026-08-27.
   `TONES` (bone, park, flare, creek, stairs, rug, gold — plate palette,
   noted in STYLE.md), item alpha 1, colour pulled toward dim by .22 per

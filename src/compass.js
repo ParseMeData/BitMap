@@ -167,7 +167,8 @@ const Compass = (() => {
   function visible(){
     const b = document.body.classList;
     return !(b.contains('wall') || b.contains('bag') || b.contains('journal') ||
-             b.contains('locus') || b.contains('missions') || b.contains('mapping'));
+             b.contains('locus') || b.contains('missions') || b.contains('mapping') ||
+             b.contains('towns'));
   }
   function tick(){
     raf = requestAnimationFrame(tick);

@@ -410,6 +410,12 @@ addEventListener('keydown', e => {
     if (e.code === 'Escape') Missions.close();
     return;
   }
+  /* the towns map owns the screen while it is up: Esc drops a pin being
+     aimed, then goes up a level, then out; nothing under it walks */
+  if (typeof Towns !== 'undefined' && Towns.opened()){
+    if (e.code === 'Escape' || e.code === 'Backspace') Towns.back();
+    return;
+  }
   /* the journal owns the screen while it is up: Esc closes, ← → change
      the tab unless a note is being typed, and nothing under it walks */
   if (typeof Journal !== 'undefined' && Journal.opened()){
@@ -810,6 +816,9 @@ function boot(img){
   /* the bone diamond is the B key: build on, or off again */
   Hud.onBuild = () => Build.setOn(!Build.active());
   if (typeof Atlas !== 'undefined') Atlas.init();
+  /* the compass's fourth diamond opens the towns map, in place of the
+     chip grid the atlas drew before the country was here */
+  if (typeof Towns !== 'undefined') Towns.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

@@ -390,7 +390,8 @@ const Hud = (() => {
        Hud.onLetters   the letter system — the bag (`src/bag.js`), opened
                        as `Bag.open('letters')` from game.js.
        Hud.onNumbers   the number system — the same bag, `Bag.open('numbers')`.
-       Hud.onTowns     the mind map of plates (`src/atlas.js`), which sets
+       Hud.onTowns     the towns map (`src/towns.js`; `src/atlas.js` sets its
+                       chip grid first and towns.js takes the seam over), which sets
                        this itself at init.
        Hud.onHome      the framing below, if something better than framing
                        is ever wanted from the house.

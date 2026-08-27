@@ -19,13 +19,6 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] `[auto]` **The towns map is Australia** — `~/Projects/loci-australia`
-  brought across: `assets/australia.js` (generated, loaded on first open,
-  not at boot), `src/country.js` (the decoder, was its `atlas.js`), a new
-  `src/towns.js` behind `Hud.onTowns` in place of the chip grid: the country
-  cut to state › region › district, typeset in diamonds, every placed plate a
-  dot with its name, click a dot to stand on it, click land to drill, Esc up
-  and out, a button to pin the plate you are on.
 - [ ] `[auto]` **The roads between plates, on the map** — every link in
   `hq.atlas` drawn as an aqua line between the two plates' dots, so the map
   shows both where a town is and how it joins; the direction-graph chips
@@ -35,6 +28,22 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The towns map is Australia** — 2026-08-27. From
+  `~/Projects/loci-australia`: `assets/australia.js` (generated, loaded on
+  first open by `Country.load()`), `src/country.js` (its `atlas.js`,
+  renamed — the game already has an Atlas), `tools/country.py` (+
+  `tools/country-data/sa3.geojson`, output path moved to assets/). New
+  `src/towns.js`: `#towns` page (bag pattern, `body.towns` clears the
+  chrome, compass hides), sheets typeset in ◆/◇ with the stride, hover
+  sheet, cross-fade drill; every `Atlas.geo` plate a gold dot + name
+  (flare = current, names step down when dots share a pixel); click dot →
+  `Atlas.go` + close; click land → drill; **pin here** arms a click that
+  `setGeo`s the current plate; list = towns in scope, unplaced, children
+  with town counts; readout on the foot. `Towns.init` takes `Hud.onTowns`
+  after `Atlas.init`; game.js gate Esc/Backspace → `Towns.back()`. BUILD
+  124. Verified on a throwaway: country decodes in 0.5 s, opens on the
+  current plate's region (Hume), readout, drill to Upper Goulburn Valley,
+  Esc up, pin moved Plate 2, list row stood on Home and closed.
 - [x] **A plate knows where it is** — 2026-08-27. `geo: {lat, lon}` on
   `hq.atlas.areas[id]`, optional. `Atlas.seed()` at init takes the home
   anchor from `Basemap.at()` once; `add()` steps the neighbour's anchor

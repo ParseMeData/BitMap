@@ -320,6 +320,18 @@ in the same column, with a stub laid inward, written into its storage in
 the shape `save()` writes before the plate is mounted. Land on a tile that
 is not road and `revalidate()` rescues, as after any edit.
 
+**The towns map is one plane, and everything above it is a sum.**
+`assets/australia.js` stores one SA3 id per cell and nothing else; region,
+state and country are unions derived in `src/country.js` at load, so the
+four levels cannot disagree about where a line falls. It is SA3 below SA4
+rather than the shire because a shire does not nest — 211 of 533 LGAs
+cross an SA4 on this very raster. The page (`src/towns.js`) is chrome on a
+2D canvas, typeset in `◆`/`◇` from the chrome's monospace: never the GL
+stream, never a sprite on the plate. The asset is loaded on first open,
+not in the boot chain — it decodes to nine megabytes of typed arrays. The
+old chip grid in `atlas.js` (`Atlas.openMap`) is still there and is what
+`Hud.onTowns` falls back to if `towns.js` is missing.
+
 **A stranded road is said, not fixed.** Eden chose connectivity over
 "any road walkable": the route is one flood from the walker, and a road
 the flood does not reach is framed in gold with the reason in the palette.

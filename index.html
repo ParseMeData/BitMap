@@ -508,6 +508,57 @@ body.journal #hud,body.journal #keys,body.journal #palette,body.journal #inside,
 body.journal #msg,body.journal #mapbar,body.journal #route,body.journal #palace,body.journal #tune{display:none}
 body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
 body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
+/* the towns map: the country in diamonds, a canvas of chrome, every plate
+   with an anchor a dot on it; the same page shape as the bag */
+#towns{position:fixed;inset:16px;z-index:8;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+#towns .phead{display:flex;align-items:baseline;gap:14px;padding-bottom:9px;border-bottom:1px solid rgba(237,234,227,.12)}
+#towns .phead .btn{margin-left:auto;padding:4px 7px;font-size:8px}
+#tcrumb{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+#tcrumb button{font:inherit;letter-spacing:.1em;background:none;border:0;padding:0;color:var(--dim);
+  text-transform:uppercase;cursor:pointer}
+#tcrumb button:hover{color:var(--bone)}
+#tcrumb button.here{color:var(--bone);cursor:default}
+#tcrumb span{color:var(--faint)}
+#towns .tally{color:var(--dim);text-transform:uppercase;white-space:nowrap;font-size:9px;letter-spacing:.16em}
+#towns .tally b{font-weight:inherit;color:var(--bone)}
+#tmid{flex:1;min-height:0;display:flex;gap:16px}
+#tstage{flex:1;min-width:0;position:relative}
+#tmap{display:block;width:100%;height:100%}
+#taside{width:240px;display:flex;flex-direction:column;min-height:0;gap:10px}
+#tlist{overflow-y:auto;flex:1;font-size:9px;letter-spacing:.12em}
+#tlist::-webkit-scrollbar{width:6px}
+#tlist::-webkit-scrollbar-thumb{background:var(--thumb)}
+.thead{display:flex;justify-content:space-between;color:var(--dim);text-transform:uppercase;
+  padding:10px 0 6px;border-bottom:1px solid rgba(237,234,227,.12)}
+.thead:first-child{padding-top:0}
+.thead b{font-weight:inherit;color:var(--flare)}
+.trow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline;padding:5px 6px 5px 0;
+  cursor:pointer;border-bottom:1px solid rgba(237,234,227,.08)}
+.trow:hover,.trow.on{background:rgba(237,234,227,.08)}
+.trow .nm{color:var(--dim);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trow:hover .nm,.trow.on .nm,.trow.has .nm{color:var(--bone)}
+.trow .qt{color:var(--faint);white-space:nowrap}
+.trow.has .qt{color:var(--gold)}
+.trow:hover .qt{color:var(--aqua)}
+.trow.here{background:var(--bone)}
+.trow.here .nm,.trow.here .qt{color:var(--ground)}
+.trow .bar{grid-column:1/-1;height:1px;background:var(--unlit);margin-top:4px}
+.trow .bar i{display:block;height:100%;background:var(--dim)}
+.trow:hover .bar i,.trow.on .bar i{background:var(--flare)}
+.tfact{display:flex;justify-content:space-between;gap:10px;padding:6px 6px 6px 0;border-bottom:1px solid rgba(237,234,227,.08)}
+.tfact span:first-child{color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.tfact span:last-child{color:var(--bone);text-align:right}
+.tnote{color:var(--faint);text-transform:uppercase;padding:10px 0 2px;line-height:1.8}
+.tnote.warn{color:var(--gold)}
+#tpin{text-align:center;padding:7px}
+#tpin.sel{background:var(--bone);color:var(--ground)}
+#tfoot{display:flex;justify-content:space-between;gap:24px;padding-top:8px;border-top:1px solid rgba(237,234,227,.12);
+  color:var(--faint);text-transform:uppercase;font-size:9px;letter-spacing:.12em}
+#tread{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tread b{color:var(--aqua);font-weight:inherit}
+#tread i{color:var(--gold);font-style:normal}
+body.towns #hud,body.towns #keys,body.towns #palette,body.towns #inside,body.towns #enterhint,
+body.towns #msg,body.towns #mapbar,body.towns #route,body.towns #palace,body.towns #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
   padding:9px 15px;display:flex;gap:13px;align-items:center;font-size:9.5px;
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone);pointer-events:none}
@@ -693,13 +744,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 123, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 124, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/bag.js','src/missions.js','src/journal.js','src/compass-art.js','src/compass.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

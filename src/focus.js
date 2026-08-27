@@ -37,7 +37,7 @@ const Focus = (() => {
   const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
-  let open = -1, rowOpen = false, hoverItem = -1, cursor = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
+  let open = -1, rowOpen = false, hoverItem = -1, cursor = -1, folded = false, hubSel = null, painted = '', F = null, P = null, DPR = 1;
   let hits = [], row = null, fold = null;     // geometry in CSS px, for the pointer
 
   /* ── motion ────────────────────────────────────────────────────────────
@@ -255,15 +255,16 @@ const Focus = (() => {
     x.globalAlpha = 1;
 
     /* a bracket over and under the open letter, as on the lead item */
-    if (lead >= 0 && !rowOpen && fd < 1){
-      const g = geo[lead], gap = 6, len = g.r * .42;
-      x.globalAlpha = 1 - fd;
-      x.strokeStyle = tok('bone'); x.lineWidth = Math.max(1, 1.2 * DPR); x.lineCap = 'square';
-      x.beginPath();
-      x.moveTo((g.cx - len) * DPR, (g.cy - g.r - gap + len) * DPR); x.lineTo(g.cx * DPR, (g.cy - g.r - gap) * DPR); x.lineTo((g.cx + len) * DPR, (g.cy - g.r - gap + len) * DPR);
-      x.moveTo((g.cx - len) * DPR, (g.cy + g.r + gap - len) * DPR); x.lineTo(g.cx * DPR, (g.cy + g.r + gap) * DPR); x.lineTo((g.cx + len) * DPR, (g.cy + g.r + gap - len) * DPR);
-      x.stroke();
-      x.globalAlpha = 1;
+    if (lead >= 0 && !rowOpen && !hubSel && fd < 1){ x.globalAlpha = 1 - fd; bracket(geo[lead].cx, geo[lead].cy, geo[lead].r, 6); x.globalAlpha = 1; }
+    /* and on the hub diamond the keys have walked down to: the three at
+       rest, or one of the four when the hub has been pressed open */
+    if (hubSel && typeof Hud !== 'undefined'){
+      const H0 = innerHeight - HUB_Y, four = Hud.opened && Hud.opened();
+      const at = four
+        ? {letters: [HUB_X, H0 - 30, 24], numbers: [HUB_X - 30, H0, 24], home: [HUB_X + 30, H0, 24], towns: [HUB_X, H0 + 30, 24]}
+        : {hub: [HUB_X, H0, HUB_R], journal: [HUB_X + HUB_DX, H0, HUB_R], build: [HUB_X + HUB_DX / 2, H0 + HUB_DX / 2, HUB_R]};
+      const c = at[hubSel];
+      if (c) bracket(c[0], c[1], c[2], 5);
     }
     /* the word on the diagonal, and the item's name: with the row, and
        gone with the fold */
@@ -330,6 +331,15 @@ const Focus = (() => {
     }
   }
 
+  function bracket(cx, cy, r, gap){
+    const x = ctx, len = r * .42;
+    x.strokeStyle = tok('bone'); x.lineWidth = Math.max(1, 1.2 * DPR); x.lineCap = 'square';
+    x.beginPath();
+    x.moveTo((cx - len) * DPR, (cy - r - gap + len) * DPR); x.lineTo(cx * DPR, (cy - r - gap) * DPR); x.lineTo((cx + len) * DPR, (cy - r - gap + len) * DPR);
+    x.moveTo((cx - len) * DPR, (cy + r + gap - len) * DPR); x.lineTo(cx * DPR, (cy + r + gap) * DPR); x.lineTo((cx + len) * DPR, (cy + r + gap - len) * DPR);
+    x.stroke();
+  }
+
   /* ── the pointer ───────────────────────────────────────────────────────
      The canvas never takes the pointer itself — where there is no diamond
      the plate under it is what should be clicked and walked. So the
@@ -372,7 +382,7 @@ const Focus = (() => {
     const l = letterAt(x, y);
     if (l >= 0){
       ev.stopPropagation(); ev.preventDefault();
-      open = open === l ? -1 : l; hoverItem = -1; cursor = -1; rowOpen = false; painted = '';
+      open = open === l ? -1 : l; hoverItem = -1; cursor = -1; rowOpen = false; hubSel = null; painted = '';
       return;
     }
     const m = itemAt(x, y);
@@ -392,12 +402,49 @@ const Focus = (() => {
      does not (game.js asks `active()` first): ↑ ↓ walk the letters, ← →
      the open letter's items, Enter picks the item under the cursor and
      folds, Esc closes the column and gives the keys back. */
-  const active = () => !!(over() && open >= 0 && !folded);
+  const active = () => !!(over() && (open >= 0 || hubSel) && !folded);
+  const U = ['ArrowUp', 'KeyW'], D = ['ArrowDown', 'KeyS'], L = ['ArrowLeft', 'KeyA'], R = ['ArrowRight', 'KeyD'], E = ['Enter', 'NumpadEnter'];
+  /* the hub is part of the same walk: ↓ off the last letter lands on the
+     hub's flare diamond, → and ↓ reach the journal's and build's, Enter
+     presses what you stand on — the hub opens its four, and the arrows
+     then pick among them the way they lie — and ↑ climbs back onto the
+     column. Esc folds the four, then steps off. */
+  function hubKey(code){
+    const n = F.letters.length, four = Hud.opened && Hud.opened();
+    const go = k => { hubSel = k; };
+    if (four){
+      if (U.includes(code)) go('letters'); else if (L.includes(code)) go('numbers');
+      else if (R.includes(code)) go('home'); else if (D.includes(code)) go('towns');
+      else if (E.includes(code)){ const k = hubSel === 'hub' ? 'home' : hubSel; hubSel = null; open = -1; Hud.press(k); }
+      else if (code === 'Escape'){ Hud.fold(); hubSel = 'hub'; }
+      return;
+    }
+    if (hubSel === 'hub'){
+      if (R.includes(code)) go('journal'); else if (D.includes(code)) go('build');
+      else if (U.includes(code)){ hubSel = null; open = n - 1; }
+      else if (E.includes(code)){ Hud.press('hub'); }
+      else if (code === 'Escape'){ hubSel = null; open = -1; }
+    } else if (hubSel === 'journal'){
+      if (L.includes(code)) go('hub'); else if (D.includes(code)) go('build');
+      else if (U.includes(code)){ hubSel = null; open = n - 1; }
+      else if (E.includes(code)){ hubSel = null; open = -1; Hud.press('journal'); }
+      else if (code === 'Escape'){ hubSel = null; open = -1; }
+    } else if (hubSel === 'build'){
+      if (U.includes(code) || L.includes(code)) go('hub'); else if (R.includes(code)) go('journal');
+      else if (E.includes(code)){ Hud.press('build'); }
+      else if (code === 'Escape'){ hubSel = null; open = -1; }
+    }
+  }
   function key(code){
     if (!active()) return false;
+    if (hubSel && typeof Hud !== 'undefined'){ hubKey(code); hoverItem = -1; cursor = -1; rowOpen = false; painted = ''; return true; }
     const n = F.letters.length, items = F.items[open] || [];
     if (code === 'ArrowUp' || code === 'KeyW'){ open = Math.max(0, open - 1); cursor = -1; rowOpen = false; }
-    else if (code === 'ArrowDown' || code === 'KeyS'){ open = Math.min(n - 1, open + 1); cursor = -1; rowOpen = false; }
+    else if (code === 'ArrowDown' || code === 'KeyS'){
+      if (open === n - 1 && typeof Hud !== 'undefined' && Hud.press){ hubSel = 'hub'; open = -1; }
+      else open = Math.min(n - 1, open + 1);
+      cursor = -1; rowOpen = false;
+    }
     else if (code === 'ArrowRight' || code === 'KeyD'){ rowOpen = true; if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
     else if (code === 'ArrowLeft' || code === 'KeyA'){ cursor = Math.max(-1, cursor - 1); if (cursor < 0) rowOpen = false; }
     else if (code === 'Enter' || code === 'NumpadEnter'){
@@ -453,7 +500,7 @@ const Focus = (() => {
     dwelling = false;
     if (mv || wasMoving) painted = '';
     wasMoving = mv;
-    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
+    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, hubSel, typeof Hud !== 'undefined' && Hud.opened && Hud.opened(), P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
     painted = key;

@@ -24,6 +24,12 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The hub joins the walk** — 2026-08-27. `Hud.press(key)` /
+  `opened()` / `fold()` exported; `focus.js` `hubSel` (hub, journal,
+  build; letters, numbers, home, towns while the four are out) reached by
+  ↓ off the last letter, `hubKey()` moves and presses, ↑ climbs back;
+  brackets drawn on the hub diamond stood on (`bracket()` helper). BUILD
+  156. Verified: journal opened, four out, towns opened, build toggled.
 - [x] **A rim on every diamond; one bracket at a time** — 2026-08-27.
   `diamond()` lays a ground ring 1.8 cells deep first, so an overlap
   shows its edge; the column's bracket hides while `rowOpen`. BUILD 155.

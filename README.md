@@ -1746,7 +1746,11 @@ the column stands again with the item still lit. The pick survives a
 reload, folded. While a letter is open the column has the keyboard and
 the walker stands still: ↑ ↓ (or W S) walk the letters, ← → (A D) the
 open letter's items, Enter picks the item under the cursor and folds,
-Esc closes the column and gives the keys back. With a letter open the
+↓ off the last letter steps onto the hub: the flare diamond, then → the
+journal's and ↓ build's; Enter presses what you stand on — the hub opens
+its four ways in, and ↑ ← → ↓ then pick among them the way they lie
+(letters, numbers, home, the towns), Enter to go — and ↑ climbs back
+onto the column. Esc closes the column and gives the keys back. With a letter open the
 column makes room for it — a bracket over and under it, the gap on
 either side opened up, and the letters further out closing over one
 another, more overlapped and duller the further they are — easing into

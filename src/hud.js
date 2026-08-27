@@ -448,7 +448,15 @@ const Hud = (() => {
 
   function init(){ wire(); return cost(); }
 
-  const api = {init, overlay, hit, cost,
+  /* the same presses from the keyboard — the focus column walks down
+     onto the hub and presses what it stands on (src/focus.js) */
+  function press(key){
+    if (key === 'hub'){ open = !open; return; }
+    open = false;
+    tap(key);
+  }
+  const api = {init, overlay, hit, cost, press,
+               opened: () => open, fold: () => { open = false; },
                onLetters: null, onNumbers: null, onTowns: null, onHome: null,
                onJournal: null, onBuild: null};
   return api;

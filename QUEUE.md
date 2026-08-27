@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The pick keeps its tone and the font** — 2026-08-27. The folded
+  diamond stays in the item's TONE (no blend to bone) and its letter is
+  stamped through the font like the acronym's, in ground or bone by
+  luma; the no-origin path the same. BUILD 164.
 - [x] **Only the acronym's letters in the font** — 2026-08-27. `stamp()`
   takes the font only when the text entry says so (the column's letters);
   the row's letters, the item's name and the word are mono again at

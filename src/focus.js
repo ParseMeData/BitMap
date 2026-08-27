@@ -305,15 +305,17 @@ const Focus = (() => {
         /* the picked diamond itself, carried from its slot in the row down
            to its place above the hub — flare on the way, bone once landed */
         const e = fd, cx = lerp(foldFrom.x, fold.x, e), cy = lerp(foldFrom.y, fold.y, e), r = lerp(foldFrom.r, fold.r, e);
-        const tone = rgbOf(TONES[P.item % TONES.length]);
-        const col = [lerp(tone[0], bone[0], e), lerp(tone[1], bone[1], e), lerp(tone[2], bone[2], e)];
+        /* it keeps the tone it had in the row, and its letter is set the
+           way the acronym's are — the pick is one of those now */
+        const col = rgbOf(TONES[P.item % TONES.length]);
         diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, col);
         const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
-        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy + r * .04, px: r * 1.1 * lerp(.82, 1, e), col: tok(luma > .5 ? 'ground' : 'bone'), al: 1});
+        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy, px: r * .9 * lerp(.82, 1, e), col: tok(luma > .5 ? 'ground' : 'bone'), al: 1, font: true});
       } else {
-        const r = fold.r * outBack(fd);
-        diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, bone);
-        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y + r * .04, px: r * 1.1, col: tok('ground'), al: (fd - .5) * 2});
+        const r = fold.r * outBack(fd), col = rgbOf(TONES[P.item % TONES.length]);
+        diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, col);
+        const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
+        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y, px: r * .9, col: tok(luma > .5 ? 'ground' : 'bone'), al: (fd - .5) * 2, font: true});
       }
     }
     Title.paint(cv, face, {weight: 1});

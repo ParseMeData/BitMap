@@ -1740,7 +1740,8 @@ the letter stands for set on the diagonal above them;
 point at an item and it names itself. Press an item and it is **picked** (flare); press it again and
 the journal opens on that letter. Press anywhere else with an item
 picked and the whole acronym folds down to one diamond above the hub,
-twice the hub's size, showing the picked item's first letter — the one thing you are
+twice the hub's size, in the item's own tone, showing the picked item's
+first letter set like the acronym's — the one thing you are
 carrying — its lower point on the pair's centre line; press that and
 the column stands again with the item still lit. The pick survives a
 reload, folded. While a letter is open the column has the keyboard and

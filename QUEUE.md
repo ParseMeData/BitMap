@@ -20,17 +20,6 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **Minimal view, and the trace** — `src/trace.js`. Inside a
-  palace, `V` toggles **minimal**: Floor and Fittings are not drawn and do
-  not block — only walls, windows, doors and stairs. In minimal the trace
-  runs: room 1 (by `n`) is printed with a **3×3 grid of nine coloured
-  squares** in the plate's own material — nine plate tones, each square a
-  block of cells — and a **line** is drawn from the room's start (the side
-  it shares with the room before it, or its west side for room 1) through
-  every fitting in that room in the order it was laid, to the room's end
-  (the side it shares with the next room). Walk to the end and the room is
-  done: the grid and the line move to the next room, and so on to the last.
-  Progress in `hq.trace.<uid>`; `V` again shows the plan as it was.
 - [ ] [auto] **Grains and blocks** — `src/stock.js`, `hq.stock`. Two
   materials with two bar levels on the HUD strip beside Sparks: **grains**
   (gold) build roads and links; **blocks** (bone) build markers, houses,
@@ -59,6 +48,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Minimal view, and the trace** — 2026-08-27. `src/trace.js` and a
+  `minimal` flag in build.js: floor and fittings not drawn, fittings not
+  stamped; `V` toggles inside a palace. Nine plate-tone squares as blocks
+  of cells, an aqua line start → fittings (laid order) → end, gold ends;
+  room 1 starts across from where it leaves; arriving within 1.2 tiles of
+  the end advances `hq.trace.<uid>`. Leaving the building takes the view
+  down. Verified on the rig: Barwidgee, 11 rooms, 1 → 2 on arrival. BUILD 176.
 - [x] **The region plate** — 2026-08-27. `src/region.js`: a frame on
   `hq.shapes.region` with a third registry (`link` + the town's terrain),
   towns as connected runs of atlas areas drawn as one diamond per plate,

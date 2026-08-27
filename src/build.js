@@ -103,6 +103,14 @@ const Build = (() => {
   const snap = snapC;
   const MAXSPAN = () => grid() * 60;
   const layerOf = s => (Kinds.by[s.kind] || {layer: 'ground'}).layer;
+  /* ── minimal ──────────────────────────────────────────────────────────
+     A plan taken down to its walls (src/trace.js): the floor and the
+     fittings are not drawn, and the fittings do not block — the floor
+     still stamps, because it is the ground the walker stands on. Never
+     saved; a view, not an edit, and every mount puts it back. */
+  let minimal = false;
+  const HIDE = {floor: 1, fixt: 1};
+  const hidden = s => minimal && HIDE[layerOf(s)];
   const layerIndex = id => Kinds.layers.findIndex(L => L.id === id);
   const zOf = s => (Kinds.layers.find(L => L.id === layerOf(s)) || {z: 0}).z;
   /* A gap belongs to the plan, not to the fit-out: it is a statement about
@@ -702,7 +710,7 @@ const Build = (() => {
 
   function rebuild(){
     if (!R || R.lost || !G.A) return;
-    const order = G.shapes.filter(s => vis[layerOf(s)])
+    const order = G.shapes.filter(s => vis[layerOf(s)] && !hidden(s))
       .sort((a, b) => zOf(a) - zOf(b) || a.id - b.id);
     const box = order.map(s => reachBox(s));
     /* what has been knocked through, and out of which shapes — hung on the
@@ -807,6 +815,7 @@ const Build = (() => {
       for (const s of G.shapes){
         if (s.kind !== k.id) continue;
         if (k.cuts) continue;                       // a cut lays nothing down
+        if (minimal && k.layer === 'fixt') continue; // not drawn, so not in the way
         /* Nor does a modifier, and for a sharper reason: a demolish area
            over a road has to leave that road walkable. Blocking would make
            the ruin a wall, opening it would make it a bridge over the water
@@ -2546,6 +2555,7 @@ const Build = (() => {
   function mount(scope, key){
     Kinds.use(scope);
     KEY = key;
+    minimal = false;
     seeVis();
     sel = null; drag = null; armed = null; lastKind = null; freeSel = null;
     document.body.classList.remove('arming');
@@ -2580,5 +2590,6 @@ const Build = (() => {
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),
           sync: syncUI, head: syncHead,
-          commit: save, key: () => KEY, count: () => G.shapes.length};
+          commit: save, key: () => KEY, count: () => G.shapes.length,
+          setMinimal: v => { minimal = !!v; rebuild(); }, minimal: () => minimal};
 })();

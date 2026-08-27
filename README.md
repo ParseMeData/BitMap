@@ -204,6 +204,7 @@ It asks you to type the word.
 | `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
+| `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and the trace through it (inside) |
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus |
 | `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
@@ -299,6 +300,9 @@ stale.
                          and the two exclusive edit layers, Rooms and Fit-out
     src/markers.js       glyph markers, baked to one texture atlas
     src/interior.js      going inside a marker: the stack, and the swap
+    src/trace.js         minimal — a plan down to its walls — and the trace
+                         that runs in it: nine squares in a room and a
+                         line through its fittings, one room at a time
     src/loci.js          the numbered places inside a room, their pictures,
                          the lattice preview, and the route the platformer
                          plays
@@ -1437,6 +1441,25 @@ type chosen on purpose; a profile with no key at all gets the default. A name is
 a fine script will be finer than a short one. A name too wide for the
 town at the plate's pitch is let shrink, because a title off both edges
 names nothing.
+
+### Minimal, and the trace
+
+Inside a palace, `V` takes the plan down to its walls: the floor and the
+fittings are not drawn, and the fittings do not block, so what is left is
+the layout — rooms, windows, doors, stairs. That is the view the **trace**
+runs in (`src/trace.js`). The first room by its number is printed with a
+**3×3 grid of nine coloured squares**, each a block of the plate's own
+cells in one of nine plate tones, and a **line** is drawn through the
+room in aqua: from where you come in — the side it shares with the room
+before it; for the first room, the side across from where it leaves —
+through every fitting in the room in the order it was laid, each marked
+with a ring, to where you go out — the side it shares with the next room,
+marked in gold; the middle, for the last. Walk to the end of the line and
+the room is done: the grid and the line move on to the next room, and so
+on to the last, which says so. Which room you are up to is kept per
+palace under `hq.trace.<uid>`, so a trace put down is picked up again.
+`V` again, or leaving the building, shows the plan as it was; the number
+is kept.
 
 ## The route, and playing it
 

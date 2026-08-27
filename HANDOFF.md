@@ -146,6 +146,7 @@ Storage, all under `hq.`:
                          on its marker inside hq.markers
     hq.rooms.<uid>       one palace's plan
     hq.marks.<uid>       one palace's loci
+    hq.trace.<uid>       which room that palace's trace is up to (src/trace.js)
     hq.order.<uid>       the room list that palace was typed from
     hq.basemap           the home plate's tracing underlay: position and
                          source (its picture is row `img` of the hq.basemap

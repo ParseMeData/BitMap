@@ -85,6 +85,7 @@ const Interior = (() => {
   /* ── out ── */
   function leave(){
     if (!stack.length) return false;
+    if (typeof Trace !== 'undefined') Trace.off();   // the view goes with the plan
     Build.commit(); Markers.commit();
     const f = stack.pop();
     survey();                                  // this plan may have just begun to exist

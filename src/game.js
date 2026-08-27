@@ -510,6 +510,11 @@ addEventListener('keydown', e => {
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
     /* O is the order: the list of rooms this palace is laid out from */
+    /* V is the minimal view, and the trace that runs in it (src/trace.js) */
+    case 'KeyV':
+      if (Loci.opened()) break;
+      if (typeof Trace !== 'undefined') Trace.toggle();
+      break;
     case 'KeyO':
       if (Loci.opened()) break;
       if (Palace.opened()) Palace.close();
@@ -757,6 +762,7 @@ function frame(now){
   if (live) Doors.step(dt, pxw, pyw);
   m = Doors.draw(ENT, m, ENTMAX);
   m = Interior.overlay(ENT, m, ENTMAX);
+  if (typeof Trace !== 'undefined'){ m = Trace.overlay(ENT, m, ENTMAX); if (live) Trace.step(); }
   if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);

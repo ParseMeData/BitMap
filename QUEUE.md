@@ -24,6 +24,18 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The focus stands on the hub, and folds to a pick** — 2026-08-27.
+  `focus.js` relaid: column centred on the hub pair's axis (x 92), last
+  letter's lower point 8 px above the pair's upper points, stacking
+  upward and shrinking under the compass; item press → `Journal.setPick`
+  (flare, named beneath), second press → `Journal.openAt`; a press away
+  with a pick folds to one 60 px-half diamond on the axis whose lower
+  point sits on the pair's centre line, showing the item's first letter;
+  press it to stand the column again; a pick is carried folded across a
+  reload. `Journal.pick/setPick`, `pick` in `hq.journal` (cleared when
+  the focus changes; dropped if the item is gone). BUILD 136. Verified on
+  a throwaway: open A, pick "small", away → folded S, unfold, second
+  press → journal on A, reload → folded with the pick.
 - [x] **The focus: an acronym stood up on the plate** — 2026-08-27.
   Journal: `◆ focus` beside each row's caption (`Journal.setFocus`, toggles
   `hq.journal.focus`; `load()` now carries `focus` — it was dropped, found

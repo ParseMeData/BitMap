@@ -65,7 +65,7 @@ const Journal = (() => {
   function load(){
     if (J) return J;
     const raw = Store.json(KEY, {}) || {};
-    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}, focus: raw.focus || null}; return J; }
+    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}, focus: raw.focus || null, pick: raw.pick || null}; return J; }
     J = {frame: DEFAULT.map(seedTab), notes: {}};
     let carried = 0;
     for (const k in raw){
@@ -102,7 +102,22 @@ const Journal = (() => {
   function setFocus(id){
     const J = load();
     J.focus = J.focus === id ? null : id;
+    J.pick = null;                          // a pick belongs to the acronym it was made in
     store(); render();
+  }
+  /* the one item being carried: {id: letter id, item: index}; read back
+     with its text, or null if the item is gone */
+  function setPick(id, item){
+    const J = load();
+    J.pick = id == null ? null : {id, item};
+    store();
+  }
+  function pick(){
+    const J = load(), p = J.pick;
+    if (!p) return null;
+    const n = J.notes[p.id]; const text = n && n.items ? n.items[p.item] : null;
+    if (text == null){ J.pick = null; return null; }
+    return {id: p.id, item: p.item, text};
   }
   function focused(){
     const J = load();
@@ -384,5 +399,5 @@ const Journal = (() => {
   const count = () => { let c = 0; for (const id in load().notes) if (filled(id)) c++; return c; };
 
   return {open: show, close, move, opened: () => open, editing: () => editing, setEdit, count,
-          frame: () => load().frame, focused, setFocus, openAt};
+          frame: () => load().frame, focused, setFocus, openAt, pick, setPick};
 })();

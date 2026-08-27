@@ -161,7 +161,8 @@ Storage, all under `hq.`:
                          that id → {word, note, items}. A pre-v7.8 flat
                          "Tab/Sub/row/col" map is carried across on the
                          first open (src/journal.js, load); `focus` is the
-                         id of the acronym stood up on the plate (src/focus.js)
+                         id of the acronym stood up on the plate, `pick`
+                         {id, item} the one item being carried (src/focus.js)
     hq.compass           {manual, deg, tune}: the rose turned by hand or
                          following the map, and how it is read and drawn
     hq.bagpics           each card's hand of pictures: how many, which is

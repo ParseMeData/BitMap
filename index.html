@@ -503,7 +503,7 @@ body.missions #bag{visibility:hidden}
 /* the focus: one acronym stood up on the left, under the compass and
    above the hub; the canvas takes no pointer — focus.js listens on the
    window and stops only what lands on a diamond */
-#focus{position:fixed;left:0;top:270px;z-index:3;pointer-events:none}
+#focus{position:fixed;left:0;top:0;z-index:3;pointer-events:none}
 #focus canvas{display:block}
 body.focus-hit{cursor:pointer}
 body.mapping #focus,body.wall #focus{display:none}
@@ -791,7 +791,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 135, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 136, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

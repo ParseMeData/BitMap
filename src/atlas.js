@@ -93,6 +93,9 @@ const Atlas = (() => {
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
     /* from the region, a jump is a jump home first: the frame it holds
        is the plate being left, and mounting over it would lose it */
+    /* a jump is refused across a plate with a distraction on it
+       (src/distract.js); a crossing on foot has nothing between and passes */
+    if (typeof Distract !== 'undefined' && !Distract.allow(id)) return false;
     if (typeof Region !== 'undefined' && Region.on()) Region.leave();
     if (id === A.current && !at) return true;
     Build.commit(); Markers.commit();

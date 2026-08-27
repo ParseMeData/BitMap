@@ -205,7 +205,7 @@ It asks you to type the word.
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and the trace through it (inside) |
-| `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus |
+| `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus &nbsp;·&nbsp; or deal with the distraction you are standing by |
 | `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
 | rose diamond | the region &nbsp;·&nbsp; `Enter` by a town goes there, `Esc` leaves |
@@ -343,6 +343,9 @@ stale.
     src/region.js        the region: our towns drawn flat with north up,
                          one more plate on a third registry — links for
                          roads, diamonds for towns, Enter to stand on one
+    src/distract.js      the distractions: what settles on a road and eats
+                         it, the quiz that clears one, and the gate on a
+                         jump across a plate that has one
     src/country.js       Australia, decoded: one plane of SA3 ids and the
                          three levels above it derived at load; loaded on
                          the first open of the towns map, never at boot
@@ -1708,7 +1711,7 @@ never a plate of the atlas. The compass reads north while you are here.
 
 ### The towns
 
-**The country is behind a switch.** Since V8.1 the compass's fourth
+**The country is behind a switch.** Since build 174 the compass's fourth
 diamond opens the **region plate** (below) rather than the country; press
 `T` and under *Towns* pick **Country** to have it open Australia again.
 Kept in `hq.towns`, resting on Region. Nothing about the country page
@@ -1933,6 +1936,31 @@ was **added**, how many times it has been **run through**, and the
 **last run**. `run` counts a run and deals the cards back into the bag to
 be read; `delete` asks twice. `Esc` is back to the bag. Missions live
 under `hq.missions`, so a snapshot carries them.
+
+## Distractions
+
+The enemies (`src/distract.js`, `hq.distract`). Now and then, while you
+are out walking a town — every minute or two, never while a page is up
+or build mode is on — a **distraction** settles on a road of the plate
+you are on: a dim core with four flare motes circling it, in the plate's
+own material, never near you, at most three a plate. It **eats the
+road**: the tile it sits on is taken out of the walk grid, so the route
+is cut there until it is dealt with, and a plate with one on it blocks
+**fast travel** — the region's `Enter`, the towns map's dots and the
+atlas chips all refuse a jump whose road from here to there crosses such
+a plate, and the note names it. Walking across a road end on foot is a
+step between neighbours with nothing in between and is never refused;
+the cut tiles are what stop you there.
+
+Deal with one by knowing something. Stand by it and press `Enter` (it
+comes before the door beside it) and it asks a **pop quiz** from what you
+have built: a card from your deck (`12 · action?` — the word), a place
+in a palace (`in Home, what stands at 3?` — the locus's name), or a card
+of a saved stack. A right answer — the word, or a good part of it —
+clears it and repairs the road; a wrong one leaves it there and asks
+another; `Esc` leaves it there. With nothing at all written down to ask,
+the panel offers **repair · 3 grains** instead. Cleared ones are gone;
+the rest are where they were after a reload, and a snapshot carries them.
 
 ## Walking
 

@@ -67,6 +67,18 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #hgrains{background:var(--gold)}
 #hblocks{background:var(--bone)}
 #hgrainsv{color:var(--gold)}
+/* the quiz a distraction puts: the drill's panel, over the plate (src/distract.js) */
+#quiz{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:400px;
+  padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+#quiz .phead em{color:var(--dim);font-style:normal;margin-left:10px;text-transform:uppercase;letter-spacing:.2em;font-size:9px}
+#quiz .phead .btn{padding:4px 7px;font-size:8px}
+#quizq{font-size:12px;letter-spacing:.2em;text-transform:uppercase;text-align:center;padding:10px 0;color:var(--bone);line-height:1.6}
+#quiza{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 11px/1.4 var(--mono);padding:7px 9px;letter-spacing:.06em;text-align:center;outline:0}
+#quiza:focus{border-color:var(--flare)}
+#quiz .knote{text-align:center}
+#quiz .kfoot .btn{width:100%}
+body.wall #quiz{display:none}
 /* the drill: five questions over the bag, one grain each */
 #drill{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:360px;
   padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
@@ -832,13 +844,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 177, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 178, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

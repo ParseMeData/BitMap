@@ -163,6 +163,8 @@ Storage, all under `hq.`:
     hq.bag               the bag's words, card key → text
     hq.stock             {grains, blocks}: the two materials (src/stock.js);
                          the platformer writes this key raw, having no Store
+    hq.distract          {plates: {<id>: [{x, y, seed}]}}: where the
+                         distractions sit, walk tiles per plate (src/distract.js)
     hq.journal           {frame, notes}: the journal's tabs → sub-tabs →
                          acronyms, every letter with an id, and notes by
                          that id → {word, note, items}. A pre-v7.8 flat
@@ -390,6 +392,18 @@ and may not: home takes the underlay's search point once (`Atlas.seed`), a
 plate opened from a road end steps its neighbour's anchor one cell of the
 country raster the way the road went, and `Atlas.setGeo` pins any plate by
 hand. Nothing ever guesses an anchor for a plate that has none.
+
+**A distraction is stamped, not drawn into the grid.** `Distract.stamp`
+runs at the end of `restampTerrain`, after the shapes, and takes its
+tiles out of `G.terr` — never out of `terrBase`, and never by writing a
+shape — so clearing one is a restamp and nothing else, and a snapshot
+from before they existed restores clean. The gate on a jump lives in
+`Atlas.go`, once, because every way of jumping ends there (the region's
+Enter, the towns map, the chip grid); `Region.gate` asks the same
+question first only so the region is not left before a refusal. The
+walk of the atlas avoids blocked plates other than the two ends: the
+destination may hold one — you arrive and deal with it — and the plate
+you stand on is already cut under your feet where it matters.
 
 **The region is a frame, not an atlas area.** `src/region.js` mounts the
 editor on `hq.shapes.region` with `Kinds.use('region')` exactly as going

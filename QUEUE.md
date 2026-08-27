@@ -20,23 +20,21 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **Distractions** — `src/distract.js`, `hq.distract`. Enemy
-  sprites in the plate's material that appear now and then on a road tile of
-  the plate you are on (never near the walker, at most three a plate) and
-  **eat the road**: the tile is blocked in the walk grid until cleared.
-  Stand by one and press `Enter` for its **pop quiz**: a question from your
-  deck (a filled card: "12's action?"), from a palace (a named locus:
-  "in Home, what stands at 3?") or from a saved stack (a mission's card);
-  right clears it and repairs the road, wrong leaves it and asks another.
-  With nothing to ask, it takes three grains to repair instead. **Fast
-  travel** — the region plate's `Enter`, the towns map's dots, the atlas
-  chips — is refused to any town whose road from here crosses a plate with
-  a distraction still on it, and says so.
-
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **Distractions** — 2026-08-27. `src/distract.js` (`hq.distract`):
+  settle on a reachable road tile of the current town plate on a ~90 s
+  clock (≥6 tiles off, ≤3 a plate, not while a page or build is up), cut
+  the tile in `restampTerrain`, drawn as a dim core with four flare motes;
+  Enter beside one → `#quiz` from deck / palace loci / saved stacks, right
+  clears and restamps, wrong asks again, nothing-to-ask → repair for 3
+  grains (`Stock.COST.repair`). `Distract.allow` in `Atlas.go` and
+  `Region.gate` refuses a jump across a blocked plate, naming it. Also
+  fixed a TDZ in stock.js that broke boot once `hq.stock` existed.
+  Verified on the rig: cut → wrong → right → repaired; home→P3 refused
+  across P2, allowed once cleared. BUILD 178.
 - [x] **Grains and blocks** — 2026-08-27. `src/stock.js` (`hq.stock`,
   cap 100, start 20/10, `COST` per kind): two bars on the strip, `pay` at
   `Build.create` and `Markers.place`, refused with the price. The bag's

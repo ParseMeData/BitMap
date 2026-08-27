@@ -35,13 +35,13 @@ const Stock = (() => {
                blocks: 'blocks — run a route in the platformer for more'};
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
+  const clamp = v => Math.max(0, Math.min(CAP, Math.round(+v || 0)));
   let S = load();
   function load(){
     const s = Store.json(KEY, null);
     if (!s || typeof s !== 'object') return Object.assign({}, START);
     return {grains: clamp(s.grains), blocks: clamp(s.blocks)};
   }
-  const clamp = v => Math.max(0, Math.min(CAP, Math.round(+v || 0)));
   function save(){ Store.save(KEY, S, 'the stock'); ui(); }
 
   /* the bars. Width is the level over the cap; the number beside it is

@@ -291,6 +291,8 @@ function restampTerrain(){
   G.terr.walk.set(G.terrBase.walk);
   G.terr.path.set(G.terrBase.path);
   Build.stamp(G.terr);
+  /* and then what has eaten the road (src/distract.js) */
+  if (typeof Distract !== 'undefined') Distract.stamp(G.terr);
   if (G.reach) revalidate();
 }
 
@@ -486,6 +488,8 @@ addEventListener('keydown', e => {
       }
       /* on the region a town is what you stand by, and Enter goes there */
       else if (typeof Region !== 'undefined' && Region.on()) Region.press();
+      /* a distraction you are standing by comes before the door beside it */
+      else if (typeof Distract !== 'undefined' && Distract.target()) Distract.open();
       else Interior.enter();
       break;
     /* Esc is BACK, and only back. It used to close the pause as well, which
@@ -496,7 +500,8 @@ addEventListener('keydown', e => {
        thing dismissed first, and it is dismissed by clicking it. */
     case 'Escape':
       if (G.paused) break;                    // the pause owns the screen; click it
-      if (Loci.opened()) Loci.close();
+      if (typeof Distract !== 'undefined' && Distract.opened()) Distract.close();
+      else if (Loci.opened()) Loci.close();
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
@@ -763,6 +768,7 @@ function frame(now){
   m = Doors.draw(ENT, m, ENTMAX);
   m = Interior.overlay(ENT, m, ENTMAX);
   if (typeof Trace !== 'undefined'){ m = Trace.overlay(ENT, m, ENTMAX); if (live) Trace.step(); }
+  if (typeof Distract !== 'undefined'){ m = Distract.overlay(ENT, m, ENTMAX); if (live) Distract.step(dt); }
   if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
@@ -770,6 +776,7 @@ function frame(now){
   m = Markers.draw(ENT, m, ENTMAX);
   Interior.prompt();
   if (typeof Region !== 'undefined') Region.prompt();
+  if (typeof Distract !== 'undefined') Distract.prompt();
   Basemap.sync();
 
   R.begin(w, h, t);
@@ -861,6 +868,8 @@ function boot(img){
   if (typeof Atlas !== 'undefined') Atlas.init();
   /* the region: our towns drawn flat, north up, in place of the country */
   if (typeof Region !== 'undefined') Region.init();
+  /* the distractions: what eats the road, and what gates a jump */
+  if (typeof Distract !== 'undefined') Distract.init();
   /* the compass's fourth diamond opens the towns map, in place of the
      chip grid the atlas drew before the country was here */
   if (typeof Towns !== 'undefined') Towns.init();

@@ -17,7 +17,15 @@
 
    `hq.atlas` holds the graph and which plate you are on. The home plate
    keeps the keys it always had, so a town saved before the atlas existed
-   is the home plate of a one-plate atlas without being touched. */
+   is the home plate of a one-plate atlas without being touched.
+
+   A plate may also know WHERE it is: an optional `geo: {lat, lon}`. The
+   graph says how plates join; geo says where on the country they fall,
+   which is what the towns map (`src/towns.js`) draws. Home takes its
+   anchor from the traced underlay's search point the first time one is
+   there to take; a plate opened from a road end inherits its neighbour's,
+   stepped the way the road was heading; any plate can be pinned by hand.
+   A plate with no geo is simply not on the map — never guessed at. */
 
 const Atlas = (() => {
   const KEY = 'hq.atlas';
@@ -37,6 +45,31 @@ const Atlas = (() => {
     return {areas: {home: {name: 'Home', links: []}}, current: 'home'};
   }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(A)); } catch (e){} }
+
+  /* ── where a plate is ────────────────────────────────────────────────
+     One step between joined plates is one cell of the country raster —
+     0.0125°, about 1.4 km — which is roughly what a plate of town covers at
+     the zoom a town is traced at, and exactly one dot on the towns map, so
+     a road that leads to the next plate leads to the next cell. Not the
+     truth about the ground; a place to put the dot until it is pinned. */
+  const STEP = 0.0125;
+  const geoOK = g => !!g && isFinite(g.lat) && isFinite(g.lon) && (g.lat || g.lon);
+  const geo = id => { const a = A.areas[id || A.current]; return a && geoOK(a.geo) ? a.geo : null; };
+  function setGeo(id, lat, lon){
+    const a = A.areas[id || A.current]; if (!a) return false;
+    if (lat == null){ delete a.geo; save(); return true; }
+    a.geo = {lat: +lat, lon: +lon}; save(); return true;
+  }
+  const stepped = (g, dir) => !g ? null :
+    {lat: g.lat + (dir === 'n' ? STEP : dir === 's' ? -STEP : 0),
+     lon: g.lon + (dir === 'e' ? STEP : dir === 'w' ? -STEP : 0)};
+  /* the home plate's anchor is the underlay's search point, taken once:
+     a home already placed — by hand, or by an earlier run — keeps it */
+  function seed(){
+    if (geo('home') || typeof Basemap === 'undefined' || !Basemap.at) return;
+    const [lat, lon] = Basemap.at();
+    if (lat || lon) setGeo('home', lat, lon);
+  }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   /* ── where a crossing lands ───────────────────────────────────────────
@@ -95,6 +128,8 @@ const Atlas = (() => {
     const from = A.current;
     const t = G.terr, z = t.tsz, e = entry(dir, at);
     A.areas[id] = {name: 'Plate ' + (n + 1), links: [{at: e, dir: OPP[dir], to: from, land: at}]};
+    const g = stepped(geo(from), dir);
+    if (g) A.areas[id].geo = g;
     cur.links.push({at: [at[0], at[1]], dir, to: id, land: e});
     save();
     const dx = dir === 'e' ? 1 : dir === 'w' ? -1 : 0, dy = dir === 's' ? 1 : dir === 'n' ? -1 : 0;
@@ -220,6 +255,7 @@ const Atlas = (() => {
       Markers.mount(mkey(A.current));
       Build.mount('map', skey(A.current));
     }
+    seed();
     if (typeof Hud !== 'undefined') Hud.onTowns = toggleMap;
   }
 
@@ -227,5 +263,6 @@ const Atlas = (() => {
           current: () => A.current, areas: () => A.areas,
           name: () => A.areas[A.current].name,
           rename: v => { A.areas[A.current].name = v; save(); },
+          geo, setGeo, seed, layout: place,
           skey, mkey};
 })();

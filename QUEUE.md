@@ -19,12 +19,30 @@ may run straight into the next without waiting.
 
 ## Queue
 
-
+- [ ] `[auto]` **The towns map is Australia** — `~/Projects/loci-australia`
+  brought across: `assets/australia.js` (generated, loaded on first open,
+  not at boot), `src/country.js` (the decoder, was its `atlas.js`), a new
+  `src/towns.js` behind `Hud.onTowns` in place of the chip grid: the country
+  cut to state › region › district, typeset in diamonds, every placed plate a
+  dot with its name, click a dot to stand on it, click land to drill, Esc up
+  and out, a button to pin the plate you are on.
+- [ ] `[auto]` **The roads between plates, on the map** — every link in
+  `hq.atlas` drawn as an aqua line between the two plates' dots, so the map
+  shows both where a town is and how it joins; the direction-graph chips
+  stay beneath the list for plates with no anchor.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **A plate knows where it is** — 2026-08-27. `geo: {lat, lon}` on
+  `hq.atlas.areas[id]`, optional. `Atlas.seed()` at init takes the home
+  anchor from `Basemap.at()` once; `add()` steps the neighbour's anchor
+  `STEP = 0.0125°` the way the road went; `Atlas.geo(id)` / `setGeo(id,
+  lat, lon)` (null clears); `layout` exports the chip-grid placement for
+  the towns map. BUILD 123. Verified on a throwaway: seeded −36.56/146.72
+  from a written `hq.basemap`, pinned by hand, a plate opened north landed
+  at −36.4875.
 - [x] **The compass** — 2026-08-26. `assets/compass.png` (Eden's
   map-pointer) → `tools/compass.py` cuts rose + N/E/S/W (white keyed to
   alpha, halved) → `src/compass-art.js`. `src/compass.js`: `#compass`

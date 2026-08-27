@@ -1577,7 +1577,12 @@ road drawn into the margin beside the plate is a road the walker stops
 short of. Build mode draws the edge, faintly, so you can see where the
 town ends and the next plate would begin. Each plate
 is its own town under its own keys — shapes, markers, sparks — and the
-palaces inside markers are shared by all of them. The **compass** at the
+palaces inside markers are shared by all of them. A plate may also know
+where it is — `geo: {lat, lon}` in `hq.atlas` — which is what puts it on
+the towns map: the home plate takes the traced underlay's search point
+the first time there is one, a plate opened from a road end starts one
+cell of the country raster along from its neighbour, and any plate can
+be pinned from the map. One without an anchor is listed, not drawn. The **compass** at the
 bottom of the HUD opens the mind map: every plate laid out by how it
 joins, the one you are on inverted, click to stand on another. The home
 plate is the town you had before plates existed, untouched.

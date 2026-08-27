@@ -300,7 +300,12 @@ it. `hq.atlas` is the graph — `{areas: {id: {name, links: {n,e,s,w}}},
 current}` — and the home plate keeps `hq.shapes`/`hq.markers`, so a town
 saved before the atlas existed is the home plate of a one-plate atlas
 without being touched. Plates are never entered from inside a building:
-`Atlas.go` refuses while `Interior.inside()`.
+`Atlas.go` refuses while `Interior.inside()`. A plate may carry `geo:
+{lat, lon}` as well — where it falls on the country, for the towns map —
+and may not: home takes the underlay's search point once (`Atlas.seed`), a
+plate opened from a road end steps its neighbour's anchor one cell of the
+country raster the way the road went, and `Atlas.setGeo` pins any plate by
+hand. Nothing ever guesses an anchor for a plate that has none.
 
 **The end of a road is a step the walker asks about.** `tryStep` in
 `game.js` decides what a dead end is — a road tile with at most one road

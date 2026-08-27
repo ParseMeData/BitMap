@@ -1733,10 +1733,10 @@ Beside every acronym's caption is **◆ focus**. Press it and that acronym
 stands up on the plate: a column of diamonds down the left, a letter in
 each, standing on the hub — centred on the HUD's pair of diamonds with
 its last letter just above them, so the letters and the three diamonds
-read as one piece. Press a letter and it opens: a row of diamonds beside
-it, one for each item under that letter with the item's first letter in
-it, and — two seconds later — the word the letter stands for set on the
-diagonal above them;
+read as one piece. Press a letter and it opens; press → and its row
+slides out: a diamond for each item under that letter with the item's
+first letter in it, and — two seconds after the letter opened — the word
+the letter stands for set on the diagonal above them;
 point at an item and it names itself. Press an item and it is **picked** (flare); press it again and
 the journal opens on that letter. Press anywhere else with an item
 picked and the whole acronym folds down to one diamond above the hub,
@@ -1749,7 +1749,7 @@ open letter's items, Enter picks the item under the cursor and folds,
 Esc closes the column and gives the keys back. With a letter open the
 column makes room for it — a bracket over and under it, the gap on
 either side opened up, and the letters further out closing over one
-another, more overlapped and fainter the further they are — easing into
+another, more overlapped and duller the further they are — easing into
 place as the open letter changes. At rest the gap between letters, and
 between the last letter and the hub, is the hub's own 12 px. It
 moves: the letters rise out of the hub in turn when an acronym is put in

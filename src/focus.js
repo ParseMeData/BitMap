@@ -37,7 +37,7 @@ const Focus = (() => {
   const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
-  let open = -1, hoverItem = -1, cursor = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
+  let open = -1, rowOpen = false, hoverItem = -1, cursor = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
   let hits = [], row = null, fold = null;     // geometry in CSS px, for the pointer
 
   /* ── motion ────────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ const Focus = (() => {
     let y = foot - size / 2;
     for (let k = n - 1; k >= 0; k--){
       ys[k] = y;
-      als[k] = open < 0 || folded ? (open === k ? 1 : .82) : Math.max(.28, 1 - Math.abs(k - open) * .3);
+      als[k] = open < 0 || folded ? (open === k ? 0 : .18) : Math.min(.8, Math.abs(k - open) * .32);   // how far toward dim, not how faint
       if (k > 0) y -= size + gapAt(k - 1);
     }
     hits = [];
@@ -121,7 +121,7 @@ const Focus = (() => {
     row = null;
     /* a row is drawn for the open letter — or, while it is still sliding
        back in, for the letter that was open */
-    const k = open >= 0 ? open : (val('row') > 0 ? lastOpen : -1);
+    const k = (open >= 0 && rowOpen) ? open : (T.row && val('row') > 0 ? lastOpen : -1);
     if (k >= 0 && hits[k]){
       const h = hits[k], rr = h.r * ROW, step = rr * 1.15, x0 = h.x + h.r * 1.35 + rr;
       row = {k, h, rr, step, x0, n: (F.items[k] || []).length};
@@ -173,9 +173,9 @@ const Focus = (() => {
       const k = n - 1 - h.k;                  // 0 for the last letter, which moves first
       const st = Math.max(0, Math.min(1, (stand * (n + 2) - k) / 3));   // its own slice of the stand
       const sk = outBack(st);
-      let cx = h.x, cy = lerp(hubTop, h.y, sk), r = h.r * Math.max(0, sk), al = cur.al[h.k] * Math.min(1, st * 2);
+      let cx = h.x, cy = lerp(hubTop, h.y, sk), r = h.r * Math.max(0, sk), al = Math.min(1, st * 2), dull = cur.al[h.k];
       if (fd > 0){ cx = lerp(cx, fold.x, fd); cy = lerp(cy, fold.y, fd); r = lerp(r, fold.r * .4, fd); al *= 1 - fd; }
-      return {cx, cy, r, al, h};
+      return {cx, cy, r, al, dull, h};
     });
     /* the row: items slide out of their letter in turn, and back in */
     if (row){
@@ -213,7 +213,8 @@ const Focus = (() => {
     const lead = open >= 0 && !folded ? open : -1;
     const order = geo.slice().sort((a, b) => (lead < 0 ? a.h.k - b.h.k : Math.abs(b.h.k - lead) - Math.abs(a.h.k - lead)));
     for (const g of order){
-      if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, bone);
+      const col = [lerp(bone[0], dim[0], g.dull), lerp(bone[1], dim[1], g.dull), lerp(bone[2], dim[2], g.dull)];
+      if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, col);
       if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy + g.r * .04, px: g.r * .95, col: tok('ground'), al: Math.min(1, g.al)});
     }
     /* the pick diamond, growing out of the collapsing letters */
@@ -355,13 +356,13 @@ const Focus = (() => {
     const [x, y] = at(ev);
     if (foldAt(x, y)){
       ev.stopPropagation(); ev.preventDefault();
-      folded = false; open = F.ids.indexOf(P.id); hoverItem = -1; cursor = -1; painted = '';
+      folded = false; open = F.ids.indexOf(P.id); rowOpen = true; hoverItem = -1; cursor = -1; painted = '';
       return;
     }
     const l = letterAt(x, y);
     if (l >= 0){
       ev.stopPropagation(); ev.preventDefault();
-      open = open === l ? -1 : l; hoverItem = -1; cursor = -1; painted = '';
+      open = open === l ? -1 : l; hoverItem = -1; cursor = -1; rowOpen = false; painted = '';
       return;
     }
     const m = itemAt(x, y);
@@ -385,17 +386,17 @@ const Focus = (() => {
   function key(code){
     if (!active()) return false;
     const n = F.letters.length, items = F.items[open] || [];
-    if (code === 'ArrowUp' || code === 'KeyW'){ open = Math.max(0, open - 1); cursor = -1; }
-    else if (code === 'ArrowDown' || code === 'KeyS'){ open = Math.min(n - 1, open + 1); cursor = -1; }
-    else if (code === 'ArrowRight' || code === 'KeyD'){ if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
-    else if (code === 'ArrowLeft' || code === 'KeyA'){ cursor = Math.max(-1, cursor - 1); }
+    if (code === 'ArrowUp' || code === 'KeyW'){ open = Math.max(0, open - 1); cursor = -1; rowOpen = false; }
+    else if (code === 'ArrowDown' || code === 'KeyS'){ open = Math.min(n - 1, open + 1); cursor = -1; rowOpen = false; }
+    else if (code === 'ArrowRight' || code === 'KeyD'){ rowOpen = true; if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
+    else if (code === 'ArrowLeft' || code === 'KeyA'){ cursor = Math.max(-1, cursor - 1); if (cursor < 0) rowOpen = false; }
     else if (code === 'Enter' || code === 'NumpadEnter'){
       if (cursor >= 0 && items[cursor] && typeof Journal !== 'undefined' && Journal.setPick){
         Journal.setPick(F.ids[open], cursor);
         read(); layout(); setOut(); folded = true; cursor = -1;
       }
     }
-    else if (code === 'Escape'){ open = -1; cursor = -1; }
+    else if (code === 'Escape'){ open = -1; cursor = -1; rowOpen = false; }
     else return true;                        // ours, but nothing to do — still not the walker's
     hoverItem = -1; painted = '';
     return true;
@@ -427,11 +428,14 @@ const Focus = (() => {
     tween('stand', 1, 520, outCubic);
     tween('fold', folded ? 1 : 0, foldFrom ? 520 : (folded ? 380 : 320), foldFrom ? inOutCubic : (folded ? inCubic : outCubic));
     if (open !== lastOpen){
-      /* a new letter: its row starts from nothing */
-      if (open >= 0){ T.row = null; tween('row', 1, 460, outCubic); openSince = performance.now(); }
-      else tween('row', 0, 220, inCubic);
-      lastOpen = open;
+      if (open >= 0) openSince = performance.now();
+      if (open < 0) rowOpen = false;
+      lastOpen = open >= 0 ? open : lastOpen;
+      if (open < 0) tween('row', 0, 220, inCubic);
     }
+    /* the row shows only when asked for with →, and starts from nothing */
+    if (rowOpen && (!T.row || T.row.to !== 1)){ T.row = null; tween('row', 1, 460, outCubic); }
+    if (!rowOpen && T.row && T.row.to === 1) tween('row', 0, 220, inCubic);
     /* while a tween runs every frame is drawn — and one more after it
        lands, or the last drawn frame is the one just before the end and
        a fold stops a hair short of folded */
@@ -439,7 +443,7 @@ const Focus = (() => {
     dwelling = false;
     if (mv || wasMoving) painted = '';
     wasMoving = mv;
-    const key = [innerHeight, DPR, open, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
+    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
     painted = key;

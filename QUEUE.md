@@ -24,6 +24,12 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The column dulls, not fades; the row waits for →** — 2026-08-27.
+  Letter colour = bone → dim by .32 per step (cap .8), alpha 1; `rowOpen`
+  set by → (cursor 0), cleared by ← past the first, ↑ ↓, Esc, a fresh
+  letter; unfolding brings the row back (the pick is in it). Fixed
+  `val('row')` reading 1 with no tween, which drew the row unasked.
+  BUILD 154. Verified: row ink 0 → 2818 on → → 0 on ← → back on unfold.
 - [x] **The column makes room for the open letter** — 2026-08-27.
   `layout()` gaps by distance from the open letter (2.2 GAP beside it,
   −.1 size, then −.32 size), alpha 1 − .3 per step (floor .28), the foot

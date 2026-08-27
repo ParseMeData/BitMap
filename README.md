@@ -1746,8 +1746,12 @@ the column stands again with the item still lit. The pick survives a
 reload, folded. While a letter is open the column has the keyboard and
 the walker stands still: ↑ ↓ (or W S) walk the letters, ← → (A D) the
 open letter's items, Enter picks the item under the cursor and folds,
-Esc closes the column and gives the keys back. The gap between letters,
-and between the last letter and the hub, is the hub's own 12 px. It
+Esc closes the column and gives the keys back. With a letter open the
+column makes room for it — a bracket over and under it, the gap on
+either side opened up, and the letters further out closing over one
+another, more overlapped and fainter the further they are — easing into
+place as the open letter changes. At rest the gap between letters, and
+between the last letter and the hub, is the hub's own 12 px. It
 moves: the letters rise out of the hub in turn when an acronym is put in
 focus, a row slides out of its letter and back in, and a pick travels — the
 chosen item's diamond slides from its slot in the row down to its place

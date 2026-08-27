@@ -87,15 +87,36 @@ const Focus = (() => {
      lower point a gap above the pair's upper points — and shrinks to fit
      under the compass when an acronym is long. Folded: one diamond on
      the axis, its lower point on the pair's centre line. */
+  /* With a letter open the column makes room for it: the gap on either
+     side of it opens up, and the letters further out close over one
+     another — more overlapped, and fainter, the further they are. The
+     last letter keeps its foot on the hub. The positions ease toward
+     their targets a little each frame (`cur`), so a change of letter
+     slides rather than jumps. */
+  const cur = {y: [], al: []};
   function layout(){
     const H = innerHeight, n = F.letters.length;
     const foot = H - HUB_Y - HUB_R - GAP;     // the last letter's lower point: the hub's own gap above the pair
     const room = foot - TOP;
     const size = Math.max(40, Math.min(SIZE, (room - GAP * (n - 1)) / n));
+    /* the gap after letter k (between k and k+1), by how far the pair is
+       from the open letter: room beside it, then closing over */
+    const gapAt = k => {
+      if (open < 0 || folded) return GAP;
+      const d = Math.min(Math.abs(k - open), Math.abs(k + 1 - open));   // 0 when the open letter is one of the pair
+      return d === 0 ? GAP * 2.2 : d === 1 ? -size * .1 : -size * .32;
+    };
+    const ys = [], als = [];
+    let y = foot - size / 2;
+    for (let k = n - 1; k >= 0; k--){
+      ys[k] = y;
+      als[k] = open < 0 || folded ? (open === k ? 1 : .82) : Math.max(.28, 1 - Math.abs(k - open) * .3);
+      if (k > 0) y -= size + gapAt(k - 1);
+    }
     hits = [];
     for (let k = 0; k < n; k++){
-      const y = foot - size / 2 - (n - 1 - k) * (size + GAP);
-      hits.push({x: AXIS, y, r: size / 2, k});
+      if (cur.y[k] == null){ cur.y[k] = ys[k]; cur.al[k] = als[k]; }
+      hits.push({x: AXIS, y: cur.y[k], r: size / 2, k, ty: ys[k], tal: als[k]});
     }
     row = null;
     /* a row is drawn for the open letter — or, while it is still sliding
@@ -141,11 +162,18 @@ const Focus = (() => {
     /* the letters: each rises out of the hub in turn, the last first;
        folding, each sinks into the pick diamond */
     const n = hits.length;
+    /* ease each letter toward where the layout wants it */
+    for (const h of hits){
+      cur.y[h.k] = lerp(cur.y[h.k], h.ty, .16); cur.al[h.k] = lerp(cur.al[h.k], h.tal, .16);
+      if (Math.abs(cur.y[h.k] - h.ty) > .3 || Math.abs(cur.al[h.k] - h.tal) > .01) dwelling = true;
+      else { cur.y[h.k] = h.ty; cur.al[h.k] = h.tal; }
+      h.y = cur.y[h.k];
+    }
     const geo = hits.map(h => {
       const k = n - 1 - h.k;                  // 0 for the last letter, which moves first
       const st = Math.max(0, Math.min(1, (stand * (n + 2) - k) / 3));   // its own slice of the stand
       const sk = outBack(st);
-      let cx = h.x, cy = lerp(hubTop, h.y, sk), r = h.r * Math.max(0, sk), al = (open === h.k ? 1 : .82) * Math.min(1, st * 2);
+      let cx = h.x, cy = lerp(hubTop, h.y, sk), r = h.r * Math.max(0, sk), al = cur.al[h.k] * Math.min(1, st * 2);
       if (fd > 0){ cx = lerp(cx, fold.x, fd); cy = lerp(cy, fold.y, fd); r = lerp(r, fold.r * .4, fd); al *= 1 - fd; }
       return {cx, cy, r, al, h};
     });
@@ -180,7 +208,11 @@ const Focus = (() => {
         if (st > .6 && rr > 6) text.push({s: (items[m] || '').trim().charAt(0).toUpperCase(), x: cx, y: g.cy + rr * .04, px: rr * .9, col: tok(luma > .5 ? 'ground' : 'bone'), al: al});
       }
     }
-    for (const g of geo){
+    /* outermost first, so each letter lands over the one further from the
+       open letter, and the open letter over all */
+    const lead = open >= 0 && !folded ? open : -1;
+    const order = geo.slice().sort((a, b) => (lead < 0 ? a.h.k - b.h.k : Math.abs(b.h.k - lead) - Math.abs(a.h.k - lead)));
+    for (const g of order){
       if (g.r > 0.5) diamond(face, p, g.cx * DPR, g.cy * DPR, g.r * DPR, g.al, bone);
       if (g.r > 6 && g.al > .2) text.push({s: F.letters[g.h.k], x: g.cx, y: g.cy + g.r * .04, px: g.r * .95, col: tok('ground'), al: Math.min(1, g.al)});
     }
@@ -211,6 +243,17 @@ const Focus = (() => {
     }
     x.globalAlpha = 1;
 
+    /* a bracket over and under the open letter, as on the lead item */
+    if (lead >= 0 && fd < 1){
+      const g = geo[lead], gap = 6, len = g.r * .42;
+      x.globalAlpha = 1 - fd;
+      x.strokeStyle = tok('bone'); x.lineWidth = Math.max(1, 1.2 * DPR); x.lineCap = 'square';
+      x.beginPath();
+      x.moveTo((g.cx - len) * DPR, (g.cy - g.r - gap + len) * DPR); x.lineTo(g.cx * DPR, (g.cy - g.r - gap) * DPR); x.lineTo((g.cx + len) * DPR, (g.cy - g.r - gap + len) * DPR);
+      x.moveTo((g.cx - len) * DPR, (g.cy + g.r + gap - len) * DPR); x.lineTo(g.cx * DPR, (g.cy + g.r + gap) * DPR); x.lineTo((g.cx + len) * DPR, (g.cy + g.r + gap - len) * DPR);
+      x.stroke();
+      x.globalAlpha = 1;
+    }
     /* the word on the diagonal, and the item's name: with the row, and
        gone with the fold */
     if (row && fd < 1){

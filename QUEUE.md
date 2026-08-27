@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The column makes room for the open letter** — 2026-08-27.
+  `layout()` gaps by distance from the open letter (2.2 GAP beside it,
+  −.1 size, then −.32 size), alpha 1 − .3 per step (floor .28), the foot
+  fixed; `cur` eases y/alpha by .16 a frame; draw order outermost first;
+  brackets on the open letter. BUILD 152. Verified: A open, then T.
 - [x] **Harder fall-off, and a bracket on the lead** — 2026-08-27. Dull
   = .35 + .3 per step (cap .88); two bone chevrons 5 px clear of the lead
   item's top and bottom points, .42 rr long. BUILD 151.

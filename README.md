@@ -1,4 +1,4 @@
-# Loci Bitmap V7.7
+# Loci Bitmap V7.8
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.7 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.8 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -111,6 +111,15 @@ lines into states, regions and districts; every plate that knows where it
 is stands on it as a dot, click one and you are there, and the roads
 between plates are drawn as the lines they are. A plate may carry `geo`
 in `hq.atlas`; the home plate takes the underlay's search point.
+
+**v7.8** — the backend realigned. One store (`src/store.js`) every key
+goes through, with `hq.version` and a ladder of migrations climbed once;
+an index (`src/index.js`) of what exists and what it belongs to, read off
+the keys; a sweep in `tools/snapshot.py` that shows orphans and removes
+them only with `--yes` after a backup; the picture store's rows named for
+their tenant (`locus:`, `card:`); each plate its own tracing underlay; and
+the fresh-profile restore fixed at its cause. No key was renamed and no
+value changed shape: a v7.7 snapshot restores into v7.8 and climbs.
 
 ### The half that is not in the repo
 

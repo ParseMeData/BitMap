@@ -1735,7 +1735,8 @@ each, standing on the hub — centred on the HUD's pair of diamonds with
 its last letter just above them, so the letters and the three diamonds
 read as one piece. Press a letter and it opens: a row of diamonds beside
 it, one for each item under that letter with the item's first letter in
-it, and the word the letter stands for set on the diagonal above them;
+it, and — a second later — the word the letter stands for set on the
+diagonal above them;
 point at an item and it names itself. Press an item and it is **picked** (flare); press it again and
 the journal opens on that letter. Press anywhere else with an item
 picked and the whole acronym folds down to one diamond above the hub,

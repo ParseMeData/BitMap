@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The word waits a second** — 2026-08-27. `WORD_WAIT` 1000 ms from
+  the letter opening (`openSince`), `RISE` fade; anchor moved to (1.05 r,
+  −0.85 r). BUILD 148. Verified: word region ink 103 at 0.5 s, 516 at 1.4 s.
 - [x] **The name waits** — 2026-08-27. `DWELL` 2000 ms on the same lead
   item before the name shows, `RISE` 220 ms fade; anchor moved to
   (.6 rr, −1.2 rr); the number dropped. The frame loop keeps drawing

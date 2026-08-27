@@ -185,11 +185,15 @@ const Focus = (() => {
     if (row && fd < 1){
       const g = geo[row.k], h = row.h, word = (F.words[row.k] || '').trim(), items = F.items[row.k] || [];
       const ro = outCubic(val('row')) * (1 - fd);
-      if (word && ro > 0){
+      /* the word waits a second after the letter opens, then fades up */
+      const held = open >= 0 ? performance.now() - openSince : WORD_WAIT + RISE;
+      const wshow = Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));
+      if (open >= 0 && wshow < 1) dwelling = true;
+      if (word && ro > 0 && wshow > 0){
         x.save();
-        x.globalAlpha = ro;
+        x.globalAlpha = ro * wshow;
         /* from above the row's first diamond, rising to the right, clear of the letter */
-        x.translate((h.x + h.r * 1.2 - (1 - ro) * h.r * .6) * DPR, (g.cy - h.r * 1.0 + (1 - ro) * h.r * .6) * DPR);
+        x.translate((h.x + h.r * 1.05 - (1 - wshow) * h.r * .3) * DPR, (g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3) * DPR);
         x.rotate(-Math.PI / 4);
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok('bone');
@@ -324,6 +328,8 @@ const Focus = (() => {
   let lastOpen = -1, wasMoving = false;
   let leadKey = '', leadSince = 0, dwelling = false;            // the item under the lead, and when it came to rest there
   const DWELL = 2000, RISE = 220;             // ms resting before the name shows, and its fade-in
+  const WORD_WAIT = 1000;                     // ms a letter is open before its word shows
+  let openSince = 0;
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
@@ -336,7 +342,7 @@ const Focus = (() => {
     tween('fold', folded ? 1 : 0, folded ? 380 : 320, folded ? inCubic : outCubic);
     if (open !== lastOpen){
       /* a new letter: its row starts from nothing */
-      if (open >= 0){ T.row = null; tween('row', 1, 460, outCubic); }
+      if (open >= 0){ T.row = null; tween('row', 1, 460, outCubic); openSince = performance.now(); }
       else tween('row', 0, 220, inCubic);
       lastOpen = open;
     }

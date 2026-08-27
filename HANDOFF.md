@@ -138,6 +138,10 @@ Storage, all under `hq.`:
     hq.version           which step of src/store.js's ladder this profile
                          has climbed — the one number that says what shape
                          every other key is in
+    hq.index             derived — plates → markers, palaces → plate, loci
+                         → pictures, missions → palace, and the orphans;
+                         rebuilt from the keys on every boot, never read
+                         back to decide anything (src/index.js)
     hq.town              the town's name — a palace's name is not here, it is
                          on its marker inside hq.markers
     hq.rooms.<uid>       one palace's plan
@@ -307,6 +311,18 @@ exactly as localStorage does, which is why every module's try/catch and
 their values did not change: `tools/snapshot.py` carries `hq.version`
 like any other key and a v7.7 snapshot restores into a v7.8 profile and
 climbs on the next boot.
+
+**A palace knows its plate by being asked, not by being told.** Nothing
+writes a plate id into a palace: `Index.plateOf(uid)` walks every plate's
+marker list and answers. The index (`src/index.js`) is rebuilt from the
+keys at boot, once `Loci.survey` has listed the pictures, and again 600 ms
+after any write to `hq.markers*`, `hq.rooms.*`, `hq.order.*`, `hq.marks.*`,
+`hq.missions` or `hq.atlas` (through `Store.watch`). It is written to
+`hq.index` so a tool reading the profile cold sees the same picture, and
+if the two ever disagree the keys are right. Its `orphans` is what the
+sweep reads — and at v7.8 it found four palaces with no marker on any
+plate and two pictures no locus holds, which are the four typed palaces
+of v5.0 whose markers were deleted, not rubbish. Nothing here deletes.
 
 **A plate is the interior's trick pointed sideways.** Going inside a
 building mounts the builder and the markers on another pair of keys and

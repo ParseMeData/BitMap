@@ -747,11 +747,11 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 127, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 128, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
-   'src/loci.js','src/palace.js',
+   'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
    'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){

@@ -19,12 +19,6 @@ may run straight into the next without waiting.
 
 ## Queue
 
-- [ ] `[auto]` **v7.8 · 2 · A palace knows its plate** — `plate: <atlas id>`
-  on each palace, derived once by migration from whichever plate's marker
-  list holds the uid.
-- [ ] `[auto]` **v7.8 · 3 · The index** — `hq.index`: every marker uid, every
-  picture key, which plate, which mission; rebuilt by migration, kept current
-  through `Store`.
 - [ ] `[auto]` **v7.8 · 4 · The sweep** — `tools/snapshot.py sweep`: orphaned
   palaces, loci, pictures, missions listed; `--yes` removes. Dry-run default,
   never at runtime.
@@ -42,6 +36,17 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **v7.8 · 2 + 3 · A palace knows its plate, and the index** —
+  2026-08-27, one item: `src/index.js` after loci.js; `Index.init()` once
+  `Loci.survey` resolves (game.js); plates → markers, palaces → {plate,
+  name, n, plan, order, loci}, loci → {palace, picture}, pictures →
+  {kind locus|card|alt, owner}, missions → palace, `orphans`; written to
+  `hq.index`, rebuilt on boot and 600 ms after any write to the six key
+  families via `Store.watch`; `Loci.keys()` exported. No `plate` field
+  written into any record — `Index.plateOf(uid)` answers instead. BUILD
+  128. Verified on the v7.7 throwaway: 1 plate, 5 palaces, 14 pictures,
+  1 mission; orphans = 4 palaces (v5.0's typed plans with no marker) + 2
+  pictures; rebuild fired on `Atlas.rename`.
 - [x] **v7.8 · 1 · One store, one version** — 2026-08-27. `src/store.js`
   first in the chain: `get/set/del/put/json/save/keys/has/watch`, `set`
   throws on quota as before so every latch holds; `hq.version` + `LADDER`

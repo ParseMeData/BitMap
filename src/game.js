@@ -801,7 +801,7 @@ function boot(img){
   Interior.init();
   /* the picture store answers asynchronously; the palette and the rings
      redraw themselves once it has said what is attached */
-  Loci.init().then(() => Build.sync());
+  Loci.init().then(() => { Build.sync(); if (typeof Index !== 'undefined') Index.init(); });
   Palace.init();
   Basemap.init();
   if (typeof Compass !== 'undefined') Compass.init();

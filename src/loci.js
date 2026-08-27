@@ -60,6 +60,7 @@ const Loci = (() => {
     }).catch(() => have);
   }
   const has = uid => !!(uid && have[uid]);
+  const keys = () => Object.keys(have);      // every picture key, for the index
 
   /* ── attaching one ─────────────────────────────────────────────────────
      Down to a long edge of 1200 and re-encoded, because what comes off a
@@ -330,7 +331,7 @@ const Loci = (() => {
 
   /* `get` is handed out for the bag, which keeps its cards in this store
      under its own keys and reads them back to paint the faces */
-  return {init, has, get, enter, show, close, pick, attach, detach, draw, survey,
+  return {init, has, keys, get, enter, show, close, pick, attach, detach, draw, survey,
           route, deck, count, publish, play, opened: () => !!open,
           at: () => (open ? open.mk : null)};
 })();

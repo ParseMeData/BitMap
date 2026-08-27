@@ -37,7 +37,7 @@ const Focus = (() => {
   const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
-  let open = -1, hoverItem = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
+  let open = -1, hoverItem = -1, cursor = -1, folded = false, painted = '', F = null, P = null, DPR = 1;
   let hits = [], row = null, fold = null;     // geometry in CSS px, for the pointer
 
   const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
@@ -58,7 +58,7 @@ const Focus = (() => {
      the axis, its lower point on the pair's centre line. */
   function layout(){
     const H = innerHeight, n = F.letters.length;
-    const foot = H - HUB_Y - HUB_R - 8;       // where the last letter's lower point may reach
+    const foot = H - HUB_Y - HUB_R - GAP;     // the last letter's lower point: the hub's own gap above the pair
     const room = foot - TOP;
     const size = Math.max(40, Math.min(SIZE, (room - GAP * (n - 1)) / n));
     hits = [];
@@ -111,7 +111,7 @@ const Focus = (() => {
       const items = F.items[open] || [];
       for (let m = items.length - 1; m >= 0; m--){
         const isPick = picked(open) && P.item === m;
-        const al = isPick || hoverItem === m ? 1 : Math.max(.3, .85 - m * .22);
+        const al = isPick || hoverItem === m || cursor === m ? 1 : Math.max(.3, .85 - m * .22);
         diamond(face, p, (row.x0 + m * row.step) * DPR, row.h.y * DPR, row.rr * DPR, al, isPick ? flare : bone);
       }
     }
@@ -147,7 +147,7 @@ const Focus = (() => {
         x.restore();
         x.textAlign = 'left'; x.textBaseline = 'top';
       }
-      const say = hoverItem >= 0 ? hoverItem : (picked(open) ? P.item : -1);
+      const say = hoverItem >= 0 ? hoverItem : cursor >= 0 ? cursor : (picked(open) ? P.item : -1);
       x.textAlign = 'left'; x.textBaseline = 'top';
       if (say >= 0 && items[say]){
         x.fillStyle = tok(picked(open) && P.item === say ? 'flare' : 'bone');
@@ -198,13 +198,13 @@ const Focus = (() => {
     const [x, y] = at(ev);
     if (foldAt(x, y)){
       ev.stopPropagation(); ev.preventDefault();
-      folded = false; open = F.ids.indexOf(P.id); hoverItem = -1; painted = '';
+      folded = false; open = F.ids.indexOf(P.id); hoverItem = -1; cursor = -1; painted = '';
       return;
     }
     const l = letterAt(x, y);
     if (l >= 0){
       ev.stopPropagation(); ev.preventDefault();
-      open = open === l ? -1 : l; hoverItem = -1; painted = '';
+      open = open === l ? -1 : l; hoverItem = -1; cursor = -1; painted = '';
       return;
     }
     const m = itemAt(x, y);
@@ -217,6 +217,31 @@ const Focus = (() => {
     }
     /* away, with something picked: fold — and let the press go on */
     if (P && !folded){ folded = true; hoverItem = -1; painted = ''; }
+  }
+
+  /* ── the keys ──────────────────────────────────────────────────────────
+     While a letter is open the column has the keyboard and the walker
+     does not (game.js asks `active()` first): ↑ ↓ walk the letters, ← →
+     the open letter's items, Enter picks the item under the cursor and
+     folds, Esc closes the column and gives the keys back. */
+  const active = () => !!(over() && open >= 0 && !folded);
+  function key(code){
+    if (!active()) return false;
+    const n = F.letters.length, items = F.items[open] || [];
+    if (code === 'ArrowUp' || code === 'KeyW'){ open = Math.max(0, open - 1); cursor = -1; }
+    else if (code === 'ArrowDown' || code === 'KeyS'){ open = Math.min(n - 1, open + 1); cursor = -1; }
+    else if (code === 'ArrowRight' || code === 'KeyD'){ if (items.length) cursor = Math.min(items.length - 1, cursor + 1); }
+    else if (code === 'ArrowLeft' || code === 'KeyA'){ cursor = Math.max(-1, cursor - 1); }
+    else if (code === 'Enter' || code === 'NumpadEnter'){
+      if (cursor >= 0 && items[cursor] && typeof Journal !== 'undefined' && Journal.setPick){
+        Journal.setPick(F.ids[open], cursor);
+        read(); folded = true; cursor = -1;
+      }
+    }
+    else if (code === 'Escape'){ open = -1; cursor = -1; }
+    else return true;                        // ours, but nothing to do — still not the walker's
+    hoverItem = -1; painted = '';
+    return true;
   }
 
   function read(){
@@ -233,7 +258,7 @@ const Focus = (() => {
     el.hidden = !v;
     if (!v) return;
     DPR = Math.min(2, devicePixelRatio || 1);
-    const key = [innerHeight, DPR, open, hoverItem, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
+    const key = [innerHeight, DPR, open, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
     painted = key;
@@ -260,6 +285,6 @@ const Focus = (() => {
     if (!raf) raf = requestAnimationFrame(tick);
   }
 
-  return {init, refresh: read, open: k => { open = k; folded = false; painted = ''; }, opened: () => open,
+  return {init, refresh: read, key, active, open: k => { open = k; folded = false; painted = ''; }, opened: () => open,
           fold: v => { folded = !!v && !!P; painted = ''; }, folded: () => folded};
 })();

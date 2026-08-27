@@ -24,6 +24,13 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **Focus has the keys while a letter is open** — 2026-08-27.
+  `Focus.active()` = a letter open and not folded; game.js keydown asks
+  it first and returns, so nothing walks; `Focus.key(code)`: ↑↓/WS
+  letters, ←→/AD items (`cursor`, lit and named like a hover), Enter →
+  `Journal.setPick` + fold, Esc → close. Foot gap = `GAP` (12) to match
+  the hub. BUILD 138. Verified on a throwaway: open R, ↓→→ Enter picked
+  "small" and folded with the walker unmoved; a held → walked after.
 - [x] **Focus, tidied** — 2026-08-27. The word's anchor moved to (1.2 r,
   −1.0 r) from the letter so the diagonal clears it; each item diamond
   carries the item's first letter; the fold is `HUB_R × 2` (half 32).

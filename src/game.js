@@ -425,6 +425,12 @@ addEventListener('keydown', e => {
     else if (!typing && e.code === 'ArrowRight') Journal.move(1);
     return;
   }
+  /* the focus column, with a letter open, has the keys: the walker stands
+     still while the arrows walk the letters and their items */
+  if (typeof Focus !== 'undefined' && Focus.active()){
+    if (Focus.key(e.code)) e.preventDefault();
+    return;
+  }
   if (typeof Bag !== 'undefined' && Bag.opened()){
     if (e.code === 'Escape') Bag.back();
     else if (e.code === 'ArrowUp') Bag.step(-1);

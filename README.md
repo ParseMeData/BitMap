@@ -1734,7 +1734,11 @@ picked and the whole acronym folds down to one diamond above the hub,
 twice the hub's size, showing the picked item's first letter — the one thing you are
 carrying — its lower point on the pair's centre line; press that and
 the column stands again with the item still lit. The pick survives a
-reload, folded. One acronym is in focus at a time (`focus` in
+reload, folded. While a letter is open the column has the keyboard and
+the walker stands still: ↑ ↓ (or W S) walk the letters, ← → (A D) the
+open letter's items, Enter picks the item under the cursor and folds,
+Esc closes the column and gives the keys back. The gap between letters,
+and between the last letter and the hub, is the hub's own 12 px. One acronym is in focus at a time (`focus` in
 `hq.journal`, the row's id; the pick is `pick`); press ◆ again to take
 it down. The column is `src/focus.js`, made of the plate's material by
 the rule in `STYLE.md` — every diamond a region of lattice cells at the

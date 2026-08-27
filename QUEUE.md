@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The pick: bone letter, larger, a slight gradient** — 2026-08-27.
+  `diamond()` takes a second colour and runs top point → foot; the pick
+  goes tone+22 % bone at the top to tone+28 % dim at the foot; its letter
+  bone at 1.15 r. BUILD 166.
 - [x] **The closing row flashed on the next letter** — 2026-08-27. The
   row sliding back after ↓ read its letter from `lastOpen`, already the
   new one; `rowK` now remembers which letter the row was opened on (set

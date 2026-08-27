@@ -135,7 +135,7 @@ const Focus = (() => {
      bare plate it is nothing, and where one diamond lies over another it
      is the dark edge that says which is on top. */
   const RIM = 1.8;                            // cells
-  function diamond(f, p, x, y, r, al, rgb){
+  function diamond(f, p, x, y, r, al, rgb, rgb2){
     const cx = x / p, cy = y / p, rc = r / p, ro = rc + RIM;
     const i0 = Math.floor(cx - ro), i1 = Math.ceil(cx + ro), j0 = Math.floor(cy - ro), j1 = Math.ceil(cy + ro);
     const ground = GROUND || (GROUND = rgbOf(tok('ground')));
@@ -143,8 +143,12 @@ const Focus = (() => {
       const d = Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy);
       if (d > rc && d <= ro) f.cells.push({x: i, y: j, al: Math.min(1, al * 1.5), rgb: ground, sz: 1});
     }
-    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++)
-      if (Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy) <= rc) f.cells.push({x: i, y: j, al, rgb, sz: 1});
+    /* a second colour runs the diamond from its top point to its foot */
+    for (let j = j0; j <= j1; j++){
+      const c = rgb2 ? (() => { const t = Math.max(0, Math.min(1, (j + 0.5 - (cy - rc)) / (2 * rc))); return [lerp(rgb[0], rgb2[0], t), lerp(rgb[1], rgb2[1], t), lerp(rgb[2], rgb2[2], t)]; })() : rgb;
+      for (let i = i0; i <= i1; i++)
+        if (Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy) <= rc) f.cells.push({x: i, y: j, al, rgb: c, sz: 1});
+    }
   }
   let GROUND = null;
 
@@ -308,15 +312,17 @@ const Focus = (() => {
         const e = fd, cx = lerp(foldFrom.x, fold.x, e), cy = lerp(foldFrom.y, fold.y, e), r = lerp(foldFrom.r, fold.r, e);
         /* it keeps the tone it had in the row, and its letter is set the
            way the acronym's are — the pick is one of those now */
+        /* lit a little at its top point, shaded a little at its foot, and
+           its letter in bone, larger than the acronym's */
         const col = rgbOf(TONES[P.item % TONES.length]);
-        diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, col);
-        const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
-        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy, px: r * .9 * lerp(.82, 1, e), col: tok(luma > .5 ? 'ground' : 'bone'), al: 1, font: true});
+        const top = col.map((v, i) => lerp(v, bone[i], .22 * e)), foot = col.map((v, i) => lerp(v, dim[i], .28 * e));
+        diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, top, foot);
+        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy, px: r * 1.15 * lerp(.82, 1, e), col: tok('bone'), al: 1, font: true});
       } else {
         const r = fold.r * outBack(fd), col = rgbOf(TONES[P.item % TONES.length]);
-        diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, col);
-        const luma = col[0] * .3 + col[1] * .59 + col[2] * .11;
-        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y, px: r * .9, col: tok(luma > .5 ? 'ground' : 'bone'), al: (fd - .5) * 2, font: true});
+        const top = col.map((v, i) => lerp(v, bone[i], .22)), foot = col.map((v, i) => lerp(v, dim[i], .28));
+        diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, top, foot);
+        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y, px: r * 1.15, col: tok('bone'), al: (fd - .5) * 2, font: true});
       }
     }
     Title.paint(cv, face, {weight: 1});

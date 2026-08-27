@@ -20,17 +20,6 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **Grains and blocks** — `src/stock.js`, `hq.stock`. Two
-  materials with two bar levels on the HUD strip beside Sparks: **grains**
-  (gold) build roads and links; **blocks** (bone) build markers, houses,
-  buildings and the district textures. Placing one costs its price
-  (`COST` in stock.js) and is refused with a note when short. Grains are
-  earned by **drills**: a *drill* chip on the bag page asks five questions
-  from the cards you have filled — a number or letter and a slot, type the
-  word — one grain each. Blocks are earned by running a route in the
-  platformer: `routeDone` on the last picture adds one block per picture to
-  `hq.stock` before it hands back. A profile with no stock starts with
-  enough to build a little.
 - [ ] [auto] **Distractions** — `src/distract.js`, `hq.distract`. Enemy
   sprites in the plate's material that appear now and then on a road tile of
   the plate you are on (never near the walker, at most three a plate) and
@@ -48,6 +37,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Grains and blocks** — 2026-08-27. `src/stock.js` (`hq.stock`,
+  cap 100, start 20/10, `COST` per kind): two bars on the strip, `pay` at
+  `Build.create` and `Markers.place`, refused with the price. The bag's
+  `drill` chip: five questions from cards with words, a grain each.
+  `routeDone` in the platformer adds a block per picture, raw
+  localStorage, heard through the storage event. Verified: strip shows
+  25/10, right answer +1, road refused at 0. BUILD 177.
 - [x] **Minimal view, and the trace** — 2026-08-27. `src/trace.js` and a
   `minimal` flag in build.js: floor and fittings not drawn, fittings not
   stamped; `V` toggles inside a palace. Nine plate-tone squares as blocks

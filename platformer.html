@@ -2841,6 +2841,15 @@ function routeDone(){
     (last ? 'THE ROUTE IS WALKED' : 'CARRIED &#183; ' + (k + 2) + ' OF ' + (N + 1));
   setTimeout(() => {
     if (!last){ renderFace(k + 1, 1.6); return; }
+    /* the run walked is blocks earned: one per picture, into the town's
+       stock (src/stock.js reads it back over there through the storage
+       event). Raw localStorage, because this page has no Store. */
+    try {
+      const K = 'hq.stock', s = JSON.parse(localStorage.getItem(K) || '{}') || {};
+      s.grains = Math.max(0, s.grains | 0);
+      s.blocks = Math.min(100, Math.max(0, (s.blocks | 0) + NIMG));
+      localStorage.setItem(K, JSON.stringify(s));
+    } catch (e){}
     leaveRoute();
   }, last ? 2600 : 1800);
 }

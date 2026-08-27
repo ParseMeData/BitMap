@@ -847,6 +847,8 @@ function boot(img){
   Basemap.init();
   if (typeof Compass !== 'undefined') Compass.init();
   Hud.init();
+  /* the stock's two bars on the strip, and the ear for the platformer's write */
+  if (typeof Stock !== 'undefined') Stock.init();
   /* the left and top rings open the bag: one page, two sets of labels */
   if (typeof Bag !== 'undefined'){
     Hud.onNumbers = () => Bag.open('numbers');

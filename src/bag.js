@@ -164,9 +164,79 @@ const Bag = (() => {
     ls.className = 'chip'; ls.id = 'bagsaved'; ls.textContent = 'saved';
     sv.addEventListener('click', saveStack);
     ls.addEventListener('click', () => Missions.show());
-    el.append(u, x, sv, ls);
+    /* and the drill: the way grains are earned (src/stock.js) */
+    const dr = document.createElement('div');
+    dr.className = 'chip'; dr.id = 'bagdrill'; dr.textContent = 'drill';
+    dr.addEventListener('click', () => drill.open());
+    el.append(u, x, sv, ls, dr);
     return el;
   }
+  /* ── the drill ─────────────────────────────────────────────────────────
+     Five questions from the cards you have written a word on — a number
+     or a letter and a slot, and you type the word — and every right one
+     is a grain (src/stock.js). Over the bag, in a panel of its own, the
+     way the still is; Esc closes it and the bag is where it was. An
+     answer is right when it is the word, or a good part of it. */
+  const drill = (() => {
+    let el = null, qs = [], at = 0, right = 0;
+    function pool(){
+      const out = [];
+      for (const sys in SYSTEMS)
+        for (let i = 0; i < SYSTEMS[sys].cap; i++)
+          for (const slot of SLOTS){
+            const k = key(sys, i, slot), w = word(k);
+            if (w) out.push({sys, i, slot, w});
+          }
+      return out;
+    }
+    function build(){
+      if (el) return el;
+      el = document.createElement('div');
+      el.id = 'drill'; el.className = 'glass'; el.hidden = true;
+      el.innerHTML = '<div class="phead"><span>Drill <em id="drillat"></em></span>' +
+        '<button class="btn" id="drillx">&#10005;</button></div>' +
+        '<div id="drillq"></div>' +
+        '<input id="drilla" type="text" spellcheck="false" autocomplete="off" placeholder="the word">' +
+        '<div class="knote">enter answers &middot; esc closes &middot; a grain for every right one</div>';
+      document.body.appendChild(el);
+      el.querySelector('#drillx').onclick = close;
+      const inp = el.querySelector('#drilla');
+      inp.addEventListener('keydown', e => {
+        if (e.code === 'Enter' || e.code === 'NumpadEnter'){ e.preventDefault(); e.stopPropagation(); answer(); }
+        else if (e.code === 'Escape'){ e.preventDefault(); e.stopPropagation(); close(); }
+      });
+      return el;
+    }
+    function open(){
+      const p = pool();
+      if (!p.length){ note('a drill needs cards with words on them — type a word along a card first'); return false; }
+      for (let i = p.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [p[i], p[j]] = [p[j], p[i]]; }
+      qs = p.slice(0, 5); at = 0; right = 0;
+      build().hidden = false;
+      ask();
+      return true;
+    }
+    function ask(){
+      const q = qs[at];
+      el.querySelector('#drillat').textContent = (at + 1) + ' of ' + qs.length;
+      el.querySelector('#drillq').textContent = SYSTEMS[q.sys].label(q.i) + ' \u00b7 ' + NAMES[q.slot] + '?';
+      const inp = el.querySelector('#drilla'); inp.value = ''; inp.focus();
+    }
+    function answer(){
+      const q = qs[at];
+      const a = el.querySelector('#drilla').value.trim().toLowerCase(), w = q.w.toLowerCase();
+      const ok = !!a && (a === w || (a.length >= 3 && w.indexOf(a) >= 0));
+      if (ok){ right++; if (typeof Stock !== 'undefined') Stock.earn('grains', 1); note('\u2713 ' + q.w + ' \u00b7 a grain'); }
+      else note('\u2717 it was ' + q.w);
+      at++;
+      if (at >= qs.length){ close(); note('drill done \u00b7 ' + right + ' of ' + qs.length + ' \u00b7 ' + right + ' grain' + (right === 1 ? '' : 's')); }
+      else ask();
+    }
+    function close(){ if (el) el.hidden = true; qs = []; }
+    const isOpen = () => !!el && !el.hidden;
+    return {open, close, isOpen};
+  })();
+
   function saveStack(){
     if (!Missions.whole(seq)){ note('a stack saves in rounds of three — person, action, object'); return false; }
     const m = Missions.add(seq);
@@ -730,13 +800,14 @@ const Bag = (() => {
      touch the stack — the stack stays until it is cleared. */
   function back(){
     if (!system) return false;
+    if (drill.isOpen()){ drill.close(); return true; }
     if (still.isOpen()){ still.close(); return true; }
     if (zone === 'switch'){ zone = 'row'; render(); return true; }
     return close();
   }
   function close(){
     if (!system) return false;
-    still.close();
+    still.close(); drill.close();
     system = null; pending = null; zone = 'row';
     render();
     return true;

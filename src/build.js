@@ -320,6 +320,9 @@ const Build = (() => {
   function create(kind, type, wx, wy){
     const k = Kinds.by[kind];
     if (!k) return null;
+    /* a road is grains and a building is blocks (src/stock.js); short of
+       either, nothing is placed and the note says what it would take */
+    if (typeof Stock !== 'undefined' && !Stock.pay(kind)) return null;
     const c = cellSize();
     const area = type !== 'line' && type !== 'ring';
     const g = grid();

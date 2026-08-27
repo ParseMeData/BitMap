@@ -161,6 +161,8 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
+    hq.stock             {grains, blocks}: the two materials (src/stock.js);
+                         the platformer writes this key raw, having no Store
     hq.journal           {frame, notes}: the journal's tabs → sub-tabs →
                          acronyms, every letter with an id, and notes by
                          that id → {word, note, items}. A pre-v7.8 flat
@@ -580,6 +582,15 @@ the deal is a slider that will not reach the number you came for. The slider
 is drawn, not an `<input type=range>`: a native range stood on end is either
 a deprecated appearance value or a writing-mode that puts the big number at
 the top.
+
+**The platformer writes one `hq.` key, raw.** `routeDone` on the last
+picture adds a block per picture to `hq.stock` through `localStorage`
+directly — that page has no `Store`, and vendoring one in for one write
+is more upstream drift than the write. The builder hears it through the
+`storage` event (`Stock.init`), which fires across pages of one origin,
+so the strip moves before the platformer window has closed. Keep the
+shape `{grains, blocks}` the same on both sides; there is no version on
+it, and the store's ladder does not run over there.
 
 **The platformer is unchanged in behaviour.** It plays its own deck when
 opened alone. The route is a *chain* — 0 into 1, 1 into 2 — rather than the

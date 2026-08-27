@@ -100,6 +100,8 @@ const Markers = (() => {
       if (typeof hqNote === 'function') hqNote('nothing is built on the region — a town is a plate of its own', false);
       return null;
     }
+    /* a place costs blocks (src/stock.js) */
+    if (typeof Stock !== 'undefined' && !Stock.pay('marker')) return null;
     const m = {id: nextId++, uid: mint(), name: '', gi: armed, x: snap(x), y: snap(y),
                size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
     G.markers.push(m);

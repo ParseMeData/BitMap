@@ -60,6 +60,23 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #hud b{color:var(--dim);font-weight:400;margin-right:6px}
 #hud span{font-variant-numeric:tabular-nums}
 #hsparks{color:var(--gold)}
+/* the stock: two bar levels, grains in gold and blocks in bone (src/stock.js) */
+#hud .bar{display:inline-block;width:44px;height:5px;margin-right:7px;vertical-align:middle;
+  border:1px solid rgba(237,234,227,.22)}
+#hud .bar i{display:block;height:100%;width:0;transition:width .25s}
+#hgrains{background:var(--gold)}
+#hblocks{background:var(--bone)}
+#hgrainsv{color:var(--gold)}
+/* the drill: five questions over the bag, one grain each */
+#drill{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:360px;
+  padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
+#drill .phead em{color:var(--dim);font-style:normal;margin-left:10px;text-transform:uppercase;letter-spacing:.2em;font-size:9px}
+#drill .phead .btn{padding:4px 7px;font-size:8px}
+#drillq{font-size:13px;letter-spacing:.3em;text-transform:uppercase;text-align:center;padding:10px 0;color:var(--bone)}
+#drilla{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 11px/1.4 var(--mono);padding:7px 9px;letter-spacing:.06em;text-align:center;outline:0}
+#drilla:focus{border-color:var(--flare)}
+#drill .knote{text-align:center}
 /* the compass: top-left under the sparks, a rose that turns and four
    letters that stay upright, all bone through masks (src/compass.js) */
 #compass{position:fixed;left:8px;top:58px;width:200px;height:200px;z-index:3;pointer-events:none}
@@ -675,6 +692,8 @@ body.arming,body.arming #gl{cursor:copy}
   <span><b>Sparks</b><span id="hsparks">0/0</span></span>
   <span><b>Round</b><span id="hround">1</span></span>
   <span><b>Steps</b><span id="hsteps">0</span></span>
+  <span><b>Grains</b><i class="bar"><i id="hgrains"></i></i><span id="hgrainsv">0</span></span>
+  <span><b>Blocks</b><i class="bar"><i id="hblocks"></i></i><span id="hblocksv">0</span></span>
 </div>
 <div id="msg"></div>
 
@@ -813,9 +832,9 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 176, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 177, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
-  ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
+  ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',

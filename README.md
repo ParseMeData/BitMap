@@ -282,6 +282,8 @@ stale.
     src/store.js         every hq. key read and written through one place;
                          hq.version and the ladder of migrations a profile
                          written by an older build climbs once at boot
+    src/stock.js         grains and blocks: the two bars on the strip, what
+                         each kind costs to place, and how they are earned
     src/render.js        WebGL2 instanced SDF renderer
     src/lattice.js       picture → lattice: analyse (tone, sharpen, sobel)
                          then compose (pick faces + colour), and terrain
@@ -1896,6 +1898,26 @@ The pictures go into the picture store (`IndexedDB hq.loci`) under rows of
 their own, `card:numbers:3:action`, the words into `hq.bag`, and the
 stack into `hq.bagseq`, so a
 snapshot carries both.
+
+### The drill, and the stock
+
+The HUD strip carries two bar levels beside the sparks: **grains** in
+gold and **blocks** in bone (`src/stock.js`, `hq.stock`, a hundred of
+each at most). Grains build roads — a road on the town, a link on the
+region; blocks build places — a marker, a house, a building, a district
+of blocks or housing. Placing one costs its price (`COST` in stock.js:
+a road 5 grains, a link 3, a marker 5 blocks, a house or building 3, a
+district 4) and is refused, with a note that says the price, when you
+are short. Nothing that stands is ever taken back; a profile with no
+stock starts with twenty grains and ten blocks.
+
+Grains are earned by **drilling**: the `drill` chip on the bag page asks
+five questions from the cards you have written a word on — a number or a
+letter and its slot, `12 · action?` — and you type the word (the word, or
+a good part of it). Every right answer is a grain. Blocks are earned by
+walking a route: when the platformer's last picture is built, one block
+per picture goes into the stock before it hands you back, and the strip
+reads it the moment that page writes it.
 
 ### The missions
 

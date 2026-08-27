@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The item's name on the diagonal** — 2026-08-27. From
+  (x + .35 rr, y − .95 rr) of the lead item, −45°, spaced like the word;
+  the line beneath the row is gone. BUILD 145.
 - [x] **The row fades from the cursor** — 2026-08-27. Item alpha = .85 −
   .22 × |m − lead| (floor .25), the lead at 1; the pick keeps flare.
   BUILD 144.

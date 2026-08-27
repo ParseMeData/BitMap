@@ -201,9 +201,16 @@ const Focus = (() => {
       x.globalAlpha = ro;
       x.textAlign = 'left'; x.textBaseline = 'top';
       if (say >= 0 && items[say]){
+        /* the item's name rises from its own diamond on the same diagonal
+           as the word, so the two read as one hand of type */
+        x.save();
+        x.translate((row.x0 + say * row.step + row.rr * .35) * DPR, (g.cy - row.rr * .95) * DPR);
+        x.rotate(-Math.PI / 4);
+        x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok(picked(row.k) && P.item === say ? 'flare' : 'bone');
         x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
-        x.fillText(String(say + 1) + '  ' + items[say], (h.x + h.r * 1.35) * DPR, (g.cy + row.rr + 8) * DPR);
+        x.fillText(String(say + 1) + '  ' + items[say].toUpperCase().split('').join(' '), 0, 0);
+        x.restore();
       } else if (!items.length){
         x.textBaseline = 'middle';
         x.fillStyle = tok('dim');

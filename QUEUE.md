@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The retreat fades harder and stops at the diamond** — 2026-08-27.
+  Front width .18, squared, running at 1.3 from t − .08; a character slid
+  back past the word's foot (ax < 0) is not drawn. BUILD 170.
 - [x] **The word retreats** — 2026-08-27. On leaving a letter whose word
   was up, `leaving` {k, word, t0}; `diagonalOut()` draws it char by char
   slid back along the diagonal (outCubic × .7 of its run) with a

@@ -226,8 +226,12 @@ const Focus = (() => {
     let ax = -back * DPR;
     for (let i = 0; i < chars.length; i++){
       const at = i / Math.max(1, chars.length - 1);
-      const a = Math.max(0, Math.min(1, (at - front) / .35 + 1)) * al;   // clear behind the front, whole ahead of it
-      if (a > 0){ c.globalAlpha = a; c.fillText(chars[i], ax, 0); }
+      /* a steep front: a character is whole ahead of it and gone a short
+         way behind; and a character that has reached the diamond — slid
+         back past the word's foot — is gone, not drawn through it */
+      const k = Math.max(0, Math.min(1, (at - front) / .18 + 1));
+      const a = k * k * al;
+      if (a > 0.01 && ax >= 0){ c.globalAlpha = a; c.fillText(chars[i], ax, 0); }
       ax += adv;
     }
     c.restore();
@@ -386,7 +390,7 @@ const Focus = (() => {
         const g = geo[leaving.k], h = hits[leaving.k];
         const L = leaving.word.length * 14 * 1.2;                     // about the word's run, in px
         /* the slide leads, easing out; the fade follows a step behind it */
-        diagonalOut(leaving.word, h.x + h.r * 1.05, g.cy - h.r * 0.85, 14, bone, (1 - fd), outCubic(t) * L * .7, Math.max(0, t - .12) * 1.15);
+        diagonalOut(leaving.word, h.x + h.r * 1.05, g.cy - h.r * 0.85, 14, bone, (1 - fd), outCubic(t) * L * .7, Math.max(0, t - .08) * 1.3);
       }
     }
     /* the item's name, with the row */

@@ -51,7 +51,7 @@ const Compass = (() => {
 
   function load(){
     try {
-      const v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      const v = JSON.parse(Store.get(KEY) || 'null');
       if (v && typeof v === 'object'){
         state = {manual: !!v.manual, deg: isFinite(v.deg) ? +v.deg : 0};
         if (v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
@@ -59,7 +59,7 @@ const Compass = (() => {
     } catch (e){}
   }
   function store(){
-    try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, state, {tune}))); } catch (e){}
+    try { Store.set(KEY, JSON.stringify(Object.assign({}, state, {tune}))); } catch (e){}
   }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 

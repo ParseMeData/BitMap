@@ -323,14 +323,14 @@ const Palace = (() => {
   function saved(){
     const id = here();
     if (!id) return '';
-    try { return localStorage.getItem(KEY(id)) || ''; } catch (e){ return ''; }
+    try { return Store.get(KEY(id)) || ''; } catch (e){ return ''; }
   }
   function store(txt){
     const id = here();
     if (!id) return;                       // no palace, so no list, so no key
     try {
-      if (txt.trim()) localStorage.setItem(KEY(id), txt);
-      else localStorage.removeItem(KEY(id));
+      if (txt.trim()) Store.set(KEY(id), txt);
+      else Store.del(KEY(id));
       if (typeof hqStoreOK === 'function') hqStoreOK('this room list');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('this room list', e); }
   }
@@ -644,7 +644,7 @@ const Palace = (() => {
   let off = null;                              // {dx, dy} world units, or null
   function loadOff(){
     try {
-      const raw = localStorage.getItem(POS);
+      const raw = Store.get(POS);
       if (!raw) return;
       const v = JSON.parse(raw);
       if (v && isFinite(v.dx) && isFinite(v.dy)) off = {dx: +v.dx, dy: +v.dy};
@@ -658,9 +658,9 @@ const Palace = (() => {
      different thing being saved. */
   function storeOff(){
     try {
-      if (off) localStorage.setItem(POS, JSON.stringify(
+      if (off) Store.set(POS, JSON.stringify(
         {dx: +off.dx.toFixed(2), dy: +off.dy.toFixed(2)}));
-      else localStorage.removeItem(POS);
+      else Store.del(POS);
       if (typeof hqStoreOK === 'function') hqStoreOK('the title position');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the title position', e); }
   }
@@ -709,19 +709,19 @@ const Palace = (() => {
   };
   function loadStyle(){
     try {
-      const t = localStorage.getItem(TREAT), b = localStorage.getItem(BORD);
+      const t = Store.get(TREAT), b = Store.get(BORD);
       /* checked against the tables rather than trusted: a name that has been
          retired should fall back to the plain one, not draw nothing */
       if (t && Type.hasTreatment(t)) treat = t;
       if (b && Type.hasBorder(b)) border = b;
-      bright = num(localStorage.getItem(BRIGHT), BMIN, BMAX, 1);
-      jitter = num(localStorage.getItem(JIT), 0, JMAX, 0);
+      bright = num(Store.get(BRIGHT), BMIN, BMAX, 1);
+      jitter = num(Store.get(JIT), 0, JMAX, 0);
       /* Three readings of the key: absent is a profile that has never
          chosen, and gets the shelf's first face; `none` is the diamond
          type chosen on purpose; anything else is a family. The sentinel
          is what keeps "chose the diamond type" from reading as "never
          chose" after a reload, which would put the default back. */
-      const raw = localStorage.getItem(FONT);
+      const raw = Store.get(FONT);
       font = raw === null ? ((typeof Title !== 'undefined' && Title.DEFAULT) || '')
            : raw === 'none' ? '' : String(raw).trim().slice(0, FMAX);
       /* asked for now rather than on the first frame that wants it, so the
@@ -730,18 +730,18 @@ const Palace = (() => {
       if (typeof Title !== 'undefined')
         for (const k in Title.tune){
           const r = Title.tune[k];
-          tune[k] = num(localStorage.getItem(TUNEK(k)), r.lo, r.hi, r.dflt);
+          tune[k] = num(Store.get(TUNEK(k)), r.lo, r.hi, r.dflt);
         }
     } catch (e){}
   }
   function storeStyle(){
     try {
-      localStorage.setItem(TREAT, treat);
-      localStorage.setItem(BORD, border);
-      localStorage.setItem(BRIGHT, String(bright));
-      localStorage.setItem(JIT, String(jitter));
-      localStorage.setItem(FONT, font || 'none');
-      for (const k in tune) localStorage.setItem(TUNEK(k), String(tune[k]));
+      Store.set(TREAT, treat);
+      Store.set(BORD, border);
+      Store.set(BRIGHT, String(bright));
+      Store.set(JIT, String(jitter));
+      Store.set(FONT, font || 'none');
+      for (const k in tune) Store.set(TUNEK(k), String(tune[k]));
       if (typeof hqStoreOK === 'function') hqStoreOK('the heading style');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the heading style', e); }
   }
@@ -938,7 +938,7 @@ const Palace = (() => {
   }
 
   const TOWN = 'hq.town';
-  const townName = () => { try { return localStorage.getItem(TOWN) || ''; }
+  const townName = () => { try { return Store.get(TOWN) || ''; }
                            catch (e){ return ''; } };
   /* The town is named in storage and a palace is named on its marker, which
      is where each of them already lives — so the one field writes to
@@ -946,7 +946,7 @@ const Palace = (() => {
   function rename(v){
     const s = String(v || '').slice(0, 28);
     if (typeof Interior !== 'undefined' && Interior.inside()) Interior.rename(s);
-    else { try { if (s) localStorage.setItem(TOWN, s); else localStorage.removeItem(TOWN);
+    else { try { if (s) Store.set(TOWN, s); else Store.del(TOWN);
                  if (typeof hqStoreOK === 'function') hqStoreOK('the town name'); }
            catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the town name', e); } }
   }
@@ -989,6 +989,6 @@ const Palace = (() => {
                            brightRange: [BMIN, BMAX], jitterRange: [0, JMAX]}),
           treatments: () => Type.treatments, borders: () => Type.borders,
           opened: () => open, at: here,
-          has: id => { try { return !!localStorage.getItem(KEY(id)); }
+          has: id => { try { return !!Store.get(KEY(id)); }
                        catch (e){ return false; } }};
 })();

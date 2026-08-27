@@ -92,10 +92,16 @@ WRITE_LOCI = """(async (rows) => {
 })"""
 
 WRITE_PIC = """(async (url) => {
-  const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
+  // Open at whatever version the profile has. A fresh profile can hold this
+  // database at version 1 with no 'pic' store in it yet, and asking for
+  // version 1 again would not run the upgrade that creates it -- so if the
+  // store is missing, close and reopen one version up, which does.
+  const open = ver => new Promise((res, rej) => { const r = ver ? indexedDB.open('hq.basemap', ver) : indexedDB.open('hq.basemap');
     r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic'))
       r.result.createObjectStore('pic'); };
     r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
+  let d = await open(0);
+  if (!d.objectStoreNames.contains('pic')){ const v = d.version + 1; d.close(); d = await open(v); }
   return await new Promise((res, rej) => { const t = d.transaction('pic', 'readwrite');
     const s = t.objectStore('pic');
     // A snapshot with no frozen picture has to leave the profile with no frozen

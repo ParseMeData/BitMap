@@ -255,7 +255,7 @@ const Loci = (() => {
      time and the deck is all of them at once. */
   const RKEY = uid => 'hq.rooms.' + uid;
   const MKEY = uid => 'hq.marks.' + uid;
-  const read = k => { try { return JSON.parse(localStorage.getItem(k) || '[]') || []; }
+  const read = k => { try { return JSON.parse(Store.get(k) || '[]') || []; }
                       catch (e){ return []; } };
   const byN = a => a.slice().sort((x, y) => (x.n || 0) - (y.n || 0));
 
@@ -307,7 +307,7 @@ const Loci = (() => {
           uids.push(l.uid);
           meta.push({room: r.name || '', name: l.name || '', n: l.n});
         }
-    try { localStorage.setItem(DECK, JSON.stringify({uids, meta, at: Date.now()})); }
+    try { Store.set(DECK, JSON.stringify({uids, meta, at: Date.now()})); }
     catch (e){ note('could not hand the route over: ' + e.message); }
     return uids.length;
   }

@@ -48,7 +48,7 @@ const History = (() => {
   const entries = new Map();
   let pending = 0, waiting = null, busy = false;
 
-  const read = k => { try { return localStorage.getItem(k) || ''; } catch (e){ return ''; } };
+  const read = k => { try { return Store.get(k) || ''; } catch (e){ return ''; } };
   const ready = () => typeof Build !== 'undefined' && typeof Markers !== 'undefined' &&
                       typeof Build.key === 'function' && typeof Markers.key === 'function';
   const shot = e => ({s: read(e.skey), m: read(e.mkey)});
@@ -155,7 +155,7 @@ const History = (() => {
      so a scope that held nothing goes back to holding nothing — Interior
      reads those keys to know which markers have a plan in them. */
   function put(k, v){
-    if (v) localStorage.setItem(k, v); else localStorage.removeItem(k);
+    if (v) Store.set(k, v); else Store.del(k);
   }
   function apply(e, s){
     /* the same words save() uses, so a failure here and a failure there
@@ -171,7 +171,7 @@ const History = (() => {
        finally, because a throw out of mount/reload below would otherwise
        leave busy set and every later tap and step a silent no-op. */
     try {
-      const back = localStorage.getItem(e.skey);
+      const back = Store.get(e.skey);
       try {
         put(e.skey, s.s);
         try {

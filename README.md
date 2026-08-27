@@ -249,6 +249,9 @@ stale.
     assets/buildings-b.png the landmark sheets: sixty-odd small buildings as
                          pixel art, read by tools/glyphs.py and by nothing
                          at run time
+    src/store.js         every hq. key read and written through one place;
+                         hq.version and the ladder of migrations a profile
+                         written by an older build climbs once at boot
     src/render.js        WebGL2 instanced SDF renderer
     src/lattice.js       picture → lattice: analyse (tone, sharpen, sobel)
                          then compose (pick faces + colour), and terrain

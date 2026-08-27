@@ -30,12 +30,12 @@ const Missions = (() => {
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   function load(){
     if (list) return list;
-    try { list = JSON.parse(localStorage.getItem(KEY) || '[]') || []; } catch (e){ list = []; }
+    try { list = JSON.parse(Store.get(KEY) || '[]') || []; } catch (e){ list = []; }
     if (!Array.isArray(list)) list = [];
     return list;
   }
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify(list)); }
+    try { Store.set(KEY, JSON.stringify(list)); }
     catch (e){ note('could not save the missions — storage is full'); }
   }
   const day = iso => (iso ? iso.slice(0, 10) : '—');

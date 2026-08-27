@@ -52,12 +52,12 @@ const Journal = (() => {
   let notes = null;
   function load(){
     if (notes) return notes;
-    try { notes = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e){ notes = {}; }
+    try { notes = JSON.parse(Store.get(KEY) || '{}') || {}; } catch (e){ notes = {}; }
     return notes;
   }
   function store(){
     try {
-      localStorage.setItem(KEY, JSON.stringify(load()));
+      Store.set(KEY, JSON.stringify(load()));
       if (typeof hqStoreOK === 'function') hqStoreOK('the journal');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the journal', e); }
   }

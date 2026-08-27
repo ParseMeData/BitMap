@@ -59,22 +59,16 @@ const Bag = (() => {
      slot k%3. It is not the row's selection — it outlives the row, the
      system and the page, so the stack you were building is there when you
      come back. Saved under `hq.bagseq`, an hq. key, so a snapshot carries
-     it. `hq.bagsel` was the one held number before the stack was a
-     sequence; it is read once, as a stack of one, and then let go. */
+     it. (`hq.bagsel`, the one held number before the stack was a
+     sequence, is folded in by the store's ladder, step 1.) */
   const SEQ = 'hq.bagseq';
   let seq = [];
-  try {
-    seq = JSON.parse(localStorage.getItem(SEQ) || 'null');
-    if (!Array.isArray(seq)){
-      const old = JSON.parse(localStorage.getItem('hq.bagsel') || 'null');
-      seq = old ? [old] : [];
-    }
-  } catch (e){ seq = []; }
+  seq = Store.json(SEQ, []);
+  if (!Array.isArray(seq)) seq = [];
   seq = seq.filter(d => d && SYSTEMS[d.sys] && d.i >= 0 && d.i < SYSTEMS[d.sys].cap);
   function saveSeq(){
-    try { seq.length ? localStorage.setItem(SEQ, JSON.stringify(seq)) : localStorage.removeItem(SEQ); }
+    try { seq.length ? Store.set(SEQ, JSON.stringify(seq)) : Store.del(SEQ); }
     catch (e){ note('could not save the stack — storage is full'); }
-    try { localStorage.removeItem('hq.bagsel'); } catch (e){}
   }
   /* whether a row card is in the stack, as the row sees it */
   const dealt = i => seq.some(d => d.sys === system && d.i === i);
@@ -100,7 +94,7 @@ const Bag = (() => {
   let words = null;
   function loadWords(){
     if (words) return words;
-    try { words = JSON.parse(localStorage.getItem(WORDS) || '{}') || {}; }
+    try { words = JSON.parse(Store.get(WORDS) || '{}') || {}; }
     catch (e){ words = {}; }
     return words;
   }
@@ -109,7 +103,7 @@ const Bag = (() => {
     loadWords();
     text = (text || '').trim();
     if (text) words[k] = text; else delete words[k];
-    try { localStorage.setItem(WORDS, JSON.stringify(words)); }
+    try { Store.set(WORDS, JSON.stringify(words)); }
     catch (e){ note('could not save the word — storage is full'); }
   }
 
@@ -679,13 +673,13 @@ const Bag = (() => {
   let hands = null;
   function hand(k){
     if (!hands){
-      try { hands = JSON.parse(localStorage.getItem(HK) || '{}') || {}; } catch (e){ hands = {}; }
+      try { hands = JSON.parse(Store.get(HK) || '{}') || {}; } catch (e){ hands = {}; }
     }
     return hands[k] || null;
   }
   function setHand(k, h){
     hand(k); hands[k] = h;
-    try { localStorage.setItem(HK, JSON.stringify(hands)); } catch (e){ note('the hand could not be saved'); }
+    try { Store.set(HK, JSON.stringify(hands)); } catch (e){ note('the hand could not be saved'); }
   }
   const altKey = (k, i) => k + ':alt:' + i;
   /* a file into the hand: one more alternate, dealt at once, and the card's

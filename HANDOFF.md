@@ -135,6 +135,9 @@ Storage, all under `hq.`:
 
     hq.shapes            the town
     hq.markers           the town's markers
+    hq.version           which step of src/store.js's ladder this profile
+                         has climbed — the one number that says what shape
+                         every other key is in
     hq.town              the town's name — a palace's name is not here, it is
                          on its marker inside hq.markers
     hq.rooms.<uid>       one palace's plan
@@ -292,6 +295,18 @@ lands every path that still carries a size back on 1×. Resizing went
 through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
+
+**Every key goes through the store, and the store has a version.**
+`src/store.js` is first in the boot chain; `Store.get/set/del/put/json/
+save/keys/has` are the only way a module touches localStorage, and
+`hq.version` says which step of the ladder at the foot of that file this
+profile has climbed. A step is appended, never edited once shipped — a
+profile that climbed it will not climb it again. `set` throws on quota
+exactly as localStorage does, which is why every module's try/catch and
+`hqStoreFail` latch kept working unchanged through the move. The keys and
+their values did not change: `tools/snapshot.py` carries `hq.version`
+like any other key and a v7.7 snapshot restores into a v7.8 profile and
+climbs on the next boot.
 
 **A plate is the interior's trick pointed sideways.** Going inside a
 building mounts the builder and the markers on another pair of keys and

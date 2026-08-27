@@ -19,11 +19,38 @@ may run straight into the next without waiting.
 
 ## Queue
 
+- [ ] `[auto]` **v7.8 · 2 · A palace knows its plate** — `plate: <atlas id>`
+  on each palace, derived once by migration from whichever plate's marker
+  list holds the uid.
+- [ ] `[auto]` **v7.8 · 3 · The index** — `hq.index`: every marker uid, every
+  picture key, which plate, which mission; rebuilt by migration, kept current
+  through `Store`.
+- [ ] `[auto]` **v7.8 · 4 · The sweep** — `tools/snapshot.py sweep`: orphaned
+  palaces, loci, pictures, missions listed; `--yes` removes. Dry-run default,
+  never at runtime.
+- [ ] `[auto]` **v7.8 · 5 · The picture store, namespaced** — `hq.loci/img`
+  keys become `locus:<uid>`, `card:<sys>:<label>:<slot>`, `card:…:alt:<n>`;
+  loci, bag, platformer and snapshot.py read the new names; migration
+  rewrites IDB keys once. Snapshot first; verified on a throwaway restored
+  from `snapshots/v7.7.json`.
+- [ ] `[auto]` **v7.8 · 6 · A plate's own underlay** — `hq.basemap.<id>` for
+  plates other than home, mounted with the plate; home keeps `hq.basemap`.
+- [ ] `[auto]` **v7.8 · 7 · Lazy plates** — a plate's shapes and markers are
+  parsed when you stand on it, not at boot.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **v7.8 · 1 · One store, one version** — 2026-08-27. `src/store.js`
+  first in the chain: `get/set/del/put/json/save/keys/has/watch`, `set`
+  throws on quota as before so every latch holds; `hq.version` + `LADDER`
+  (step 1: `hq.bagsel`→`hq.bagseq`, drop `hq.bagtune`, bare `hq.order.`,
+  Haunt Quest's `hq.best`). 65 sites in 14 files rerouted; bag's own
+  bagsel fallback and interior's key scan replaced. BUILD 127. Verified on
+  a throwaway restored from `snapshots/v7.7.json`: version 0→1, stray keys
+  gone, 39 shapes / 5 plans / 1 mission / geo intact, watch fires, rename
+  and commit write through.
 - [x] **The roads between plates, on the map** — 2026-08-27. `drawLinks`
   in `towns.js`: each link in `hq.atlas` whose two plates both have an
   anchor, one dashed aqua line (drawn from the lower id, so both ways is
@@ -99,10 +126,10 @@ may run straight into the next without waiting.
   throwaway with two pictures seeded under bag keys via the snapshot
   tool's WRITE_LOCI (its full `restore` dies on a fresh profile at the
   `hq.basemap` store — pre-existing, noted below).
-- [ ] **`snapshot.py restore` on a fresh profile**: `WRITE_PIC` opens
-  `hq.basemap` at version 1 and the fresh profile's DB lacks the `pic`
-  store → "One of the specified object stores was not found". Bump the
-  open to the app's version or create the store on upgrade regardless.
+- [x] **`snapshot.py restore` on a fresh profile** — 2026-08-27, with
+  v7.8 · 1. `WRITE_PIC` opens at the profile's own version and, if the
+  `pic` store is missing, reopens one version up to create it. Verified:
+  `snapshots/v7.7.json` restored into an empty profile, 39 shapes back.
 - [x] **Size is cells per letter; the pitch never moves** — 2026-08-26.
   The pitch multiplier (`size` tune) is gone — it shrank the diamonds with
   the name, and the diamond is the thing that must not change. `detail`

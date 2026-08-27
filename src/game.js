@@ -71,9 +71,9 @@ function fatal(e){
   try { probe = !!document.createElement('canvas').getContext('webgl2'); } catch (err){}
   let loads = [];
   try {
-    loads = JSON.parse(localStorage.getItem('hq.loads') || '[]').filter(t => Date.now() - t < 60000);
+    loads = JSON.parse(Store.get('hq.loads') || '[]').filter(t => Date.now() - t < 60000);
     loads.push(Date.now());
-    localStorage.setItem('hq.loads', JSON.stringify(loads.slice(-20)));
+    Store.set('hq.loads', JSON.stringify(loads.slice(-20)));
   } catch (err){}
 
   const head = probe ? 'graphics context refused' : 'this build needs WebGL2';
@@ -105,7 +105,7 @@ let VW = 1, VH = 1;
    walk grid with it, so the only ground that exists is ground you drew.
    Nothing is destroyed, so the printed map comes back on a restamp. */
 let BLANK = false;
-try { BLANK = localStorage.getItem('hq.blank') === '1'; } catch (e){}
+try { BLANK = Store.get('hq.blank') === '1'; } catch (e){}
 
 /* ── the sparks ─────────────────────────────────────────────────────────
    The round is the game this started as, and it is in the way of the game
@@ -114,10 +114,10 @@ try { BLANK = localStorage.getItem('hq.blank') === '1'; } catch (e){}
    round machinery underneath is untouched — turn them back on and the
    deal-and-collect loop is exactly where it was. */
 let SPARKS = false;
-try { SPARKS = localStorage.getItem('hq.sparks') === '1'; } catch (e){}
+try { SPARKS = Store.get('hq.sparks') === '1'; } catch (e){}
 function setSparks(v){
   SPARKS = !!v;
-  try { localStorage.setItem('hq.sparks', SPARKS ? '1' : '0'); } catch (e){}
+  try { Store.set('hq.sparks', SPARKS ? '1' : '0'); } catch (e){}
   G.got = 0; G.sparks.length = 0;
   G.total = roundTotal();
   scatterSparks();
@@ -146,7 +146,7 @@ function applyPlate(){
    town's own setting has to still be there when you come back out. */
 function setBlank(v, persist){
   BLANK = !!v;
-  if (persist !== false){ try { localStorage.setItem('hq.blank', BLANK ? '1' : '0'); } catch (e){} }
+  if (persist !== false){ try { Store.set('hq.blank', BLANK ? '1' : '0'); } catch (e){} }
   compose();
   /* applyPlate restamps, and restamping already revalidates the round: a
      blank sheet has nowhere to stand and nothing to collect until a road is

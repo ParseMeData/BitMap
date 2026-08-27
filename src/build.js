@@ -2394,7 +2394,7 @@ const Build = (() => {
        tells you the town would not keep when you are standing in a plan. */
     const what = KEY === 'hq.shapes' ? 'the town' : 'this plan';
     try {
-      localStorage.setItem(KEY, JSON.stringify(G.shapes.map(s => ({
+      Store.set(KEY, JSON.stringify(G.shapes.map(s => ({
         kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, tone: s.tone || 'stone', rot: s.rot || 0,
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
@@ -2461,7 +2461,7 @@ const Build = (() => {
 
   function load(){
     let raw = [];
-    try { raw = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e){}
+    try { raw = JSON.parse(Store.get(KEY) || '[]'); } catch (e){}
     G.shapes = (Array.isArray(raw) ? raw : [])
       .filter(s => s && Kinds.by[s.kind])
       .map(s => {

@@ -35,14 +35,7 @@ const Interior = (() => {
      still inside and the ring would be missing from a room that exists. */
   function survey(){
     have = {};
-    try {
-      for (let i = 0; i < localStorage.length; i++){
-        const k = localStorage.key(i);
-        if (k.indexOf(PRE) !== 0) continue;
-        const v = localStorage.getItem(k);
-        if (v && v !== '[]') have[k.slice(PRE.length)] = 1;
-      }
-    } catch (e){}
+    for (const k of Store.keys(PRE)) if (Store.has(k)) have[k.slice(PRE.length)] = 1;
   }
 
   const glyph = mk => (Markers.glyphs()[mk.gi] || '◆');
@@ -205,9 +198,9 @@ const Interior = (() => {
     const f = stack[stack.length - 1];
     f.name = String(v || '').slice(0, 28);
     try {
-      const list = JSON.parse(localStorage.getItem(f.mkey) || '[]');
+      const list = JSON.parse(Store.get(f.mkey) || '[]');
       const mk = (Array.isArray(list) ? list : []).find(x => x && x.uid === f.uid);
-      if (mk){ mk.name = f.name; localStorage.setItem(f.mkey, JSON.stringify(list)); }
+      if (mk){ mk.name = f.name; Store.set(f.mkey, JSON.stringify(list)); }
       if (typeof hqStoreOK === 'function') hqStoreOK('this palace name');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('this palace name', e); }
     banner();

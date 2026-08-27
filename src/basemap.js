@@ -343,7 +343,7 @@ const Basemap = (() => {
     if (!pic) return;
     pic.remove(); pic = null; picURL = ''; place = null;
     setPlacing(false);
-    try { localStorage.removeItem(IMGKEY); } catch (e){}
+    try { Store.del(IMGKEY); } catch (e){}
     idbDel();
     lastRange = ''; paint(); syncUI(); save();
   }
@@ -563,18 +563,18 @@ const Basemap = (() => {
     }).catch(() => {});
   }
   async function stash(url){
-    try { await idbPut(url); try { localStorage.removeItem(IMGKEY); } catch (e){} return; }
+    try { await idbPut(url); try { Store.del(IMGKEY); } catch (e){} return; }
     catch (e){}
-    try { localStorage.setItem(IMGKEY, url); }
+    try { Store.set(IMGKEY, url); }
     catch (e){ note('picture too large to keep — it will not survive a reload'); }
   }
   async function fetchStashed(){
     try { const v = await idbGet(); if (v) return v; } catch (e){}
-    try { return localStorage.getItem(IMGKEY) || ''; } catch (e){ return ''; }
+    try { return Store.get(IMGKEY) || ''; } catch (e){ return ''; }
   }
 
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify({shown, lat, lon, z, dim, scale,
+    try { Store.set(KEY, JSON.stringify({shown, lat, lon, z, dim, scale,
       src, gkey, gtype, place, placing}));
       if (typeof hqStoreOK === 'function') hqStoreOK('the map settings'); }
     /* this try holds the settings blob, not the picture — stash() reports on
@@ -587,7 +587,7 @@ const Basemap = (() => {
   }
   function load(){
     try {
-      const j = JSON.parse(localStorage.getItem(KEY) || 'null');
+      const j = JSON.parse(Store.get(KEY) || 'null');
       if (!j) return null;
       lat = j.lat; lon = j.lon; z = j.z; dim = j.dim; scale = j.scale;
       shown = !!j.shown; src = j.src || 'dark'; gkey = j.gkey || ''; gtype = j.gtype || 'roadmap';

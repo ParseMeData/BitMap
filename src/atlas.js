@@ -36,7 +36,7 @@ const Atlas = (() => {
   let A = load();
   function load(){
     try {
-      const a = JSON.parse(localStorage.getItem(KEY) || 'null');
+      const a = JSON.parse(Store.get(KEY) || 'null');
       if (a && a.areas && a.areas.home){
         for (const id in a.areas) if (!Array.isArray(a.areas[id].links)) a.areas[id].links = [];
         return a;
@@ -44,7 +44,7 @@ const Atlas = (() => {
     } catch (e){}
     return {areas: {home: {name: 'Home', links: []}}, current: 'home'};
   }
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(A)); } catch (e){} }
+  function save(){ try { Store.set(KEY, JSON.stringify(A)); } catch (e){} }
 
   /* ── where a plate is ────────────────────────────────────────────────
      One step between joined plates is one cell of the country raster —
@@ -140,7 +140,7 @@ const Atlas = (() => {
                   grain: 1, scale: 1, jitter: 0, scatter: 0, fall: 0, out: 0, quad: null, blob: null,
                   core: 0.35, aim: null, pad: 1.2, padFade: 0.8, padBreak: 0.3,
                   x: a[0], y: a[1], w: z * 6, h: z * 5, r: z * 0.25, pts: [a, b], ctrl: null, width: z * 0.5};
-    try { localStorage.setItem(skey(id), JSON.stringify([stub])); } catch (err){}
+    try { Store.set(skey(id), JSON.stringify([stub])); } catch (err){}
     return go(id, e);
   }
 

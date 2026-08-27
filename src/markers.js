@@ -240,7 +240,7 @@ const Markers = (() => {
   /* ── persistence ── */
   function save(){
     try {
-      localStorage.setItem(KEY, JSON.stringify(G.markers.map(m =>
+      Store.set(KEY, JSON.stringify(G.markers.map(m =>
         ({uid: m.uid, name: m.name || '', n: m.n || 0, gi: m.gi, x: m.x, y: m.y,
           size: m.size, tint: m.tint}))));
       if (typeof hqStoreOK === 'function') hqStoreOK('the markers');
@@ -248,7 +248,7 @@ const Markers = (() => {
   }
   function load(){
     let raw = [];
-    try { raw = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e){}
+    try { raw = JSON.parse(Store.get(KEY) || '[]'); } catch (e){}
     let minted = false;
     G.markers = (Array.isArray(raw) ? raw : [])
       .filter(m => m && m.gi < glyphs.length)

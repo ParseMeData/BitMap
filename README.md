@@ -1735,7 +1735,7 @@ each, standing on the hub — centred on the HUD's pair of diamonds with
 its last letter just above them, so the letters and the three diamonds
 read as one piece. Press a letter and it opens: a row of diamonds beside
 it, one for each item under that letter with the item's first letter in
-it, and — a second later — the word the letter stands for set on the
+it, and — two seconds later — the word the letter stands for set on the
 diagonal above them;
 point at an item and it names itself. Press an item and it is **picked** (flare); press it again and
 the journal opens on that letter. Press anywhere else with an item
@@ -1749,9 +1749,10 @@ open letter's items, Enter picks the item under the cursor and folds,
 Esc closes the column and gives the keys back. The gap between letters,
 and between the last letter and the hub, is the hub's own 12 px. It
 moves: the letters rise out of the hub in turn when an acronym is put in
-focus, a row slides out of its letter and back in, and the fold sinks
-the letters into the pick diamond as it grows — a few hundred
-milliseconds each, out with a little overshoot, back easing in
+focus, a row slides out of its letter and back in, and a pick travels — the
+chosen item's diamond slides from its slot in the row down to its place
+above the hub as the letters sink away, and climbs back when unfolded —
+a few hundred milliseconds each, out with a little overshoot, back easing in
 (`STYLE.md` says why this, and only this, may move). One acronym is in focus at a time (`focus` in
 `hq.journal`, the row's id; the pick is `pick`); press ◆ again to take
 it down. The column is `src/focus.js`, made of the plate's material by

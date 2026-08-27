@@ -24,6 +24,13 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The pick travels; the word waits two** — 2026-08-27. `foldFrom`
+  taken by `setOut()` at the moment of a pick (Enter or click-away):
+  the picked diamond is skipped in the row and drawn on the path from
+  its slot to the fold (position, radius and flare→bone lerped by `fd`,
+  520 ms inOutCubic, reversed on unfold); a pick with no origin (boot,
+  journal) grows in place as before. `WORD_WAIT` 2000. BUILD 149.
+  Verified with mid-frames both ways.
 - [x] **The word waits a second** — 2026-08-27. `WORD_WAIT` 1000 ms from
   the letter opening (`openSince`), `RISE` fade; anchor moved to (1.05 r,
   −0.85 r). BUILD 148. Verified: word region ink 103 at 0.5 s, 516 at 1.4 s.

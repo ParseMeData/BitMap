@@ -51,6 +51,7 @@ const Focus = (() => {
   const outBack = t => { const c = 1.6; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
   const inCubic = t => t * t * t;
   const outCubic = t => 1 - Math.pow(1 - t, 3);
+  const inOutCubic = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   function tween(name, to, dur, ease){
     const cur = T[name] ? val(name) : (to ? 0 : 1);
     if (T[name] && T[name].to === to) return;
@@ -109,6 +110,13 @@ const Focus = (() => {
       if (Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy) <= rc) f.cells.push({x: i, y: j, al, rgb, sz: 1});
   }
   const picked = k => P && F && F.ids[k] === P.id;
+  /* the picked diamond's place in the row, taken the moment it is picked
+     so the fold can carry it from there; null means it grows in place */
+  function setOut(){
+    foldFrom = null;
+    if (!row || !P || !picked(row.k)) return;
+    foldFrom = {x: row.x0 + P.item * row.step, y: row.h.y, r: row.rr};
+  }
 
   function paint(){
     if (!cv || !F) return;
@@ -151,6 +159,7 @@ const Focus = (() => {
         const st = Math.max(0, Math.min(1, (ro * (items.length + 2) - m) / 3));
         const sk = outBack(st);
         const isPick = picked(row.k) && P.item === m;
+        if (isPick && fd > 0 && foldFrom) continue;          // it is the one travelling, drawn below
         /* and the fade follows the layering: full where you stand, and a
            step dimmer for every diamond away from it on either side */
         const away = lead >= 0 ? Math.abs(m - lead) : m;
@@ -166,9 +175,18 @@ const Focus = (() => {
     }
     /* the pick diamond, growing out of the collapsing letters */
     if (P && fd > 0){
-      const r = fold.r * outBack(fd);
-      diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, bone);
-      if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y + r * .04, px: r * 1.1, col: tok('ground'), al: (fd - .5) * 2});
+      if (foldFrom){
+        /* the picked diamond itself, carried from its slot in the row down
+           to its place above the hub — flare on the way, bone once landed */
+        const e = fd, cx = lerp(foldFrom.x, fold.x, e), cy = lerp(foldFrom.y, fold.y, e), r = lerp(foldFrom.r, fold.r, e);
+        const col = [lerp(flare[0], bone[0], e), lerp(flare[1], bone[1], e), lerp(flare[2], bone[2], e)];
+        diamond(face, p, cx * DPR, cy * DPR, r * DPR, 1, col);
+        text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: cx, y: cy + r * .04, px: r * 1.1 * lerp(.82, 1, e), col: tok('ground'), al: 1});
+      } else {
+        const r = fold.r * outBack(fd);
+        diamond(face, p, fold.x * DPR, fold.y * DPR, r * DPR, fd, bone);
+        if (fd > .5) text.push({s: (P.text || '?').trim().charAt(0).toUpperCase(), x: fold.x, y: fold.y + r * .04, px: r * 1.1, col: tok('ground'), al: (fd - .5) * 2});
+      }
     }
     Title.paint(cv, face, {weight: 1});
 
@@ -288,7 +306,7 @@ const Focus = (() => {
       return;
     }
     /* away, with something picked: fold — and let the press go on */
-    if (P && !folded){ folded = true; hoverItem = -1; painted = ''; }
+    if (P && !folded){ layout(); setOut(); folded = true; hoverItem = -1; painted = ''; }
   }
 
   /* ── the keys ──────────────────────────────────────────────────────────
@@ -307,7 +325,7 @@ const Focus = (() => {
     else if (code === 'Enter' || code === 'NumpadEnter'){
       if (cursor >= 0 && items[cursor] && typeof Journal !== 'undefined' && Journal.setPick){
         Journal.setPick(F.ids[open], cursor);
-        read(); folded = true; cursor = -1;
+        read(); layout(); setOut(); folded = true; cursor = -1;
       }
     }
     else if (code === 'Escape'){ open = -1; cursor = -1; }
@@ -322,13 +340,14 @@ const Focus = (() => {
     if (F && !had){ T.stand = null; tween('stand', 1, 520, outCubic); }
     P = F && Journal.pick ? Journal.pick() : null;
     if (F && open >= F.letters.length) open = -1;
-    if (!P) folded = false;
+    if (!P){ folded = false; foldFrom = null; }
     painted = '';
   }
   let lastOpen = -1, wasMoving = false;
   let leadKey = '', leadSince = 0, dwelling = false;            // the item under the lead, and when it came to rest there
   const DWELL = 2000, RISE = 220;             // ms resting before the name shows, and its fade-in
-  const WORD_WAIT = 1000;                     // ms a letter is open before its word shows
+  const WORD_WAIT = 2000;                     // ms a letter is open before its word shows
+  let foldFrom = null;                        // where the picked diamond set out from, in the row
   let openSince = 0;
   function tick(){
     raf = requestAnimationFrame(tick);
@@ -339,7 +358,7 @@ const Focus = (() => {
     DPR = Math.min(2, devicePixelRatio || 1);
     /* the state says where things are going; the tweens say where they are */
     tween('stand', 1, 520, outCubic);
-    tween('fold', folded ? 1 : 0, folded ? 380 : 320, folded ? inCubic : outCubic);
+    tween('fold', folded ? 1 : 0, foldFrom ? 520 : (folded ? 380 : 320), foldFrom ? inOutCubic : (folded ? inCubic : outCubic));
     if (open !== lastOpen){
       /* a new letter: its row starts from nothing */
       if (open >= 0){ T.row = null; tween('row', 1, 460, outCubic); openSince = performance.now(); }

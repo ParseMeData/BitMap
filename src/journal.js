@@ -1,21 +1,23 @@
 'use strict';
 /* ── the journal ────────────────────────────────────────────────────────
    A second way in beside the hub: a page of tabs, each tab a few sub-tabs,
-   each sub-tab a set of rows of letters — acronyms — and a note behind
-   every letter, what it stands for and what you have to say about it.
+   each sub-tab a set of rows of letters — acronyms — and behind every
+   letter what it stands for, a description, and a list of items.
 
    It is a page like the bag: one glass pane over the plate, the chrome
-   cleared under it, Esc the way out. The structure — the tabs and their
-   letters — is written here, in `SECTIONS`, because it is the frame of
-   the thing and not what you type into it; adding a tab is adding a row.
-   What you type is kept in `hq.journal`, one entry per letter under a key
-   that says where it is, so a tab renamed here keeps nothing and a letter
-   moved keeps nothing — the same trade the bag's cards make, and for the
-   same reason: a key that names a place is a key you can read. */
+   cleared under it, Esc the way out.
+
+   The frame — tabs, sub-tabs, acronyms — used to be written here in code,
+   and a tab renamed kept nothing, because a note's key was the path to
+   its letter. Now the frame is data, kept with the notes, and every
+   letter carries an id of its own: rename a tab, move an acronym, and
+   the notes come along. `DEFAULT` below is only what a journal starts
+   as. Press **Edit** and every label is a field: type to rename, ‹ › and
+   ▲ ▼ to move, ✕ to remove, + to add. Leaving edit mode is what saves. */
 
 const Journal = (() => {
   const $ = s => document.querySelector(s);
-  const SECTIONS = [
+  const DEFAULT = [
     {label: 'Quest', subs: [
       {name: 'Projects',  rows: [{letters: 'PLAN', blurb: 'Ideas on the table'}, {letters: 'DOING', blurb: 'In motion'}, {letters: 'DONE', blurb: 'Finished'}]},
       {name: 'Birthdays', rows: [{letters: 'GIFT', blurb: 'Presents to find'}, {letters: 'CARD', blurb: 'Notes to write'}]},
@@ -34,26 +36,52 @@ const Journal = (() => {
       {name: 'Web', rows: [{letters: 'SITES', blurb: 'Things to build'}, {letters: 'TOOLS', blurb: 'Stack & setup'}]}
     ]},
     {label: 'Status', subs: [
-      {name: 'Gov',      rows: [{letters: 'FORMS', blurb: 'Paperwork'}, {letters: 'DATES', blurb: 'Deadlines'}]},
-      {name: 'Maths',    rows: [{letters: 'ADD', blurb: 'Arithmetic'}, {letters: 'ALG', blurb: 'Algebra'}]},
-      {name: 'Spelling', rows: [{letters: 'WORDS', blurb: 'Tricky spellings'}]},
-      {name: 'Grammar',  rows: [{letters: 'RULES', blurb: 'Structure & usage'}]}
+      {name: 'Gov',            rows: [{letters: 'FORMS', blurb: 'Paperwork'}, {letters: 'DATES', blurb: 'Deadlines'}]},
+      {name: 'Maths',          rows: [{letters: 'ADD', blurb: 'Arithmetic'}, {letters: 'ALG', blurb: 'Algebra'}]},
+      {name: 'Spelling',       rows: [{letters: 'WORDS', blurb: 'Tricky spellings'}]},
+      {name: 'Grammar',        rows: [{letters: 'RULES', blurb: 'Structure & usage'}]},
+      {name: 'Politics',       rows: [{letters: 'PARTY', blurb: 'Who stands where'}, {letters: 'LAW', blurb: 'Bills & rulings'}]},
+      {name: 'Economics',      rows: [{letters: 'MONEY', blurb: 'Rates, prices, wages'}, {letters: 'TRADE', blurb: 'Markets & supply'}]},
+      {name: 'Talking points', rows: [{letters: 'TOPIC', blurb: 'What to raise'}, {letters: 'CLAIM', blurb: 'What to say, and the evidence'}]}
     ]}
   ];
 
   /* ── what is kept ──────────────────────────────────────────────────────
-     `hq.journal` is {key: {word, note}}, the key "Skills/Music/1/3" —
-     tab, sub-tab, row, column. Written on `change` rather than every
-     keystroke: a note is typed in sentences, and a save per letter is the
-     sixty-a-second the HANDOFF warns about, in slower motion. The latch
-     phrase is its own so a journal that cannot be saved does not silence
-     the town. */
+     `hq.journal` is {frame, notes}. `frame` is the tabs, each with an id;
+     each sub-tab with an id; each acronym row with its letters, a blurb,
+     and one id per letter. `notes` is {letter id: {word, note, items}}.
+
+     Before v7.8 the key was a flat map of "Tab/Sub/row/col" → {word,
+     note}, and the frame was code. A journal in that shape is read once
+     into the new one: the frame is seeded from DEFAULT and each note is
+     carried to the id of the letter at its path, if that letter still
+     exists. Self-describing — no `frame` means old — so no ladder step. */
   const KEY = 'hq.journal';
-  let notes = null;
+  let J = null;
+  const mint = () => 'j' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  const seedRow = r => ({id: mint(), letters: r.letters, blurb: r.blurb || '', ids: [...r.letters].map(mint)});
+  const seedSub = s => ({id: mint(), name: s.name, rows: s.rows.map(seedRow)});
+  const seedTab = t => ({id: mint(), label: t.label, subs: t.subs.map(seedSub)});
   function load(){
-    if (notes) return notes;
-    try { notes = JSON.parse(Store.get(KEY) || '{}') || {}; } catch (e){ notes = {}; }
-    return notes;
+    if (J) return J;
+    const raw = Store.json(KEY, {}) || {};
+    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}}; return J; }
+    J = {frame: DEFAULT.map(seedTab), notes: {}};
+    let carried = 0;
+    for (const k in raw){
+      const m = /^([^/]+)\/([^/]+)\/(\d+)\/(\d+)$/.exec(k);
+      if (!m) continue;
+      const tab = J.frame.find(t => t.label === m[1]); if (!tab) continue;
+      const sub = tab.subs.find(s => s.name === m[2]); if (!sub) continue;
+      const row = sub.rows[+m[3]]; if (!row) continue;
+      const id = row.ids[+m[4]]; if (!id) continue;
+      const v = raw[k] || {};
+      J.notes[id] = {word: v.word || '', note: v.note || '', items: []};
+      carried++;
+    }
+    store();
+    if (carried) note(carried + ' journal notes carried to the new frame');
+    return J;
   }
   function store(){
     try {
@@ -61,10 +89,12 @@ const Journal = (() => {
       if (typeof hqStoreOK === 'function') hqStoreOK('the journal');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the journal', e); }
   }
+  const noteOf = id => load().notes[id] || (load().notes[id] = {word: '', note: '', items: []});
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const filled = id => { const n = load().notes[id]; return !!n && !!((n.word || '') + (n.note || '') + (n.items || []).join('')).trim(); };
 
-  let open = false, active = 0, sub = 0, sel = null;   // sel = [row, col]
+  let open = false, editing = false, active = 0, sub = 0, sel = null;   // sel = letter id
   let el = null;
 
   function page(){
@@ -73,69 +103,227 @@ const Journal = (() => {
     el.id = 'journal'; el.className = 'glass'; el.hidden = true;
     el.innerHTML =
       '<div class="phead"><span>The <b>journal</b></span>' +
+      '<button class="btn" id="jedit">Edit</button>' +
       '<button class="btn" id="jx">&#10005;</button></div>' +
       '<div class="jtabs" id="jtabs"></div>' +
       '<div class="jwin" id="jwin"></div>' +
-      '<div class="knote">tabs hold sub-tabs, sub-tabs hold rows of letters, every letter holds a note · ← → change the tab · Esc closes</div>';
+      '<div class="knote" id="jnote-k"></div>';
     document.body.append(el);
     el.querySelector('#jx').addEventListener('click', close);
-    el.querySelector('#jtabs').addEventListener('click', e => {
-      const t = e.target.closest('.chip');
-      if (t){ active = +t.dataset.i; sub = 0; sel = null; render(); }
-    });
+    el.querySelector('#jedit').addEventListener('click', () => setEdit(!editing));
     return el;
   }
+  const clamp = () => {
+    const F = load().frame;
+    active = Math.max(0, Math.min(active, F.length - 1));
+    const t = F[active];
+    sub = t ? Math.max(0, Math.min(sub, t.subs.length - 1)) : 0;
+  };
 
+  /* ── editing the frame ─────────────────────────────────────────────────
+     Each of these changes the frame in memory and re-renders; the frame
+     is written when edit mode is left, or the page closed. Removing a
+     tab or sub-tab with notes in it asks once, in the banner's words,
+     by needing a second press. */
+  const swap = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return false; [arr[i], arr[j]] = [arr[j], arr[i]]; return true; };
+  const notesIn = tab => { let n = 0; for (const s of (tab.subs || [tab])) for (const r of s.rows) for (const id of r.ids) if (filled(id)) n++; return n; };
+  let arm = null;                          // {what, id}: the thing a second ✕ removes
+  function remove(kind, list, i, thing){
+    const n = kind === 'row' ? thing.ids.filter(filled).length : notesIn(thing);
+    if (n && !(arm && arm.id === thing.id)){
+      arm = {id: thing.id};
+      note('that ' + kind + ' holds ' + n + ' note' + (n === 1 ? '' : 's') + ' — press ✕ again to remove it');
+      return;
+    }
+    arm = null;
+    list.splice(i, 1);
+    if (kind === 'tab') active = Math.min(active, list.length - 1);
+    if (kind === 'sub') sub = Math.min(sub, list.length - 1);
+    sel = null;
+    render();
+  }
+  /* letters change under the same row: ids follow their column, so the
+     note at column 2 stays at column 2; new columns are minted */
+  function reletter(row, v){
+    const s = v.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!s) return;
+    row.letters = s;
+    row.ids = [...s].map((_, i) => row.ids[i] || mint());
+  }
+
+  function setEdit(v){
+    editing = !!v; arm = null; sel = null;
+    if (!editing) store();
+    render();
+  }
+
+  /* ── the page ─────────────────────────────────────────────────────── */
   function render(){
     const el = page();
     el.hidden = !open;
     document.body.classList.toggle('journal', open);
     if (!open) return;
-    const s = SECTIONS[active], t = s.subs[sub];
-    el.querySelector('#jtabs').innerHTML = SECTIONS.map((x, i) =>
-      '<div class="chip' + (i === active ? ' sel' : '') + '" data-i="' + i + '">' + esc(x.label) + '</div>').join('');
-    const key = sel ? s.label + '/' + t.name + '/' + sel[0] + '/' + sel[1] : null;
-    const n = key ? (load()[key] || (load()[key] = {word: '', note: ''})) : null;
-    const letter = sel ? t.rows[sel[0]].letters[sel[1]] : '';
+    clamp();
+    const F = load().frame, s = F[active], t = s && s.subs[sub];
+    el.classList.toggle('editing', editing);
+    el.querySelector('#jedit').textContent = editing ? 'Done' : 'Edit';
+    el.querySelector('#jedit').classList.toggle('sel', editing);
+    el.querySelector('#jnote-k').textContent = editing
+      ? 'type to rename · ‹ › and ▲ ▼ move · ✕ removes (twice, if it holds notes) · + adds · Done keeps it'
+      : 'tabs hold sub-tabs, sub-tabs hold rows of letters, every letter holds a description and a list · ← → change the tab · Esc closes';
+
+    /* tabs */
+    const tools = (kind, i, n) => editing ? '<span class="jtools">' +
+      '<button data-act="left" data-kind="' + kind + '" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>&#8249;</button>' +
+      '<button data-act="right" data-kind="' + kind + '" data-i="' + i + '"' + (i === n - 1 ? ' disabled' : '') + '>&#8250;</button>' +
+      '<button data-act="remove" data-kind="' + kind + '" data-i="' + i + '">&#10005;</button></span>' : '';
+    el.querySelector('#jtabs').innerHTML = F.map((x, i) =>
+      '<div class="chip' + (i === active ? ' sel' : '') + '" data-i="' + i + '">' +
+        (editing ? '<input class="jname" data-kind="tab" data-i="' + i + '" value="' + esc(x.label) + '" spellcheck="false">' + tools('tab', i, F.length)
+                 : esc(x.label)) + '</div>').join('') +
+      (editing ? '<div class="chip jadd" data-act="add" data-kind="tab">+ tab</div>' : '');
+
     const win = el.querySelector('#jwin');
+    if (!s){
+      win.innerHTML = '<div class="jempty">no tabs — press Edit and + tab</div>';
+      return;
+    }
+    const nsel = sel ? noteOf(sel) : null;
+    let selLetter = '', selRow = null;
+    if (t) for (const r of t.rows){ const i = r.ids.indexOf(sel); if (i >= 0){ selLetter = r.letters[i]; selRow = r; } }
     win.innerHTML =
       '<div class="jcol">' +
         '<div class="jsubs">' + s.subs.map((x, i) =>
-          '<div class="chip' + (i === sub ? ' sel' : '') + '" data-i="' + i + '">' + esc(x.name) + '</div>').join('') + '</div>' +
-        '<div class="plabel">' + esc(t.name) + '</div>' +
+          '<div class="chip' + (i === sub ? ' sel' : '') + '" data-i="' + i + '">' +
+            (editing ? '<input class="jname" data-kind="sub" data-i="' + i + '" value="' + esc(x.name) + '" spellcheck="false">' + tools('sub', i, s.subs.length)
+                     : esc(x.name)) + '</div>').join('') +
+          (editing ? '<div class="chip jadd" data-act="add" data-kind="sub">+ sub-tab</div>' : '') + '</div>' +
+        (t ? '<div class="plabel">' + esc(t.name) + '</div>' +
         '<div class="jgrid">' + t.rows.map((r, ri) =>
           '<div class="jblock"><div class="jrow">' + [...r.letters].map((ch, ci) =>
-            '<button class="jletter' + (sel && sel[0] === ri && sel[1] === ci ? ' sel' : '') +
-            '" data-r="' + ri + '" data-c="' + ci + '">' + esc(ch) + '</button>').join('') +
-          '</div><div class="jblurb">' + esc(r.blurb) + '</div></div>').join('') + '</div>' +
+            '<button class="jletter' + (sel === r.ids[ci] ? ' sel' : '') + (filled(r.ids[ci]) ? ' has' : '') +
+            '" data-id="' + r.ids[ci] + '">' + esc(ch) + '</button>').join('') +
+          '</div>' +
+          (editing ?
+            '<div class="jredit">' +
+              '<input class="jname jletters" data-kind="letters" data-i="' + ri + '" value="' + esc(r.letters) + '" spellcheck="false" placeholder="LETTERS">' +
+              '<input class="jname" data-kind="blurb" data-i="' + ri + '" value="' + esc(r.blurb) + '" spellcheck="false" placeholder="what this acronym is for">' +
+              '<span class="jtools">' +
+                '<button data-act="up" data-kind="row" data-i="' + ri + '"' + (ri === 0 ? ' disabled' : '') + '>&#9650;</button>' +
+                '<button data-act="down" data-kind="row" data-i="' + ri + '"' + (ri === t.rows.length - 1 ? ' disabled' : '') + '>&#9660;</button>' +
+                '<button data-act="remove" data-kind="row" data-i="' + ri + '">&#10005;</button></span>' +
+            '</div>'
+            : '<div class="jblurb">' + esc(r.blurb) + '</div>') +
+          '</div>').join('') +
+          (editing ? '<div class="jblock jaddrow"><input class="jname jletters" id="jnewrow" spellcheck="false" placeholder="+ ACRONYM, then Enter"></div>' : '') +
+        '</div>' : '<div class="jempty">no sub-tabs — press Edit and + sub-tab</div>') +
       '</div>' +
       '<div class="jcol jright">' +
-        '<div class="plabel">Note</div>' +
+        '<div class="plabel">' + (sel ? 'Letter' : 'Description') + '</div>' +
         '<div class="jdetail">' + (sel ?
-          '<div class="jtop"><div class="jbig">' + esc(letter) + '</div><div>' +
-            '<input id="jword" type="text" spellcheck="false" placeholder="' + esc(letter) + ' stands for" value="' + esc(n.word) + '">' +
-            '<div class="jfrom">' + esc(t.name) + ' · ' + esc(t.rows[sel[0]].blurb || [...t.rows[sel[0]].letters].join('.')) + '</div>' +
+          '<div class="jtop"><div class="jbig">' + esc(selLetter) + '</div><div>' +
+            '<input id="jword" type="text" spellcheck="false" placeholder="' + esc(selLetter) + ' stands for" value="' + esc(nsel.word) + '">' +
+            '<div class="jfrom">' + esc(t.name) + ' · ' + esc(selRow.blurb || [...selRow.letters].join('.')) + '</div>' +
           '</div></div>' +
-          '<textarea id="jnote" spellcheck="false" placeholder="Write your note here…">' + esc(n.note) + '</textarea>'
-          : '<div class="jempty">pick a letter to write a note</div>') +
+          '<div class="plabel">Description</div>' +
+          '<textarea id="jnote" spellcheck="false" placeholder="A summary of what this letter holds…">' + esc(nsel.note) + '</textarea>' +
+          '<div class="plabel">Items <b>' + (nsel.items || []).length + '</b></div>' +
+          '<div class="jitems" id="jitems">' + (nsel.items || []).map((it, i) =>
+            '<div class="jitem"><span class="jn">' + (i + 1) + '</span><input class="jitext" data-i="' + i + '" value="' + esc(it) + '" spellcheck="false">' +
+            '<span class="jtools"><button data-act="iup" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>&#9650;</button>' +
+            '<button data-act="idown" data-i="' + i + '"' + (i === nsel.items.length - 1 ? ' disabled' : '') + '>&#9660;</button>' +
+            '<button data-act="iremove" data-i="' + i + '">&#10005;</button></span></div>').join('') +
+            '<div class="jitem jinew"><span class="jn">+</span><input id="jnewitem" spellcheck="false" placeholder="add an item, then Enter"></div>' +
+          '</div>'
+          : '<div class="jempty">pick a letter</div>') +
         '</div>' +
       '</div>';
-    win.querySelector('.jsubs').addEventListener('click', e => {
-      const b = e.target.closest('.chip');
-      if (b){ sub = +b.dataset.i; sel = null; render(); }
-    });
-    win.querySelector('.jgrid').addEventListener('click', e => {
+    wire(win, s, t, nsel);
+  }
+
+  function wire(win, s, t, nsel){
+    const F = load().frame;
+    const stop = e => { if (e.key !== 'Escape') e.stopPropagation(); };
+    /* tabs and sub-tabs: a press picks, unless it landed on a field or a tool */
+    el.querySelector('#jtabs').onclick = e => {
+      if (e.target.closest('.jtools, input')) return;
+      const add = e.target.closest('[data-act="add"]');
+      if (add){ F.push({id: mint(), label: 'Tab', subs: []}); active = F.length - 1; sub = 0; render(); focusName('tab', active); return; }
+      const c = e.target.closest('.chip');
+      if (c && c.dataset.i != null){ active = +c.dataset.i; sub = 0; sel = null; render(); }
+    };
+    win.querySelector('.jsubs').onclick = e => {
+      if (e.target.closest('.jtools, input')) return;
+      const add = e.target.closest('[data-act="add"]');
+      if (add){ s.subs.push({id: mint(), name: 'Sub-tab', rows: []}); sub = s.subs.length - 1; sel = null; render(); focusName('sub', sub); return; }
+      const c = e.target.closest('.chip');
+      if (c && c.dataset.i != null){ sub = +c.dataset.i; sel = null; render(); }
+    };
+    const grid = win.querySelector('.jgrid');
+    if (grid) grid.onclick = e => {
+      if (e.target.closest('.jtools, input')) return;
       const b = e.target.closest('.jletter');
-      if (b){ sel = [+b.dataset.r, +b.dataset.c]; render(); win.querySelector('#jword').focus(); }
+      if (b){ sel = b.dataset.id; render(); const w = el.querySelector('#jword'); if (w) w.focus(); }
+    };
+    /* the tools: move and remove, on whichever list the button names */
+    el.onclick = e => {
+      const b = e.target.closest('.jtools button'); if (!b || b.disabled) return;
+      e.stopPropagation();
+      const act = b.dataset.act, kind = b.dataset.kind, i = +b.dataset.i;
+      if (kind === 'tab'){ if (act === 'remove') return remove('tab', F, i, F[i]); if (swap(F, i, act === 'left' ? -1 : 1)) active = i + (act === 'left' ? -1 : 1); }
+      else if (kind === 'sub'){ if (act === 'remove') return remove('sub', s.subs, i, s.subs[i]); if (swap(s.subs, i, act === 'left' ? -1 : 1)) sub = i + (act === 'left' ? -1 : 1); }
+      else if (kind === 'row'){ if (act === 'remove') return remove('row', t.rows, i, t.rows[i]); swap(t.rows, i, act === 'up' ? -1 : 1); }
+      else if (act === 'iremove'){ nsel.items.splice(i, 1); store(); }
+      else if (act === 'iup' || act === 'idown'){ swap(nsel.items, i, act === 'iup' ? -1 : 1); store(); }
+      render();
+    };
+    /* the fields: a name changes on change, not per keystroke */
+    for (const inp of win.querySelectorAll('.jname, #jnewrow')) inp.addEventListener('keydown', stop);
+    for (const inp of el.querySelectorAll('#jtabs .jname')) inp.addEventListener('keydown', stop);
+    el.querySelectorAll('.jname[data-kind]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const i = +inp.dataset.i, v = inp.value;
+        if (inp.dataset.kind === 'tab') F[i].label = v.trim() || F[i].label;
+        else if (inp.dataset.kind === 'sub') s.subs[i].name = v.trim() || s.subs[i].name;
+        else if (inp.dataset.kind === 'letters') reletter(t.rows[i], v);
+        else if (inp.dataset.kind === 'blurb') t.rows[i].blurb = v.trim();
+        render();
+      });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); });
+    });
+    const nr = win.querySelector('#jnewrow');
+    if (nr) nr.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const v = nr.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!v) return;
+      t.rows.push({id: mint(), letters: v, blurb: '', ids: [...v].map(mint)});
+      render();
+      const again = el.querySelector('#jnewrow'); if (again) again.focus();
     });
     if (sel){
       const w = win.querySelector('#jword'), x = win.querySelector('#jnote');
-      w.addEventListener('input', () => { n.word = w.value; });
-      x.addEventListener('input', () => { n.note = x.value; });
+      w.addEventListener('input', () => { nsel.word = w.value; });
+      x.addEventListener('input', () => { nsel.note = x.value; });
       w.addEventListener('change', store); x.addEventListener('change', store);
       w.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') x.focus(); });
-      x.addEventListener('keydown', e => { if (e.key !== 'Escape') e.stopPropagation(); });
+      x.addEventListener('keydown', stop);
+      win.querySelectorAll('.jitext').forEach(inp => {
+        inp.addEventListener('keydown', e => { stop(e); if (e.key === 'Enter') inp.blur(); });
+        inp.addEventListener('change', () => { const i = +inp.dataset.i; const v = inp.value.trim(); if (v) nsel.items[i] = v; else nsel.items.splice(i, 1); store(); render(); });
+      });
+      const ni = win.querySelector('#jnewitem');
+      ni.addEventListener('keydown', e => {
+        stop(e);
+        if (e.key !== 'Enter') return;
+        const v = ni.value.trim(); if (!v) return;
+        (nsel.items || (nsel.items = [])).push(v); store(); render();
+        const again = el.querySelector('#jnewitem'); if (again) again.focus();
+      });
     }
+  }
+  function focusName(kind, i){
+    const f = el.querySelector('.jname[data-kind="' + kind + '"][data-i="' + i + '"]');
+    if (f){ f.focus(); f.select(); }
   }
 
   function show(){
@@ -145,6 +333,7 @@ const Journal = (() => {
   }
   function close(){
     if (!open) return false;
+    if (editing){ editing = false; }
     store();
     open = false; render();
     return true;
@@ -152,11 +341,13 @@ const Journal = (() => {
   /* ← → walk the tabs while the page is up and nothing is being typed */
   function move(d){
     if (!open) return false;
-    active = ((active + d) % SECTIONS.length + SECTIONS.length) % SECTIONS.length;
+    const n = load().frame.length; if (!n) return true;
+    active = ((active + d) % n + n) % n;
     sub = 0; sel = null; render();
     return true;
   }
-  const count = () => { const n = load(); let c = 0; for (const k in n) if ((n[k].word || n[k].note || '').trim()) c++; return c; };
+  const count = () => { let c = 0; for (const id in load().notes) if (filled(id)) c++; return c; };
 
-  return {open: show, close, move, opened: () => open, count, sections: SECTIONS};
+  return {open: show, close, move, opened: () => open, editing: () => editing, setEdit, count,
+          frame: () => load().frame};
 })();

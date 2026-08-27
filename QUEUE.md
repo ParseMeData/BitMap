@@ -24,6 +24,19 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The journal edits itself** — 2026-08-27. `src/journal.js`
+  rewritten: frame as data (`hq.journal` = `{frame, notes}`, ids per
+  tab/sub/row/letter, notes by letter id `{word, note, items}`), old
+  path-keyed map carried across on first open; **Edit/Done** in the head
+  (`Journal.setEdit`, Esc leaves edit first — game.js gate); rename in
+  place, ‹ › ▲ ▼ move, ✕ remove (armed twice when notes are held), + tab
+  / + sub-tab / + ACRONYM; `reletter` keeps ids by column; right pane =
+  Letter → stands for, Description, Items (add on Enter, ▲ ▼ ✕); tiles
+  96px / 22px letters (the one glyph over 14px, noted in the CSS);
+  Status gains Politics, Economics, Talking points. BUILD 134. Verified
+  on a throwaway seeded with an old-shape journal: 2 notes carried,
+  items add/move/remove, tab rename + move, sub add + rename, acronym
+  add/move/reletter/blurb/remove, sub remove armed then removed, Esc ×2.
 - [x] **The towns map in the plate's own diamonds** — 2026-08-27, with
   STYLE.md *The lattice* (the rule: `G.A.cell`, ≈3 px at fit-all, half-size
   0.75, weights from one table; chrome via `Title.paint`, plate via GL,

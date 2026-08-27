@@ -487,18 +487,51 @@ body.missions #bag{visibility:hidden}
 #journal .jgrid{display:flex;flex-direction:column;gap:12px}
 #journal .jblock{display:grid;gap:6px;padding-bottom:12px;border-bottom:1px solid rgba(237,234,227,.14)}
 #journal .jblock:last-child{border-bottom:none}
-#journal .jrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,72px)}
+#journal .jrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,96px)}
+/* the letter tiles: 22px, the one place a glyph is larger than 14px — a
+   tile read from across the room, not text (STYLE.md, Type) */
 #journal .jletter{aspect-ratio:1;margin-right:-1px;background:transparent;border:1px solid rgba(237,234,227,.22);
-  color:var(--bone);font:400 14px/1 var(--mono);cursor:pointer;transition:background .12s,color .12s}
+  color:var(--bone);font:400 22px/1 var(--mono);cursor:pointer;transition:background .12s,color .12s;position:relative}
+#journal .jletter.has::after{content:"";position:absolute;right:5px;bottom:5px;width:4px;height:4px;background:var(--aqua)}
 #journal .jletter:hover{color:var(--flare)}
 #journal .jletter.sel{background:var(--bone);color:var(--ground);border-color:var(--bone)}
 #journal .jblurb{color:var(--dim);text-align:right;font-size:9px;letter-spacing:.18em;text-transform:uppercase}
 #journal .jdetail{border:1px solid rgba(237,234,227,.22);padding:14px;display:flex;flex-direction:column;gap:12px}
 #journal .jtop{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
-#journal .jbig{width:44px;height:44px;background:var(--bone);color:var(--ground);display:grid;place-items:center;font-size:18px}
+#journal .jbig{width:56px;height:56px;background:var(--bone);color:var(--ground);display:grid;place-items:center;font-size:26px}
+#journal .jtop{grid-template-columns:56px 1fr}
+#journal .phead #jedit{margin-left:auto;margin-right:8px}
+#journal .phead #jedit.sel{background:var(--bone);color:var(--ground)}
+/* edit mode: every label a field, tools beside it */
+#journal .jname{background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:4px 6px;min-width:0;width:100%}
+#journal .jname:focus{outline:0;border-color:var(--flare)}
+#journal .jname::placeholder{color:var(--faint)}
+#journal .jtools{display:inline-flex;gap:0;margin-left:4px;flex:none}
+#journal .jtools button{background:transparent;border:1px solid rgba(237,234,227,.22);margin-right:-1px;color:var(--dim);
+  font:400 9px/1 var(--mono);width:20px;height:20px;cursor:pointer;padding:0}
+#journal .jtools button:hover{color:var(--flare);border-color:var(--flare);position:relative}
+#journal .jtools button:disabled{color:var(--faint);cursor:default;border-color:rgba(237,234,227,.12)}
+#journal.editing .jtabs .chip,#journal.editing .jsubs .chip{display:flex;align-items:center;gap:4px;padding:5px 6px}
+#journal.editing .jtabs .chip .jname{flex:1;text-align:center}
+#journal .jadd{color:var(--dim);border-style:dashed}
+#journal .jredit{display:grid;grid-template-columns:110px 1fr auto;gap:6px;align-items:center}
+#journal .jletters{letter-spacing:.26em}
+#journal .jaddrow{border-bottom:none}
+/* the items under a letter */
+#journal .jitems{display:flex;flex-direction:column;gap:0}
+#journal .jitem{display:grid;grid-template-columns:22px 1fr auto;gap:6px;align-items:center;padding:3px 0;
+  border-bottom:1px solid rgba(237,234,227,.08)}
+#journal .jitem .jn{color:var(--faint);font-size:9px;text-align:right;font-variant-numeric:tabular-nums}
+#journal .jitext,#journal #jnewitem{background:transparent;border:1px solid transparent;color:var(--bone);
+  font:400 11px/1.4 var(--mono);letter-spacing:.04em;padding:4px 6px;width:100%;min-width:0}
+#journal .jitext:hover,#journal .jitext:focus,#journal #jnewitem:focus{outline:0;border-color:rgba(237,234,227,.22);background:var(--well)}
+#journal #jnewitem::placeholder{color:var(--faint)}
+#journal .jinew .jn{color:var(--dim)}
+#journal .plabel b{font-weight:400;color:var(--flare)}
 #journal #jword{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
   font:400 11px/1.4 var(--mono);padding:6px 8px;letter-spacing:.06em}
-#journal #jnote{width:100%;min-height:200px;flex:1;resize:vertical;background:var(--well);border:1px solid rgba(237,234,227,.22);
+#journal #jnote{width:100%;min-height:120px;flex:1;resize:vertical;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 11px/1.6 var(--mono);padding:8px 10px;letter-spacing:.04em}
 #journal #jword:focus,#journal #jnote:focus{outline:0;border-color:var(--flare)}
 #journal #jword::placeholder,#journal #jnote::placeholder{color:var(--faint)}
@@ -747,7 +780,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 133, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 134, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

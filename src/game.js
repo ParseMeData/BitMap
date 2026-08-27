@@ -420,7 +420,7 @@ addEventListener('keydown', e => {
      the tab unless a note is being typed, and nothing under it walks */
   if (typeof Journal !== 'undefined' && Journal.opened()){
     const typing = e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
-    if (e.code === 'Escape') Journal.close();
+    if (e.code === 'Escape'){ if (Journal.editing && Journal.editing()) Journal.setEdit(false); else Journal.close(); }
     else if (!typing && e.code === 'ArrowLeft') Journal.move(-1);
     else if (!typing && e.code === 'ArrowRight') Journal.move(1);
     return;

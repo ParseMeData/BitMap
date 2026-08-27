@@ -1710,15 +1710,26 @@ journal, and on a row beneath the pair a **bone** one that is the `B` key — bu
 again — drawn hollow while build is on, the plate's own face for "here
 but open". Aqua, because it is STYLE.md's one cool note: asked for as
 blue, and aqua is the blue this palette has. Press the aqua one and the
-journal opens: a page of tabs (Quest, Skills, Health, Equip,
-Status), each tab a few sub-tabs, each sub-tab rows of letters — acronyms
-— and behind every letter a note: what it stands for, and what you have
-to say about it. Pick a letter, type, and it is kept under `hq.journal`
-by where it is (`Skills/Music/1/3` — tab, sub-tab, row, column). ← →
-change the tab while nothing is being typed; Esc closes. The tabs and
-their letters are `SECTIONS` at the head of `src/journal.js`: adding a
-tab is adding a row there, and a letter moved keeps no note, which is the
-trade a key that names a place makes.
+journal opens: a page of tabs (Quest, Skills, Health, Equip, Status),
+each tab a few sub-tabs, each sub-tab rows of letters — acronyms — and
+behind every letter three things: what it **stands for**, a
+**description**, and a list of **items** (add one and press Enter; ▲ ▼
+reorder, ✕ removes). A letter with anything behind it wears an aqua
+mark in its corner. ← → change the tab while nothing is being typed;
+Esc closes.
+
+**Edit** (top right) turns the frame into fields: every tab, sub-tab
+and acronym is typed in place; ‹ › and ▲ ▼ move them; ✕ removes — a
+second press if it holds notes, and the banner says so; `+ tab`, `+
+sub-tab` and `+ ACRONYM` add. Changing an acronym's letters keeps each
+column's note where it is and mints new columns. **Done** (or Esc)
+keeps it. The frame and the notes live together in `hq.journal` as
+`{frame, notes}`: each letter has an id and its note is filed by that
+id, so a tab renamed or an acronym moved carries its notes with it. The
+defaults a fresh journal starts with are `DEFAULT` at the head of
+`src/journal.js`; Status carries Politics, Economics and Talking points
+among them. A journal from before v7.8 — a flat map keyed by path — is
+carried across on its first open.
 
 ### The bag
 

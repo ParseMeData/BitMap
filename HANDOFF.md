@@ -156,7 +156,11 @@ Storage, all under `hq.`:
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text
-    hq.journal           the journal's notes, "Tab/Sub/row/col" → {word, note}
+    hq.journal           {frame, notes}: the journal's tabs → sub-tabs →
+                         acronyms, every letter with an id, and notes by
+                         that id → {word, note, items}. A pre-v7.8 flat
+                         "Tab/Sub/row/col" map is carried across on the
+                         first open (src/journal.js, load)
     hq.compass           {manual, deg, tune}: the rose turned by hand or
                          following the map, and how it is read and drawn
     hq.bagpics           each card's hand of pictures: how many, which is

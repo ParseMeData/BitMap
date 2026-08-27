@@ -1,4 +1,4 @@
-# Loci Bitmap V7.8
+# Loci Bitmap V7.9
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V7.8 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V7.9 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -120,6 +120,14 @@ them only with `--yes` after a backup; the picture store's rows named for
 their tenant (`locus:`, `card:`); each plate its own tracing underlay; and
 the fresh-profile restore fixed at its cause. No key was renamed and no
 value changed shape: a v7.7 snapshot restores into v7.8 and climbs.
+
+**v7.9** — the lattice rule and the focus. `STYLE.md` *The lattice*: one
+pitch, one proportion, one way in, and the towns map redrawn to obey it.
+The journal's frame is yours to edit, a letter holds a description and a
+list, and Status carries politics, economics and talking points. And the
+focus: one acronym stood up on the hub as a column of diamonds, a letter
+opening into its items with the word on the diagonal, an item picked and
+the whole thing folded to its first letter, walked by the arrow keys.
 
 ### The half that is not in the repo
 

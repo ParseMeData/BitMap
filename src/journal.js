@@ -270,7 +270,7 @@ const Journal = (() => {
         '<div class="jgrid">' + t.rows.map((r, ri) =>
           '<div class="jblock"><div class="jrow">' + [...r.letters].map((ch, ci) =>
             '<button class="jletter' + (sel === r.ids[ci] ? ' sel' : '') + (filled(r.ids[ci]) ? ' has' : '') +
-            '" data-id="' + r.ids[ci] + '">' + esc(ch) + '</button>').join('') +
+            '" data-id="' + r.ids[ci] + '">' + esc(ch) + (filled(r.ids[ci]) ? '<i class="jhas"></i>' : '') + '</button>').join('') +
           '</div>' +
           (editing ?
             '<div class="jredit">' +

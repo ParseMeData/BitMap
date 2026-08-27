@@ -1722,8 +1722,8 @@ again — drawn hollow while build is on, the plate's own face for "here
 but open". Aqua, because it is STYLE.md's one cool note: asked for as
 blue, and aqua is the blue this palette has. Press the aqua one and the
 journal opens: a page of tabs (Quest, Skills, Health, Equip, Status),
-each tab a few sub-tabs, each sub-tab rows of letters — acronyms — and
-behind every letter three things: what it **stands for**, a
+each tab a few sub-tabs, each sub-tab rows of letters — acronyms, each
+letter a diamond — and behind every letter three things: what it **stands for**, a
 **description**, and a list of **items** (add one and press Enter; ▲ ▼
 reorder, ✕ removes). A letter with anything behind it wears an aqua
 mark in its corner. ← → change the tab while nothing is being typed;

@@ -24,6 +24,10 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The journal's letters in diamonds** — 2026-08-27. `.jletter`
+  clipped to a diamond, rim as `::before` (bone .22) and face as `::after`
+  (ground, inset 1.5px), selected = both bone; the has-note mark is a
+  child `<i class="jhas">` diamond at the foot; rows gap 4px. BUILD 172.
 - [x] **A gentler front, and no ghost word on ↑ ↓** — 2026-08-27. Front
   half the word wide, linear; `wordVis` records how much of the word was
   on screen and only a word that was up retreats — one hidden behind an

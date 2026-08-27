@@ -487,14 +487,25 @@ body.missions #bag{visibility:hidden}
 #journal .jgrid{display:flex;flex-direction:column;gap:12px}
 #journal .jblock{display:grid;gap:6px;padding-bottom:12px;border-bottom:1px solid rgba(237,234,227,.14)}
 #journal .jblock:last-child{border-bottom:none}
-#journal .jrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,96px)}
-/* the letter tiles: 22px, the one place a glyph is larger than 14px — a
-   tile read from across the room, not text (STYLE.md, Type) */
-#journal .jletter{aspect-ratio:1;margin-right:-1px;background:transparent;border:1px solid rgba(237,234,227,.22);
-  color:var(--bone);font:400 22px/1 var(--mono);cursor:pointer;transition:background .12s,color .12s;position:relative}
-#journal .jletter.has::after{content:"";position:absolute;right:5px;bottom:5px;width:4px;height:4px;background:var(--aqua)}
+#journal .jrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,96px);gap:4px}
+/* the letter tiles are diamonds — the plate's shape, on the journal's
+   page. A clipped box has no border of its own, so the rim is one pseudo
+   and the face another, both cut to the same diamond; the tile stays a
+   button. 22px letters: the one glyph larger than 14px, a tile read
+   from across the room, not text (STYLE.md, Type) */
+#journal .jletter{aspect-ratio:1;position:relative;isolation:isolate;background:transparent;border:0;
+  color:var(--bone);font:400 22px/1 var(--mono);cursor:pointer;transition:color .12s;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+#journal .jletter::before,#journal .jletter::after{content:"";position:absolute;z-index:-1;
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+#journal .jletter::before{inset:0;background:rgba(237,234,227,.22)}
+#journal .jletter::after{inset:1.5px;background:var(--ground);transition:background .12s}
 #journal .jletter:hover{color:var(--flare)}
-#journal .jletter.sel{background:var(--bone);color:var(--ground);border-color:var(--bone)}
+#journal .jletter .jhas{position:absolute;left:50%;bottom:22%;width:5px;height:5px;margin-left:-2.5px;background:var(--aqua);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+#journal .jletter.sel{color:var(--ground)}
+#journal .jletter.sel::before,#journal .jletter.sel::after{background:var(--bone)}
+#journal .jletter.sel .jhas{background:var(--ground)}
 #journal .jblurb{color:var(--dim);text-align:right;font-size:9px;letter-spacing:.18em;text-transform:uppercase;display:flex;justify-content:flex-end;gap:14px;align-items:baseline}
 #journal .jfocus{background:transparent;border:1px solid transparent;color:var(--faint);font:400 9px/1 var(--mono);
   letter-spacing:.18em;text-transform:uppercase;padding:3px 6px;cursor:pointer;margin-right:auto}
@@ -791,7 +802,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 171, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 172, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

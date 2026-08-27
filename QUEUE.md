@@ -24,6 +24,9 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A rim on every diamond; one bracket at a time** — 2026-08-27.
+  `diamond()` lays a ground ring 1.8 cells deep first, so an overlap
+  shows its edge; the column's bracket hides while `rowOpen`. BUILD 155.
 - [x] **The column dulls, not fades; the row waits for →** — 2026-08-27.
   Letter colour = bone → dim by .32 per step (cap .8), alpha 1; `rowOpen`
   set by → (cursor 0), cleared by ← past the first, ↑ ↓, Esc, a fresh

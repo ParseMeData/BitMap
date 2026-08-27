@@ -130,12 +130,22 @@ const Focus = (() => {
   }
 
   /* one diamond-shaped region of the lattice, centred in CSS px */
+  /* Every diamond wears a rim of ground two cells deep, laid first: on the
+     bare plate it is nothing, and where one diamond lies over another it
+     is the dark edge that says which is on top. */
+  const RIM = 1.8;                            // cells
   function diamond(f, p, x, y, r, al, rgb){
-    const cx = x / p, cy = y / p, rc = r / p;
-    const i0 = Math.floor(cx - rc), i1 = Math.ceil(cx + rc), j0 = Math.floor(cy - rc), j1 = Math.ceil(cy + rc);
+    const cx = x / p, cy = y / p, rc = r / p, ro = rc + RIM;
+    const i0 = Math.floor(cx - ro), i1 = Math.ceil(cx + ro), j0 = Math.floor(cy - ro), j1 = Math.ceil(cy + ro);
+    const ground = GROUND || (GROUND = rgbOf(tok('ground')));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++){
+      const d = Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy);
+      if (d > rc && d <= ro) f.cells.push({x: i, y: j, al: Math.min(1, al * 1.5), rgb: ground, sz: 1});
+    }
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++)
       if (Math.abs(i + 0.5 - cx) + Math.abs(j + 0.5 - cy) <= rc) f.cells.push({x: i, y: j, al, rgb, sz: 1});
   }
+  let GROUND = null;
   const picked = k => P && F && F.ids[k] === P.id;
   /* the picked diamond's place in the row, taken the moment it is picked
      so the fold can carry it from there; null means it grows in place */
@@ -245,7 +255,7 @@ const Focus = (() => {
     x.globalAlpha = 1;
 
     /* a bracket over and under the open letter, as on the lead item */
-    if (lead >= 0 && fd < 1){
+    if (lead >= 0 && !rowOpen && fd < 1){
       const g = geo[lead], gap = 6, len = g.r * .42;
       x.globalAlpha = 1 - fd;
       x.strokeStyle = tok('bone'); x.lineWidth = Math.max(1, 1.2 * DPR); x.lineCap = 'square';

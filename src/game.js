@@ -141,6 +141,29 @@ function applyPlate(){
   else { G.terrBase.walk.set(G.terrPrint.walk); G.terrBase.path.set(G.terrPrint.path); }
   restampTerrain();
 }
+/* ── the towns: the region, or the country ──────────────────────────────
+   The compass's fourth diamond opens where the towns are. It used to open
+   Australia (src/towns.js); Eden asked for that hidden behind a switch,
+   with our own region drawn flat as a plate of its own in its place
+   (src/region.js). The country is kept whole — its asset, its page, its
+   pin — and is one chip away in the tune panel, resting on Region. */
+let TOWNS = 'region';
+try { TOWNS = Store.get('hq.towns') === 'country' ? 'country' : 'region'; } catch (e){}
+function setTowns(v){
+  TOWNS = v === 'country' ? 'country' : 'region';
+  try { Store.set('hq.towns', TOWNS); } catch (e){}
+  if (typeof syncPanel === 'function') syncPanel();
+}
+/* what the rose diamond opens, decided at the press rather than at boot so
+   the chip takes effect at once; the atlas's chip grid is the fallback the
+   towns map always had, and it stays the fallback for the region too */
+function openTowns(){
+  if (TOWNS === 'country' && typeof Towns !== 'undefined') return Towns.toggle();
+  if (typeof Region !== 'undefined') return Region.toggle();
+  if (typeof Towns !== 'undefined') return Towns.toggle();
+  return Atlas.toggleMap();
+}
+
 /* `persist` is false when the plate is being forced rather than chosen —
    going inside a building blanks it whatever the town is set to, and the
    town's own setting has to still be there when you come back out. */
@@ -825,6 +848,9 @@ function boot(img){
   /* the compass's fourth diamond opens the towns map, in place of the
      chip grid the atlas drew before the country was here */
   if (typeof Towns !== 'undefined') Towns.init();
+  /* and after both have claimed it, the diamond goes to the switch above:
+     the region by default, the country when asked for */
+  Hud.onTowns = openTowns;
   /* the focus column: one acronym from the journal, stood up on the plate */
   if (typeof Focus !== 'undefined') Focus.init();
   applyPlate();

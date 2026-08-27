@@ -87,6 +87,21 @@ function buildPanel(){
   }
   body.appendChild(plate);
 
+  /* where the towns are: our region drawn flat, or the whole country. The
+     country is hidden rather than removed — Eden's call, 2026-08-27 */
+  const th = document.createElement('div');
+  th.className = 'plabel'; th.textContent = 'Towns';
+  body.appendChild(th);
+  const tw = document.createElement('div');
+  tw.className = 'chips two';
+  for (const [name, v] of [['Region', 'region'], ['Country', 'country']]){
+    const c = document.createElement('div');
+    c.className = 'chip'; c.textContent = name; c.dataset.towns = v;
+    c.onclick = () => { setTowns(v); syncPanel(); };
+    tw.appendChild(c);
+  }
+  body.appendChild(tw);
+
   /* the round, on or off. It is the game this started as and it is in the
      way of the one it is becoming, so it is a switch rather than a removal */
   const sh = document.createElement('div');
@@ -143,6 +158,8 @@ function syncPanel(){
     c.classList.toggle('sel', (c.dataset.blank === '1') === BLANK));
   document.querySelectorAll('.chip[data-spark]').forEach(c =>
     c.classList.toggle('sel', (c.dataset.spark === '1') === SPARKS));
+  document.querySelectorAll('.chip[data-towns]').forEach(c =>
+    c.classList.toggle('sel', c.dataset.towns === TOWNS));
 }
 function setPanel(open){
   panelOpen = open;

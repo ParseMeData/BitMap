@@ -13,16 +13,69 @@ GIT_AUTHOR_EMAIL=eden@customer.mlbeaus1.isp.starlink.com` (and COMMITTER)
 as env vars; bump `BUILD` in `index.html` on every change so the cache-bust
 reloads; keep README/HANDOFF current in the project's voice.
 
-**Mode: stop between items.** After finishing an item, tick it, summarise what
-changed, and wait for review before starting the next. Items marked `[auto]`
-may run straight into the next without waiting.
+**Mode: run through.** (Set 2026-08-27 by Eden: no confirmation between
+items.) After finishing an item, tick it into Done with a line on what changed
+and the BUILD, commit, and start the next at once. Only stop at the end of the
+queue, or on something that would destroy the town.
 
 ## Queue
 
+- [ ] [auto] **The region plate** — `src/region.js`. One more plate, not an
+  atlas area: our region drawn flat, **north always up** (no traced underlay,
+  no rotation; the compass reads 0). Every *town* — a connected run of plates
+  in `hq.atlas` — stands on it as diamonds, one per plate in that town, at
+  the town's mean geo projected north-up (`hq.atlas.region = {lat0, lon0,
+  scale}`); a town with no anchor stands along the foot of the plate, dim,
+  until it is dragged into place in build mode (which pins it). Instead of
+  roads there are **links**: a `link` kind, thin lines between towns, the
+  only route the walker has here. Terrain is allowed (grounds, water, creek,
+  river, trees, park); nothing built and no markers — a third registry
+  `Kinds.use('region')`, and `Markers.place` refuses. Stand by a town and
+  `Enter` goes to its home plate (the fast travel item 5 will gate). Keys
+  `hq.shapes.region`. Reached from the rose diamond; `Esc` leaves.
+- [ ] [auto] **Minimal view, and the trace** — `src/trace.js`. Inside a
+  palace, `V` toggles **minimal**: Floor and Fittings are not drawn and do
+  not block — only walls, windows, doors and stairs. In minimal the trace
+  runs: room 1 (by `n`) is printed with a **3×3 grid of nine coloured
+  squares** in the plate's own material — nine plate tones, each square a
+  block of cells — and a **line** is drawn from the room's start (the side
+  it shares with the room before it, or its west side for room 1) through
+  every fitting in that room in the order it was laid, to the room's end
+  (the side it shares with the next room). Walk to the end and the room is
+  done: the grid and the line move to the next room, and so on to the last.
+  Progress in `hq.trace.<uid>`; `V` again shows the plan as it was.
+- [ ] [auto] **Grains and blocks** — `src/stock.js`, `hq.stock`. Two
+  materials with two bar levels on the HUD strip beside Sparks: **grains**
+  (gold) build roads and links; **blocks** (bone) build markers, houses,
+  buildings and the district textures. Placing one costs its price
+  (`COST` in stock.js) and is refused with a note when short. Grains are
+  earned by **drills**: a *drill* chip on the bag page asks five questions
+  from the cards you have filled — a number or letter and a slot, type the
+  word — one grain each. Blocks are earned by running a route in the
+  platformer: `routeDone` on the last picture adds one block per picture to
+  `hq.stock` before it hands back. A profile with no stock starts with
+  enough to build a little.
+- [ ] [auto] **Distractions** — `src/distract.js`, `hq.distract`. Enemy
+  sprites in the plate's material that appear now and then on a road tile of
+  the plate you are on (never near the walker, at most three a plate) and
+  **eat the road**: the tile is blocked in the walk grid until cleared.
+  Stand by one and press `Enter` for its **pop quiz**: a question from your
+  deck (a filled card: "12's action?"), from a palace (a named locus:
+  "in Home, what stands at 3?") or from a saved stack (a mission's card);
+  right clears it and repairs the road, wrong leaves it and asks another.
+  With nothing to ask, it takes three grains to repair instead. **Fast
+  travel** — the region plate's `Enter`, the towns map's dots, the atlas
+  chips — is refused to any town whose road from here crosses a plate with
+  a distraction still on it, and says so.
 
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **The country map goes behind a switch** — 2026-08-27. `TOWNS` in
+  game.js (`hq.towns`, region|country), a Towns chip pair in the tune
+  panel, and `openTowns()` is what the rose diamond presses: the region
+  plate, the country when asked, the atlas grid as last resort. BUILD 174.
 
 - [x] **The journal's letters in diamonds** — 2026-08-27. `.jletter`
   clipped to a diamond, rim as `::before` (bone .22) and face as `::after`

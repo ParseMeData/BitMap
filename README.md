@@ -1653,7 +1653,13 @@ be pinned from the map. One without an anchor is listed, not drawn.
 
 ### The towns
 
-Press the compass's fourth diamond and the page is Australia — cut out of
+**The country is behind a switch.** Since V8.1 the compass's fourth
+diamond opens the **region plate** (below) rather than the country; press
+`T` and under *Towns* pick **Country** to have it open Australia again.
+Kept in `hq.towns`, resting on Region. Nothing about the country page
+changed — its asset, its levels and its pin are as they were.
+
+Press the compass's fourth diamond, with *Towns* on Country, and the page is Australia — cut out of
 the Typeset Earth loci bitmap at 0.0125°, spliced by the ABS's own lines
 into nine states, eighty-nine regions and three hundred and forty-eight
 districts, and made of the plate's own diamonds — a lattice at the

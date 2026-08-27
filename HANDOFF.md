@@ -319,6 +319,14 @@ stream, pictures through the tone pass — never a font glyph or a sprite.
 The towns map was the one thing built otherwise (typeset `◆`, its own
 pitch) and was brought into line the same day the rule was written.
 
+**An id is a millisecond, a counter, and a little chance.** The journal's
+first `mint` was time plus two random characters, and a fresh frame mints
+sixty ids in one millisecond: on the first day RAITS and DONE shared a
+row id, `rowById` found DONE first, and the focus stood up the wrong
+acronym with nothing to pick. The counter is what makes an id unique;
+`dedupe()` on load re-mints any later duplicate a profile from that build
+still holds. If a thing needs an id, mint it here, not with `Date.now()`.
+
 **The focus column takes no pointer.** `src/focus.js` draws on a canvas
 with `pointer-events:none` and listens on the window in the capture
 phase, stopping only an event that lands on one of its diamonds. Without

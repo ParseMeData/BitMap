@@ -24,6 +24,15 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The fold stops short; the focus stands the wrong acronym** —
+  2026-08-27, two bugs from Eden's relaunch. (1) `focus.js` repainted only
+  while a tween ran, never the settled frame — `wasMoving` draws one more;
+  a page booting with a pick starts with `fold` pre-settled instead of
+  rising then sinking. (2) `journal.js` `mint()` collided (ms + 2 random
+  chars, ~60 ids per ms): a counter added, `dedupe()` on load re-mints
+  later duplicates and says so. BUILD 142. Verified on a fresh throwaway:
+  192/192 ids unique, RAITS in focus, Enter picked "big" and the column
+  ink above the pick fell 13019 → 4, reload came up folded and still.
 - [x] **The focus moves** — 2026-08-27. Tweens in `focus.js` (`tween/
   val/moving`, outBack / inCubic / outCubic): `stand` (520 ms, letters
   rise from the hub last-first, each on its own slice), `row` (460 ms out

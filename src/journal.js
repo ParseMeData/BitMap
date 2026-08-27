@@ -58,14 +58,34 @@ const Journal = (() => {
      exists. Self-describing — no `frame` means old — so no ladder step. */
   const KEY = 'hq.journal';
   let J = null;
-  const mint = () => 'j' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  /* an id: the millisecond, a counter, and a little chance. The counter is
+     the part that matters — a fresh frame mints sixty ids in one
+     millisecond, and time plus two random characters collided on the
+     first day, filing one acronym's focus under another's row */
+  let minted = 0;
+  const mint = () => 'j' + Date.now().toString(36) + (minted++).toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  /* a frame written by the build with the weaker mint may hold the same
+     id twice: the first keeps it, every later one is re-minted. A note
+     under a shared id stays with the first — the second never had one
+     of its own to lose */
+  function dedupe(J){
+    const seen = new Set(); let fixed = 0;
+    const take = o => { if (seen.has(o.id)){ o.id = mint(); fixed++; } seen.add(o.id); };
+    for (const t of J.frame){ take(t); for (const s of t.subs){ take(s); for (const r of s.rows){ take(r);
+      r.ids = r.ids.map(id => { if (seen.has(id)){ fixed++; id = mint(); } seen.add(id); return id; }); } } }
+    return fixed;
+  }
   const seedRow = r => ({id: mint(), letters: r.letters, blurb: r.blurb || '', ids: [...r.letters].map(mint)});
   const seedSub = s => ({id: mint(), name: s.name, rows: s.rows.map(seedRow)});
   const seedTab = t => ({id: mint(), label: t.label, subs: t.subs.map(seedSub)});
   function load(){
     if (J) return J;
     const raw = Store.json(KEY, {}) || {};
-    if (raw.frame && Array.isArray(raw.frame)){ J = {frame: raw.frame, notes: raw.notes || {}, focus: raw.focus || null, pick: raw.pick || null}; return J; }
+    if (raw.frame && Array.isArray(raw.frame)){
+      J = {frame: raw.frame, notes: raw.notes || {}, focus: raw.focus || null, pick: raw.pick || null};
+      if (dedupe(J)){ store(); note('journal ids that were shared have been told apart'); }
+      return J;
+    }
     J = {frame: DEFAULT.map(seedTab), notes: {}};
     let carried = 0;
     for (const k in raw){

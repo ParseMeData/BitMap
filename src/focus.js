@@ -293,7 +293,7 @@ const Focus = (() => {
     if (!P) folded = false;
     painted = '';
   }
-  let lastOpen = -1;
+  let lastOpen = -1, wasMoving = false;
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
@@ -310,7 +310,12 @@ const Focus = (() => {
       else tween('row', 0, 220, inCubic);
       lastOpen = open;
     }
-    if (moving()) painted = '';
+    /* while a tween runs every frame is drawn — and one more after it
+       lands, or the last drawn frame is the one just before the end and
+       a fold stops a hair short of folded */
+    const mv = moving();
+    if (mv || wasMoving) painted = '';
+    wasMoving = mv;
     const key = [innerHeight, DPR, open, hoverItem, cursor, folded, P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
@@ -332,7 +337,7 @@ const Focus = (() => {
     read();
     /* a pick that was there when the page opened is carried folded: the
        one thing you were holding, still held */
-    if (P) folded = true;
+    if (P){ folded = true; T.fold = {from: 1, to: 1, t0: 0, dur: 1, ease: inCubic}; }   // already folded: nothing to sink
     if (typeof Store !== 'undefined') Store.watch('hq.journal', read);
     addEventListener('resize', () => { painted = ''; });
     if (!raf) raf = requestAnimationFrame(tick);

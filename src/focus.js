@@ -229,8 +229,7 @@ const Focus = (() => {
       /* a steep front: a character is whole ahead of it and gone a short
          way behind; and a character that has reached the diamond — slid
          back past the word's foot — is gone, not drawn through it */
-      const k = Math.max(0, Math.min(1, (at - front) / .18 + 1));
-      const a = k * k * al;
+      const a = Math.max(0, Math.min(1, (at - front) / .5 + 1)) * al;   // a gentle front, half the word wide
       if (a > 0.01 && ax >= 0){ c.globalAlpha = a; c.fillText(chars[i], ax, 0); }
       ax += adv;
     }
@@ -378,6 +377,7 @@ const Focus = (() => {
       const wshow = say0 >= 0 ? 0 : Math.max(0, Math.min(1, (held - WORD_WAIT) / RISE));
       if (wshow < 1 && say0 < 0) dwelling = true;
       /* from above the row's first diamond, rising to the right, clear of the letter */
+      wordVis = word ? wshow : 0;
       if (word && wshow > 0)
         diagonal(word.toUpperCase(), h.x + h.r * 1.05 - (1 - wshow) * h.r * .3, g.cy - h.r * 0.85 + (1 - wshow) * h.r * .3, 14, bone, (1 - fd) * wshow);
     }
@@ -390,7 +390,7 @@ const Focus = (() => {
         const g = geo[leaving.k], h = hits[leaving.k];
         const L = leaving.word.length * 14 * 1.2;                     // about the word's run, in px
         /* the slide leads, easing out; the fade follows a step behind it */
-        diagonalOut(leaving.word, h.x + h.r * 1.05, g.cy - h.r * 0.85, 14, bone, (1 - fd), outCubic(t) * L * .7, Math.max(0, t - .08) * 1.3);
+        diagonalOut(leaving.word, h.x + h.r * 1.05, g.cy - h.r * 0.85, 14, bone, (1 - fd), outCubic(t) * L * .7, Math.max(0, t - .05) * 1.5);
       }
     }
     /* the item's name, with the row */
@@ -576,6 +576,7 @@ const Focus = (() => {
   let foldFrom = null;                        // where the picked diamond set out from, in the row
   let openSince = 0;
   let leaving = null;                         // {k, word, t0}: the word retreating into the letter just left
+  let wordVis = 0;                            // how much of the open letter's word was on screen last frame
   const RETREAT = 620;                        // ms it takes to slide back in
   function tick(){
     raf = requestAnimationFrame(tick);
@@ -589,8 +590,11 @@ const Focus = (() => {
     tween('fold', folded ? 1 : 0, foldFrom ? 520 : (folded ? 380 : 320), foldFrom ? inOutCubic : (folded ? inCubic : outCubic));
     if (open !== lastOpen){
       /* the word of the letter being left slides back into it */
-      if (lastOpen >= 0 && F && F.words[lastOpen] && (F.words[lastOpen] || '').trim() && performance.now() - openSince > WORD_WAIT)
+      /* only a word that was actually up retreats — one still waiting, or
+         hidden behind an item's highlight, has nothing to slide back */
+      if (lastOpen >= 0 && F && (F.words[lastOpen] || '').trim() && wordVis > 0)
         leaving = {k: lastOpen, word: F.words[lastOpen].trim().toUpperCase(), t0: performance.now()};
+      wordVis = 0;
       if (open >= 0) openSince = performance.now();
       if (open < 0) rowOpen = false;
       lastOpen = open >= 0 ? open : lastOpen;

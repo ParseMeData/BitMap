@@ -24,6 +24,11 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **A gentler front, and no ghost word on ↑ ↓** — 2026-08-27. Front
+  half the word wide, linear; `wordVis` records how much of the word was
+  on screen and only a word that was up retreats — one hidden behind an
+  item's highlight, or still waiting, no longer flashes and collapses.
+  BUILD 171. Verified: word region flat across ↓ from an open row.
 - [x] **The retreat fades harder and stops at the diamond** — 2026-08-27.
   Front width .18, squared, running at 1.3 from t − .08; a character slid
   back past the word's foot (ax < 0) is not drawn. BUILD 170.

@@ -36,6 +36,56 @@ from across the room.
 
 ---
 
+## The lattice
+
+One pitch, one proportion, one way in. Anything that is halftoned, latticed
+or bitmapped — the plate, a title, a card's picture, the compass, the towns
+map, and whatever comes next — is the same material, and the material is
+these three numbers. Measured on the live town at v7.8, not chosen:
+
+    cell        3.1458 world units — the plate is 240 × 228 of them, and a
+                walk tile is four. `G.A.cell`, from `Lattice.analyse`,
+                built once at boot and shared by the town and every plan
+                inside it. There is no second lattice.
+    on screen   3.17 CSS px a cell at fit-all, 5.33 at the town's reset zoom
+                (DPR 1). A lattice drawn in chrome takes the plate's cell at
+                the zoom the town is read at: about three pixels a diamond.
+    diamond     half-size = 0.75 × cell, times a weight that rests at 1.
+                `0.75` in the shader (`render.js`), `PLATE = 0.75` in
+                `title.js`. Neighbours overlap by design; that is the
+                breathing.
+
+**The rule.** New work that wants the effect does not draw diamonds. It
+hands cells to the one path that does — the GL stream for anything on the
+plate, `Title.paint` for anything in chrome — and a picture becomes cells
+only through the tone pass (`Lattice.analyse` / `compose`). Nothing may:
+
+- typeset a diamond from a font (`◆` `◇`), draw one as a sprite, an SVG or a
+  CSS shape, or fill a cell as a square;
+- choose its own pitch. The pitch on screen is the plate's. A map that must
+  show more than the screen has pixels for strides the *data* — every kth
+  cell — and keeps the diamond where it is; a picture that must fit shrinks
+  its *cells*, never its diamond ratio;
+- choose its own proportion. Half-size is 0.75 × pitch. What varies is the
+  weight, and only within the one table below;
+- ink a cell in anything but the ten tokens, at alpha.
+
+**Weights, the whole list.** A weight is the one number a feature may own,
+because a thing read across the room wants a slightly heavier dot than a
+thing read up close. Add a row here or do not use a new one.
+
+    plate, titles, type       1.00   rest; a title's Weight slider ranges over it
+    bag card pictures          .65   settled by Eden at v7.1
+    compass                    .80   rests; Eden's tune sits at .45 (hq.compass)
+    towns map                 1.00   the land; edges and dots the same
+
+**Where it is checked.** `G.A.cell` is the cell; `Title.paint` is the
+chrome path; the compass's *Detail* slider and a title's *Size* both read
+as "cells", never as a pitch, so no slider can move the diamond. If a change
+would put a fourth number beside the three above, it is the wrong change.
+
+---
+
 ## The chrome palette
 
 Ten tokens, declared once in `index.html`, and there is no eleventh.

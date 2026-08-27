@@ -24,6 +24,18 @@ may run straight into the next without waiting.
 
 (ticked items move here with the date)
 
+- [x] **The towns map in the plate's own diamonds** — 2026-08-27, with
+  STYLE.md *The lattice* (the rule: `G.A.cell`, ≈3 px at fit-all, half-size
+  0.75, weights from one table; chrome via `Title.paint`, plate via GL,
+  pictures via the tone pass, never a glyph/sprite). `towns.js`: sprites
+  and `◆`/`◇` gone; `face()` at `pitch() = G.A.cell × G.fitAll × DPR`,
+  `under(i,j)` maps lattice → country cell, roles as alphas for a covering
+  diamond (.30/.22/.25/.40 subject, .11/.13 parent, .05 beyond), edges walk
+  the cell's dividing side at every lattice step (one diamond thick at
+  every level), all through `Title.paint`; dots are rhombi two pitches
+  wide on a ground diamond. BUILD 133. Measured on a throwaway: country
+  41 ms, region 93, district 104 (was 183/196/164); rims continuous at
+  district level.
 - [x] **v7.8 · 5 · The picture store, namespaced** — 2026-08-27. In
   `loci.js` only: `row(k)` maps a uid → `locus:<uid>` and `bag:…` →
   `card:…` (alts ride along); `store/get/del` go through it; `survey()`

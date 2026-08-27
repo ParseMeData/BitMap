@@ -305,6 +305,14 @@ through two designs in one day — whole multiples, then a ceiling with
 shrink — before Eden settled it: the thing is a print, and a print is not
 resized.
 
+**One lattice, one pitch, one proportion.** `STYLE.md` *The lattice* is
+the rule for anything halftoned: the plate's cell (`G.A.cell`), about
+three pixels on screen at fit-all, half-size 0.75 × cell, weights from one
+table. Chrome draws through `Title.paint`, the plate through the GL
+stream, pictures through the tone pass — never a font glyph or a sprite.
+The towns map was the one thing built otherwise (typeset `◆`, its own
+pitch) and was brought into line the same day the rule was written.
+
 **Every key goes through the store, and the store has a version.**
 `src/store.js` is first in the boot chain; `Store.get/set/del/put/json/
 save/keys/has` are the only way a module touches localStorage, and

@@ -1634,7 +1634,9 @@ be pinned from the map. One without an anchor is listed, not drawn.
 Press the compass's fourth diamond and the page is Australia — cut out of
 the Typeset Earth loci bitmap at 0.0125°, spliced by the ABS's own lines
 into nine states, eighty-nine regions and three hundred and forty-eight
-districts, and typeset in the same `◆` the overlay draws its earth with.
+districts, and made of the plate's own diamonds — a lattice at the
+plate's pitch laid over the screen, each point lit by the cell of
+country under it, by the rule in `STYLE.md` (*The lattice*).
 Every plate that knows where it is stands on it as a gold dot with its
 name; the one you are on is flare. Click a dot and you are standing on
 that plate — the map is how you cross the country without walking every
@@ -1652,8 +1654,11 @@ atlas's own picture — the chips laid out by which way each road went —
 sits beneath the unplaced list, the unplaced ones dim, so a plate that
 is off the map can still be found by the road that leads to it.
 
-It is a page of chrome, drawn on a 2D canvas, and never the plate: the
-plate's diamonds are the GL stream and this does not reach it. Nothing
+It is a page of chrome, painted through `Title.paint` on a 2D canvas, and
+never the plate: the plate's diamonds are the GL stream and this does not
+reach it. The map zooms; the diamond does not — far out one diamond stands
+for many cells, close in many diamonds fill one, and a division is one
+diamond thick at every level. Nothing
 below a district is held — a plate is the thing that goes there. The
 asset is `assets/australia.js`, a 220 KB run-length of one SA3 id per
 cell; `src/country.js` decodes it and derives the three levels above on

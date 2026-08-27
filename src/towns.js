@@ -13,10 +13,12 @@
    one says where on the ground each plate falls. They share `hq.atlas`,
    and nothing here writes to it except a pin.
 
-   Cells are typeset, not filled: U+25C6 and U+25C7 in the chrome's own
-   monospace, so a diamond here is the same diamond the overlay this was
-   cut from draws its earth with. It is a page of chrome, not the plate —
-   the plate's diamonds are the GL stream, and this never reaches it.
+   It is made of the plate's own material, by the rule in STYLE.md (*The
+   lattice*): a lattice at the plate's pitch laid over the screen, each
+   point lit by the cell of country under it, painted through
+   `Title.paint`. The map zooms; the diamond never does. It is a page of
+   chrome, not the plate — the plate's diamonds are the GL stream, and
+   this never reaches it.
 
    Nothing is drawn per frame that can be drawn once. A `sheet` is an
    offscreen canvas holding one whole rendering, tagged with the slice of
@@ -27,9 +29,7 @@
    frame, over the top.                                                    */
 
 const Towns = (() => {
-  const FILL = '◆', EDGE = '◇';
-  const MAX_PITCH = 22;                     // CSS px a cell may reach; past it a district is a chart
-  const MIN_PITCH = 2.6;                    // CSS px below which the field is strided
+  const MAX_PITCH = 22;                     // CSS px a cell of country may reach; past it a district is a chart
   const DUR = 420;
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
@@ -42,27 +42,31 @@ const Towns = (() => {
   let liveBox = null, targetBox = null, dirty = true, raf = 0;
   const rowFor = new Map();
 
-  /* ── glyph sprites ──────────────────────────────────────────────────── */
-  const sprites = new Map();
+  /* ── the material ──────────────────────────────────────────────────────
+     STYLE.md, *The lattice*: this page draws no diamonds of its own. It
+     lays a lattice over the screen at the plate's pitch — the plate's cell
+     at fit-all, about three pixels — asks which cell of the country each
+     lattice point falls in, and hands the lit points to `Title.paint`,
+     which is the one chrome path that knows what a diamond is. The map
+     zooms; the diamond does not: what changes with the level is how many
+     cells of country one diamond stands for, never the diamond.
+
+     Tokens as normalised rgb, read once from the stylesheet. */
   const tok = n => getComputedStyle(document.documentElement).getPropertyValue('--' + n).trim();
-  function sprite(ch, px, alpha, colour){
-    const size = Math.max(1, Math.round(px * 20) / 20);
-    const a = Math.max(.04, Math.min(1, Math.round(alpha * 50) / 50));
-    const key = ch + '|' + size + '|' + a + '|' + colour;
-    let s = sprites.get(key);
-    if (s) return s;
-    if (sprites.size > 400) sprites.clear();
-    const em = size * 1.18, n = Math.ceil(em * 1.7) + 2;
-    s = document.createElement('canvas');
-    s.width = s.height = n;
-    const c = s.getContext('2d');
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.font = em.toFixed(2) + 'px ' + tok('mono');
-    c.fillStyle = colour; c.globalAlpha = a;
-    c.fillText(ch, n / 2, n / 2);
-    sprites.set(key, s);
-    return s;
+  const rgbOf = hex => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
+  let INK = null;
+  const ink = () => INK || (INK = {bone: rgbOf(tok('bone')), aqua: rgbOf(tok('aqua')), flare: rgbOf(tok('flare')),
+                                   gold: rgbOf(tok('gold')), ground: rgbOf(tok('ground')), dim: rgbOf(tok('dim'))});
+  /* the plate's cell on screen at fit-all, in device pixels — the one
+     pitch (STYLE.md); a fallback for a page with no plate yet */
+  const pitch = () => (typeof G !== 'undefined' && G.A && G.fitAll ? G.A.cell * G.fitAll : 3.17) * DPR;
+
+  /* a face for Title.paint, the size of the sheet at that pitch */
+  function face(){
+    const p = pitch();
+    return {cols: Math.ceil(W / p), rows: Math.ceil(H / p), cells: [], p};
   }
+  const cell = (f, i, j, al, rgb) => f.cells.push({x: i, y: j, al, rgb, sz: 1});
 
   /* ── view ───────────────────────────────────────────────────────────── */
   function boxOf(s, pad){
@@ -81,103 +85,106 @@ const Towns = (() => {
                                  x1: lerp(a.x1, b.x1, t), y1: lerp(a.y1, b.y1, t)});
 
   /* ── sheets ─────────────────────────────────────────────────────────────
-     Three roles and no more: the thing being spoken about, the thing it
-     sits inside, and everything else. Land is bone; aqua is spent only on
-     the divisions, graded so the outline of where you stand is loudest,
-     then what you can open, then what is beside you; flare is what is
-     under the cursor and nothing else. A diamond covers a quarter of its
-     cell at any size, so a cell at alpha a reads as a/4 of the colour, and
-     the field is walked with a stride below MIN_PITCH with the diamond
-     grown to the stride — same tone, a ninth of the work at country level.
-     Boundaries are never strided: a dotted state line is not a line. */
+     A sheet is one whole rendering, built once per level and blitted with
+     a transform while the view eases. The country's data is strided by
+     the lattice itself: far out, one diamond stands for many cells; close
+     in, many diamonds fill one cell. Either way the diamond is the
+     plate's. */
   function sheet(sc, box, only){
-    const p = document.createElement('canvas');
-    p.width = W; p.height = H;
-    const c = p.getContext('2d');
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
     const {s, ox, oy} = fit(box);
     const g = C.grid, ed = C.edge, rg = C.regionOf, st = C.stateOf;
     const cols = C.cols, rows = C.rows, d = sc.depth;
-    const k = Math.max(1, Math.ceil(MIN_PITCH * DPR / s));
-    const gs = s * k;
-    const align = v => v + ((k - (v % k)) % k);
-    const c0 = Math.max(0, Math.floor(-ox / s)), c1 = Math.min(cols - 1, Math.ceil((W - ox) / s));
-    const r0 = Math.max(0, Math.floor(-oy / s)), r1 = Math.min(rows - 1, Math.ceil((H - oy) / s));
-    const put = (sp, i, half) => c.drawImage(sp, (i % cols) * s + ox + s / 2 - half,
-                                                 ((i / cols) | 0) * s + oy + s / 2 - half);
-    const bone = tok('bone'), aqua = tok('aqua'), flare = tok('flare');
-    const holds = C.holds;
-    const out = {canvas: p, box: {x0: -ox / s, y0: -oy / s, x1: (W - ox) / s, y1: (H - oy) / s}};
+    const holds = C.holds, K = ink();
+    const f = face(), p = f.p;
+    const out = {canvas: cv, box: {x0: -ox / s, y0: -oy / s, x1: (W - ox) / s, y1: (H - oy) / s}};
+    /* the cell of country under a lattice point, or -1 for the sea and
+       beyond the window */
+    const under = (i, j) => {
+      const c = Math.floor(((i + 0.5) * p - ox) / s), r = Math.floor(((j + 0.5) * p - oy) / s);
+      if (c < 0 || r < 0 || c >= cols || r >= rows) return -1;
+      const k = r * cols + c;
+      return g[k] ? k : -1;
+    };
 
+    /* Three roles and no more: the thing being spoken about, the thing it
+       sits inside, and everything else. Land is bone; aqua is spent only on
+       the divisions; flare is what is under the cursor. Alphas are for a
+       diamond that covers its cell (STYLE: 0.75 half-size overlaps), so
+       they are the tone itself — the overlay's land peaks about .65 of
+       bone, and the subject sits under that so the lines read over it. */
     if (only){
-      const sp = sprite(FILL, gs, 1, flare), half = sp.width / 2;
-      const lo = Math.max(r0, only.r0), hi = Math.min(r1, only.r1);
-      const lc = Math.max(c0, only.c0), hc = Math.min(c1, only.c1);
-      for (let r = align(lo); r <= hi; r += k)
-        for (let cc = align(lc); cc <= hc; cc += k){
-          const i = r * cols + cc;
-          if (g[i] && holds(only, i)) put(sp, i, half);
-        }
+      for (let j = 0; j < f.rows; j++) for (let i = 0; i < f.cols; i++){
+        const k = under(i, j);
+        if (k >= 0 && holds(only, k)) cell(f, i, j, .9, K.flare);
+      }
+      Title.paint(cv, f, {weight: 1});
       return out;
     }
-
     const parent = d >= 2 ? C.parentOf(sc) : null;
-    const spMid = parent ? sprite(FILL, gs, d === 2 ? .22 : .26, bone) : null;
-    const spIn = sprite(FILL, gs, [.62, .46, .52, .85][d], bone);
-    const half = spIn.width / 2;
-
-    /* the land beyond what you are looking at, so the subject is not a
-       shape floating in nothing: a ninth of the alpha, walked coarser —
-       never more than double the fine stride, never coarser than about
-       seven pixels, or it stops reading as the same material */
-    if (d > 0){
-      const kf = Math.max(k, Math.min(2 * k, Math.round(7 * DPR / s) || 1));
-      const gf = s * kf, alignF = v => v + ((kf - (v % kf)) % kf);
-      const sp = sprite(FILL, gf, .09, bone), h = sp.width / 2;
-      const outer = parent || sc;
-      for (let r = alignF(r0); r <= r1; r += kf)
-        for (let cc = alignF(c0); cc <= c1; cc += kf){
-          const i = r * cols + cc;
-          if (g[i] && !holds(outer, i)) put(sp, i, h);
-        }
+    const aIn = [.30, .22, .25, .40][d], aMid = d === 2 ? .11 : .13, aOut = .05;
+    for (let j = 0; j < f.rows; j++) for (let i = 0; i < f.cols; i++){
+      const k = under(i, j);
+      if (k < 0) continue;
+      if (holds(sc, k)) cell(f, i, j, aIn, K.bone);
+      else if (parent && holds(parent, k)) cell(f, i, j, aMid, K.bone);
+      else if (d > 0) cell(f, i, j, aOut, K.bone);
     }
-    for (let r = align(r0); r <= r1; r += k)
-      for (let cc = align(c0); cc <= c1; cc += k){
-        const i = r * cols + cc;
-        if (!g[i]) continue;
-        if (holds(sc, i)) put(spIn, i, half);
-        else if (parent && holds(parent, i)) put(spMid, i, half);
-      }
 
-    /* a hollow ◇ has no ink to be hollow with under nine pixels, so a
-       boundary cell stays solid and aqua carries the line */
-    const es = s * Math.min(k, 2), eg = es < 9 * DPR ? FILL : EDGE;
-    const eLoud = sprite(eg, es, .95, aqua), eMid = sprite(eg, es, .55, aqua);
-    const eSoft = sprite(eg, es, d === 1 ? .40 : .26, aqua), eFaint = sprite(eg, es, .18, aqua);
-    const eHalf = eLoud.width / 2;
-    /* a boundary is stored on one side of itself, so half a scope's rim
-       is written on its neighbours' cells */
+    /* Boundaries: one diamond per edge cell, snapped to the lattice point
+       it falls under, so a line drawn far out — where a cell is smaller
+       than a diamond — is still a line and not a sprinkle; and drawn close
+       in, where a cell is many diamonds wide, still one diamond thick.
+       Aqua is graded rather than uniform: loudest is the outline of where
+       you are standing, then what you can open, then what is beside you. */
     const own = d === 3 ? g : rg;
     const rim = i => own[i] === sc.id || ((i % cols) + 1 < cols && own[i + 1] === sc.id) ||
                      (i + cols < own.length && own[i + cols] === sc.id);
-    for (const i of C.edgeList){
-      const cc = i % cols; if (cc < c0 || cc > c1) continue;
-      const rr = (i / cols) | 0; if (rr < r0 || rr > r1) continue;
-      const e = ed[i];
-      let sp = null;
-      if (d === 0) sp = (e & 4) ? eLoud : null;
-      else if (d === 1) sp = st[i] === sc.id ? ((e & 2) ? eLoud : null) : ((e & 4) ? eSoft : null);
+    const c0 = Math.max(0, Math.floor(-ox / s)), c1 = Math.min(cols - 1, Math.ceil((W - ox) / s));
+    const r0 = Math.max(0, Math.floor(-oy / s)), r1 = Math.min(rows - 1, Math.ceil((H - oy) / s));
+    const seen = new Set();
+    const LOUD = .95, MID = .6, SOFT = d === 1 ? .42 : .3, FAINT = .2;
+    for (const k of C.edgeList){
+      const cc = k % cols; if (cc < c0 || cc > c1) continue;
+      const rr = (k / cols) | 0; if (rr < r0 || rr > r1) continue;
+      const e = ed[k];
+      let a = 0;
+      if (d === 0) a = (e & 4) ? LOUD : 0;
+      else if (d === 1) a = st[k] === sc.id ? ((e & 2) ? LOUD : 0) : ((e & 4) ? SOFT : 0);
       else if (d === 2){
-        if ((e & 2) && rim(i)) sp = eLoud;
-        else if (rg[i] === sc.id) sp = (e & 1) ? eMid : null;
-        else if (st[i] === sc.state) sp = (e & 2) ? eSoft : null;
-        else sp = (e & 4) ? eFaint : null;
+        if ((e & 2) && rim(k)) a = LOUD;
+        else if (rg[k] === sc.id) a = (e & 1) ? MID : 0;
+        else if (st[k] === sc.state) a = (e & 2) ? SOFT : 0;
+        else a = (e & 4) ? FAINT : 0;
       } else {
-        if ((e & 1) && rim(i)) sp = eLoud;
-        else if (rg[i] === sc.region) sp = (e & 1) ? eSoft : null;
-        else sp = (e & 2) ? eFaint : null;
+        if ((e & 1) && rim(k)) a = LOUD;
+        else if (rg[k] === sc.region) a = (e & 1) ? SOFT : 0;
+        else a = (e & 2) ? FAINT : 0;
       }
-      if (sp) put(sp, i, eHalf);
+      if (!a) continue;
+      /* the division is stored on the cell's right and lower sides, on the
+         side that differs. Far out, a cell is smaller than the pitch and
+         its one diamond lands on the lattice point under that side; close
+         in, a cell is many diamonds wide, and the diamonds walk along the
+         side at every lattice step — so the line is one diamond thick at
+         every level and never beads. */
+      const right = cc + 1 < cols && g[k + 1] && g[k + 1] !== g[k];
+      const down = rr + 1 < rows && g[k + cols] && g[k + cols] !== g[k];
+      const half = Math.min(s, p) / 2;
+      const lay = (x, y) => {
+        const i = Math.floor(x / p), j = Math.floor(y / p);
+        if (i < 0 || j < 0 || i >= f.cols || j >= f.rows) return;
+        const id = j * f.cols + i;
+        if (seen.has(id)) return;
+        seen.add(id);
+        cell(f, i, j, a, K.aqua);
+      };
+      const x1 = (cc + 1) * s + ox - half, y1 = (rr + 1) * s + oy - half;
+      if (right || !down) for (let y = rr * s + oy + half; y <= y1 + 0.01; y += Math.max(p, 0.5)) lay(x1, y);
+      if (down) for (let x = cc * s + ox + half; x <= x1 + 0.01; x += Math.max(p, 0.5)) lay(x, y1);
     }
+    Title.paint(cv, f, {weight: 1});
     return out;
   }
 
@@ -225,10 +232,17 @@ const Towns = (() => {
     ctx.setLineDash([]); ctx.globalAlpha = 1;
   }
 
+  const rhombus = (x, y, r, rgb, a) => {
+    ctx.beginPath();
+    ctx.moveTo(x - r, y); ctx.lineTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.closePath();
+    ctx.fillStyle = 'rgba(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ',' + a + ')';
+    ctx.fill();
+  };
   function drawDots(m){
-    const ds = dots(), s = m.s;
-    const px = Math.max(10 * DPR, s * 1.6);
-    const gold = tok('gold'), flare = tok('flare'), ground = tok('ground');
+    const ds = dots(), s = m.s, K = ink();
+    /* a dot is a marker, not land: two of the plate's cells wide, at the
+       plate's proportion, on a ground diamond so it reads over bone */
+    const px = pitch() * 2;
     drawLinks(m, ds);
     ctx.font = (9 * DPR) + 'px ' + tok('mono');
     ctx.textBaseline = 'middle';
@@ -240,13 +254,9 @@ const Towns = (() => {
       let stack = 0;
       for (const q of placed) if (Math.abs(q.x - x) < 14 * DPR && Math.abs(q.y - y) < 14 * DPR) stack++;
       placed.push({x, y});
-      const sp = sprite(FILL, px, 1, d.here ? flare : gold);
-      /* a ground diamond under it, so the dot is read against the plate
-         and not lost in the bone of the land */
-      const under = sprite(FILL, px * 1.5, 1, ground);
       ctx.globalAlpha = 1;
-      ctx.drawImage(under, x - under.width / 2, y - under.height / 2);
-      ctx.drawImage(sp, x - sp.width / 2, y - sp.height / 2);
+      rhombus(x, y, px * 0.75 * 1.4, K.ground, 1);
+      rhombus(x, y, px * 0.75, d.here ? K.flare : K.gold, 1);
       const on = hoverDot === d.id;
       ctx.fillStyle = on || d.here ? tok('bone') : tok('dim');
       ctx.fillText(d.name.toUpperCase(), x + px * .8, y + stack * 11 * DPR);

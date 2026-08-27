@@ -209,7 +209,7 @@ const Focus = (() => {
         x.textAlign = 'left'; x.textBaseline = 'alphabetic';
         x.fillStyle = tok(picked(row.k) && P.item === say ? 'flare' : 'bone');
         x.font = '400 ' + Math.round(10 * DPR) + 'px ' + tok('mono');
-        x.fillText(String(say + 1) + '  ' + items[say].toUpperCase().split('').join(' '), 0, 0);
+        x.fillText(items[say].toUpperCase().split('').join(' '), 0, 0);
         x.restore();
       } else if (!items.length){
         x.textBaseline = 'middle';

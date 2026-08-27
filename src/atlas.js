@@ -96,6 +96,7 @@ const Atlas = (() => {
     A.current = id; save();
     Markers.mount(mkey(id));
     Build.mount('map', skey(id));               // restamps the walk grid
+    if (typeof Basemap !== 'undefined' && Basemap.mount) Basemap.mount(id);
     if (at){
       G.x = G.tx = at[0]; G.y = G.ty = at[1];
       const w = toWorld(G.x, G.y);
@@ -254,6 +255,7 @@ const Atlas = (() => {
     if (A.current !== 'home' && A.areas[A.current]){
       Markers.mount(mkey(A.current));
       Build.mount('map', skey(A.current));
+      if (typeof Basemap !== 'undefined' && Basemap.mount) Basemap.mount(A.current);
     }
     seed();
     if (typeof Hud !== 'undefined') Hud.onTowns = toggleMap;

@@ -147,7 +147,11 @@ Storage, all under `hq.`:
     hq.rooms.<uid>       one palace's plan
     hq.marks.<uid>       one palace's loci
     hq.order.<uid>       the room list that palace was typed from
-    hq.basemap           the tracing underlay's position and source
+    hq.basemap           the home plate's tracing underlay: position and
+                         source (its picture is row `img` of the hq.basemap
+                         picture store, or hq.basemap.img if that failed)
+    hq.basemap.<id>      another plate's, the same three handles with the
+                         plate's id on the end (row `img.<id>`)
     hq.blank             printed map or blank plate
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
@@ -323,6 +327,18 @@ if the two ever disagree the keys are right. Its `orphans` is what the
 sweep reads — and at v7.8 it found four palaces with no marker on any
 plate and two pictures no locus holds, which are the four typed palaces
 of v5.0 whose markers were deleted, not rubbish. Nothing here deletes.
+
+**Each plate traces its own picture.** `Basemap.mount(id)` is called by
+`Atlas.go` and `Atlas.init` after the shapes and markers mount: it lets go
+of the picture in memory only — never `thaw()`, which deletes from storage
+— swaps the three handles (`KEY`, `IMGKEY`, the store row `PK`) and reads
+the other plate's in through the same `boot()` init uses. Home keeps the
+bare keys, so a town from before this is the home plate's unchanged. A
+successful search on a plate with no `geo` sets it, which is how a plate
+opened from a road end and then traced finds its own place on the towns
+map. `snapshot.py` reads every row of the picture store: `picture` stays
+the home plate's, `pictures` is the rest and is absent when there are
+none, so a v7.7 file reads back exactly as before.
 
 **A plate is the interior's trick pointed sideways.** Going inside a
 building mounts the builder and the markers on another pair of keys and

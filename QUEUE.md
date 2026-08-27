@@ -24,13 +24,22 @@ may run straight into the next without waiting.
   loci, bag, platformer and snapshot.py read the new names; migration
   rewrites IDB keys once. Snapshot first; verified on a throwaway restored
   from `snapshots/v7.7.json`.
-- [ ] `[auto]` **v7.8 · 6 · A plate's own underlay** — `hq.basemap.<id>` for
-  plates other than home, mounted with the plate; home keeps `hq.basemap`.
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **v7.8 · 6 · A plate's own underlay** — 2026-08-27. `basemap.js`:
+  `handles(id)` sets `KEY`/`IMGKEY`/`PK` (`hq.basemap[.id]`,
+  `hq.basemap.img[.id]`, store row `img[.id]`); `boot()` shared by `init`
+  and new `mount(id)` (drops the picture in memory only, never storage);
+  `find()` seeds `Atlas.setGeo` when the plate has none; `Basemap.plate()`.
+  `Atlas.go`/`init` call `Basemap.mount`. `snapshot.py`: READ_PIC returns
+  every row, `pictures` beside `picture` when other plates have one,
+  WRITE_PIC clears and writes both, the gkey strip covers `hq.basemap.*`.
+  BUILD 129. Verified on the throwaway: new plate → no picture, took one
+  → `hq.basemap.<id>` + row; home → rot −2.18 back; new → its own; save
+  shows "+1 plates'", restore round-trips byte for byte.
 - [x] **v7.8 · 7 · Lazy plates** — 2026-08-27, by measurement, no code:
   `Build.load` and `Markers.load` read one key (the mounted plate's);
   `Atlas.init` mounts only the current plate; `Interior.survey` checks

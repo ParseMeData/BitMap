@@ -1600,6 +1600,12 @@ is taller than it is wide and the window is the other way round. Measured
 in cells so the pitch the town is built at does not move; the tracing
 underlay stays anchored to the sheet, not the plate.
 
+Each plate has its own tracing underlay: search, freeze and place on a
+plate and that picture is that plate's, under `hq.basemap.<id>`, and the
+home plate's stays where it always was. Standing on a plate shows what
+it traced, or nothing. A search on a plate that does not yet know where
+it is also anchors it for the towns map.
+
 The plate is the map, and nothing is drawn past its edge: a line's
 points and an area's centre are held inside it on every edit, because a
 road drawn into the margin beside the plate is a road the walker stops

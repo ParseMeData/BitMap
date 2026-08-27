@@ -31,8 +31,22 @@
 
 const Basemap = (() => {
   const TILE = 256;
-  const KEY = 'hq.basemap';
-  const IMGKEY = 'hq.basemap.img';          // localStorage fallback for the picture
+  /* ── whose underlay ────────────────────────────────────────────────────
+     One traced picture per plate. The home plate keeps the keys it always
+     had — `hq.basemap`, `hq.basemap.img`, row `img` of the picture store —
+     so a town from before plates had their own is the home plate's
+     untouched; every other plate is the same three handles with its id
+     on the end. `mount(id)` swaps them and reads that plate's picture in,
+     without writing a byte to the one being left. */
+  let plate = 'home';
+  let KEY = 'hq.basemap';
+  let IMGKEY = 'hq.basemap.img';            // localStorage fallback for the picture
+  let PK = 'img';                           // the row in the picture store
+  function handles(id){
+    plate = id || 'home';
+    const sfx = plate === 'home' ? '' : '.' + plate;
+    KEY = 'hq.basemap' + sfx; IMGKEY = 'hq.basemap.img' + sfx; PK = 'img' + sfx;
+  }
   const OSM = 'https://tile.openstreetmap.org/';
   const DARK = 'https://basemaps.cartocdn.com/dark_nolabels/';
   const FIND = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=';
@@ -230,6 +244,8 @@ const Basemap = (() => {
       const j = await r.json();
       if (!j.length){ note('nothing found'); return false; }
       lat = +j[0].lat; lon = +j[0].lon;
+      /* the plate now knows roughly where it is, if it did not before */
+      if (typeof Atlas !== 'undefined' && Atlas.setGeo && !Atlas.geo(plate)) Atlas.setGeo(plate, lat, lon);
       thaw();                          // only reachable now with nothing frozen
       clear();
       setShown(true);
@@ -544,7 +560,7 @@ const Basemap = (() => {
     const d = await idb();
     return new Promise((res, rej) => {
       const t = d.transaction(STORE, 'readwrite');
-      t.objectStore(STORE).put(v, 'img');
+      t.objectStore(STORE).put(v, PK);
       t.oncomplete = () => res(true); t.onerror = () => rej(t.error);
     });
   }
@@ -552,14 +568,14 @@ const Basemap = (() => {
     const d = await idb();
     return new Promise((res, rej) => {
       const t = d.transaction(STORE, 'readonly');
-      const q = t.objectStore(STORE).get('img');
+      const q = t.objectStore(STORE).get(PK);
       q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
     });
   }
   function idbDel(){
     idb().then(d => {
       const t = d.transaction(STORE, 'readwrite');
-      t.objectStore(STORE).delete('img');
+      t.objectStore(STORE).delete(PK);
     }).catch(() => {});
   }
   async function stash(url){
@@ -599,19 +615,39 @@ const Basemap = (() => {
      so nothing inside it may reject onto the page's error handler */
   async function init(){
     try {
-      const st = load();
-      waiting = !!st;
       ui();
       wirePlace();
-      if (st){
-        const url = await fetchStashed();
-        /* adopt() re-measures the picture, so a stored w/h is never trusted */
-        if (url){ save._done = url; await adopt(url, st.p); setPlacing(st.placing); }
-      }
-      waiting = false;
-      setShown(shown && !!(lat || lon || pic));
+      await boot();
       setBar(false);
     } catch (e){ waiting = false; note('underlay failed to start: ' + e.message); }
+  }
+  /* read the mounted plate's underlay in: its settings, then its picture
+     if it has one */
+  async function boot(){
+    const st = load();
+    waiting = !!st;
+    if (st){
+      const url = await fetchStashed();
+      /* adopt() re-measures the picture, so a stored w/h is never trusted */
+      if (url){ save._done = url; await adopt(url, st.p); setPlacing(st.placing); }
+    }
+    waiting = false;
+    setShown(shown && !!(lat || lon || pic));
+  }
+  /* ── standing on another plate ───────────────────────────────────────
+     Let go of this plate's picture in memory only — thaw() would delete
+     it from storage, and it is the most expensive thing in the profile —
+     then take the other plate's handles and read it in. What is on screen
+     is what that plate traced, or nothing. */
+  async function mount(id){
+    if ((id || 'home') === plate) return;
+    if (pic){ pic.remove(); pic = null; }
+    picURL = ''; place = null; save._done = '';
+    setPlacing(false); clear();
+    lat = 0; lon = 0; z = 15; shown = false;
+    handles(id);
+    try { await boot(); } catch (e){ waiting = false; note('underlay failed to start: ' + e.message); }
+    syncUI();
   }
 
   addEventListener('keydown', e => {
@@ -623,7 +659,8 @@ const Basemap = (() => {
     }
   });
 
-  return {init, sync, find, setShown, setSrc, freeze, thaw, take, suspend,
+  return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend,
+          plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,
           /* which way the traced picture is turned, radians clockwise — the

@@ -67,11 +67,14 @@ READ_PIC = """(async () => {
     const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
       r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic')) r.result.createObjectStore('pic'); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error || new Error('refused')); });
-    if (!d.objectStoreNames.contains('pic')) return null;
+    if (!d.objectStoreNames.contains('pic')) return {};
+    // every row: 'img' is the home plate's picture, 'img.<id>' another plate's
     return await new Promise((res, rej) => { const t = d.transaction('pic', 'readonly');
-      const q = t.objectStore('pic').get('img');
-      q.onsuccess = () => res(q.result || null); q.onerror = () => rej(q.error); });
-  } catch (e){ return null; }
+      const s = t.objectStore('pic'), out = {};
+      const q = s.openCursor();
+      q.onsuccess = () => { const c = q.result; if (!c){ res(out); return; } out[c.key] = c.value; c.continue(); };
+      q.onerror = () => rej(q.error); });
+  } catch (e){ return {}; }
 })()"""
 
 READ_LOCI = """(async () => {
@@ -99,7 +102,7 @@ WRITE_LOCI = """(async (rows) => {
     t.oncomplete = () => res(Object.keys(rows).length); t.onerror = () => rej(t.error); });
 })"""
 
-WRITE_PIC = """(async (url) => {
+WRITE_PIC = """(async (url, rows) => {
   const d = await new Promise((res, rej) => { const r = indexedDB.open('hq.basemap', 1);
     r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('pic'))
       r.result.createObjectStore('pic'); };
@@ -107,9 +110,12 @@ WRITE_PIC = """(async (url) => {
   return await new Promise((res, rej) => { const t = d.transaction('pic', 'readwrite');
     const s = t.objectStore('pic');
     // A snapshot with no frozen picture has to leave the profile with no frozen
-    // picture, or a restore is a merge again: putting the null back would store
-    // a row that basemap.js reads as a picture it has.
-    if (url === null) s.delete('img'); else s.put(url, 'img');
+    // picture, or a restore is a merge again -- so the store is cleared and
+    // only what the file holds is put back. `url` is the home plate's (an
+    // older file has only that); `rows` is every plate's, keyed as stored.
+    s.clear();
+    if (url) s.put(url, 'img');
+    for (const k in (rows || {})) if (k !== 'img') s.put(rows[k], k);
     t.oncomplete = () => res(true); t.onerror = () => rej(t.error); });
 })"""
 
@@ -141,21 +147,30 @@ def save(path, page=None, port=PORT, strip=True):
     # See SKIP: the key is billable and a snapshot is a committed file. The
     # pre-restore backup is neither — it is gitignored, and it is the only
     # copy of what is about to be destroyed, so it keeps the key.
-    if strip and state.get('hq.basemap'):
+    # every plate's underlay settings carry the key: hq.basemap and hq.basemap.<id>
+    for bk in [k for k in state if k == 'hq.basemap' or (k.startswith('hq.basemap.') and not k.startswith('hq.basemap.img'))]:
+        if not (strip and state.get(bk)):
+            continue
         try:
-            bm = json.loads(state['hq.basemap'])
+            bm = json.loads(state[bk])
             # valid JSON that is not an object has no .get, and AttributeError
             # is not a ValueError — basemap.js only ever writes a dict, but a
             # hand-edited key should not be able to abort a save
             if isinstance(bm, dict) and bm.get('gkey'):
                 bm['gkey'] = ''
-                state['hq.basemap'] = json.dumps(bm)
-                print('stripped the Google Maps key from hq.basemap')
+                state[bk] = json.dumps(bm)
+                print(f'stripped the Google Maps key from {bk}')
         except ValueError:
             pass        # not JSON: leave it exactly as the page had it
-    pic = p.js(READ_PIC)
+    rows = p.js(READ_PIC) or {}
+    # 'picture' stays the home plate's, as every file since version 3 has had
+    # it; 'pictures' is the other plates', and is absent when there are none
+    pic = rows.get('img')
+    others = {k: v for k, v in rows.items() if k != 'img'}
     loci = p.js(READ_LOCI) or {}
     out = {'version': 3, 'localStorage': state, 'picture': pic, 'loci': loci}
+    if others:
+        out['pictures'] = others
     f = pathlib.Path(path)
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1))
@@ -166,7 +181,8 @@ def save(path, page=None, port=PORT, strip=True):
     print(f'saved {f}  ·  {shapes} shapes, {markers} markers, '
           f'{rooms} interiors holding {inside} shapes, '
           f'{pics} locus pictures ({lb // 1024} KB), '
-          f'picture {len(pic) if pic else 0} bytes, {f.stat().st_size} bytes total')
+          f'picture {len(pic) if pic else 0} bytes'
+          + (f' (+{len(others)} plates\')' if others else '') + f', {f.stat().st_size} bytes total')
     return out
 
 
@@ -215,7 +231,7 @@ def restore(path, port=PORT, yes=False):
     # Written whether or not the file has a picture, for the same reason the
     # loci are: a snapshot taken with no underlay has to clear the one that is
     # there, or the profile keeps a traced map the file says was removed.
-    p.js(f'({WRITE_PIC})({json.dumps(data.get("picture"))})')
+    p.js(f'({WRITE_PIC})({json.dumps(data.get("picture"))}, {json.dumps(data.get("pictures") or {})})')
     # written whether or not the file has any: an empty set has to clear the
     # store, or a locus the snapshot says is blank keeps yesterday's picture
     p.js(f'({WRITE_LOCI})({json.dumps(data.get("loci") or {})})')

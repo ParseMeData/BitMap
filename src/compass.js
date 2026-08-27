@@ -68,7 +68,9 @@ const Compass = (() => {
     if (typeof Basemap === 'undefined' || !Basemap.rot) return 0;
     return Basemap.rot() * 180 / Math.PI;
   }
-  const heading = () => (state.manual ? state.deg : mapDeg());
+  /* on the region north is up by definition, whatever the map or the hand says */
+  const heading = () => (typeof Region !== 'undefined' && Region.on() ? 0
+                         : state.manual ? state.deg : mapDeg());
 
   function build(){
     if (el) return el;

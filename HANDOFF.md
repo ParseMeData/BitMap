@@ -152,6 +152,10 @@ Storage, all under `hq.`:
                          picture store, or hq.basemap.img if that failed)
     hq.basemap.<id>      another plate's, the same three handles with the
                          plate's id on the end (row `img.<id>`)
+    hq.shapes.region     the region plate's shapes (src/region.js)
+    hq.region            {lat0, lon0, scale}: where the region plate's
+                         centre falls and how many degrees a world unit is
+    hq.towns             what the rose diamond opens: region or country
     hq.blank             printed map or blank plate
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
@@ -383,6 +387,20 @@ and may not: home takes the underlay's search point once (`Atlas.seed`), a
 plate opened from a road end steps its neighbour's anchor one cell of the
 country raster the way the road went, and `Atlas.setGeo` pins any plate by
 hand. Nothing ever guesses an anchor for a plate that has none.
+
+**The region is a frame, not an atlas area.** `src/region.js` mounts the
+editor on `hq.shapes.region` with `Kinds.use('region')` exactly as going
+inside a building mounts a plan, and holds the plate it left in a frame
+until Esc. It is deliberately not an entry in `hq.atlas`: the atlas is the
+towns, and the region is where the towns are — `Atlas.go` pops the frame
+before it mounts anything, so a jump from the towns map or the chip grid
+while standing on the region cannot mount a plate over it. A *town* is a
+connected run of atlas areas read both ways off the links; its root is
+home or the first plate; its anchor is the mean of its plates' `geo`.
+The one write the region makes to the atlas is `setGeo`, on a drop in
+build mode, and it pins every plate of the town at once so the group
+keeps its shape. `hq.region` is the projection and is set once from
+home's anchor; nothing recentres it.
 
 **The end of a road is a step the walker asks about.** `tryStep` in
 `game.js` decides what a dead end is — a road tile with at most one road

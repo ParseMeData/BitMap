@@ -91,6 +91,9 @@ const Atlas = (() => {
   function go(id, at){
     if (!A.areas[id] || !G.terr) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    /* from the region, a jump is a jump home first: the frame it holds
+       is the plate being left, and mounting over it would lose it */
+    if (typeof Region !== 'undefined' && Region.on()) Region.leave();
     if (id === A.current && !at) return true;
     Build.commit(); Markers.commit();
     A.current = id; save();

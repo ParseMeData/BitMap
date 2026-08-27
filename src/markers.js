@@ -94,6 +94,12 @@ const Markers = (() => {
 
   function place(x, y){
     if (armed < 0 || armed >= glyphs.length) return null;
+    /* nothing is built on the region: a town there is a plate, entered
+       rather than drawn, and a marker on it would be a palace nowhere */
+    if (typeof Region !== 'undefined' && Region.on()){
+      if (typeof hqNote === 'function') hqNote('nothing is built on the region — a town is a plate of its own', false);
+      return null;
+    }
     const m = {id: nextId++, uid: mint(), name: '', gi: armed, x: snap(x), y: snap(y),
                size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
     G.markers.push(m);

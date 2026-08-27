@@ -373,7 +373,8 @@ function tryStep(dx, dy){
      most one road neighbour, and pressing on is pressing away from that
      neighbour — so a sideways bump mid-road never asks, and a road that
      ends at the plate edge asks the same as one that ends in a field. */
-  if (typeof Atlas !== 'undefined' && wAt(G.x, G.y) && !(sx && sy) && !wAt(nx, ny)){
+  if (typeof Atlas !== 'undefined' && !(typeof Region !== 'undefined' && Region.on()) &&
+      wAt(G.x, G.y) && !(sx && sy) && !wAt(nx, ny)){
     let nb = 0, vx = 0, vy = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
       if ((dx || dy) && wAt(G.x + dx, G.y + dy)){ nb++; vx += dx; vy += dy; }
@@ -483,6 +484,8 @@ addEventListener('keydown', e => {
         const mk = Interior.target();
         if (mk) Loci.enter(mk);
       }
+      /* on the region a town is what you stand by, and Enter goes there */
+      else if (typeof Region !== 'undefined' && Region.on()) Region.press();
       else Interior.enter();
       break;
     /* Esc is BACK, and only back. It used to close the pause as well, which
@@ -497,6 +500,7 @@ addEventListener('keydown', e => {
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();
+      else if (typeof Region !== 'undefined' && Region.on()) Region.leave();
       /* On the desktop plate #pause is display:none, and the only way out of
          a pause is a pointerdown on that hidden element — so pausing there
          is a door that locks behind you. Same guard, same reason, as the
@@ -753,11 +757,13 @@ function frame(now){
   if (live) Doors.step(dt, pxw, pyw);
   m = Doors.draw(ENT, m, ENTMAX);
   m = Interior.overlay(ENT, m, ENTMAX);
+  if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
   m = Hud.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);
   Interior.prompt();
+  if (typeof Region !== 'undefined') Region.prompt();
   Basemap.sync();
 
   R.begin(w, h, t);
@@ -845,6 +851,8 @@ function boot(img){
   /* the bone diamond is the B key: build on, or off again */
   Hud.onBuild = () => Build.setOn(!Build.active());
   if (typeof Atlas !== 'undefined') Atlas.init();
+  /* the region: our towns drawn flat, north up, in place of the country */
+  if (typeof Region !== 'undefined') Region.init();
   /* the compass's fourth diamond opens the towns map, in place of the
      chip grid the atlas drew before the country was here */
   if (typeof Towns !== 'undefined') Towns.init();

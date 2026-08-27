@@ -1294,6 +1294,11 @@ const Build = (() => {
       /* A marker is pinned to a spot, not to a layer, so it answers the
          pointer wherever it sits and whatever you are working on. */
       if (Markers.armed()){ Markers.place(p[0], p[1]); Markers.disarm(); syncUI(); return; }
+      /* on the region a town's diamonds can be taken and put where the
+         town is; the drop pins every plate in it (src/region.js) */
+      if (typeof Region !== 'undefined' && Region.on() && Region.grab(p[0], p[1])){
+        drag = {mode: 'town'}; sel = null; return;
+      }
       const mk = Markers.hit(p[0], p[1], GRAB() * 1.5);
       if (mk){
         Markers.select(mk); sel = null;
@@ -1376,6 +1381,7 @@ const Build = (() => {
          fired mid-drag and one press of undo left the marker wherever it
          happened to be 450ms in. Every other drag re-arms through save(). */
       if (drag.mode === 'marker'){ Markers.moveTo(drag.mk, p[0], p[1]); htap(); return; }
+      if (drag.mode === 'town'){ Region.dragTo(p[0], p[1]); return; }
       const q = quant(s);
       if (drag.mode === 'move'){
         const dx = snapQ(p[0] - drag.ox, q), dy = snapQ(p[1] - drag.oy, q);
@@ -1528,8 +1534,9 @@ const Build = (() => {
         return;
       }
       if (drag){
-        const s = drag.s, w0 = drag.w0, h0 = drag.h0;
+        const s = drag.s, w0 = drag.w0, h0 = drag.h0, was = drag.mode;
         drag = null;
+        if (was === 'town'){ Region.drop(); syncUI(); return; }
         /* On release, not on every move: laying a room's contents again is
            the expensive half, and watching furniture flicker through every
            intermediate size is worse than seeing it settle once.
@@ -1635,7 +1642,7 @@ const Build = (() => {
          label is how the two heading cycles already read. */
       '<div class="kfoot one fitonly" id="kendsrow" hidden>' +
       '<button class="btn" id="kends">Ends anchored</button></div>' +
-      '<div class="plabel fitonly">Markers</div>' +
+      '<div class="plabel fitonly" id="kmlabel">Markers</div>' +
       '<div id="kmarkers" class="fitonly"></div>' +
       '<input id="kmname" class="fitonly" type="text" spellcheck="false" ' +
       'placeholder="name this place" hidden>' +

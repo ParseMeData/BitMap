@@ -959,6 +959,20 @@ const Kinds = (() => {
     }
   }
 
+  /* ── LINK ──────────────────────────────────────────────────────────────
+     The region's road: a line one cell wide between two towns, in the
+     kerb's grey rather than the road's white, because it is not a road —
+     it is the fact that a road exists, drawn at a scale where the road
+     itself would be thinner than a diamond. Walkable, so the walker can
+     cross the region on it; a link is the only route the region has. */
+  function link(s, cell, buf){
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      if (hash(u, v, s.seed) > 0.97) return;
+      buf.cell(x, y, C.kerb, 0.9 * fade, 0.92, 0, 0.72 * fade, 0.98, 0,
+               0.02, hash(u, v, s.seed + 7));
+    });
+  }
+
   /* ── CREEK ─────────────────────────────────────────────────────────────
      A road's geometry carrying water. Everything about drawing one is the
      road editor — a polyline whose segments bow, a width, a ring if you
@@ -1971,6 +1985,29 @@ const Kinds = (() => {
                   {id: 'warp', label: 'Warp'}, {id: 'line', label: 'Line'},
                   {id: 'ring', label: 'Ring'}];
 
+  /* ── the region registry ───────────────────────────────────────────────
+     The third scope, for src/region.js: our region drawn flat with north
+     up. The same terrain as the town — every ground, the water, the
+     trees — under the same ids, so the generators and the saved shapes
+     are the town's; nothing built, because a town on the region is a
+     plate, not a picture of one; and in place of roads, links. Modifiers
+     are left out with the built kinds: a demolisher on a map of towns
+     has nothing to weather. */
+  const RLAYERS = [
+    {id: 'links',  label: 'Links',     z: 3, solo: true, start: true},
+    {id: 'ground', label: 'Ground',    z: 0},
+    {id: 'water',  label: 'Water',     z: 0.5},
+    {id: 'trees',  label: 'Trees',     z: 1}
+  ];
+  const RLIST = LIST.filter(k => k.layer === 'ground' || k.layer === 'water' || k.layer === 'trees').concat([
+    {id: 'link',      label: 'Link',      layer: 'links',  types: ['line'],
+     walk: 2, stamp: 6, gen: link,      swatch: '#85858E', width0: 1,
+     bright0: 1.2, feather0: 0, pad0: 0, padFade0: 0, padBreak0: 0,
+     connects: true}
+  ]);
+  const RPALETTE = [{label: 'Link', kind: 'link', type: 'line'}]
+    .concat(PALETTE.filter(p => RLIST.some(k => k.id === p.kind)));
+
   /* ── two registries, one editor ────────────────────────────────────────
      Everything downstream — the palette, the layer rows, the walk-grid
      stamp, saving — reads `Kinds.list`, `Kinds.by`, `Kinds.layers` and
@@ -1980,7 +2017,8 @@ const Kinds = (() => {
   const index = list => { const by = {}; for (const k of list) by[k.id] = k; return by; };
   const REG = {
     map:   {list: LIST,  by: index(LIST),  layers: LAYERS,  palette: PALETTE},
-    floor: {list: FLIST, by: index(FLIST), layers: FLAYERS, palette: FPALETTE}
+    floor: {list: FLIST, by: index(FLIST), layers: FLAYERS, palette: FPALETTE},
+    region: {list: RLIST, by: index(RLIST), layers: RLAYERS, palette: RPALETTE}
   };
   let scope = 'map';
 

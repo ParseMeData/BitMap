@@ -223,6 +223,16 @@ body.ordering #palette{display:none}
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
 #inside b{color:var(--flare);font-weight:400}
 #inside em{color:var(--dim);font-style:normal}
+/* the region's banner is the interior's, word for word in the stylesheet */
+#region{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
+  padding:8px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
+#region b{color:var(--flare);font-weight:400}
+#region em{color:var(--dim);font-style:normal}
+body.region #msg{top:98px}
+body.wall #region{display:none}
+/* no markers on the region: the palette's strip for them is not shown there */
+body.region #kmlabel,body.region #kmarkers,body.region #kmname{display:none!important}
 #enterhint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
   padding:7px 12px;display:flex;gap:9px;align-items:center;font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
@@ -676,6 +686,7 @@ body.arming,body.arming #gl{cursor:copy}
 </div>
 
 <div id="inside" class="glass" hidden></div>
+<div id="region" class="glass" hidden><b>The region</b><span>north is up</span><em>Esc leaves</em></div>
 <div id="enterhint" class="glass" hidden></div>
 <div id="locus" class="glass" hidden></div>
 <input id="lfile" type="file" accept="image/*" hidden>
@@ -802,13 +813,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 174, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 175, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
+   'src/interior.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

@@ -431,6 +431,8 @@ const Palace = (() => {
   }
 
   function overlay(a, m, cap){
+    /* the heading names the town; the region is not the town */
+    if (typeof Region !== 'undefined' && Region.on()) return m;
     if (!G.shapes || !G.terr || WALL) return m;
     const z = G.cam[2], t = G.terr.tsz;
     const hw = VW / (2 * z), hh = VH / (2 * z);

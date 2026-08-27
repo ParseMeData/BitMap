@@ -20,19 +20,6 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **The region plate** — `src/region.js`. One more plate, not an
-  atlas area: our region drawn flat, **north always up** (no traced underlay,
-  no rotation; the compass reads 0). Every *town* — a connected run of plates
-  in `hq.atlas` — stands on it as diamonds, one per plate in that town, at
-  the town's mean geo projected north-up (`hq.atlas.region = {lat0, lon0,
-  scale}`); a town with no anchor stands along the foot of the plate, dim,
-  until it is dragged into place in build mode (which pins it). Instead of
-  roads there are **links**: a `link` kind, thin lines between towns, the
-  only route the walker has here. Terrain is allowed (grounds, water, creek,
-  river, trees, park); nothing built and no markers — a third registry
-  `Kinds.use('region')`, and `Markers.place` refuses. Stand by a town and
-  `Enter` goes to its home plate (the fast travel item 5 will gate). Keys
-  `hq.shapes.region`. Reached from the rose diamond; `Esc` leaves.
 - [ ] [auto] **Minimal view, and the trace** — `src/trace.js`. Inside a
   palace, `V` toggles **minimal**: Floor and Fittings are not drawn and do
   not block — only walls, windows, doors and stairs. In minimal the trace
@@ -72,6 +59,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The region plate** — 2026-08-27. `src/region.js`: a frame on
+  `hq.shapes.region` with a third registry (`link` + the town's terrain),
+  towns as connected runs of atlas areas drawn as one diamond per plate,
+  north up (compass 0), Enter beside a town → `Atlas.go` its root, drag in
+  build mode pins the whole town, `hq.region` the projection. `Atlas.go`
+  pops the frame first; `Markers.place` refuses; the heading stays off.
+  Verified on the rig: two-plate town, link walked, jump home restores 39
+  shapes / 1 marker / heading 206°. BUILD 175.
 - [x] **The country map goes behind a switch** — 2026-08-27. `TOWNS` in
   game.js (`hq.towns`, region|country), a Towns chip pair in the tune
   panel, and `openTowns()` is what the rose diamond presses: the region

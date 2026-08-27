@@ -207,6 +207,7 @@ It asks you to type the word.
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus |
 | `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
+| rose diamond | the region &nbsp;·&nbsp; `Enter` by a town goes there, `Esc` leaves |
 | drag / `Shift`+drag | move / turn the frozen map (in Place) |
 | `Shift`+`Tab` | next layer (in build mode) |
 | `F` / `F11` | fullscreen |
@@ -333,6 +334,9 @@ stale.
                          at their edges, the edge prompt, where each one
                          falls on the ground, and the chip grid the towns
                          map fell back on before the country was here
+    src/region.js        the region: our towns drawn flat with north up,
+                         one more plate on a third registry — links for
+                         roads, diamonds for towns, Enter to stand on one
     src/country.js       Australia, decoded: one plane of SA3 ids and the
                          three levels above it derived at load; loaded on
                          the first open of the towns map, never at boot
@@ -1650,6 +1654,32 @@ the towns map: the home plate takes the traced underlay's search point
 the first time there is one, a plate opened from a road end starts one
 cell of the country raster along from its neighbour, and any plate can
 be pinned from the map. One without an anchor is listed, not drawn.
+
+### The region
+
+Press the compass's fourth diamond and you are standing on the **region**:
+our towns drawn flat, **north always up**, made of the plate's own
+diamonds by the same editor (`src/region.js`, `hq.shapes.region`). Every
+*town* — a run of plates joined by their roads — stands on it as diamonds,
+one for each plate in the town side by side, so a town that has grown an
+extension plate wears two; its name beneath is its home plate's. The town
+you came from is flare. A town whose plates know where they are stands
+where its anchor falls, projected flat (`hq.region` holds the centre and
+the scale, taken from the home plate's anchor the first time and never
+moved on its own); one that does not stands dim along the foot of the
+plate until you **drag it into place in build mode**, which pins every
+plate in it — the home plate where you dropped it, each other plate one
+atlas step away the way its road went.
+
+Instead of roads there are **links** — the first chip on the palette, a
+line one cell wide in the kerb's grey — and a link is the only route the
+walker has here: draw one from town to town and walk it. The terrain
+tools are the town's own (grounds, water, creek, river, trees, park);
+nothing built and no markers, because a town on the region is a plate,
+and a plate is entered, not drawn. Stand by a town and press `Enter` to
+stand on its home plate. `Esc` leaves the region for wherever you were,
+walker and camera and all — it is a frame, as going inside a building is,
+never a plate of the atlas. The compass reads north while you are here.
 
 ### The towns
 

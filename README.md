@@ -1684,7 +1684,15 @@ is there to read again.
 
 The map never pans and never zooms: what is on screen is the town. When
 the town needs more room it gets another **plate** — a second screen the
-same size as this one — and plates are joined where **roads end**. Walk
+same size as this one — and plates are joined where **roads end**.
+
+**A plate is one size, and that size is the limit.** Every plate is
+**60 × 57 walk tiles** — 240 × 228 lattice cells, 755 × 720 world units,
+the printed sheet's height and its width plus `PLATE_EXT_COLS` (64) cells
+of plain ground — and build mode holds every shape inside that edge
+(`keepOnPlate`). There is no bigger plate: a town that needs more room
+takes an extension, opened from the end of a road, and the region plate
+shows the town as one diamond per plate it has grown. Walk
 to the end of any road and press on: if that end leads somewhere you
 arrive there; if it does not, a prompt asks whether to open a plate for
 it (`Enter` opens, `Esc` stays). A new plate is drawn as though it lay the
@@ -1959,6 +1967,11 @@ a road 5 grains, a link 3, a marker 5 blocks, a house or building 3, a
 district 4) and is refused, with a note that says the price, when you
 are short. Nothing that stands is ever taken back; a profile with no
 stock starts with twenty grains and ten blocks.
+
+**The first plate is free.** On the home plate — the town you set out
+from — roads, links, markers, houses, buildings and districts cost
+nothing, so the town can be laid out without grinding for it; every
+other plate pays. Cards still cost their spark wherever you are.
 
 Grains are earned by **drilling**: the `drill` chip on the bag page asks
 five questions from the cards you have written a word on — a number or a

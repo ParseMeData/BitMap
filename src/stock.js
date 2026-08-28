@@ -72,8 +72,18 @@ const Stock = (() => {
     }
   }
 
-  /* what placing one of `kind` costs; nothing, for a kind not listed */
-  const cost = kind => COST[kind] || null;
+  /* ── the first plate is free ─────────────────────────────────────────
+     Home — the first plate, the town you set out from — costs nothing to
+     build: roads, places, houses, districts all go down for free there,
+     so the town can be laid out without grinding for it (Eden,
+     2026-08-28). Every other plate pays. A card is not building and
+     still costs its spark wherever you are; a repair is a repair. */
+  const FREE = {road: 1, link: 1, marker: 1, house: 1, landmark: 1, buildings: 1, houses: 1};
+  const onHome = () => typeof Atlas !== 'undefined' && Atlas.current() === 'home' &&
+    !(typeof Region !== 'undefined' && Region.on());
+  /* what placing one of `kind` costs; nothing, for a kind not listed, or
+     for building on the home plate */
+  const cost = kind => (FREE[kind] && onHome()) ? null : (COST[kind] || null);
   const afford = kind => {
     const c = cost(kind); if (!c) return true;
     for (const m in c) if (S[m] < c[m]) return false;

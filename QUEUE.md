@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The first plate is free** — 2026-08-28. `Stock.cost` answers
+  nothing for road, link, marker, house, landmark, buildings and houses
+  while on home (not the region); cards and repairs still pay. README
+  records the plate's fixed size (60 × 57 tiles) as the limit — more room
+  is an extension. BUILD 184.
 - [x] **The printed sheet is never shown** — 2026-08-28. `BLANK` is
   always true, `setBlank` no longer reads or writes `hq.blank`, the Plate
   chip pair is gone from the tune panel; the art stays in assets for the

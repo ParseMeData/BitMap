@@ -185,7 +185,13 @@ const Atlas = (() => {
     el.querySelector('#edgeno').onclick = no;
     return el;
   }
-  function yes(){ if (!asking) return; const q = asking; asking = null; prompt().hidden = true; add(q.dir, q.at); }
+  /* yes is not the plate yet: a plate is founded on an address (src/found.js),
+     and the plate is made when the address is found */
+  function yes(){
+    if (!asking) return; const q = asking; asking = null; prompt().hidden = true;
+    if (typeof Found !== 'undefined') Found.ask(q, 'the road ends here heading ' + NAME[q.dir] + ' — where does it lead?');
+    else add(q.dir, q.at);
+  }
   function no(){ asking = null; prompt().hidden = true; }
   addEventListener('keydown', e => {
     if (asking){
@@ -195,6 +201,12 @@ const Atlas = (() => {
       return;
     }
     if (mapOpen() && e.code === 'Escape'){ e.preventDefault(); e.stopPropagation(); closeMap(); }
+    /* the founding dialog holds every key but its own field's */
+    if (typeof Found !== 'undefined' && Found.open()){
+      if (e.target && e.target.id === 'foundq') return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.code === 'Escape') Found.later();
+    }
   }, true);
 
   /* ── the mind map ────────────────────────────────────────────────────

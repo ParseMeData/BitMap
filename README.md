@@ -352,6 +352,9 @@ stale.
                          at their edges, the edge prompt, where each one
                          falls on the ground, and the chip grid the towns
                          map fell back on before the country was here
+    src/found.js         founding a plate: the address it is asked for, the
+                         map frozen there, the anchor, and the first palace
+                         planted at the address
     src/region.js        the region: our towns drawn flat with north up,
                          one more plate on a third registry — links for
                          roads, diamonds for towns, Enter to stand on one
@@ -1729,6 +1732,18 @@ is there to read again.
 The map never pans and never zooms: what is on screen is the town. When
 the town needs more room it gets another **plate** — a second screen the
 same size as this one — and plates are joined where **roads end**.
+
+**A plate is founded on an address.** Since V8.1 no plate opens without
+one (`src/found.js`). Say yes at the end of a road and a panel asks
+*where does it lead?* — type an address or a town, and the plate is
+made only once the address is found: the map is looked up and frozen
+there — that picture is the plate's boundary and its point the plate's
+anchor on the region — and the **first palace** is planted at the
+address, named for it, free, so every plate begins as one memory palace
+standing where its address is with the town round it to trace. *Stay*
+(or Esc) leaves the road ending where it was. A home plate with nothing
+on it asks the same at boot, and names the town; there *Later* puts it
+off, because a town may be about to be imported instead.
 
 **A plate is one size, and that size is the limit.** Every plate is
 **60 × 57 walk tiles** — 240 × 228 lattice cells, 755 × 720 world units,

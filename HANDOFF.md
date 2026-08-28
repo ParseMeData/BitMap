@@ -484,6 +484,15 @@ build mode, and it pins every plate of the town at once so the group
 keeps its shape. `hq.region` is the projection and is set once from
 home's anchor; nothing recentres it.
 
+**Yes at a road end is not a plate.** `Atlas.yes` hands the end to
+`Found.ask` and the plate is made inside `Found.go`, after the address is
+found — so a plate with no place cannot come to exist, and Stay leaves
+the atlas untouched. `Found` does four things in order and each can fail
+on its own: `Atlas.add`, `Basemap.find`, `Basemap.ready` then `freeze`,
+`Atlas.setGeo` + `Markers.plant`. If `find` fails after `add`, the plate
+exists without a map; the note says so and the dialog stays for another
+try — better than tearing a plate out from under a walker standing on it.
+
 **The end of a road is a step the walker asks about.** `tryStep` in
 `game.js` decides what a dead end is — a road tile with at most one road
 neighbour, pressed away from that neighbour — and hands it to

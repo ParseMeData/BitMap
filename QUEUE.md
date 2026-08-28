@@ -24,6 +24,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **A plate is founded on an address** — 2026-08-28. `src/found.js`:
+  the road-end yes asks for an address before the plate exists; found →
+  `Atlas.add`, `Basemap.find`, `ready`, `freeze`, `setGeo`, and
+  `Markers.plant` puts the first palace at the address, named for it,
+  free; an empty home asks at boot and names the town. Verified on a
+  fresh profile: home → Myrtleford (anchor, palace, town name), road end
+  → Bright (new plate, frozen map, anchor, palace). BUILD 194.
 - [x] **Tag v8.1 and clone** — 2026-08-28. `snapshots/v8.1.json` from the
   live profile (headless on 9222, the game not running), tag v8.1,
   pushed with the branch, `~/Projects/Loci Bitmap V8.1` checked out at

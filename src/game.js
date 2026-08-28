@@ -887,6 +887,8 @@ function boot(img){
   if (typeof Quest !== 'undefined') Quest.init();
   /* the keys on the screen, on a phone */
   if (typeof Touch !== 'undefined') Touch.init();
+  /* a home plate with nothing on it is founded on an address first */
+  if (typeof Found !== 'undefined') setTimeout(() => Found.check(), 400);
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

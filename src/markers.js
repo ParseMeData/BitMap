@@ -112,6 +112,17 @@ const Markers = (() => {
     return m;
   }
   function rename(m, s){ m.name = String(s || '').slice(0, 40); save(); }
+  /* a marker put down by the game rather than the hand — the founding
+     palace at a plate's address (src/found.js): first glyph, named, free */
+  function plant(x, y, name){
+    if (!glyphs.length) return null;
+    const m = {id: nextId++, uid: mint(), name: String(name || '').slice(0, 40), gi: 0, x: snap(x), y: snap(y),
+               size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
+    G.markers.push(m);
+    renumber();
+    save();
+    return m;
+  }
   /* which item of the plate's letter this palace is (src/quest.js):
      {id: letter id, item: index}, or nothing */
   function setItem(m, it){ if (it && it.id) m.item = {id: String(it.id), item: it.item | 0}; else delete m.item; save(); }
@@ -294,7 +305,7 @@ const Markers = (() => {
     ui();
   }
 
-  return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, setItem, nearest, mount,
+  return {init, ui, draw, place, plant, hit, moveTo, remove, cycleTint, rename, setItem, nearest, mount,
           ordered, reorder, renumber, text, textWidth,
           armed: () => armed >= 0,
           disarm: () => { armed = -1; document.body.classList.remove('arming'); syncChips(); },

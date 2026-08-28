@@ -272,6 +272,20 @@ const Basemap = (() => {
   }
 
   const note = t => { const n = $('#mapnote'); if (n) n.textContent = t; };
+  /* every tile that has been asked for has answered — for a caller that
+     wants to freeze the moment it can (src/found.js) */
+  function ready(ms){
+    const t0 = Date.now();
+    return new Promise(res => {
+      const look = () => {
+        const imgs = [...live.values()];
+        const done = imgs.length && imgs.every(i => i.complete);
+        if (done || Date.now() - t0 > (ms || 15000)) res(done);
+        else setTimeout(look, 200);
+      };
+      look();
+    });
+  }
 
   function paint(){
     if (!layer) return;
@@ -682,7 +696,7 @@ const Basemap = (() => {
     }
   });
 
-  return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend,
+  return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,

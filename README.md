@@ -2067,8 +2067,8 @@ snapshot carries both.
 
 ### The drill, and the stock
 
-The HUD strip — three meters stacked in the bottom-left corner under the
-hub: **sparks** in gold, **grains** in bone and **blocks** in flare
+The HUD strip — three meters stacked at the foot of the screen, to the
+right of the hub: **sparks** in gold, **grains** in bone and **blocks** in flare
 (`src/stock.js`, `hq.stock`, a hundred of each at most).
 
 Sparks are the PAO system's own material. Every card of the bag — a

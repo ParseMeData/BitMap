@@ -76,7 +76,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 /* the strip: three meters stacked in the bottom-left corner, under the
    hub — sparks, grains, blocks — each a label, a bar and its number.
    Eden asked for it there, and for round and steps to go (2026-08-28). */
-#hud{position:fixed;left:16px;bottom:10px;padding:6px 12px;display:flex;flex-direction:column;gap:3px;
+#hud{position:fixed;left:196px;bottom:10px;padding:6px 12px;display:flex;flex-direction:column;gap:3px;
   font-size:9px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
 #hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums}
 #hud b{color:var(--dim);font-weight:400;width:54px}
@@ -1011,7 +1011,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 209, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 210, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

@@ -51,7 +51,7 @@ const Hud = (() => {
      outside the diamond rather than touching it. */
   const EDGE = 16;           // the inset every chrome panel sits at (index.html)
   const LIFT = 104;          // the hub, above the bottom edge of the canvas (nearer it since 2026-08-28)
-  const LIFT_DESK = 86;      // and on a desk, beside the strip, nearer still
+  const LIFT_DESK = 78;      // and on a desk, nearer still
   const HUB = 24;            // half-size of the middle diamond (larger since 2026-08-28)
   /* hub centre → button centre. Tight, because the hub is not there when the
      four are: they gather where it stood, near enough to read as one thing
@@ -211,14 +211,12 @@ const Hud = (() => {
        #hud is top-left, #tune and #route top-right, #keys bottom-right.
        #palette takes this corner in build mode, where a HUD is not what
        you are looking at anyway. The lift clears #toast, which shares it. */
-    /* On a desk the strip of meters has the corner, so the cluster stands
-       just to its right and lower, near the bottom (Eden, 2026-08-28); on
-       a phone the strip is top right and the corner is the cluster's. */
+    /* The corner is the cluster's on desk and phone alike, low; on a desk
+       the strip of meters stands to its right (index.html moves it), so
+       the two never meet (Eden, 2026-08-28). */
     const mob = document.body.classList.contains('mobile');
-    const strip = mob ? null : document.getElementById('hud');
-    const sr = strip && !strip.hidden ? strip.getBoundingClientRect() : null;
-    const ax = (sr ? sr.right - b.left + 14 : EDGE) + SPAN + RIM;
-    const lift = sr ? LIFT_DESK : LIFT;
+    const ax = EDGE + SPAN + RIM;
+    const lift = mob ? LIFT : LIFT_DESK;
     const ay = b.height - lift;
     anchorNow = {x: ax, y: lift, dx: JX, r: HUB, span: SPAN, rim: RIM};
     return {b, dpr, z, u,

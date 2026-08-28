@@ -190,7 +190,7 @@ const Compass = (() => {
      chrome canvas above is kept only for the tune panel's reading. */
   const ON_PLATE = true;
   const AT = 6;                      // tiles in from the plate's top-left corner, both ways
-  const COLS_ON = 26;                // the rose read at this many cells across, and drawn one plate cell per cell
+  const COLS_ON = 34;                // the rose read at this many cells across, and drawn one plate cell per cell
   let facePlate = null;
   function readPlate(){
     if (typeof Title === 'undefined' || !Title.picture) return;

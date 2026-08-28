@@ -26,6 +26,7 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Compass bigger, hub in the corner, lower** — 2026-08-28. Rose at 34 cells; the cluster at the corner on desk and phone, 78 px up on a desk, the strip moved to its right (`#hud{left:196px}`). BUILD 210.
 - [x] **Hub and compass at the plate's grain** — 2026-08-28. hud.js builds
   its dot tables from the plate's cell on screen (`pitchOf`, cached per
   pitch) — HUB 24, RIM 34, SPAN 42 — and on a desk stands the cluster

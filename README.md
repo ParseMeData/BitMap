@@ -1764,9 +1764,13 @@ all, and a **boundary** laid by default that fades the town at the rim.
 Before the shapes go down the frozen picture is **turned** so the road
 at the address lies perfectly vertical or horizontal — whichever is
 nearer — and the compass turns with it, so the roads on the plate agree
-with the picture under them and the connecting road runs square. The
-first palace is planted at the address itself and can be dragged
-anywhere within the boundary afterwards like any marker. Every point
+with the picture under them and the connecting road runs square. A **house** — one of the sheet's, drawn by lot — is planted at the
+address with the first palace's marker standing on it; the palace can be
+dragged anywhere within the boundary afterwards like any marker. Before
+the picture is baked the camera frames the whole plate, so the frozen
+map covers it edge to edge, and afterwards it comes back to the working
+zoom on the door. The town's name rests in the plate's top-right corner
+now rather than across the middle of what was drawn. Every point
 goes through `Basemap.worldOf`, which reads the picture as it is placed.
 Three Overpass instances are tried in turn, twice each: the main one
 answers the web version in a second and a `file://` page not at all

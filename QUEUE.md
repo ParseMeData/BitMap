@@ -6,7 +6,9 @@ the file is re-read before every item.
 
 **Working rules (learned 2026-08-25):** snapshot the town with
 `tools/snapshot.py save <file>` before any live test; verify in the running
-game over CDP (`tools/cdp.py`, `Page.captureScreenshot`) and revert test
+game over CDP (`tools/cdp.py`, `Page.captureScreenshot`; a headless throwaway
+wants `--use-angle=gl --enable-gpu --ignore-gpu-blocklist`, or software GL
+makes a big plate look hung) and revert test
 shapes — shapes with ids you did not create are Eden's, leave them; there is
 no git identity on this box, commit with `GIT_AUTHOR_NAME=Eden
 GIT_AUTHOR_EMAIL=eden@customer.mlbeaus1.isp.starlink.com` (and COMMITTER)
@@ -24,6 +26,16 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Cleaned up** — 2026-08-28. The town's title rests top-right of
+  the sheet (`titleAt`); the founding frames the whole plate (fitAll,
+  centred) before the freeze and returns to the working zoom on the door
+  after; a random house from the sheet (`Glyphs.of('houses')`) is planted
+  at the address through the new `Build.add` (re-laying the plate with
+  its own shape objects hung the page); `make` honours `d.feather` and
+  sizes prints; the ground is four grass rects under MAX_CELLS. Found
+  along the way: the headless rig's software GL, not the game, was the
+  hang. Verified on hardware GL: 29 shapes, house a02 at the door, 50 k
+  frames alive. BUILD 198.
 - [x] **The default address** — 2026-08-28. `Found.DEFAULT` = 929
   Myrtleford-Yackandandah Road, Barwidgee VIC 3737; an empty home is
   founded on it unasked at boot (`go(address)` quiet, notes as toasts),

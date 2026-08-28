@@ -753,6 +753,15 @@ it down.
 
 ## Working on it
 
+**A headless rig needs the real GPU.** `--headless=new` falls back to
+SwiftShader, and a plate-sized field — tens of thousands of overlapping
+diamonds a frame — pins the GPU *process* at 300 % while the renderer
+idles; the page then looks hung from CDP (no pause event, no crash, no
+exception, `Runtime.evaluate` never returns) and an afternoon can go
+into a bug the game does not have. Launch the throwaway with
+`--use-angle=gl --enable-gpu --ignore-gpu-blocklist` and check
+`WEBGL_debug_renderer_info` says Mesa, not SwiftShader.
+
 **Never test against the live town.** Launch a throwaway on its own profile
 *and* port, and then point the tools at that port as well:
 

@@ -208,9 +208,9 @@ It asks you to type the word.
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and the trace through it (inside) |
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus &nbsp;·&nbsp; or deal with the distraction you are standing by |
 | `P` | play the route in the platformer |
-| `M` | map underlay to trace over |
+| `M` | the map dialog (top right) and the underlay with it &nbsp;·&nbsp; its ✕ closes both |
 | rose diamond | the region &nbsp;·&nbsp; `Enter` by a town goes there, `Esc` leaves |
-| drag / `Shift`+drag, ◀ ▶ | move / turn the frozen map (in Place) &nbsp;·&nbsp; the arrows turn a degree, fifteen with ctrl |
+| drag / `Shift`+drag, ◀ ▶ | move / turn the frozen map (in Pin) &nbsp;·&nbsp; the arrows turn a degree, fifteen with ctrl |
 | `Shift`+`Tab` | next layer (in build mode) |
 | `F` / `F11` | fullscreen |
 | `R` | new round &nbsp;·&nbsp; replaces the picture while a locus is open |

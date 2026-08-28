@@ -40,10 +40,13 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
    window itself is the only clip. */
 #basemap{position:fixed;left:0;top:0;width:0;height:0;z-index:0;overflow:visible;pointer-events:none;
   transform-origin:0 0;display:none;will-change:transform}
-#mapbar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:6;
-  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
-  max-width:calc(100vw - 32px);gap:8px;padding:8px 10px;font-size:9.5px;
+#mapbar{position:fixed;right:16px;top:14px;z-index:6;width:300px;
+  display:flex;flex-direction:column;gap:8px;padding:10px 12px;font-size:9.5px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+#mapbar .mrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#mapbar .mrow input[type=text]{flex:1;min-width:0}
+#mapbar #mapoff{margin-left:auto}
+#mapbar .mfoot{justify-content:space-between}
 #mapbar input[type=text]{background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;width:190px;
   letter-spacing:.06em;text-transform:none}
@@ -719,23 +722,29 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="basemap"></div>
 <canvas id="gl"></canvas>
 
+<!-- the map dialog: top right, a column of rows (Eden, 2026-08-28). No Show:
+     the X closes the dialog and takes the map with it, M brings both back. -->
 <div id="mapbar" class="glass" hidden>
-  <input id="mapq" type="text" placeholder="town or address" spellcheck="false">
-  <button class="btn" id="mapgo">Find</button>
-  <button class="btn" id="mapshow">Show</button>
+  <div class="mrow">
+    <input id="mapq" type="text" placeholder="town or address" spellcheck="false">
+    <button class="btn" id="mapgo">Find</button>
+    <button class="btn" id="mapoff" title="close, and the map with it">✕</button>
+  </div>
   <span class="mapsrc"><button class="btn" id="mapsrcdark">Dark</button><button class="btn" id="mapsrcosm">OSM</button><button class="btn" id="mapsrcg">Google</button></span>
   <input id="mapkey" type="text" placeholder="Google API key" spellcheck="false" hidden>
-  <button class="btn" id="mapfreeze" title="bake the tiles into one picture you can place by hand">Freeze</button>
-  <button class="btn" id="mapplace" title="drag to move &middot; shift-drag to turn &middot; ctrl for 15&deg; steps" hidden>Place</button>
-  <!-- Fade and Scale rest at their defaults and are not shown (Eden, 2026-08-28);
-       the sliders stay so a saved setting still reads back through them -->
+  <!-- Fade and Scale rest at their defaults and are not shown; the sliders
+       stay so a saved setting still reads back through them -->
   <label hidden>Fade<input id="mapdim" type="range" min="10" max="100" step="5"></label>
   <label hidden>Scale<input id="mapscale" type="range" min="25" max="400" step="5"><span id="mapscalev"></span></label>
-  <label id="maprotwrap" hidden>Turn<button class="btn" id="maprotl" title="turn left &middot; ctrl for 15&deg;">&#9664;</button><span id="maprotv"></span><button class="btn" id="maprotr" title="turn right &middot; ctrl for 15&deg;">&#9654;</button></label>
-  <label id="mapzwrap">Zoom<button class="btn" id="mapzo">&minus;</button><span id="mapzv"></span><button class="btn" id="mapzi">+</button></label>
-  <span id="mapnote"></span>
-  <span id="mapcred">© OpenStreetMap</span>
-  <button class="btn" id="mapoff">✕</button>
+  <div class="mrow">
+    <button class="btn" id="mapfreeze" title="bake the tiles into one picture you can pin by hand">Freeze</button>
+    <label id="mapzwrap">Zoom<button class="btn" id="mapzo">&minus;</button><span id="mapzv"></span><button class="btn" id="mapzi">+</button></label>
+  </div>
+  <div class="mrow" id="maprotwrap" hidden>
+    <label>Turn<button class="btn" id="maprotl" title="turn left &middot; ctrl for 15&deg;">&#9664;</button><span id="maprotv"></span><button class="btn" id="maprotr" title="turn right &middot; ctrl for 15&deg;">&#9654;</button></label>
+    <button class="btn" id="mapplace" title="drag to move &middot; shift-drag to turn &middot; ctrl for 15&deg; steps">Pin</button>
+  </div>
+  <div class="mrow mfoot"><span id="mapnote"></span><span id="mapcred">© OpenStreetMap</span></div>
 </div>
 
 <div id="hud" class="glass">
@@ -945,7 +954,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 190, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 191, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

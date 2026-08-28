@@ -24,6 +24,10 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The map dialog, top right** — 2026-08-28. `#mapbar` is a column
+  of rows at the top right; Show/Hide is gone — the X closes the dialog
+  and the map with it, M brings both back; Place is **Pin** and sits on
+  the Turn row with the arrows. BUILD 191.
 - [x] **The map bar, simplified** — 2026-08-28. Fade and Scale rest at
   their defaults and are hidden (the inputs stay for a saved setting);
   Turn is two arrows, a degree a press and fifteen with ctrl; `M` opens

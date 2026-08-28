@@ -481,8 +481,6 @@ const Basemap = (() => {
   }
 
   function syncUI(){
-    const b = $('#mapshow');
-    if (b){ b.textContent = shown ? 'Hide' : 'Show'; b.classList.toggle('sel', shown); }
     for (const [id, s] of [['#mapsrcdark', 'dark'], ['#mapsrcosm', 'osm'], ['#mapsrcg', 'google']]){
       const el = $(id);
       if (el){ el.classList.toggle('sel', src === s); el.hidden = !!pic; }
@@ -518,7 +516,6 @@ const Basemap = (() => {
       gkey = e.target.value.trim();
       clear(); sync(); save();
     };
-    $('#mapshow').onclick = () => setShown(!shown);
     $('#mapsrcdark').onclick = () => setSrc('dark');
     $('#mapsrcosm').onclick = () => setSrc('osm');
     $('#mapsrcg').onclick = () => setSrc('google');
@@ -535,7 +532,8 @@ const Basemap = (() => {
     $('#maprotr').onclick = e => turn(1, e.ctrlKey);
     $('#mapzo').onclick = () => step(-1);
     $('#mapzi').onclick = () => step(1);
-    $('#mapoff').onclick = () => setBar(false);
+    /* the X closes the dialog and takes the map with it; M brings both back */
+    $('#mapoff').onclick = () => { setBar(false); setShown(false); };
     $('#mapdim').value = Math.round(dim * 100);
     $('#mapscale').value = Math.round(scale * 100);
     $('#mapscalev').textContent = scale.toFixed(2) + '×';
@@ -679,6 +677,8 @@ const Basemap = (() => {
          same press was landing in it as the letter m. Click it to type. */
       e.preventDefault();
       setBar(!barOpen);
+      if (barOpen && (pic || lat || lon)) setShown(true);
+      else if (!barOpen) setShown(false);
     }
   });
 

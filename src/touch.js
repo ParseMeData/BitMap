@@ -24,6 +24,8 @@ const Touch = (() => {
   let el = null;
 
   const press = (code, down) => {
+    /* a paused game answers no key; a press on the layer is the resume */
+    if (down && typeof G !== 'undefined' && G.paused && typeof togglePause === 'function') togglePause(false);
     const key = code === 'Enter' ? 'Enter' : code === 'Escape' ? 'Escape' : code.replace(/^Key|^Arrow/, '');
     window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', {code, key, bubbles: true, cancelable: true}));
   };
@@ -40,6 +42,12 @@ const Touch = (() => {
     b.addEventListener('pointercancel', up);
     b.addEventListener('lostpointercapture', up);
     b.addEventListener('contextmenu', e => e.preventDefault());
+    /* iOS: a touch that is not cancelled here becomes a scroll or a zoom,
+       and the pointer is cancelled under the finger; passive:false is what
+       lets preventDefault mean anything on a touch */
+    b.addEventListener('touchstart', e => e.preventDefault(), {passive: false});
+    b.addEventListener('touchmove', e => e.preventDefault(), {passive: false});
+    b.addEventListener('touchend', e => { e.preventDefault(); up(e); }, {passive: false});
     return b;
   }
 

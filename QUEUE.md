@@ -26,6 +26,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The touch layer answers** — 2026-08-28. The game paused on blur
+  (address bar, app switch) and the pause card sat under the touch layer,
+  so every button did nothing: no blur-pause on mobile, Esc on nothing no
+  longer pauses there, any press on the layer resumes a paused game, the
+  layer is z 20, and iOS gets touchstart/move/end with passive:false so a
+  tap is never a scroll. Verified: paused → ▲ resumes and walks. BUILD 199.
 - [x] **Cleaned up** — 2026-08-28. The town's title rests top-right of
   the sheet (`titleAt`); the founding frames the whole plate (fitAll,
   centred) before the freeze and returns to the working zoom on the door

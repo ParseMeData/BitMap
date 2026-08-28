@@ -157,10 +157,10 @@ body.mobile #edge,body.mobile #atlas{max-width:calc(100vw - 16px)}
 body.mobile #tbody .prow,body.mobile #presets,body.mobile #pvarlabel,body.mobile #pinks,body.mobile #preset,
 body.mobile #pcopy,body.mobile #ctune,body.mobile #premix,body.mobile #pplayerlabel,body.mobile #pplayer{display:none!important}
 /* the touch layer */
-#touch{position:fixed;right:10px;bottom:10px;z-index:7;display:flex;flex-direction:column;align-items:flex-end;gap:10px;user-select:none;-webkit-user-select:none}
+#touch{position:fixed;right:10px;bottom:10px;z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:10px;user-select:none;-webkit-user-select:none}
 #touch .tpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:2px}
 #touch .tgap{width:48px;height:48px}
-#touch .tkey{display:flex;align-items:center;justify-content:center;width:48px;height:48px;
+#touch .tkey{display:flex;align-items:center;justify-content:center;width:48px;height:48px;-webkit-tap-highlight-color:transparent;
   background:rgba(8,8,11,.72);border:1px solid rgba(237,234,227,.22);color:var(--bone);
   font:400 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;touch-action:none}
 #touch .tkey.on{background:var(--bone);color:var(--ground)}
@@ -1001,7 +1001,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 198, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 199, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

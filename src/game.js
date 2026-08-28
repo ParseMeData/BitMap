@@ -514,7 +514,7 @@ addEventListener('keydown', e => {
          a pause is a pointerdown on that hidden element — so pausing there
          is a door that locks behind you. Same guard, same reason, as the
          blur handler below. */
-      else if (!WALL) togglePause(true);      // nothing to go back from: the reference
+      else if (!WALL && !MOBILE_UI()) togglePause(true);      // nothing to go back from: the reference
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
@@ -558,7 +558,11 @@ addEventListener('keydown', e => {
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
-addEventListener('blur', () => { keys.clear(); if (!WALL && !G.paused) togglePause(true); });
+/* a phone blurs for the address bar, a notification, a switch of apps —
+   and its pause card sat under the touch layer, so every button then did
+   nothing (Eden, 2026-08-28): no pause on blur there, as on the wall */
+const MOBILE_UI = () => document.body.classList.contains('mobile');
+addEventListener('blur', () => { keys.clear(); if (!WALL && !MOBILE_UI() && !G.paused) togglePause(true); });
 canvas.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.pow(1.14, -Math.sign(e.deltaY))); },
                         {passive: false});
 /* the plate hands control back the moment you steer it */

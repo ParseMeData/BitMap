@@ -24,6 +24,7 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Fade rests at a quarter** — 2026-08-28. The underlay's Fade default is 0.25 (was 0.85); a saved underlay keeps its own. BUILD 187.
 - [x] **Dark tiles without a key** — 2026-08-28. CARTO began watermarking
   keyless tiles "API KEY REQUIRED"; the Dark source is now Esri's
   World_Dark_Gray_Base (keyless, CORS *, z/y/x), credit line and lift

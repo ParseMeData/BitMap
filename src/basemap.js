@@ -60,7 +60,7 @@ const Basemap = (() => {
   const MAXBAKE = 4096;                     // longest edge of a baked picture
 
   let barOpen = false, shown = false;
-  let lat = 0, lon = 0, z = 15, dim = 0.85, scale = 1;
+  let lat = 0, lon = 0, z = 15, dim = 0.25, scale = 1;   // Fade rests at a quarter (Eden, 2026-08-28)
   let src = 'dark', gkey = '', gtype = 'roadmap';
   let layer = null, live = new Map(), lastRange = '', origin = [0, 0];
   let placed = 0, failed = 0;

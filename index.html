@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#08080B">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon.png">
@@ -131,6 +131,41 @@ body.mapping #hud{display:none}
   text-align:center;z-index:5;background:rgba(8,8,11,.86);letter-spacing:.28em;
   text-transform:uppercase;font-size:11px}
 #fatal{color:var(--flare);z-index:9;background:var(--ground)}
+/* ── mobile ─────────────────────────────────────────────────────────────
+   Every fixed panel becomes a sheet that fits the phone: full width, at
+   the top or the bottom, scrolling inside itself. The keys hint, the
+   lattice sliders, Variations, Copy settings and the compass tune are not
+   shown — there is no keyboard to hint at and no room to tune. The
+   compass is half size; the strip moves to the top right; the prompts
+   step up clear of the touch layer (src/touch.js). */
+body.mobile{overscroll-behavior:none}
+body.mobile #gl{touch-action:none}
+body.mobile #keys{display:none!important}
+body.mobile #compass{transform:scale(.5);transform-origin:0 0;left:4px;top:8px}
+body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px}
+body.mobile #quest{top:112px;left:8px;right:8px;transform:none;font-size:8.5px}
+body.mobile #inside,body.mobile #region{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
+body.mobile #enterhint{bottom:auto;top:180px;left:8px;right:8px;transform:none;justify-content:center}
+body.mobile #msg{top:214px}
+body.mobile #toast{left:8px;right:8px;top:44px;bottom:auto;max-width:none}
+body.mobile #tune,body.mobile #route,body.mobile #mapbar,body.mobile #palette,body.mobile #palace{
+  left:8px;right:8px;top:8px;bottom:auto;width:auto;max-height:52vh;overflow-y:auto}
+body.mobile #palette{top:auto;bottom:8px;max-height:46vh}
+body.mobile #bag,body.mobile #journal,body.mobile #towns,body.mobile #missions{inset:8px}
+body.mobile #quiz,body.mobile #drill{width:auto;left:8px;right:8px;transform:translateY(-50%)}
+body.mobile #edge,body.mobile #atlas{max-width:calc(100vw - 16px)}
+body.mobile #tbody .prow,body.mobile #presets,body.mobile #pvarlabel,body.mobile #pinks,body.mobile #preset,
+body.mobile #pcopy,body.mobile #ctune,body.mobile #premix,body.mobile #pplayerlabel,body.mobile #pplayer{display:none!important}
+/* the touch layer */
+#touch{position:fixed;right:10px;bottom:10px;z-index:7;display:flex;flex-direction:column;align-items:flex-end;gap:10px;user-select:none;-webkit-user-select:none}
+#touch .tpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:2px}
+#touch .tgap{width:48px;height:48px}
+#touch .tkey{display:flex;align-items:center;justify-content:center;width:48px;height:48px;
+  background:rgba(8,8,11,.72);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 12px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;touch-action:none}
+#touch .tkey.on{background:var(--bone);color:var(--ground)}
+#touch .tkeys{display:grid;grid-template-columns:repeat(2,48px);gap:2px}
+#touch .tkeys .tenter{grid-column:1 / -1;width:auto;color:var(--gold)}
 /* the door */
 #login{position:fixed;inset:0;display:grid;place-content:center;gap:14px;text-align:center;
   z-index:10;background:var(--ground);letter-spacing:.28em;text-transform:uppercase;font-size:11px}
@@ -907,6 +942,12 @@ addEventListener('unhandledrejection', e => hqReport(
    a reload within the session does not ask again (sessionStorage), and a
    window the game opens — the platformer — inherits it. */
 var HQ_USER = '', HQ_DB = function(n){ return HQ_USER ? HQ_USER + ':' + n : n; };
+/* ── mobile ─────────────────────────────────────────────────────────────
+   A coarse pointer, or a window too narrow for the desk's chrome, is the
+   phone: `body.mobile` is the one switch the stylesheet and src/touch.js
+   read. Decided once, here, before anything is laid out. */
+var MOBILE = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || window.innerWidth < 800;
+if (MOBILE) document.documentElement.classList.add('mobile');
 var Users = (function(){
   var KEY = 'users', SESSION = 'hq.user';
   var DEFAULT = {list: [{name: 'Eden', slug: '', pw: null}, {name: 'Test User', slug: 'test', pw: null}], last: ''};
@@ -951,7 +992,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 192, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 193, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){
@@ -990,15 +1031,19 @@ var Users = (function(){
     document.title = document.title.replace(/ · .*$/, '') + (HQ_USER ? ' · ' + Users.name() : '');
     start();
   }
+  if (MOBILE) document.body.classList.add('mobile');
   var was = Users.current();
-  if (was !== null) enter(was); else door();
+  /* no door on the phone (Eden, 2026-08-28): straight into the first
+     player's town — the one the desk's tools read too */
+  if (MOBILE){ Users.signIn(''); enter(''); }
+  else if (was !== null) enter(was); else door();
 
   function start(){
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/touch.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

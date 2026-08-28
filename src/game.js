@@ -885,6 +885,8 @@ function boot(img){
   if (typeof Focus !== 'undefined') Focus.init();
   /* the quest: the picked item's palace, and the line that says where */
   if (typeof Quest !== 'undefined') Quest.init();
+  /* the keys on the screen, on a phone */
+  if (typeof Touch !== 'undefined') Touch.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

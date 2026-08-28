@@ -378,6 +378,9 @@ stale.
     src/snapshot.js      the town out to a file and back, in the page, in
                          snapshot.py's shape — Export and Import under Town
                          in the tune panel
+    src/touch.js         the keys on the screen for a phone: a d-pad and a
+                         column of buttons that press the keyboard's keys,
+                         and a pinch that turns the wheel
     tools/cdp.py         a few dozen lines of WebSocket — what talks to the
                          running page
     tools/snapshot.py    the town, out to a file and back in again; and
@@ -1617,8 +1620,22 @@ Google Maps key blanked, the traced picture, the locus pictures) and
 asks — the town here becomes the file — and reloads. A file from either
 side reads on the other (`src/snapshot.js`).
 
-Nothing here is made for a phone yet: the keys are the keys. It runs
-there; it is not yet played there.
+### On a phone
+
+Since V8.1 the page knows a phone — a coarse pointer, or a window under
+800 px wide — and wears `body.mobile`. There is **no door**: it opens
+straight into the first player's town. The keys are laid on the screen
+(`src/touch.js`): a **d-pad** at the bottom right and above it a column
+of buttons — **Enter · Esc · B · M · T · V · P** — each pressing the same
+key the keyboard would, so everything answers as it does at the desk; a
+held arrow keeps the walker walking, and two fingers on the plate pinch
+the zoom. Every panel becomes a sheet that fits the screen — the tune,
+the route, the map dialog and the palette at the top or the bottom, full
+width, scrolling inside themselves. The keys hint, the lattice sliders
+and inks, Variations, Copy settings, the compass tune and the Player
+rows are not shown there; the compass is half size, the strip sits top
+right, and the quest line and prompts stand under it. Build mode works
+by touch but is a desk's job.
 
 ## Pausing
 

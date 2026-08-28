@@ -63,7 +63,7 @@ function buildPanel(){
     body.appendChild(row);
   }
   const inks = document.createElement('div');
-  inks.className = 'chips';
+  inks.className = 'chips'; inks.id = 'pinks';
   for (const [name, v] of INKS){
     const c = document.createElement('div');
     c.className = 'chip'; c.textContent = name; c.dataset.ink = v;
@@ -105,10 +105,10 @@ function buildPanel(){
   /* who is playing: sign out to the door, or set a password (index.html, Users) */
   if (typeof Users !== 'undefined'){
     const ul = document.createElement('div');
-    ul.className = 'plabel'; ul.textContent = 'Player · ' + Users.name();
+    ul.className = 'plabel'; ul.id = 'pplayerlabel'; ul.textContent = 'Player · ' + Users.name();
     body.appendChild(ul);
     const ur = document.createElement('div');
-    ur.className = 'chips two';
+    ur.className = 'chips two'; ur.id = 'pplayer';
     for (const [name, fn] of [['Sign out', () => Users.signOut()],
                               ['Password', () => {
                                 const pw = window.prompt('a new password for ' + Users.name());
@@ -140,7 +140,7 @@ function buildPanel(){
   }
 
   const head = document.createElement('div');
-  head.className = 'plabel'; head.textContent = 'Variations';
+  head.className = 'plabel'; head.id = 'pvarlabel'; head.textContent = 'Variations';
   body.appendChild(head);
   const pre = document.createElement('div');
   pre.className = 'chips three'; pre.id = 'presets';

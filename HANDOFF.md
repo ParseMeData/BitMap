@@ -417,6 +417,13 @@ as the map rendering in a different patch of the screen on every zoom.
 It is a zero-size anchor at the origin with overflow visible; the window
 is the clip. If a clip is ever wanted, wrap it in a second element.
 
+**A phone is the desk with the keys drawn on it.** `body.mobile` is one
+switch, decided in index.html before layout; `src/touch.js` presses real
+`KeyboardEvent`s on the window, so no module knows a finger from a key
+and nothing was rewritten for touch. Keep it that way: a mobile-only
+code path in a module is a second game to keep. What differs on a phone
+is stylesheet — sheets in place of panels — and what is not shown.
+
 **The door comes before the first script.** Every module reads its keys
 the moment its file runs — the bag's stack, the stock, the atlas — so
 whose keys they are has to be settled before `start()` appends a single

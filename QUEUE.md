@@ -20,14 +20,6 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **Mobile** — `body.mobile` when the pointer is coarse or the
-  window narrow; no door on mobile (Eden's town, straight in); a touch
-  layer `src/touch.js` — a d-pad bottom right and a row of buttons (Enter
-  · Esc · B · M · T · V · P) that press the same keys the keyboard does;
-  every fixed panel becomes a sheet that fits the screen (top or bottom,
-  full width, scrolling); the keys hint, the compass tune and the lattice
-  sliders, Variations and Copy settings are not shown there; the strip,
-  hub and prompts sized and placed so nothing overlaps.
 - [ ] [auto] **Tag v8.1 and clone** — `snapshots/v8.1.json` from the live
   town, tag, push, and `~/Projects/Loci Bitmap V8.1` as the frozen copy.
 
@@ -35,6 +27,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Mobile** — 2026-08-28. `MOBILE` in index.html (coarse pointer or
+  < 800 px) → `body.mobile`; no door there; `src/touch.js` d-pad and key
+  column pressing synthetic KeyboardEvents, pinch → zoomBy; a stylesheet
+  block turns every panel into a sheet and hides the hint, sliders, inks,
+  Variations, Copy, compass tune and Player rows; compass half size,
+  strip top right, quest/inside/enterhint lines under it. Verified under
+  390×844 @2× touch emulation: walks 5 tiles on a held ▲, tune sheet
+  shows Towns/Sparks/Town only, no errors. BUILD 193.
 - [x] **The new compass, locked to the map** — 2026-08-28. The star rose
   from Eden's desktop is `assets/compass.png`; `tools/compass.py` cuts
   one rose; `compass.js` draws it alone, heading = the map's rotation

@@ -178,7 +178,14 @@ const Basemap = (() => {
     const range = src + z + ':' + x0 + ',' + y0 + ',' + x1 + ',' + y1;
     if (range === lastRange) return;
     lastRange = range;
-    if ((x1 - x0 + 1) * (y1 - y0 + 1) > 140){ note('zoomed out too far to tile'); return; }
+    /* The ceiling is the screen's: as many tiles as the view can show at
+       one to one, with the margin, and half again for the zoom to move in.
+       A fixed 140 was right for one monitor and wrong for a 4K one, where
+       the working zoom alone wants more than that — and past the ceiling
+       nothing new is laid, so the map stopped at whatever corner had
+       already loaded. */
+    const most = Math.ceil((Math.ceil(VW / TILE) + 3) * (Math.ceil(VH / TILE) + 3) * 1.5);
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > most){ note('zoomed out too far to tile'); return; }
 
     /* keep the tiles hanging off a nearby origin, and shuffle the ones
        already placed when it moves, rather than reloading them */
@@ -224,7 +231,12 @@ const Basemap = (() => {
       note(src === 'google'
         ? 'google refused every tile — check the key and its billing'
         : 'tiles failed to load');
-    else note(live.size + ' tiles' + (failed ? ', ' + failed + ' failed' : ''));
+    else {
+      /* tiles land from the top-left corner outward, and on a slow link
+         the corner alone can look like the whole map — so say how far in */
+      const done = [...live.values()].filter(i => i.complete && i.naturalWidth).length;
+      note((done < live.size ? done + ' of ' : '') + live.size + ' tiles' + (failed ? ', ' + failed + ' failed' : ''));
+    }
   }
 
   function clear(){
@@ -610,7 +622,10 @@ const Basemap = (() => {
       const j = JSON.parse(Store.get(KEY) || 'null');
       if (!j) return null;
       lat = j.lat; lon = j.lon; z = j.z; dim = j.dim; scale = j.scale;
-      shown = !!j.shown; src = j.src || 'dark'; gkey = j.gkey || ''; gtype = j.gtype || 'roadmap';
+      /* Dark is the only source now (Eden, 2026-08-28): OSM and Google are
+         hidden in the bar, and a setting saved on one of them comes back
+         as Dark — the key is kept in the record, unread */
+      shown = !!j.shown; src = 'dark'; gkey = j.gkey || ''; gtype = j.gtype || 'roadmap';
       return j.place ? {p: j.place, placing: !!j.placing} : null;
     } catch (e){ return null; }
   }

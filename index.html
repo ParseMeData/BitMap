@@ -44,7 +44,7 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #mapbar input[type=range]{width:74px;accent-color:var(--flare);height:14px}
 #mapbar label{display:flex;align-items:center;gap:5px}
 #mapbar .btn{padding:5px 9px}
-#mapbar .mapsrc{display:flex;gap:4px}
+#mapbar .mapsrc{display:none}   /* Dark is the only source; OSM and Google stay in the code, unshown */
 #mapbar #mapkey{width:150px}
 #mapnote{color:var(--dim);max-width:26ch;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;text-transform:none;letter-spacing:.04em}
@@ -937,7 +937,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 187, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 188, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

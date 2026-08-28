@@ -24,6 +24,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Dark only, and the map fills the screen** — 2026-08-28. OSM and
+  Google hidden in the bar (`.mapsrc` display none, a saved source reads
+  back as Dark); the tile ceiling is the viewport's (`most` in `lay`) in
+  place of a fixed 140 that stopped the sheet at a corner on a big
+  screen; the bar counts tiles in as they land. Verified at 3840×2160:
+  54 tiles, full cover. BUILD 188.
 - [x] **Fade rests at a quarter** — 2026-08-28. The underlay's Fade default is 0.25 (was 0.85); a saved underlay keeps its own. BUILD 187.
 - [x] **Dark tiles without a key** — 2026-08-28. CARTO began watermarking
   keyless tiles "API KEY REQUIRED"; the Dark source is now Esri's

@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#08080B">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon.png">
-<title>Loci Bitmap V8.0</title>
+<title>Loci Bitmap V8.1</title>
 <!-- a Chromium app-mode window takes its window and taskbar icon from the
      page favicon, so without this the window wears the browser's own -->
 <link rel="icon" href="assets/icon.png">
@@ -109,17 +109,14 @@ body.wall #quiz{display:none}
 /* the compass: top-left under the sparks, a rose that turns and four
    letters that stay upright, all bone through masks (src/compass.js) */
 #compass{position:fixed;left:8px;top:58px;width:200px;height:200px;z-index:3;pointer-events:none}
-#compass .rose{position:absolute;left:40px;top:40px;width:120px;height:120px;pointer-events:auto;cursor:grab;
-  opacity:.85;transition:opacity .12s}
-#compass .rose:hover{opacity:1}
-#compass .rose:active{cursor:grabbing}
+#compass .rose{position:absolute;opacity:.85}
 #compass .pt{position:absolute;opacity:.85}
 #ctune{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 #ctune .prow{gap:7px}
 #ctune .prow label{width:46px;font-size:8.5px;letter-spacing:.1em}
 #ctune .prow .pv{width:46px;font-size:9px}
 #ctune input[type=range]{height:14px}
-body.mapping #compass,body.wall #compass{display:none}
+body.wall #compass{display:none}
 /* the map bar is centred in the same top lane as the HUD and runs to about
    1260px wide, so below roughly 1400px the two collide and the bar wraps
    down onto #msg. While it is open, the HUD is the one that gives way. */
@@ -954,7 +951,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 191, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 192, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

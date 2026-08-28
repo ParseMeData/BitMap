@@ -20,10 +20,28 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
+- [ ] [auto] **Mobile** — `body.mobile` when the pointer is coarse or the
+  window narrow; no door on mobile (Eden's town, straight in); a touch
+  layer `src/touch.js` — a d-pad bottom right and a row of buttons (Enter
+  · Esc · B · M · T · V · P) that press the same keys the keyboard does;
+  every fixed panel becomes a sheet that fits the screen (top or bottom,
+  full width, scrolling); the keys hint, the compass tune and the lattice
+  sliders, Variations and Copy settings are not shown there; the strip,
+  hub and prompts sized and placed so nothing overlaps.
+- [ ] [auto] **Tag v8.1 and clone** — `snapshots/v8.1.json` from the live
+  town, tag, push, and `~/Projects/Loci Bitmap V8.1` as the frozen copy.
+
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **The new compass, locked to the map** — 2026-08-28. The star rose
+  from Eden's desktop is `assets/compass.png`; `tools/compass.py` cuts
+  one rose; `compass.js` draws it alone, heading = the map's rotation
+  (0 on the region), no drag, no double-click, `hq.compass` keeps the
+  tune only; shown while the dialog is open. Verified: Turn to 90° →
+  rose rotate(90deg). BUILD 192.
+- [x] **Version 8.1** — 2026-08-28. Title, README heading and launcher line.
 - [x] **The map dialog, top right** — 2026-08-28. `#mapbar` is a column
   of rows at the top right; Show/Hide is gone — the X closes the dialog
   and the map with it, M brings both back; Place is **Pin** and sits on

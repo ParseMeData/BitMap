@@ -1,33 +1,30 @@
 'use strict';
 /* ── the compass ────────────────────────────────────────────────────────
-   Top-left, under the sparks: a rose that turns and four letters that do
-   not. The rose follows the map — the traced underlay's own rotation,
-   which is the one number in this game that says which way north is —
-   and turns with it as the picture is placed. Take hold of the rose and
-   turn it and it is yours instead, at whatever heading you leave it;
-   double-click it and it is the map's again.
+   Top-left: a star rose with a long north spike, and nothing else. It
+   follows the map — the traced underlay's own rotation, which is the one
+   number in this game that says which way north is — and turns with it
+   exactly as the picture is turned (the Turn arrows, shift-drag), so
+   the spike points where north is on the plate. On the region north is
+   up and it reads 0. It is never turned by hand: since 2026-08-28 there
+   is no drag and no double-click, and `hq.compass` keeps only the tune.
 
-   Five cuts out of one drawing (`tools/compass.py`): the rose is one
-   element with a transform, and each letter is its own element placed
-   at the rose's turned point every time the angle moves, upright — a
-   letter that turned with the rose would be a letter read on its side.
-   Each cut goes through the same tone pass as a card's picture and is
-   painted as diamonds, in bone with the titles' sheen down it — so the
-   compass is made of what the plate is made of, at the plate's pitch,
-   and never a picture laid on it. Flare while it is turned by hand. */
+   One cut out of the drawing (`tools/compass.py`), through the same tone
+   pass as a card's picture and painted as diamonds in bone with the
+   titles' sheen down it — so the compass is made of what the plate is
+   made of, at the plate's pitch, and never a picture laid on it. */
 
 const Compass = (() => {
-  const KEY = 'hq.compass';                    // {manual, deg}
+  const KEY = 'hq.compass';                    // {tune}
   const BOX = 200;                             // the element, CSS px (index.html agrees)
-  const OUT = 84;                              // letter centre from the rose's centre, clear of its rim
-  let el = null, rose = null, pts = {}, state = {manual: false, deg: 0};
-  let shown = -1, last = null, drag = null, raf = 0, faces = {}, painted = null;
+  let el = null, rose = null;
+  let shown = -1, last = null, raf = 0, faces = {}, painted = null;
   /* the pitch: about three CSS pixels a diamond, which is the plate's own
      cell at the zoom the town is read at; each cut is read at as many
      cells as fit its width at that pitch, and painted at 2× for the
      screen */
   const SCALE = 2;
-  const SIZE = {rose: [120, 120], n: [50, 30], e: [40, 30], s: [40, 30], w: [40, 30]};
+  /* the rose's box: the sheet's own proportion (225 × 268), 120 tall */
+  const SIZE = {rose: [101, 120]};
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
   /* the ink runs bone at the top to a grey at the foot — bone mixed a
      little toward dim, subtle, not a shadow; flare toward dim while it
@@ -52,14 +49,11 @@ const Compass = (() => {
   function load(){
     try {
       const v = JSON.parse(Store.get(KEY) || 'null');
-      if (v && typeof v === 'object'){
-        state = {manual: !!v.manual, deg: isFinite(v.deg) ? +v.deg : 0};
-        if (v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
-      }
+      if (v && typeof v === 'object' && v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
     } catch (e){}
   }
   function store(){
-    try { Store.set(KEY, JSON.stringify(Object.assign({}, state, {tune}))); } catch (e){}
+    try { Store.set(KEY, JSON.stringify({tune})); } catch (e){}
   }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
@@ -68,30 +62,21 @@ const Compass = (() => {
     if (typeof Basemap === 'undefined' || !Basemap.rot) return 0;
     return Basemap.rot() * 180 / Math.PI;
   }
-  /* on the region north is up by definition, whatever the map or the hand says */
-  const heading = () => (typeof Region !== 'undefined' && Region.on() ? 0
-                         : state.manual ? state.deg : mapDeg());
+  /* on the region north is up by definition, whatever the map says */
+  const heading = () => (typeof Region !== 'undefined' && Region.on() ? 0 : mapDeg());
 
   function build(){
     if (el) return el;
     el = document.createElement('div');
     el.id = 'compass';
-    el.title = 'drag to turn · double-click for the map’s north';
+    el.title = 'north, as the map is turned';
     rose = document.createElement('canvas');
     rose.className = 'rose';
     rose.width = SIZE.rose[0] * SCALE; rose.height = SIZE.rose[1] * SCALE;
+    rose.style.width = SIZE.rose[0] + 'px'; rose.style.height = SIZE.rose[1] + 'px';
+    rose.style.left = ((BOX - SIZE.rose[0]) / 2) + 'px'; rose.style.top = ((BOX - SIZE.rose[1]) / 2) + 'px';
     el.append(rose);
-    for (const k of ['n', 'e', 's', 'w']){
-      const p = document.createElement('canvas');
-      p.className = 'pt pt-' + k;
-      p.width = SIZE[k][0] * SCALE; p.height = SIZE[k][1] * SCALE;
-      p.style.width = SIZE[k][0] + 'px'; p.style.height = SIZE[k][1] + 'px';
-      p.style.margin = (-SIZE[k][1] / 2) + 'px 0 0 ' + (-SIZE[k][0] / 2) + 'px';
-      el.append(p);
-      pts[k] = p;
-    }
     document.body.append(el);
-    wire();
     read();
     return el;
   }
@@ -100,19 +85,19 @@ const Compass = (() => {
   function read(){
     if (typeof Title === 'undefined' || !Title.picture) return;
     const pitch = tuned('pitch');
-    const all = ['rose', 'n', 'e', 's', 'w'].map(k =>
+    const all = ['rose'].map(k =>
       Title.picture(url(k), Math.round(SIZE[k][0] / pitch),
                     {ink: 0, edge: 0, con: 1, bri: tuned('bri'), scatter: tuned('scatter'), szv: tuned('szv')})
         .then(f => { faces[k] = f; }));
     Promise.all(all).then(() => { painted = null; paint(); }).catch(() => {});
   }
   function paint(){
-    const ink = state.manual ? FLARE : BONE;
+    const ink = BONE;
     const stamp = ink + '|' + tuned('weight');
     if (painted === stamp) return;
     painted = stamp;
     for (const k in faces){
-      const cv = k === 'rose' ? rose : pts[k];
+      const cv = rose;
       if (cv && faces[k]) Title.paint(cv, faces[k], {weight: tuned('weight'), shade: 0, tint: ink, tint2: mix(ink, DIM, GREY)});
     }
   }
@@ -147,20 +132,11 @@ const Compass = (() => {
     body.append(el);
   }
 
-  /* the rose turns as one; each letter is set at the turned point, and
-     not turned itself */
+  /* the rose turns as one, with the map */
   function lay(deg){
     if (deg === last) return;
     last = deg;
     rose.style.transform = 'rotate(' + deg.toFixed(2) + 'deg)';
-    const c = BOX / 2;
-    const at = {n: -90, e: 0, s: 90, w: 180};
-    for (const k in pts){
-      const a = (at[k] + deg) * Math.PI / 180;
-      pts[k].style.left = (c + Math.cos(a) * OUT) + 'px';
-      pts[k].style.top = (c + Math.sin(a) * OUT) + 'px';
-    }
-    el.classList.toggle('manual', state.manual);
     paint();
   }
 
@@ -169,8 +145,7 @@ const Compass = (() => {
   function visible(){
     const b = document.body.classList;
     return !(b.contains('wall') || b.contains('bag') || b.contains('journal') ||
-             b.contains('locus') || b.contains('missions') || b.contains('mapping') ||
-             b.contains('towns'));
+             b.contains('locus') || b.contains('missions') || b.contains('towns'));
   }
   function tick(){
     raf = requestAnimationFrame(tick);
@@ -182,49 +157,10 @@ const Compass = (() => {
     if (tp && !tp.hidden) block();
   }
 
-  function wire(){
-    const centre = () => { const b = el.getBoundingClientRect(); return [b.left + b.width / 2, b.top + b.height / 2]; };
-    const angle = (e, c) => Math.atan2(e.clientY - c[1], e.clientX - c[0]) * 180 / Math.PI;
-    rose.addEventListener('pointerdown', e => {
-      if (e.button !== 0) return;
-      e.preventDefault(); e.stopPropagation();
-      const c = centre();
-      drag = {c, a0: angle(e, c), d0: heading(), moved: false};
-      rose.setPointerCapture(e.pointerId);
-    });
-    rose.addEventListener('pointermove', e => {
-      if (!drag) return;
-      const d = angle(e, drag.c) - drag.a0;
-      if (Math.abs(d) > 2) drag.moved = true;
-      if (!drag.moved) return;
-      state = {manual: true, deg: ((drag.d0 + d) % 360 + 360) % 360};
-      lay(state.deg);
-    });
-    const up = e => {
-      if (!drag) return;
-      const was = drag; drag = null;
-      if (was.moved){ store(); note('the compass is yours · ' + Math.round(state.deg) + '° · double-click for the map’s north'); }
-    };
-    rose.addEventListener('pointerup', up);
-    rose.addEventListener('pointercancel', up);
-    rose.addEventListener('dblclick', e => {
-      e.preventDefault(); e.stopPropagation();
-      if (!state.manual) return;
-      state = {manual: false, deg: 0}; store();
-      note('the compass follows the map again');
-    });
-  }
-
   function init(){
     if (typeof COMPASS_ART === 'undefined') return;
     load(); build();
     if (!raf) tick();
   }
-  function set(deg){
-    state = {manual: true, deg: ((+deg || 0) % 360 + 360) % 360}; store();
-    return state.deg;
-  }
-  function follow(){ state = {manual: false, deg: 0}; store(); }
-
-  return {init, set, follow, heading, manual: () => state.manual};
+  return {init, heading};
 })();

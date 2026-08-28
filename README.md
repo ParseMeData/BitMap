@@ -1,4 +1,4 @@
-# Loci Bitmap V8.0
+# Loci Bitmap V8.1
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -7,7 +7,7 @@ real place behind it — a frozen dark map you lay down by hand like tracing
 paper — and build roads, districts, water and trees over it, then walk the
 routes you drew.
 
-    ./play.sh          # or: Loci Bitmap V8.0 in the KDE launcher
+    ./play.sh          # or: Loci Bitmap V8.1 in the KDE launcher
 
 `./install.sh` puts that launcher entry there: it fills this clone's path and
 the current tag into the tracked `memory-quest-le.desktop` template, writes the
@@ -1835,24 +1835,22 @@ Join it to a road the walker can reach and both go away.
 
 ### The compass
 
-Top-left, under the sparks: a rose that turns and four letters that do
-not. The rose follows the map — the traced underlay's own rotation
-(`Basemap.rot`), the one number in the game that says which way north
-is — and turns with it as the picture is placed. Take hold of the rose
-and turn it and it is yours instead, in flare, at whatever heading you
-leave it; double-click it and it is the map's again, in bone. Kept in
-`hq.compass`. The drawing in `assets/compass.png` had the letters on it;
-`tools/compass.py` cuts it into five — the rose, and N, E, S, W — and
-each cut goes through the same tone pass as a card's picture and is
-painted as diamonds, bone at the top running to a quiet grey at the foot
-(flare toward grey while it is yours), so the compass is made of what the
-plate is made of. It is tuned where the plate is: press `T` and under the
-plate's rows is a **Compass** block — Detail (the pitch), Weight (the
-diamond's size, which is the gap), Scatter and Jitter (the lattice's
-throw and size variance), Tone — kept with the heading in `hq.compass`. The
-rose is one element with a transform and each letter is set at the
-rose's turned point, upright: a letter that turned with the rose would be
-a letter read on its side. Re-run the tool when the art changes.
+Top-left: a star rose with a long north spike, and nothing else. It
+follows the map — the traced underlay's own rotation (`Basemap.rot`),
+the one number in the game that says which way north is — and turns
+with it exactly as the picture is turned, by the Turn arrows or a
+shift-drag, so the spike points where north is on the plate; on the
+region it reads north-up. It is never turned by hand (the drag and the
+double-click went on 2026-08-28), and it stays up while the map dialog
+is open. The drawing is `assets/compass.png`; `tools/compass.py` cuts
+the rose out of it and it goes through the same tone pass as a card's
+picture and is painted as diamonds, bone at the top running to a quiet
+grey at the foot, so the compass is made of what the plate is made of.
+It is tuned where the plate is: press `T` and under the plate's rows is
+a **Compass** block — Detail (the pitch), Weight (the diamond's size,
+which is the gap), Scatter and Jitter (the lattice's throw and size
+variance), Tone — kept in `hq.compass`. Re-run the tool when the art
+changes.
 
 ### The journal
 

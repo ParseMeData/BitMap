@@ -20,6 +20,14 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
+- [ ] **Cards fade, and a spark revives them** — idea, 2026-08-28, not yet
+  due. A card not used for a while — not dealt, not run in a stack, not
+  asked by a distraction — slowly fades and blurs on the bag page (the
+  picture's tone thinning, the word dimming), and reviving it costs a
+  spark. Needs a `used` stamp per card (`hq.bagused`?), a fade curve
+  measured in days, and the still/row drawing to read it. Sparks stay
+  what they are: spent on creating a card, and on bringing one back.
+
 ## Done
 
 (ticked items move here with the date)

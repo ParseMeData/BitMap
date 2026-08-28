@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="cache-control" content="no-store">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08080B">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icon.png">
 <title>Loci Bitmap V8.0</title>
 <!-- a Chromium app-mode window takes its window and taskbar icon from the
      page favicon, so without this the window wears the browser's own -->
@@ -846,13 +850,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 180, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 181, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;
@@ -866,6 +870,11 @@ addEventListener('unhandledrejection', e => hqReport(
       };
       document.body.appendChild(el);
     });
+  /* On the web the page installs: the worker in sw.js caches every file above
+     and answers when there is no network. A file:// page cannot register one
+     and is not asked to — the launcher's profile is its own cache. */
+  if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator)
+    navigator.serviceWorker.register('sw.js').catch(function(){});
   /* boot() is fully synchronous once the map picture decodes, so a boot screen
      still up eight seconds later is a load that stopped rather than one that is
      slow — and with nothing watching, "building the lattice…" sits there for

@@ -117,6 +117,23 @@ function buildPanel(){
   }
   body.appendChild(spk);
 
+  /* the town, out to a file and back: what tools/snapshot.py does from a
+     terminal, for a page that has none beside it (src/snapshot.js) */
+  if (typeof Snap !== 'undefined'){
+    const tl = document.createElement('div');
+    tl.className = 'plabel'; tl.textContent = 'Town';
+    body.appendChild(tl);
+    const tr = document.createElement('div');
+    tr.className = 'chips two';
+    for (const [name, fn] of [['Export town', () => Snap.exportTown()], ['Import town', () => Snap.importTown()]]){
+      const c = document.createElement('div');
+      c.className = 'chip'; c.textContent = name;
+      c.onclick = fn;
+      tr.appendChild(c);
+    }
+    body.appendChild(tr);
+  }
+
   const head = document.createElement('div');
   head.className = 'plabel'; head.textContent = 'Variations';
   body.appendChild(head);

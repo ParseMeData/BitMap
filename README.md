@@ -271,6 +271,9 @@ stale.
                          install.sh fills in this clone's path and the tag
     index.html           page, HUD, overlays, panels, the ten colour tokens,
                          and the script loader
+    manifest.json        the web app manifest: name, icon, fullscreen
+    sw.js                the service worker: every file cached on install,
+                         network first, cache when there is none
     assets/map.js        the map, inlined as a data URI (keeps getImageData
                          working from file:// — a plain <img> would taint it)
     assets/map.webp      the same art as a file, for reference
@@ -368,6 +371,9 @@ stale.
                          against upstream, nine of the additions being the
                          note that records this. The command that prints the
                          diff is in an HTML comment after the file's <title>.
+    src/snapshot.js      the town out to a file and back, in the page, in
+                         snapshot.py's shape — Export and Import under Town
+                         in the tune panel
     tools/cdp.py         a few dozen lines of WebSocket — what talks to the
                          running page
     tools/snapshot.py    the town, out to a file and back in again; and
@@ -1562,6 +1568,34 @@ there records what they already share, and the one question it says cannot be
 deferred is whether a **cell** collides or a **tile** does. This is the answer
 in practice: a plan is authored on tiles and the pictures bake down to cells,
 which is exactly the resolution that document guessed at.
+
+## On the web
+
+The page is a static site and installs as one. Serve the folder from any
+host — nothing is built, nothing is served but files — and `manifest.json`
+makes it a home-screen app; `sw.js` is a service worker that puts every
+file the loader names into a cache on install, answers network-first so
+a deploy shows on the next load, and answers from the cache when there
+is no network. It is registered only over `http(s)` — a `file://` page
+cannot register one and the launcher's profile is its own cache — and
+its `VERSION` is bumped by hand with `BUILD` whenever the file list
+changes. Both pages carry a `viewport` meta.
+
+What changes when the page leaves `file://`: the picture store's
+localStorage fallback goes idle (a real origin is never refused
+IndexedDB); the builder and the platformer still share one origin, so
+the route and the stock cross as they do now; the geocoder answers a
+browser origin (`access-control-allow-origin: *`); and the town is
+**per browser** — it lives in that browser's storage, and it moves by
+file. Press `T` and under **Town**: **Export town** writes the same
+version-3 file `tools/snapshot.py save` writes (every `hq.` key, the
+Google Maps key blanked, the traced picture, the locus pictures) and
+**Import town** reads one back, shows the counts against what is here,
+asks — the town here becomes the file — and reloads. A file from either
+side reads on the other (`src/snapshot.js`).
+
+Nothing here is made for a phone yet: the keys are the keys. It runs
+there; it is not yet played there.
 
 ## Pausing
 

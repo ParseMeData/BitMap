@@ -393,6 +393,23 @@ plate opened from a road end steps its neighbour's anchor one cell of the
 country raster the way the road went, and `Atlas.setGeo` pins any plate by
 hand. Nothing ever guesses an anchor for a plate that has none.
 
+**Two writers of one file shape.** `tools/snapshot.py` and
+`src/snapshot.js` both write and read the version-3 snapshot — every
+`hq.` key minus `hq.lastError` and `hq.loads`, `gkey` blanked in every
+`hq.basemap*` key, `picture` the home plate's row, `pictures` the rest,
+`loci` every row of the locus store. Change the shape in one and change
+it in the other in the same commit, or a town exported on the web will
+not restore from the terminal. Both open the two databases at version 1
+with the upgrade that makes the store, for the reason under *A reader of
+the picture database must create the store*.
+
+**The worker and the cache-buster do not fight.** The loader appends
+`?cb=BUILD.now` to every script, different on every load; `sw.js`
+stores each file under its bare path and matches with `ignoreSearch`,
+so the buster keeps doing its job against the browser's own cache while
+the worker's cache still answers offline. Bump `VERSION` in `sw.js` when
+the file list changes — an unchanged worker is never re-installed.
+
 **A distraction is stamped, not drawn into the grid.** `Distract.stamp`
 runs at the end of `restampTerrain`, after the shapes, and takes its
 tiles out of `G.terr` — never out of `terrBase`, and never by writing a

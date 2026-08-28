@@ -1,0 +1,14 @@
+{
+  "name": "Loci Bitmap",
+  "short_name": "Loci",
+  "description": "Build a town out of diamond glyphs, over a real one, and walk the memory palaces in it.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#08080B",
+  "theme_color": "#08080B",
+  "icons": [
+    {"src": "assets/icon.png", "sizes": "256x256", "type": "image/png", "purpose": "any"}
+  ]
+}

@@ -20,18 +20,23 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] **Cards fade, and a spark revives them** — idea, 2026-08-28, not yet
-  due. A card not used for a while — not dealt, not run in a stack, not
-  asked by a distraction — slowly fades and blurs on the bag page (the
-  picture's tone thinning, the word dimming), and reviving it costs a
-  spark. Needs a `used` stamp per card (`hq.bagused`?), a fade curve
-  measured in days, and the still/row drawing to read it. Sparks stay
-  what they are: spent on creating a card, and on bringing one back.
-
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **A page that installs** — 2026-08-28. `manifest.json`, viewport /
+  theme-color / apple-touch-icon in the head, `sw.js` (precache 41 files,
+  network-first, `ignoreSearch`, old caches dropped), registered over
+  http(s) only. Verified on a local server: worker active, 41 cached,
+  and the page boots with the server killed. BUILD 181.
+- [x] **The town travels** — 2026-08-28. `src/snapshot.js`: `Snap.dump`
+  and `Snap.load` in snapshot.py's version-3 shape; Export/Import under
+  Town in the tune panel, import confirms with counts then reloads.
+  Verified: v8.0.json imported over http → 39 shapes, 1 marker, 5
+  interiors, 14 pictures, traced map; dump round-trips, gkey blank.
+- [x] **The geocoder from a real origin** — 2026-08-28. Nominatim answers
+  `access-control-allow-origin: *`; README *On the web* records what
+  changes off `file://`.
 - [x] **Sparks are the PAO material** — 2026-08-28. `hq.stock.sparks`
   (start 6, cap 100), `COST.card = 1 spark` paid on the first word or
   picture of a card (bag.js input handler and `attach`); `arrive()` banks

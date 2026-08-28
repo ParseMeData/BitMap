@@ -593,12 +593,15 @@ function zoomBy(f){ G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5
    still holds the whole plate. What changes is only where you start and
    where you land — nobody has to zoom to be looking at the right thing. */
 const ZSTEP = 1.25;
-/* Never closer out than fit-all, since 2026-08-28: at the working zoom
-   the plate's full height fills the screen, so the ground reaches the
-   bottom of it (Eden asked for exactly that). Four notches out from fitW
-   was already under that floor on this screen; on a narrower one it is
-   the notches that hold. */
-const home = () => Math.max(G.fitAll, clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5));
+/* Never further out than the plate's height filling the screen, since
+   2026-08-28: at the working zoom the ground reaches the top of the
+   screen and the bottom (Eden asked for exactly that). On a desk that is
+   fit-all; on a phone, held portrait, it is closer than fit-all — the
+   plate is wider than the screen there and the camera carries you along
+   it — which is what puts the ground under the compass and past the hub
+   instead of a band across the middle. */
+const fitH = () => (VH && G.H ? VH / G.H : G.fitAll);
+const home = () => Math.max(fitH(), clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5));
 function toggleFull(){
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(() => {});

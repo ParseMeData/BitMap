@@ -26,6 +26,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Every edge in the fade** — 2026-08-28. `Survey.boundary()`:
+  centre 0.55 W, 1.35 W × 1.1 H, core .55 — top/bottom ~80 % through the
+  fade, left ~60 %, right ~25 %; the frame's oval reads it; `home()` is
+  floored at fit-height (`VH/G.H`) so a portrait phone fills its height
+  too. Measured on desk and phone emulation: dithered fade on all sides,
+  phone plate spanning rows 0–1688. BUILD 203.
 - [x] **The ground fills the screen** — 2026-08-28. The survey's boundary
   is twice the sheet with core .6 (`make` honours `d.core`), the frame's
   oval matches, and `home()` is floored at `G.fitAll` so the plate's

@@ -181,10 +181,8 @@ const Survey = (() => {
       out.unshift({kind: 'grass', type: 'rect', x: G.W * (qx + 0.5) / 2, y: G.H * (qy + 0.5) / 2,
                    w: G.W / 2 + cell, h: G.H / 2 + cell, exact: true, variant: 'mixed', feather: 0, seed});
     const sw = G.sheetW || G.W;
-    /* twice the sheet, with a wide core: the ground then reaches the
-       plate's own edge before the rim takes it (Eden, 2026-08-28 — it
-       stopped at the hub before) */
-    out.push({kind: 'boundary', type: 'ellipse', x: sw / 2, y: G.H / 2, w: sw * 2, h: G.H * 2, core: 0.6, exact: true});
+    const B = boundary();
+    out.push({kind: 'boundary', type: 'ellipse', x: B.x, y: B.y, w: B.w, h: B.h, core: B.core, exact: true});
     return {out, turned, roads: keep.length, water: out.filter(s => s.kind === 'water').length};
   }
   function poly(pts, kind, cell){
@@ -240,5 +238,16 @@ const Survey = (() => {
     return [best.px + nx * need, best.py + ny * need];
   }
 
-  return {run, bbox, aside};
+  /* ── the rim ─────────────────────────────────────────────────────────
+     An ellipse set so every edge of the plate lies inside its dithered
+     fade and none inside its core: the top and bottom edges about four
+     fifths of the way through the fade, the left edge past halfway, the
+     right — where the plate carries its spare margin — only a quarter in,
+     so the ground goes slowly there (Eden, 2026-08-28). Centred a little
+     right of the plate's middle, which is what makes the two sides differ. */
+  function boundary(){
+    return {x: G.W * 0.55, y: G.H / 2, w: G.W * 1.35, h: G.H * 1.1, core: 0.55};
+  }
+
+  return {run, bbox, aside, boundary};
 })();

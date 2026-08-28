@@ -251,10 +251,13 @@ in the walk grid — it is a hole in what a blocker may block. The demolisher is
 both; a door only `clears`, because a door is a way through and stamps its own
 walkable ground. They were one flag and it made doors unwalkable.
 
-**`home()` is floored at fit-all** since 2026-08-28: at the working zoom
-the plate's full height fills the screen, which is what lets the
-surveyed ground reach the bottom of it. The four notches below still
-hold on a screen narrow enough that fit-all is width-limited.
+**`home()` is floored at fit-height** since 2026-08-28 — `VH / G.H`, not
+fit-all: at the working zoom the plate's full height fills the screen,
+which is what lets the surveyed ground reach the top and the bottom of
+it. On a desk that is fit-all; on a phone held portrait it is closer,
+the plate wider than the screen, and the camera clamps along it. The
+survey's boundary (`Survey.boundary`) is set against the plate so every
+edge is in the fade; change the plate's size and change that with it.
 
 **`home()` is not `fitW`, and putting it back would be a regression.** The
 opening zoom and `0` both land four notches of the zoom key out from `fitW`,

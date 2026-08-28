@@ -104,8 +104,12 @@ let VW = 1, VH = 1;
    is and simply does not draw it — and takes the printed routes out of the
    walk grid with it, so the only ground that exists is ground you drew.
    Nothing is destroyed, so the printed map comes back on a restamp. */
-let BLANK = false;
-try { BLANK = Store.get('hq.blank') === '1'; } catch (e){}
+/* Always blank, since 2026-08-28: Eden asked never to see the printed
+   sheet again — it is an old reference image, and the town is drawn over
+   the traced underlay of the place it is. The art stays in assets/ because
+   the plate's size and the walk grid's base are still measured off it;
+   it is simply never drawn, and `hq.blank` is no longer read. */
+let BLANK = true;
 
 /* ── the sparks ─────────────────────────────────────────────────────────
    The round is the game this started as, and it is in the way of the game
@@ -168,8 +172,7 @@ function openTowns(){
    going inside a building blanks it whatever the town is set to, and the
    town's own setting has to still be there when you come back out. */
 function setBlank(v, persist){
-  BLANK = !!v;
-  if (persist !== false){ try { Store.set('hq.blank', BLANK ? '1' : '0'); } catch (e){} }
+  BLANK = true;                        // the printed map is never shown (see BLANK above)
   compose();
   /* applyPlate restamps, and restamping already revalidates the round: a
      blank sheet has nowhere to stand and nothing to collect until a road is

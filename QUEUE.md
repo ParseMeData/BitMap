@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The printed sheet is never shown** — 2026-08-28. `BLANK` is
+  always true, `setBlank` no longer reads or writes `hq.blank`, the Plate
+  chip pair is gone from the tune panel; the art stays in assets for the
+  plate's size and the grid's base. Verified: a fresh profile boots to an
+  empty plate. BUILD 183.
 - [x] **Plates are letters, palaces are items** — 2026-08-28.
   `Atlas.setLetter` / `areas[id].letter`, `Markers.setItem` / `m.item`,
   Letter and Item selects in the palette (`Quest.wire/sync*`), the region

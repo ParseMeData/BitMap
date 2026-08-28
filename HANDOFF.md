@@ -163,7 +163,7 @@ Storage, all under `hq.`:
     hq.region            {lat0, lon0, scale}: where the region plate's
                          centre falls and how many degrees a world unit is
     hq.towns             what the rose diamond opens: region or country
-    hq.blank             printed map or blank plate
+    hq.blank             no longer read (the plate is always blank, 2026-08-28)
     hq.sparks            the round, on or off
     hq.deck              the ordered run handed to the platformer
     hq.bag               the bag's words, card key → text

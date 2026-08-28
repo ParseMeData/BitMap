@@ -10,7 +10,7 @@
    VERSION is bumped by hand with BUILD when the list below changes — a
    worker that does not change is a worker the browser does not replace.
    Registered by index.html only over http(s); a file:// page cannot.  */
-const VERSION = 'mq-182';
+const VERSION = 'mq-183';
 const FILES = [
   './', './index.html', './platformer.html', './manifest.json', './assets/icon.png',
   './src/store.js', './src/stock.js', './assets/map.js', './src/render.js', './src/lattice.js',

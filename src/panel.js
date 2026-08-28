@@ -72,21 +72,6 @@ function buildPanel(){
   }
   body.appendChild(inks);
 
-  /* the plate itself is a choice, not a slider: the printed map, or an
-     empty sheet to build a new town on */
-  const ph = document.createElement('div');
-  ph.className = 'plabel'; ph.textContent = 'Plate';
-  body.appendChild(ph);
-  const plate = document.createElement('div');
-  plate.className = 'chips two';
-  for (const [name, v] of [['Map', false], ['Blank', true]]){
-    const c = document.createElement('div');
-    c.className = 'chip'; c.textContent = name; c.dataset.blank = v ? '1' : '0';
-    c.onclick = () => { setBlank(v); syncPanel(); };
-    plate.appendChild(c);
-  }
-  body.appendChild(plate);
-
   /* where the towns are: our region drawn flat, or the whole country. The
      country is hidden rather than removed — Eden's call, 2026-08-27 */
   const th = document.createElement('div');
@@ -171,8 +156,6 @@ function syncPanel(){
   document.querySelectorAll('#tbody .prow').forEach(r => r._sync && r._sync());
   document.querySelectorAll('.chip[data-ink]').forEach(c =>
     c.classList.toggle('sel', +c.dataset.ink === T.ink));
-  document.querySelectorAll('.chip[data-blank]').forEach(c =>
-    c.classList.toggle('sel', (c.dataset.blank === '1') === BLANK));
   document.querySelectorAll('.chip[data-spark]').forEach(c =>
     c.classList.toggle('sel', (c.dataset.spark === '1') === SPARKS));
   document.querySelectorAll('.chip[data-towns]').forEach(c =>

@@ -20,8 +20,9 @@ Started 23 Aug 2026 from **Haunt Quest** (`~/Games/lattice-haunt`), which
 remains its own project. Everything here about the lattice, the renderer and
 the build tools came from there; what is new is that the plate starts
 **blank** rather than as The Mighty Haunt's printed sheet, so the town you
-build is the only thing on it. The printed map is still in `assets/` and one
-switch away — see *The plate: Map or Blank*.
+build is the only thing on it. The printed map is still in `assets/` — the
+plate's size and the walk grid's base are measured off it — but since
+2026-08-28 it is never drawn: see *The plate is blank*.
 
 `HANDOFF.md` is the orientation document: the shape of the whole thing, the
 decisions that are load-bearing, and how to work on it without breaking the
@@ -201,7 +202,7 @@ It asks you to type the word.
 | `Space` | recrystallise the map |
 | `Tab` (hold) | overview of the whole map |
 | wheel, `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at |
-| `T` | tune panel &nbsp;·&nbsp; Glow, Plate: Map or Blank |
+| `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and the trace through it (inside) |
@@ -2086,37 +2087,15 @@ is the one thing on the plate that is not terrain, and on a blank sheet with
 nothing around it, a sprite sized to the tile is too easy to lose. The
 screen-space floors scale with it, so it holds its size in the overview too.
 
-### The plate: Map or Blank
+### The plate is blank
 
-**Plate** at the foot of the panel chooses what the lattice is made of.
-**Map** is The Mighty Haunt, the printed sheet in `assets/map.js` — 112,982
-cells. **Blank** is an empty sheet: a builder wants to start a new town as
-often as it wants to start from the printed one.
-
-Blank destroys nothing. The source art is untouched on disk, `compose()`
-simply returns an empty buffer, and the classifier's reading of the printed
-map is kept in `G.terrPrint`, which nothing ever writes to — so `Map` puts
-all 346 route tiles back on a restamp. The setting persists in `hq.blank`.
-
-It takes the printed *routes* with it, which is the point and the catch:
-walking needs `path` tiles, so on a blank sheet **the walker cannot move and
-no spark can be placed until you draw a road**. The HUD reads `0/0` and that
-is correct, not broken. Draw one road and the round fills in.
-
-Changing the plate changes the map, so the round is dealt again rather than
-patched — and it has to be dealt from the round's own count, because
-`scatterSparks()` ends by setting `G.total` to however many it managed to
-place. On a blank sheet that lands at zero, and without putting the count
-back nothing would ever be placed again. `spawn()` is deliberately not called
-on the way through: it recentres the camera, and the view jumping out from
-under you while building is worse than a walker left standing where it was.
-
-An empty plate is never handed to GL as a zero-length upload — `batch()`
-takes the instance count to zero and leaves the buffer alone.
-
-Note `Edges` defaults to 0, matching the phone build, where the edge multiplier
-was zero and the sobel pass never contributed. Raise it for a harder, more
-drawn-looking map.
+There was a switch here — the printed sheet of The Mighty Haunt, or an
+empty plate — and it went on 2026-08-28: Eden asked never to see the old
+reference image again. The plate is always blank now; what shows under
+the town is the traced underlay of the place it is (*Tracing a real
+place*), and nothing else. `hq.blank` is no longer read. The art stays in
+`assets/map.js` because `boot()` still takes the plate's dimensions and
+the classifier's base grid from it; `terrPrint` is kept and unused.
 
 ## If the page will not start
 

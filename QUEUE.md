@@ -26,6 +26,10 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The name, smaller, to the right, on its mat** — 2026-08-28. Size
+  default 8 cells (was 14); the title centred past the sheet's right edge
+  (`cx = sheetW + tw * 0.2`); the demolish behind it dropped — it read as
+  a hole however soft — the title's mat does the job. BUILD 205.
 - [x] **Frame hidden, the fancy face shipped, a patch behind the name** —
   2026-08-28. `SHOW_FRAME=false` in found.js; Fleur De Leah as an
   `@font-face` over `assets/fonts/` (OFL), `title.js` loads a shipped

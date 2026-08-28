@@ -600,9 +600,11 @@ const Palace = (() => {
        what was drawn before. Still a map label, still draggable; the
        hand-placed offset is measured from this corner now. */
     const tw = (face ? w : Type.width(name, px, treat)), th = (face ? h : Type.height(px));
-    /* four tiles down from the top, which is under the strip of meters on
-       a phone (it stands top right there) */
-    const cx = (G.sheetW || G.W) - tw / 2 - t * 1.5, cy = th / 2 + t * 4;
+    /* four tiles down from the top — under the strip of meters on a
+       phone — and set to the right so most of it runs off the sheet: the
+       name can extend off screen, the walker goes to it if a road does
+       (Eden, 2026-08-28) */
+    const cx = (G.sheetW || G.W) + tw * 0.2, cy = th / 2 + t * 4;
     return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};

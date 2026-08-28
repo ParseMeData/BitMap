@@ -218,21 +218,14 @@ const Found = (() => {
           }
         } catch (e){ note('no house — ' + (e.message || e)); }
       }
-      /* a patch of demolished ground behind the town's name, so the title
-         stands on the plate's own colour rather than on the grass */
+      /* the town's name (no patch behind it since 2026-08-28: the title's
+         own mat — a feathered dimming of the ground under the name — is
+         what keeps it readable, and a demolish read as a hole) */
       try {
         const parts0 = q.split(',').map(x => x.trim()).filter(Boolean);
         const town0 = (parts0[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || parts0[0].slice(0, 28);
         if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town0);
-        const tt = Palace.titleAt && Palace.titleAt();
-        if (tt && tt.w && tt.h){
-          /* no fall and out at one: the ground under the name is taken
-             right out, to the plate's own colour, with a scattered edge */
-          Build.add({kind: 'demolish', type: 'ellipse', x: tt.x, y: tt.y, w: tt.w * 1.35, h: tt.h * 2.4,
-                     fall: 0, out: 1, scatter: 0.5, jitter: 0.35, exact: true});
-          Build.commit();
-        }
-      } catch (e){ note('no mat — ' + (e.message || e)); }
+      } catch (e){}
       const parts = q.split(',').map(x => x.trim()).filter(Boolean);
       const name = parts[0].slice(0, 28);
       const town = (parts[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || name;

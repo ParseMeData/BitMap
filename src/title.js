@@ -61,7 +61,7 @@ const Title = (() => {
      drawn, so a slider on them costs nothing per frame beyond what the
      title already cost. */
   const TUNE = {
-    detail: {lo: 4,   hi: 30,  dflt: 14},
+    detail: {lo: 4,   hi: 30,  dflt: 8},      // smaller since 2026-08-28: the name is a label, not the town
     /* weight 1 and tone 0: at Size 1 every diamond of a title IS a plate
        diamond — same pitch, same three-quarter-cell half-size the vertex
        shader draws the lattice at — so a name is made of exactly the

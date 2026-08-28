@@ -1787,12 +1787,14 @@ address with the first palace's marker standing on it; the palace can be
 dragged anywhere within the boundary afterwards like any marker. Before
 the picture is baked the camera frames the whole plate, so the frozen
 map covers it edge to edge, and afterwards it comes back to the working
-zoom on the door. The town's name rests in the plate's top-right corner,
-four tiles down — under the strip of meters on a phone — set in **Fleur
-De Leah**, which ships with the page under the OFL
-(`assets/fonts/`) so a phone with no fonts service draws the same face;
-a patch of ground under the name is taken right out (a demolish with
-`out` at one), so the title stands on the plate's own colour. Every point
+zoom on the door. The town's name stands four tiles down from the top,
+set to the right so most of it runs off the sheet — it can extend off
+screen; the walker goes to it if a road does — in **Fleur De Leah**,
+which ships with the page under the OFL (`assets/fonts/`) so a phone
+with no fonts service draws the same face, read at eight cells (Size in
+the palette). Its own mat — a feathered dimming of the ground under the
+name — is what keeps it readable over the terrain; nothing is demolished
+behind it. Every point
 goes through `Basemap.worldOf`, which reads the picture as it is placed.
 Three Overpass instances are tried in turn, twice each: the main one
 answers the web version in a second and a `file://` page not at all

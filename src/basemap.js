@@ -19,7 +19,7 @@
    the way tracing paper is, not the way a coordinate system says.
 
    Baking needs the tiles untainted, so they are requested with
-   crossOrigin='anonymous'. OSM and CARTO both answer `access-control-
+   crossOrigin='anonymous'. OSM and Esri both answer `access-control-
    allow-origin: *`, which satisfies the `null` origin a file:// page sends.
    Google is not asked to, because a source that refuses it would fail to
    load at all rather than merely fail to bake — so Google tiles still show,
@@ -48,7 +48,11 @@ const Basemap = (() => {
     KEY = 'hq.basemap' + sfx; IMGKEY = 'hq.basemap.img' + sfx; PK = 'img' + sfx;
   }
   const OSM = 'https://tile.openstreetmap.org/';
-  const DARK = 'https://basemaps.cartocdn.com/dark_nolabels/';
+  /* Esri's dark grey canvas, keyless with attribution. CARTO's dark tiles
+     were the Dark source until 2026-08-28, when CARTO began watermarking
+     every keyless tile "API KEY REQUIRED"; Esri answers `access-control-
+     allow-origin: *` and asks for nothing. Note the z/y/x order. */
+  const DARK = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/';
   const FIND = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=';
   const GOOGLE = 'https://maps.googleapis.com/maps/api/staticmap';
   /* sources that answer a cross-origin request, and so can be baked */
@@ -94,7 +98,7 @@ const Basemap = (() => {
              '&zoom=' + zz + '&size=' + TILE + 'x' + TILE +
              '&maptype=' + gtype + '&key=' + encodeURIComponent(gkey);
     }
-    if (src === 'dark') return DARK + zz + '/' + x + '/' + y + '.png';
+    if (src === 'dark') return DARK + zz + '/' + y + '/' + x;
     return OSM + zz + '/' + x + '/' + y + '.png';
   }
 
@@ -266,7 +270,7 @@ const Basemap = (() => {
        toward the plate's own bone-on-black. */
     layer.style.filter =
       pic ? 'none'
-      : src === 'dark' ? 'brightness(2.2) contrast(1.15)'
+      : src === 'dark' ? 'brightness(1.2) contrast(1.2)'
       : src === 'google' && gtype === 'satellite' ? 'saturate(0.7) brightness(0.8)'
       : 'grayscale(0.75) contrast(0.85) brightness(0.85)';
   }
@@ -470,7 +474,7 @@ const Basemap = (() => {
     const c = $('#mapcred');
     if (c) c.textContent = pic ? 'frozen picture'
                          : src === 'google' ? '© Google'
-                         : src === 'dark' ? '© OpenStreetMap · © CARTO'
+                         : src === 'dark' ? '© Esri · © OpenStreetMap contributors'
                          : '© OpenStreetMap';
     /* freezing is a live-tile act; placing and turning belong to a picture */
     const fz = $('#mapfreeze'), pl = $('#mapplace'), rw = $('#maprotwrap'), zw = $('#mapzwrap');

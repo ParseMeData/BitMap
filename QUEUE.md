@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Dark tiles without a key** — 2026-08-28. CARTO began watermarking
+  keyless tiles "API KEY REQUIRED"; the Dark source is now Esri's
+  World_Dark_Gray_Base (keyless, CORS *, z/y/x), credit line and lift
+  filter retuned. Verified: 54 tiles over Myrtleford, none failed, no
+  watermark. BUILD 186.
 - [x] **Players** — 2026-08-28. `Users` inline in index.html (`users`
   key: Eden slug '', Test User slug 'test', default 123, SHA-256 hash once
   set), a door before `start()` loads the scripts, `sessionStorage.hq.user`

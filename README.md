@@ -895,7 +895,7 @@ the place still loaded. The location, the source and the key all persist, so
 the map you were tracing is still there next launch.
 
 **Dark / OSM / Google** picks the source. Dark is the default and is
-CARTO's `dark_nolabels` over OSM data: near-black ground, grey road strokes,
+Esri's dark grey canvas (since 2026-08-28; CARTO's `dark_nolabels` before it began watermarking keyless tiles): dark ground, grey road strokes,
 no text — so nothing on it competes with your own markers, and it sits under
 a plate that is already bone-on-black instead of glaring through it. A light
 sheet gets pulled toward the plate with `grayscale·contrast·brightness`; a
@@ -915,7 +915,7 @@ screenshot of Google Maps in its own dark mode, a scan of a paper map,
 anything. It is adopted exactly as a bake is.
 
 Baking needs the tiles untainted, so they are requested with
-`crossOrigin='anonymous'`. OSM and CARTO both answer `access-control-allow-
+`crossOrigin='anonymous'`. OSM and Esri both answer `access-control-allow-
 origin: *`, which satisfies the `null` origin a `file://` page sends —
 measured, not assumed. Google is deliberately *not* asked for CORS, because a
 source that refused it would fail to load at all rather than merely fail to
@@ -958,7 +958,7 @@ as exactly that square. Nothing outside `tileURL()` and `find()` knows where
 the imagery came from. If a key is refused the bar says so, since a sheet of
 failed tiles otherwise just looks like an empty map. Keep the usage light and
 leave the attribution in place: the credit line beside the bar reads
-`© OpenStreetMap` for OSM's tiles, `© OpenStreetMap · © CARTO` for the dark
+`© OpenStreetMap` for OSM's tiles, `© Esri · © OpenStreetMap contributors` for the dark
 ones and `© Google` for Google's, and becomes `frozen picture` once there are
 no live tiles left to credit.
 

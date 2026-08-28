@@ -189,8 +189,8 @@ const Compass = (() => {
      diamonds — so it is part of the map, at the map's pitch, and the
      chrome canvas above is kept only for the tune panel's reading. */
   const ON_PLATE = true;
-  const AT = 8;                      // tiles in from the plate's top-left corner, both ways
-  const SIZE_ON = 1.15;              // cells per cell of the rose's picture
+  const AT = 6;                      // tiles in from the plate's top-left corner, both ways
+  const SIZE_ON = 0.58;              // cells per cell of the rose's picture — half of the first cut (Eden, 2026-08-28)
   function overlay(a, m, cap){
     if (!ON_PLATE || !faces.rose || !G.terr || !G.A) return m;
     if (typeof Interior !== 'undefined' && Interior.inside()) return m;

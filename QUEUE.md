@@ -26,6 +26,7 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Compass half, name bigger** — 2026-08-28. `SIZE_ON` .58, `AT` 6; Size default 16. BUILD 208.
 - [x] **The compass on the plate, the name bigger again** — 2026-08-28.
   Size default 12; `Compass.overlay` emits the rose's cells into the
   entity stream at eight tiles from the plate's top-left, turned to the

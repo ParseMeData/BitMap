@@ -1791,7 +1791,7 @@ zoom on the door. The town's name stands four tiles down from the top,
 set to the right so most of it runs off the sheet — it can extend off
 screen; the walker goes to it if a road does — in **Fleur De Leah**,
 which ships with the page under the OFL (`assets/fonts/`) so a phone
-with no fonts service draws the same face, read at ten cells (Size in
+with no fonts service draws the same face, read at twelve cells (Size in
 the palette). Its own mat — a light, feathered, dithered dimming of the
 ground under the name — is what keeps it readable over the terrain;
 nothing is demolished behind it. The compass wears the same kind of
@@ -1934,22 +1934,22 @@ Join it to a road the walker can reach and both go away.
 
 ### The compass
 
-Top-left: a star rose with a long north spike, and nothing else. It
-follows the map — the traced underlay's own rotation (`Basemap.rot`),
+On the plate, since 2026-08-28, like the town's name: a star rose with a
+long north spike, drawn into the map at the plate's top-left corner
+eight tiles in, at the plate's own pitch, over a light dithered mat of
+the ground's diamonds — part of the map rather than chrome laid on it.
+It follows the map — the traced underlay's own rotation (`Basemap.rot`),
 the one number in the game that says which way north is — and turns
 with it exactly as the picture is turned, by the Turn arrows or a
 shift-drag, so the spike points where north is on the plate; on the
-region it reads north-up. It is never turned by hand (the drag and the
-double-click went on 2026-08-28), and it stays up while the map dialog
-is open. The drawing is `assets/compass.png`; `tools/compass.py` cuts
-the rose out of it and it goes through the same tone pass as a card's
-picture and is painted as diamonds, bone at the top running to a quiet
-grey at the foot, so the compass is made of what the plate is made of.
-It is tuned where the plate is: press `T` and under the plate's rows is
-a **Compass** block — Detail (the pitch), Weight (the diamond's size,
-which is the gap), Scatter and Jitter (the lattice's throw and size
-variance), Tone — kept in `hq.compass`. Re-run the tool when the art
-changes.
+region it reads north-up. It is never turned by hand. The drawing is
+`assets/compass.png`; `tools/compass.py` cuts the rose out of it and it
+goes through the same tone pass as a card's picture. It is tuned where
+the plate is: press `T` and under the plate's rows is a **Compass**
+block — Detail (the pitch), Weight (the diamond's size, which is the
+gap), Scatter and Jitter, Tone — kept in `hq.compass`. The chrome
+canvas it used to stand on is kept, hidden, for that block's reading;
+`ON_PLATE` in `src/compass.js` is the switch.
 
 ### The journal
 

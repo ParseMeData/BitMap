@@ -26,6 +26,10 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The compass on the plate, the name bigger again** — 2026-08-28.
+  Size default 12; `Compass.overlay` emits the rose's cells into the
+  entity stream at eight tiles from the plate's top-left, turned to the
+  heading, over `Title.mat`; the chrome canvas hidden (`ON_PLATE`). BUILD 207.
 - [x] **The mat dithered, the name a touch larger, a shadow for the
   compass** — 2026-08-28. Size default 10; mat cover .4 and feather 18,
   every mat diamond rolled and the rim thinned by lot (title.js `mat`);

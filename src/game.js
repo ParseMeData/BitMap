@@ -787,6 +787,7 @@ function frame(now){
   if (typeof Distract !== 'undefined'){ m = Distract.overlay(ENT, m, ENTMAX); if (live) Distract.step(dt); }
   if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
+  if (typeof Compass !== 'undefined' && Compass.overlay) m = Compass.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
   m = Hud.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);

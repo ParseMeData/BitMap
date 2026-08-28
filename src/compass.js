@@ -175,17 +175,48 @@ const Compass = (() => {
   function tick(){
     raf = requestAnimationFrame(tick);
     if (!el) return;
-    const v = visible() ? 1 : 0;
+    const v = visible() && !ON_PLATE ? 1 : 0;
     if (v !== shown){ shown = v; el.hidden = !v; }
     if (v) lay(heading());
     const tp = document.getElementById('tune');
     if (tp && !tp.hidden) block();
   }
 
+  /* ── on the plate ──────────────────────────────────────────────────────
+     Since 2026-08-28 the compass is drawn ON THE PLATE, like the town's
+     name: the rose's cells go into the entity stream at the plate's
+     top-left corner, turned to the heading, over a mat of the ground's
+     diamonds — so it is part of the map, at the map's pitch, and the
+     chrome canvas above is kept only for the tune panel's reading. */
+  const ON_PLATE = true;
+  const AT = 8;                      // tiles in from the plate's top-left corner, both ways
+  const SIZE_ON = 1.15;              // cells per cell of the rose's picture
+  function overlay(a, m, cap){
+    if (!ON_PLATE || !faces.rose || !G.terr || !G.A) return m;
+    if (typeof Interior !== 'undefined' && Interior.inside()) return m;
+    const f = faces.rose, ts = G.terr.tsz, px = G.A.cell * SIZE_ON;
+    const cx = ts * AT, cy = ts * AT;
+    const x0 = cx - f.cols * px / 2, y0 = cy - f.rows * px / 2;
+    if (typeof Title !== 'undefined' && Title.mat)
+      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, 0.4, cap, 18);
+    const th = heading() * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
+    const hs = px * 0.75 * tuned('weight');
+    for (const c of f.cells){
+      if (cap !== undefined && m > cap - 1) return m;
+      const lx = (c.x + 0.5) * px - f.cols * px / 2, ly = (c.y + 0.5) * px - f.rows * px / 2;
+      const k = (c.y + 1) / (f.rows + 1);
+      const col = mix(BONE, DIM, GREY * k);
+      m = put(a, m, cx + lx * cs - ly * sn, cy + lx * sn + ly * cs,
+              col[0], col[1], col[2], 0.9 * c.al, hs * (c.sz || 1), 0, 0, 0, 1);
+    }
+    return m;
+  }
+
   function init(){
     if (typeof COMPASS_ART === 'undefined') return;
     load(); build();
+    if (ON_PLATE && el) el.style.display = 'none';
     if (!raf) tick();
   }
-  return {init, heading};
+  return {init, heading, overlay};
 })();

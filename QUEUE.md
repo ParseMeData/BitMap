@@ -24,6 +24,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The underlay stopped clipping itself** — 2026-08-28. `#basemap`
+  was a viewport-sized `overflow:hidden` box that the camera transform
+  moved and scaled every frame, so the map showed only inside wherever
+  that box landed — a corner, a patch, elsewhere on every wheel step. Now
+  a zero-size anchor at the origin, overflow visible. Verified at ×0.6
+  and ×2.6 of the working zoom: edge to edge. BUILD 189.
 - [x] **Dark only, and the map fills the screen** — 2026-08-28. OSM and
   Google hidden in the bar (`.mapsrc` display none, a saved source reads
   back as Dark); the tile ceiling is the viewport's (`most` in `lay`) in

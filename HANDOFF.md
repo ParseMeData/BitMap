@@ -410,6 +410,13 @@ plate opened from a road end steps its neighbour's anchor one cell of the
 country raster the way the road went, and `Atlas.setGeo` pins any plate by
 hand. Nothing ever guesses an anchor for a plate that has none.
 
+**The underlay is transformed, so it cannot also clip.** `#basemap` is
+the element `Basemap.sync` translates and scales every frame; give it a
+size and `overflow:hidden` and the clip moves with the map, which showed
+as the map rendering in a different patch of the screen on every zoom.
+It is a zero-size anchor at the origin with overflow visible; the window
+is the clip. If a clip is ever wanted, wrap it in a second element.
+
 **The door comes before the first script.** Every module reads its keys
 the moment its file runs — the bag's stack, the stock, the atlas — so
 whose keys they are has to be settled before `start()` appends a single

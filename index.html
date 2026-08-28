@@ -32,7 +32,13 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
 /* the tracing underlay sits behind the plate; the plate clears transparent
    while it is on, so a real map shows through the lattice */
-#basemap{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+/* The underlay is the element the camera transforms, so it must not also
+   be the box that clips: a viewport-sized box with overflow hidden moves
+   and scales with the map, and the map showed only inside wherever that
+   box had landed — a corner, a patch, somewhere else on every zoom (found
+   2026-08-28). A zero-size anchor at the origin, overflow visible; the
+   window itself is the only clip. */
+#basemap{position:fixed;left:0;top:0;width:0;height:0;z-index:0;overflow:visible;pointer-events:none;
   transform-origin:0 0;display:none;will-change:transform}
 #mapbar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:6;
   display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
@@ -937,7 +943,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 188, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 189, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

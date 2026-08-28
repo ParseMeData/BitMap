@@ -24,6 +24,18 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The ground is surveyed** — 2026-08-28. `src/survey.js`: Overpass
+  (three instances, two passes, GET) for highways, water, beaches,
+  waterways in the plate's bbox (`Basemap.geoOf` of the corners); the
+  road network connected to the address by shared nodes, cut into runs
+  at the plate edge; water as warps with blobs, beaches as desert,
+  rivers/creeks as lines; grass under all, a boundary oval by default;
+  the map turned square to the door's road (`Basemap.setRot`) first; the
+  palace planted at `worldOf(address)`. `Basemap.worldOf/geoOf` through
+  the placed picture (`place.mc/z/mpx` kept at freeze). Verified on 929
+  Myrtleford-Yackandandah Rd, Barwidgee: 19 road runs, 1 lake, 2 rivers,
+  1 creek, turned −28°, the door's road at 90.0°, 343 tiles reachable.
+  BUILD 195.
 - [x] **A plate is founded on an address** — 2026-08-28. `src/found.js`:
   the road-end yes asks for an address before the plate exists; found →
   `Atlas.add`, `Basemap.find`, `ready`, `freeze`, `setGeo`, and

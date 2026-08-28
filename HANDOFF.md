@@ -484,6 +484,17 @@ build mode, and it pins every plate of the town at once so the group
 keeps its shape. `hq.region` is the projection and is set once from
 home's anchor; nothing recentres it.
 
+**The survey maps through the picture, not the search point.**
+`Basemap.worldOf(lat, lon)` reads the frozen picture's `mc` (its centre
+in mercator px, kept at freeze), its `mpx`, `mult`, `rot` and centre —
+so a road surveyed off the map lies on the picture however the picture
+is dragged, turned or scaled, and turning the map square (`square` in
+survey.js) before laying the shapes is one `setRot` and nothing else
+moves. A picture baked before `mc` existed cannot be surveyed; freeze
+it again. The connected-roads walk keys nodes on six decimals of
+lat/lon, which is what OSM's shared nodes come back as under `out
+geom`; do not round coarser, or parallel roads a metre apart join.
+
 **Yes at a road end is not a plate.** `Atlas.yes` hands the end to
 `Found.ask` and the plate is made inside `Found.go`, after the address is
 found — so a plate with no place cannot come to exist, and Stay leaves

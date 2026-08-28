@@ -272,6 +272,31 @@ const Basemap = (() => {
   }
 
   const note = t => { const n = $('#mapnote'); if (n) n.textContent = t; };
+
+  /* ── the ground on the plate ──────────────────────────────────────────
+     Where a latitude and longitude fall in world units, through the frozen
+     picture as it is placed now — its centre, its turn, its scale — so a
+     road surveyed off the map (src/survey.js) lies on the picture of it
+     however the picture has been moved. A picture baked before `mc` was
+     kept has no answer; nor has a plate with no picture. */
+  function worldOf(la, lo){
+    if (!place || !place.mc) return null;
+    const m = merc(la, lo, place.z || z);
+    const k = (place.mpx || scale) * place.mult;
+    const dx = (m[0] - place.mc[0]) * k, dy = (m[1] - place.mc[1]) * k;
+    const c = Math.cos(place.rot), s = Math.sin(place.rot);
+    return [place.x + dx * c - dy * s, place.y + dx * s + dy * c];
+  }
+  function geoOf(x, y){
+    if (!place || !place.mc) return null;
+    const k = (place.mpx || scale) * place.mult;
+    const c = Math.cos(-place.rot), s = Math.sin(-place.rot);
+    const dx = x - place.x, dy = y - place.y;
+    const ux = (dx * c - dy * s) / k, uy = (dx * s + dy * c) / k;
+    return unmerc(place.mc[0] + ux, place.mc[1] + uy, place.z || z);
+  }
+  /* turn the placed picture to a heading, in radians */
+  function setRot(r){ if (!place) return false; place.rot = r; setRotUI(); sync(); save(); return true; }
   /* every tile that has been asked for has answered — for a caller that
      wants to freeze the moment it can (src/found.js) */
   function ready(ms){
@@ -335,7 +360,11 @@ const Basemap = (() => {
     const m0 = merc(lat, lon, z), C = [(G.sheetW || G.W) / 2, G.H / 2];
     const cx = (origin[0] + minL + sw / 2 - m0[0]) * scale + C[0];
     const cy = (origin[1] + minT + sh / 2 - m0[1]) * scale + C[1];
-    await adopt(url, {x: cx, y: cy, s0: scale / f, mult: 1, rot: 0});
+    /* the picture's centre in mercator px at this zoom: what lets a place
+       on the ground be found on the plate after the picture is dragged,
+       turned or scaled (worldOf, below) */
+    await adopt(url, {x: cx, y: cy, s0: scale / f, mult: 1, rot: 0,
+                      mc: [origin[0] + minL + sw / 2, origin[1] + minT + sh / 2], z, mpx: scale});
     note('frozen · ' + cv.width + '×' + cv.height + ' · drag to place');
   }
 
@@ -352,7 +381,8 @@ const Basemap = (() => {
         /* named field by field rather than merged, so nothing an older save
            happened to leave in the object can ride along into this one */
         place = {x: p.x, y: p.y, s0: p.s0, mult: p.mult == null ? 1 : p.mult,
-                 rot: p.rot || 0, w: im.naturalWidth, h: im.naturalHeight};
+                 rot: p.rot || 0, w: im.naturalWidth, h: im.naturalHeight,
+                 mc: Array.isArray(p.mc) ? [p.mc[0], p.mc[1]] : null, z: p.z || null, mpx: p.mpx || null};
         setPlacing(true);
         paint(); syncUI(); sync(); save();
         res(true);
@@ -697,6 +727,7 @@ const Basemap = (() => {
   });
 
   return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
+          worldOf, geoOf, setRot, placed: () => (place ? Object.assign({}, place) : null),
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,

@@ -352,6 +352,9 @@ stale.
                          at their edges, the edge prompt, where each one
                          falls on the ground, and the chip grid the towns
                          map fell back on before the country was here
+    src/survey.js        the survey: the roads from the door, the water, the
+                         grass and the rim, off OpenStreetMap, and the map
+                         turned square to the door's road
     src/found.js         founding a plate: the address it is asked for, the
                          map frozen there, the anchor, and the first palace
                          planted at the address
@@ -1744,6 +1747,29 @@ standing where its address is with the town round it to trace. *Stay*
 (or Esc) leaves the road ending where it was. A home plate with nothing
 on it asks the same at boot, and names the town; there *Later* puts it
 off, because a town may be about to be imported instead.
+
+**The ground is surveyed.** Once the map is frozen at the address, the
+survey (`src/survey.js`) asks OpenStreetMap — Overpass, keyless, from
+the page — for what lies inside the plate and lays it as the plate's own
+shapes: the **roads connected to the address** and no others (the way
+nearest the door, and everything reachable from it through shared
+nodes, each cut at the plate's edge into runs — so a road that leaves
+the plate ends where the next plate would begin), every **body of
+water** near (lakes, dams, reservoirs as water, beaches as sand, rivers
+and streams as river and creek lines), a field of **grass** under it
+all, and a **boundary** laid by default that fades the town at the rim.
+Before the shapes go down the frozen picture is **turned** so the road
+at the address lies perfectly vertical or horizontal — whichever is
+nearer — and the compass turns with it, so the roads on the plate agree
+with the picture under them and the connecting road runs square. The
+first palace is planted at the address itself and can be dragged
+anywhere within the boundary afterwards like any marker. Every point
+goes through `Basemap.worldOf`, which reads the picture as it is placed.
+Three Overpass instances are tried in turn, twice each: the main one
+answers the web version in a second and a `file://` page not at all
+(no allow-origin header for a null origin), so the desk goes to
+Mail.ru's mirror, which takes half a minute or so. A survey that fails
+leaves the plate frozen and empty — still founded, and the note says.
 
 **A plate is one size, and that size is the limit.** Every plate is
 **60 × 57 walk tiles** — 240 × 228 lattice cells, 755 × 720 world units,

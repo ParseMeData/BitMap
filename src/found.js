@@ -90,13 +90,24 @@ const Found = (() => {
       await Basemap.freeze();
       const [lat, lon] = Basemap.at();
       if (lat || lon) Atlas.setGeo(Atlas.current(), lat, lon);
-      /* the first palace, at the address — the sheet's centre is where the
-         search landed — named for it, and free */
-      const name = q.split(',')[0].trim().slice(0, 28);
-      const C = [(G.sheetW || G.W) / 2, G.H / 2];
+      /* the ground, surveyed: the roads from the door, the water, the
+         grass and the rim — and the map turned square to the door's road
+         (src/survey.js). A survey that fails leaves the plate frozen and
+         empty, which is still a founded plate. */
+      let at = null;
+      try { const sv = await Survey.run(lat, lon, say); at = sv.at; }
+      catch (e){ say('no survey — ' + (e.message || e)); await new Promise(r => setTimeout(r, 1200)); }
+      /* the first palace, at the address, named for it, and free */
+      const parts = q.split(',').map(x => x.trim()).filter(Boolean);
+      const name = parts[0].slice(0, 28);
+      /* the town is the locality — the part after the street, with the
+         state and the postcode taken off — or the whole address when
+         there is only the one part */
+      const town = (parts[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || name;
+      const C = at || [(G.sheetW || G.W) / 2, G.H / 2];
       const mk = Markers.plant(C[0], C[1], name);
-      if (mk && typeof Atlas.rename === 'function' && Atlas.current() !== 'home') Atlas.rename(name);
-      if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(name);
+      if (mk && typeof Atlas.rename === 'function' && Atlas.current() !== 'home') Atlas.rename(town);
+      if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town);
       Basemap.setBar(false);
       el.hidden = true;
       document.body.classList.remove('founding');

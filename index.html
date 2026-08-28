@@ -1001,7 +1001,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 194, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 195, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){
@@ -1052,7 +1052,7 @@ var Users = (function(){
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/found.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/touch.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/survey.js','src/found.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/touch.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

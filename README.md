@@ -1736,20 +1736,24 @@ The map never pans and never zooms: what is on screen is the town. When
 the town needs more room it gets another **plate** — a second screen the
 same size as this one — and plates are joined where **roads end**.
 
-**A plate is founded on an address.** Since V8.1 no plate opens without
-one (`src/found.js`). Say yes at the end of a road and a panel asks
-*where does it lead?* — type an address or a town, and the plate is
-made only once the address is found: the map is looked up and frozen
-there — that picture is the plate's boundary and its point the plate's
-anchor on the region — and the **first palace** is planted at the
-address, named for it, free, so every plate begins as one memory palace
-standing where its address is with the town round it to trace. *Stay*
-(or Esc) leaves the road ending where it was. A home plate with nothing
-on it is founded **unasked** at boot on the default address (`DEFAULT`
-in `src/found.js` — for now 929 Myrtleford-Yackandandah Road,
-Barwidgee), the notes saying how it is going; only if that fails does
-it ask, with the address in the field. A road end's panel opens with
-the default in the field too.
+**A plate is founded on an address, in steps you can see.** Since V8.1
+no plate opens without one (`src/found.js`). Say yes at the end of a
+road and a panel asks *where does it lead?* — an address or a town, the
+default already in the field — and the plate is made only once the
+address is found. Then the map is shown live under a **frame** that is
+the plate's edge, with the boundary's oval inside it: **drag the map**
+under the frame, **Zoom − +** for more or less ground, until the town
+sits where you want it. **Print** bakes what is inside the frame into
+the plate's picture — toned so the map's background is the plate's own
+black and a road is a grey line on it — and a **confirm** follows:
+*Generate*, or *Back to the frame*. Nothing is drawn until you say.
+Generate runs the survey (below), plants a house from the sheet beside
+the road on the address's side, and the first palace on it, named for
+the address, free. The picture is handed over unpinned. A home plate
+with nothing on it goes straight to the frame on the default address
+(`DEFAULT` in `src/found.js` — for now 929 Myrtleford-Yackandandah Road,
+Barwidgee) and waits for Print; *Later* puts it off, because a town may
+be about to be imported instead.
 
 **The ground is surveyed.** Once the map is frozen at the address, the
 survey (`src/survey.js`) asks OpenStreetMap — Overpass, keyless, from

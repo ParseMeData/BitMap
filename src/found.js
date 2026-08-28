@@ -1,163 +1,248 @@
 'use strict';
 /* ── founding a plate ─────────────────────────────────────────────────────
    A plate is a place, and it is founded on an address. Since 2026-08-28
-   (Eden) no plate opens without one: at the end of a road, saying yes to
-   the next plate asks for the address first; a home plate with nothing
-   on it asks at boot. The address is looked up (src/basemap.js `find`),
-   the map is frozen there — that picture is the plate's boundary, and
-   its point is the plate's anchor on the region (`Atlas.setGeo`) — and
-   the FIRST PALACE goes down on it, at the address, named for it, free.
-   So every plate begins as one memory palace standing where its address
-   is, with the town around it to trace.
+   (Eden) no plate opens without one, and the founding goes in steps you
+   can see and stop:
 
-   The dialog is the same panel as the edge prompt and holds the keys
-   until answered; on the home plate it can be put off (Later), because
-   a town may be about to be imported instead; at a road end it cannot,
-   because the plate does not exist until the address does.            */
+     1. the ADDRESS — asked for at the end of a road (the plate is made
+        only once the address is found), or the default one, unasked, on
+        a home plate with nothing on it;
+     2. the FRAME — the map is shown live under a frame that is the plate's
+        edge, with the boundary's oval inside it: drag the map under the
+        frame, Zoom − + for more or less ground, until the town sits where
+        you want it printed;
+     3. PRINT — the map inside the frame is baked into the plate's picture
+        (toned to the plate's own black);
+     4. CONFIRM — Generate, or Back to the frame;
+     5. the GROUND — the survey (src/survey.js): the roads from the door,
+        the water, the grass and the rim; the map turned square to the
+        door's road; a house from the sheet beside the road at the address,
+        and the FIRST PALACE on it, named for the address, free.
+
+   Nothing is generated before the confirm. The picture is left pinned to
+   nothing when it is done — Pin is a tool, and a plate handed over with
+   its picture still in hand ate every touch on the phone.               */
 
 const Found = (() => {
-  /* the address a home plate with nothing on it is founded on, unasked
-     (Eden, 2026-08-28: "use this address as the default for now") */
+  /* the address a home plate with nothing on it is founded on, unasked */
   const DEFAULT = '929 Myrtleford-Yackandandah Road, Barwidgee VIC 3737';
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
-  let el = null, pending = null, busy = false;
+  let el = null, frame = null, pending = null, busy = false, state = null, q = '', drag = null, raf = 0;
 
+  /* ── the panel, one face per state ──────────────────────────────────── */
   function panel(){
     if (el) return el;
     el = document.createElement('div');
     el.id = 'found'; el.className = 'glass'; el.hidden = true;
-    el.innerHTML = '<div class="plabel">A new plate needs a place</div>' +
-      '<div id="foundwhy"></div>' +
-      '<input id="foundq" type="text" placeholder="an address, or a town" spellcheck="false" autocomplete="off">' +
-      '<div class="erow"><button class="btn" id="foundgo">Found it here</button>' +
-      '<button class="btn" id="foundno">Later</button></div>' +
-      '<div class="knote" id="foundnote">the map is frozen at the address and the first palace stands on it</div>';
     document.body.appendChild(el);
-    const q = el.querySelector('#foundq');
-    q.addEventListener('keydown', e => {
-      e.stopPropagation();
-      if (e.key === 'Enter'){ e.preventDefault(); go(); }
-      else if (e.key === 'Escape'){ e.preventDefault(); later(); }
-    });
-    el.querySelector('#foundgo').onclick = go;
-    el.querySelector('#foundno').onclick = later;
     return el;
   }
-
-  /* ── asking ─────────────────────────────────────────────────────────────
-     `what` is {dir, at} for a road end — the plate is made only once the
-     address is found — or null for the plate you are standing on. */
-  function ask(what, why){
-    pending = what || null;
-    const p = panel();
-    p.querySelector('#foundwhy').textContent = why || '';
-    p.querySelector('#foundno').hidden = !!pending ? false : false;
-    p.querySelector('#foundno').textContent = pending ? 'Stay' : 'Later';
-    p.querySelector('#foundq').value = DEFAULT;
-    p.hidden = false;
+  function face(html){
+    panel().innerHTML = html;
+    el.hidden = false;
     document.body.classList.add('founding');
-    setTimeout(() => p.querySelector('#foundq').focus(), 50);
+  }
+  const say = t => { const n = el && el.querySelector('#foundnote'); if (n) n.textContent = t; else note(t); };
+
+  function askFace(why){
+    face('<div class="plabel">A new plate needs a place</div>' +
+      '<div id="foundwhy">' + (why || '') + '</div>' +
+      '<input id="foundq" type="text" placeholder="an address, or a town" spellcheck="false" autocomplete="off">' +
+      '<div class="erow"><button class="btn" id="foundgo">Find it</button>' +
+      '<button class="btn" id="foundno">' + (pending ? 'Stay' : 'Later') + '</button></div>' +
+      '<div class="knote" id="foundnote">the map is shown under a frame first; nothing is printed until you say</div>');
+    const inp = el.querySelector('#foundq');
+    inp.value = q || DEFAULT;
+    inp.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.key === 'Enter'){ e.preventDefault(); find(); }
+      else if (e.key === 'Escape'){ e.preventDefault(); later(); }
+    });
+    el.querySelector('#foundgo').onclick = find;
+    el.querySelector('#foundno').onclick = later;
+    setTimeout(() => inp.focus(), 50);
+  }
+  function frameFace(){
+    face('<div class="plabel">Frame the plate</div>' +
+      '<div id="foundwhy">' + q + '</div>' +
+      '<div class="erow"><button class="btn" id="foundzo">Zoom &minus;</button><button class="btn" id="foundzi">Zoom +</button></div>' +
+      '<div class="erow"><button class="btn" id="foundprint">Print</button>' +
+      '<button class="btn" id="foundno">' + (Atlas.current() === 'home' && !pendingMade ? 'Later' : 'Back') + '</button></div>' +
+      '<div class="knote" id="foundnote">drag the map under the frame · the oval is the boundary · print when it sits right</div>');
+    el.querySelector('#foundzo').onclick = () => Basemap.step(-1);
+    el.querySelector('#foundzi').onclick = () => Basemap.step(1);
+    el.querySelector('#foundprint').onclick = print;
+    el.querySelector('#foundno').onclick = () => { if (Atlas.current() === 'home' && !pendingMade) later(); else askFace(''); };
+  }
+  function confirmFace(){
+    face('<div class="plabel">Printed</div>' +
+      '<div id="foundwhy">generate the roads, the water, the ground and the first palace here?</div>' +
+      '<div class="erow"><button class="btn" id="foundgen">Generate</button>' +
+      '<button class="btn" id="foundback">Back to the frame</button></div>' +
+      '<div class="knote" id="foundnote">nothing is drawn until you say</div>');
+    el.querySelector('#foundgen').onclick = generate;
+    el.querySelector('#foundback').onclick = back;
+  }
+
+  /* ── the frame: the plate's edge and the boundary's oval, on screen ── */
+  function frameEl(){
+    if (frame) return frame;
+    frame = document.createElement('div');
+    frame.id = 'frame'; frame.hidden = true;
+    frame.innerHTML = '<i></i>';
+    document.body.appendChild(frame);
+    return frame;
+  }
+  function tick(){
+    raf = requestAnimationFrame(tick);
+    if (state !== 'framing' || !G.terr){ frameEl().hidden = true; return; }
+    /* the whole plate in view, always: the camera is held out at fit-all
+       while the frame is up, and the plate then sits centred */
+    G.camT[2] = G.fitAll;
+    const b = canvas.getBoundingClientRect(), dpr = VW / (b.width || 1), z = G.cam[2] / dpr;
+    const sx = wx => b.left + (wx - G.cam[0]) * z + b.width / 2, sy = wy => b.top + (wy - G.cam[1]) * z + b.height / 2;
+    const f = frameEl(); f.hidden = false;
+    f.style.left = sx(0) + 'px'; f.style.top = sy(0) + 'px';
+    f.style.width = (sx(G.W) - sx(0)) + 'px'; f.style.height = (sy(G.H) - sy(0)) + 'px';
+    const sw = G.sheetW || G.W, i = f.firstChild;
+    i.style.left = '0'; i.style.top = '0'; i.style.width = (sx(sw * 1.02) - sx(0)) + 'px'; i.style.height = (sy(G.H * 1.02) - sy(0)) + 'px';
+    i.style.transform = 'translate(-1%,-1%)';
+  }
+  /* drag the map under the frame */
+  function wireDrag(){
+    addEventListener('pointerdown', e => {
+      if (state !== 'framing' || e.target !== canvas || e.button !== 0) return;
+      drag = {x: e.clientX, y: e.clientY, moved: false};
+    }, true);
+    addEventListener('pointermove', e => {
+      if (!drag || state !== 'framing') return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 3) return;
+      drag.moved = true; drag.x = e.clientX; drag.y = e.clientY;
+      const b = canvas.getBoundingClientRect(), dpr = VW / (b.width || 1), z = G.cam[2] / dpr;
+      Basemap.nudge(dx / z, dy / z);
+      e.stopPropagation();
+    }, true);
+    const up = () => { drag = null; };
+    addEventListener('pointerup', up, true);
+    addEventListener('pointercancel', up, true);
+  }
+
+  /* ── the steps ─────────────────────────────────────────────────────── */
+  let pendingMade = false;
+  function ask(what, why){
+    pending = what || null; pendingMade = false; q = '';
+    state = 'ask';
+    askFace(why);
     return true;
   }
-  function later(){
+  async function find(){
     if (busy) return;
-    const was = pending; pending = null;
-    if (el) el.hidden = true;
-    document.body.classList.remove('founding');
-    note(was ? 'the road still ends here' : 'a plate with no place — press M to give it one');
-  }
-  const open = () => !!el && !el.hidden;
-
-  /* ── founding ────────────────────────────────────────────────────────────
-     Look the address up; if it is somewhere, open the plate (a road end)
-     or stay (home); freeze the map there; anchor the plate; plant the
-     palace. Each step says what it is doing in the note line. */
-  async function go(address){
-    if (busy) return;
-    const quiet = typeof address === 'string';        // founded unasked: no dialog to write into
-    if (!quiet) panel();
-    const q = quiet ? address.trim() : el.querySelector('#foundq').value.trim();
-    if (!q){ if (!quiet) el.querySelector('#foundnote').textContent = 'type an address first'; return; }
+    const v = (el.querySelector('#foundq') || {}).value || q;
+    q = String(v).trim();
+    if (!q){ say('type an address first'); return; }
     busy = true;
-    const say = t => { if (quiet) note(t); else el.querySelector('#foundnote').textContent = t; };
     try {
       say('looking for ' + q + '…');
-      if (pending){
-        /* the plate is made now, and the search lands on it */
-        const p = pending; pending = null;
+      if (pending && !pendingMade){
+        const p = pending;
         if (!Atlas.add(p.dir, p.at)) throw new Error('could not open the plate');
+        pendingMade = true;
       }
       const ok = await Basemap.find(q);
       if (!ok) throw new Error('nowhere by that name');
-      /* the whole plate in view, centred, before the picture is baked: the
-         tiles are laid for the view, so this is what makes the frozen map
-         cover the plate edge to edge and the survey have all of it */
-      say('framing the plate…');
-      G.camT[0] = G.W / 2; G.camT[1] = G.H / 2; G.camT[2] = G.fitAll;
-      await new Promise(r => setTimeout(r, 1400));
+      Basemap.setBar(false);
+      state = 'framing';
+      frameFace();
       say('waiting for the map…');
-      await Basemap.ready(20000);
-      say('freezing the map…');
+      Basemap.ready(20000).then(() => { if (state === 'framing') say('drag the map under the frame · print when it sits right'); });
+    } catch (e){ say(String(e.message || e)); }
+    busy = false;
+  }
+  async function print(){
+    if (busy || state !== 'framing') return;
+    busy = true;
+    try {
+      say('waiting for the map…');
+      await Basemap.ready(15000);
+      say('printing…');
       await Basemap.freeze();
+      Basemap.setPlacing(false);
+      state = 'confirm';
+      confirmFace();
+    } catch (e){ say(String(e.message || e)); }
+    busy = false;
+  }
+  function back(){
+    if (busy) return;
+    Basemap.thaw();
+    state = 'framing';
+    frameFace();
+  }
+  async function generate(){
+    if (busy || state !== 'confirm') return;
+    busy = true;
+    try {
       const [lat, lon] = Basemap.at();
       if (lat || lon) Atlas.setGeo(Atlas.current(), lat, lon);
-      /* the ground, surveyed: the roads from the door, the water, the
-         grass and the rim — and the map turned square to the door's road
-         (src/survey.js). A survey that fails leaves the plate frozen and
-         empty, which is still a founded plate. */
       let at = null;
       try { const sv = await Survey.run(lat, lon, say); at = sv.at; }
       catch (e){ say('no survey — ' + (e.message || e)); await new Promise(r => setTimeout(r, 1200)); }
-      /* a house at the address — one of the sheet's, drawn by lot — with
-         the palace's marker standing on it */
+      /* the house, beside the road on the address's side, and the palace on it */
+      let houseW = 0;
       if (at && typeof Glyphs !== 'undefined'){
         try {
           const kinds = Glyphs.of('houses') || [];
           if (kinds.length){
             const pick = kinds[(Math.random() * kinds.length) | 0];
+            const rows = Glyphs.rows(pick); houseW = rows && rows[0] ? rows[0].length * G.A.cell : 0;
+            at = Survey.aside(at, houseW);
             Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
             Build.commit();
             if (typeof restampTerrain === 'function') restampTerrain();
           }
         } catch (e){ note('no house — ' + (e.message || e)); }
       }
-      /* the first palace, at the address, named for it, and free */
       const parts = q.split(',').map(x => x.trim()).filter(Boolean);
       const name = parts[0].slice(0, 28);
-      /* the town is the locality — the part after the street, with the
-         state and the postcode taken off — or the whole address when
-         there is only the one part */
       const town = (parts[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || name;
       const C = at || [(G.sheetW || G.W) / 2, G.H / 2];
       const mk = Markers.plant(C[0], C[1], name);
-      if (mk && typeof Atlas.rename === 'function' && Atlas.current() !== 'home') Atlas.rename(town);
+      if (mk && Atlas.current() !== 'home') Atlas.rename(town);
       if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town);
+      Basemap.setPlacing(false);
       Basemap.setBar(false);
-      /* and back to the distance the town is worked at, on the door */
       if (at){ G.camT[0] = at[0]; G.camT[1] = at[1]; }
       G.camT[2] = typeof home === 'function' ? home() : G.fitW;
+      state = null;
       if (el) el.hidden = true;
       document.body.classList.remove('founding');
       note(name + ' founded — the palace at the address is the first');
-    } catch (e){
-      say(String(e.message || e));
-      /* founded unasked and it failed: ask, with the address in the field */
-      if (quiet){ busy = false; ask(null, 'the default address could not be founded — ' + (e.message || e)); return; }
-    }
+    } catch (e){ say(String(e.message || e)); }
     busy = false;
   }
+  function later(){
+    if (busy) return;
+    const was = pending; pending = null; state = null;
+    if (el) el.hidden = true;
+    document.body.classList.remove('founding');
+    note(was && !pendingMade ? 'the road still ends here' : 'a plate with no place — press M to give it one');
+  }
+  const open = () => !!el && !el.hidden;
 
-  /* the home plate with nothing on it asks at boot */
+  /* the home plate with nothing on it: the default address, unasked, and
+     then the frame — printing waits for you */
   function check(){
     if (typeof Atlas === 'undefined' || Atlas.current() !== 'home') return false;
     if (G.markers.length || G.shapes.length) return false;
     const [lat, lon] = Basemap.at();
     if (lat || lon) return false;
-    /* unasked: the default address, and the notes say how it is going */
-    note('founding on ' + DEFAULT + '…');
-    go(DEFAULT);
+    pending = null; pendingMade = false; q = DEFAULT; state = 'ask';
+    panel();
+    find();
     return true;
   }
+  function init(){ wireDrag(); if (!raf) tick(); }
 
-  return {ask, later, check, open, go, DEFAULT};
+  return {init, ask, later, check, open, find, print, generate, back, DEFAULT, state: () => state};
 })();

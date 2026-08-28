@@ -211,5 +211,31 @@ const Survey = (() => {
     return {roads, water, turned, at: Basemap.worldOf(la, lo)};
   }
 
-  return {run, bbox};
+  /* ── beside the road ──────────────────────────────────────────────────
+     A house is not on the road; it stands beside it, on the side the
+     address is. The nearest road run to the point and the side it lies on
+     decide the direction; the road's half width, the house's half width
+     and a cell of verge decide how far. A point already that far off is
+     left where it is. */
+  function aside(at, houseW){
+    const roads = G.shapes.filter(s => s.kind === 'road' && s.pts && s.pts.length > 1);
+    let best = null, bd = Infinity;
+    for (const r of roads) for (let i = 0; i + 1 < r.pts.length; i++){
+      const a = r.pts[i], b = r.pts[i + 1];
+      const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9;
+      const t = Math.max(0, Math.min(1, ((at[0] - a[0]) * dx + (at[1] - a[1]) * dy) / L));
+      const px = a[0] + dx * t, py = a[1] + dy * t, d = Math.hypot(at[0] - px, at[1] - py);
+      if (d < bd){ bd = d; best = {a, b, px, py, dx, dy, w: r.width || G.A.cell * 2}; }
+    }
+    if (!best) return at;
+    const need = best.w / 2 + houseW / 2 + G.A.cell;
+    if (bd >= need) return at;
+    const len = Math.hypot(best.dx, best.dy) || 1;
+    let nx = -best.dy / len, ny = best.dx / len;                 // a normal to the road
+    const side = (at[0] - best.px) * nx + (at[1] - best.py) * ny;
+    if (side < 0){ nx = -nx; ny = -ny; }                       // the side the address is on
+    return [best.px + nx * need, best.py + ny * need];
+  }
+
+  return {run, bbox, aside};
 })();

@@ -26,6 +26,16 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Frame, print, confirm — and the phone's buttons back** —
+  2026-08-28. Pin's capture-phase pointerdown swallowed every press that
+  was not a `<button>` (the touch layer is divs): it takes the canvas
+  only now, and founding ends unpinned. `Found` is states — ask → framing
+  (`#frame` = plate edge + boundary oval, drag → `Basemap.nudge`, Zoom ±
+  → `Basemap.step`) → print (freeze, `tone()` maps the sheet's background
+  to the plate's ground) → confirm → generate (survey, `Survey.aside`
+  puts the house and palace beside the road on the address's side).
+  Verified: nudge moves the search point, print → confirm with Pin off,
+  generate → 16 roads etc., palace 34 units off the road. BUILD 200.
 - [x] **The touch layer answers** — 2026-08-28. The game paused on blur
   (address bar, app switch) and the pause card sat under the touch layer,
   so every button did nothing: no blur-pause on mobile, Esc on nothing no

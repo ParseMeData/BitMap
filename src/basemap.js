@@ -297,6 +297,17 @@ const Basemap = (() => {
   }
   /* turn the placed picture to a heading, in radians */
   function setRot(r){ if (!place) return false; place.rot = r; setRotUI(); sync(); save(); return true; }
+  /* slide the live tiles by a world delta — a drag of the map under the
+     frame before it is printed (src/found.js): the search point moves the
+     other way by the same distance in mercator px */
+  function nudge(dx, dy){
+    if (pic || !(lat || lon)) return false;
+    const m = merc(lat, lon, z);
+    const g = unmerc(m[0] - dx / scale, m[1] - dy / scale, z);
+    lat = g[0]; lon = g[1];
+    sync(); save();
+    return true;
+  }
   /* every tile that has been asked for has answered — for a caller that
      wants to freeze the moment it can (src/found.js) */
   function ready(ms){
@@ -321,7 +332,7 @@ const Basemap = (() => {
        toward the plate's own bone-on-black. */
     layer.style.filter =
       pic ? 'none'
-      : src === 'dark' ? 'brightness(1.2) contrast(1.2)'
+      : src === 'dark' ? 'brightness(1.0) contrast(1.35)'
       : src === 'google' && gtype === 'satellite' ? 'saturate(0.7) brightness(0.8)'
       : 'grayscale(0.75) contrast(0.85) brightness(0.85)';
   }
@@ -352,6 +363,11 @@ const Basemap = (() => {
       g.drawImage(i, (parseFloat(i.style.left) - minL) * f,
                      (parseFloat(i.style.top) - minT) * f, TILE * f, TILE * f);
 
+    /* toned to the plate: the sheet's own background — its commonest
+       shade — becomes the plate's ground, and everything lighter than it
+       keeps its distance above, so a road is a grey line on the same black
+       the town stands on rather than on a grey field (Eden, 2026-08-28) */
+    tone(g, cv.width, cv.height);
     let url;
     try { url = cv.toDataURL('image/png'); }
     catch (e){ note('could not bake: ' + e.name + ' — the tiles are tainted'); return; }
@@ -366,6 +382,24 @@ const Basemap = (() => {
     await adopt(url, {x: cx, y: cy, s0: scale / f, mult: 1, rot: 0,
                       mc: [origin[0] + minL + sw / 2, origin[1] + minT + sh / 2], z, mpx: scale});
     note('frozen · ' + cv.width + '×' + cv.height + ' · drag to place');
+  }
+
+  const GROUND = [8, 8, 11];
+  function tone(g, w, h){
+    let d; try { d = g.getImageData(0, 0, w, h); } catch (e){ return; }
+    const px = d.data, hist = new Uint32Array(256);
+    for (let i = 0; i < px.length; i += 16) hist[(px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000 | 0]++;
+    let bg = 0; for (let v = 1; v < 256; v++) if (hist[v] > hist[bg]) bg = v;
+    const gain = 1.7;
+    for (let i = 0; i < px.length; i += 4){
+      const l = (px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000;
+      const t = Math.max(0, (l - bg) * gain) / 255;           // 0 at the background, up for anything lighter
+      const k = Math.min(1, t);
+      px[i]     = GROUND[0] + (px[i]     - GROUND[0]) * k;
+      px[i + 1] = GROUND[1] + (px[i + 1] - GROUND[1]) * k;
+      px[i + 2] = GROUND[2] + (px[i + 2] - GROUND[2]) * k;
+    }
+    g.putImageData(d, 0, 0);
   }
 
   /* a picture from anywhere — a bake, a dropped file, or storage */
@@ -437,7 +471,11 @@ const Basemap = (() => {
   function wirePlace(){
     addEventListener('pointerdown', e => {
       if (!placing || !pic || !place || e.button !== 0) return;
-      if (e.target && /^(INPUT|TEXTAREA|BUTTON)$/.test(e.target.tagName)) return;
+      /* the plate only: a press on any chrome — the touch layer's keys,
+         the dialogs, the hub is on the canvas and is fine — is not a drag
+         of the picture. Anything else swallowed every phone button while
+         a picture was pinned (2026-08-28). */
+      if (e.target !== canvas) return;
       e.stopPropagation();
       const p = toWorld(e);
       drag = e.shiftKey
@@ -727,7 +765,7 @@ const Basemap = (() => {
   });
 
   return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
-          worldOf, geoOf, setRot, placed: () => (place ? Object.assign({}, place) : null),
+          worldOf, geoOf, setRot, nudge, step, setPlacing, placed: () => (place ? Object.assign({}, place) : null),
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,

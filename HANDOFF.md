@@ -495,6 +495,14 @@ it again. The connected-roads walk keys nodes on six decimals of
 lat/lon, which is what OSM's shared nodes come back as under `out
 geom`; do not round coarser, or parallel roads a metre apart join.
 
+**Pin takes the canvas and nothing else.** Its pointer handlers run on
+the window in the capture phase and stop propagation, which is right for
+a drag over the plate and wrong for everything that is not the plate —
+the touch layer's keys are `<div>`s and every one of them died while a
+picture was pinned. `e.target !== canvas` is the guard; and founding
+ends with `setPlacing(false)`, because a plate handed over with its
+picture still in hand is a plate nobody can play on a phone.
+
 **Yes at a road end is not a plate.** `Atlas.yes` hands the end to
 `Found.ask` and the plate is made inside `Found.go`, after the address is
 found — so a plate with no place cannot come to exist, and Stay leaves

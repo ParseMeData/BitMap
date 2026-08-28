@@ -727,9 +727,11 @@ body.arming,body.arming #gl{cursor:copy}
   <input id="mapkey" type="text" placeholder="Google API key" spellcheck="false" hidden>
   <button class="btn" id="mapfreeze" title="bake the tiles into one picture you can place by hand">Freeze</button>
   <button class="btn" id="mapplace" title="drag to move &middot; shift-drag to turn &middot; ctrl for 15&deg; steps" hidden>Place</button>
-  <label>Fade<input id="mapdim" type="range" min="10" max="100" step="5"></label>
-  <label>Scale<input id="mapscale" type="range" min="25" max="400" step="5"><span id="mapscalev"></span></label>
-  <label id="maprotwrap" hidden>Turn<input id="maprot" type="range" min="-180" max="180" step="0.5"><span id="maprotv"></span></label>
+  <!-- Fade and Scale rest at their defaults and are not shown (Eden, 2026-08-28);
+       the sliders stay so a saved setting still reads back through them -->
+  <label hidden>Fade<input id="mapdim" type="range" min="10" max="100" step="5"></label>
+  <label hidden>Scale<input id="mapscale" type="range" min="25" max="400" step="5"><span id="mapscalev"></span></label>
+  <label id="maprotwrap" hidden>Turn<button class="btn" id="maprotl" title="turn left &middot; ctrl for 15&deg;">&#9664;</button><span id="maprotv"></span><button class="btn" id="maprotr" title="turn right &middot; ctrl for 15&deg;">&#9654;</button></label>
   <label id="mapzwrap">Zoom<button class="btn" id="mapzo">&minus;</button><span id="mapzv"></span><button class="btn" id="mapzi">+</button></label>
   <span id="mapnote"></span>
   <span id="mapcred">© OpenStreetMap</span>
@@ -943,7 +945,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 189, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 190, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

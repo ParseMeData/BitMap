@@ -466,13 +466,19 @@ const Basemap = (() => {
   }
 
   const setRotUI = () => {
-    const r = $('#maprot'), v = $('#maprotv');
+    const v = $('#maprotv');
     if (!place) return;
     let d = place.rot * 180 / Math.PI;
-    d = ((d + 180) % 360 + 360) % 360 - 180;         // keep the slider in range
-    if (r) r.value = d.toFixed(1);
+    d = ((d + 180) % 360 + 360) % 360 - 180;
     if (v) v.textContent = d.toFixed(1) + '°';
   };
+  /* a press of either arrow turns the placed picture a degree, fifteen
+     with ctrl held — a slider was the old way and went (Eden, 2026-08-28) */
+  function turn(dir, big){
+    if (!place) return;
+    place.rot += dir * (big ? 15 : 1) * Math.PI / 180;
+    setRotUI(); sync(); save();
+  }
 
   function syncUI(){
     const b = $('#mapshow');
@@ -525,12 +531,8 @@ const Basemap = (() => {
       lastRange = ''; sync(); save();
       $('#mapscalev').textContent = v.toFixed(2) + '×';
     };
-    $('#maprot').oninput = e => {
-      if (!place) return;
-      place.rot = +e.target.value * Math.PI / 180;
-      $('#maprotv').textContent = (+e.target.value).toFixed(1) + '°';
-      sync(); save();
-    };
+    $('#maprotl').onclick = e => turn(-1, e.ctrlKey);
+    $('#maprotr').onclick = e => turn(1, e.ctrlKey);
     $('#mapzo').onclick = () => step(-1);
     $('#mapzi').onclick = () => step(1);
     $('#mapoff').onclick = () => setBar(false);
@@ -673,8 +675,10 @@ const Basemap = (() => {
     if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
     if (held) return;                 // nothing to trace against inside a building
     if (e.code === 'KeyM' && !e.ctrlKey && !e.metaKey){
+      /* the bar opens, and the search box is NOT handed the keyboard: the
+         same press was landing in it as the letter m. Click it to type. */
+      e.preventDefault();
       setBar(!barOpen);
-      if (barOpen) $('#mapq').focus();
     }
   });
 

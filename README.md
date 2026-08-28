@@ -210,7 +210,7 @@ It asks you to type the word.
 | `P` | play the route in the platformer |
 | `M` | map underlay to trace over |
 | rose diamond | the region &nbsp;·&nbsp; `Enter` by a town goes there, `Esc` leaves |
-| drag / `Shift`+drag | move / turn the frozen map (in Place) |
+| drag / `Shift`+drag, ◀ ▶ | move / turn the frozen map (in Place) &nbsp;·&nbsp; the arrows turn a degree, fifteen with ctrl |
 | `Shift`+`Tab` | next layer (in build mode) |
 | `F` / `F11` | fullscreen |
 | `R` | new round &nbsp;·&nbsp; replaces the picture while a locus is open |

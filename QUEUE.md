@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The map bar, simplified** — 2026-08-28. Fade and Scale rest at
+  their defaults and are hidden (the inputs stay for a saved setting);
+  Turn is two arrows, a degree a press and fifteen with ctrl; `M` opens
+  the bar without handing the search the keyboard, so the m no longer
+  lands in it. BUILD 190.
 - [x] **The underlay stopped clipping itself** — 2026-08-28. `#basemap`
   was a viewport-sized `overflow:hidden` box that the camera transform
   moved and scaled every frame, so the map showed only inside wherever

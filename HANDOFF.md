@@ -661,6 +661,14 @@ a word. Cycle keys are `character2`, `action2`, `object2`, … — the first
 cycle carries no number, so what was stored before there were cycles is the
 first cycle.
 
+**Fleur De Leah ships; every other face is fetched.** Since 2026-08-28
+the default face is an `@font-face` in index.html over
+`assets/fonts/FleurDeLeah-Regular.ttf` (SIL OFL 1.1, licence beside it),
+because a phone with no fonts service drew the 5×7 type in its place.
+`title.js` asks `document.fonts` first and only adds the Google link for
+a family the page does not carry. The licence question below still
+stands for any other family: do not add a font file without its licence.
+
 **A title in a font is still diamonds, and the font is fetched, not
 bundled.** `title.js` rasterises a Google Font and hands one diamond per
 cell of ink to the same `put` everything else uses, which is the only way a

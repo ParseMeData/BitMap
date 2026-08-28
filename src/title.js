@@ -125,6 +125,15 @@ const Title = (() => {
       e.cbs = [];
     };
     if (!document.fonts || !document.fonts.load){ settle(false); return; }
+    /* a face the page ships (an @font-face in index.html — Fleur De Leah,
+       under the OFL) is loaded from there and Google is not asked: the
+       same title on a phone with no fonts service as on the desk */
+    const local = [...document.fonts].some(f => f.family.replace(/^"|"$/g, '') === family);
+    if (local){
+      document.fonts.load('100px "' + family + '"').then(fs => settle(fs.length > 0), () => settle(false));
+      setTimeout(() => settle(false), 8000);
+      return;
+    }
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = 'https://fonts.googleapis.com/css2?family=' +

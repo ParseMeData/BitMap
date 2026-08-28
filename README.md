@@ -1740,10 +1740,11 @@ same size as this one — and plates are joined where **roads end**.
 no plate opens without one (`src/found.js`). Say yes at the end of a
 road and a panel asks *where does it lead?* — an address or a town, the
 default already in the field — and the plate is made only once the
-address is found. Then the map is shown live under a **frame** that is
-the plate's edge, with the boundary's oval inside it: **drag the map**
-under the frame, **Zoom − +** for more or less ground, until the town
-sits where you want it. **Print** bakes what is inside the frame into
+address is found. Then the map is shown live — the screen at fit-all *is* the plate,
+and the frame itself is not drawn (it looked odd; `SHOW_FRAME` in
+`src/found.js` brings it back): **drag the map** under the screen,
+**Zoom − +** for more or less ground, until the town sits where you
+want it. **Print** bakes what is inside the frame into
 the plate's picture — toned so the map's background is the plate's own
 black and a road is a grey line on it — and a **confirm** follows:
 *Generate*, or *Back to the frame*. Nothing is drawn until you say.
@@ -1786,8 +1787,12 @@ address with the first palace's marker standing on it; the palace can be
 dragged anywhere within the boundary afterwards like any marker. Before
 the picture is baked the camera frames the whole plate, so the frozen
 map covers it edge to edge, and afterwards it comes back to the working
-zoom on the door. The town's name rests in the plate's top-right corner
-now rather than across the middle of what was drawn. Every point
+zoom on the door. The town's name rests in the plate's top-right corner,
+four tiles down — under the strip of meters on a phone — set in **Fleur
+De Leah**, which ships with the page under the OFL
+(`assets/fonts/`) so a phone with no fonts service draws the same face;
+a patch of ground under the name is taken right out (a demolish with
+`out` at one), so the title stands on the plate's own colour. Every point
 goes through `Basemap.worldOf`, which reads the picture as it is placed.
 Three Overpass instances are tried in turn, twice each: the main one
 answers the web version in a second and a `file://` page not at all

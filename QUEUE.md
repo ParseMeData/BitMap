@@ -26,6 +26,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Frame hidden, the fancy face shipped, a patch behind the name** —
+  2026-08-28. `SHOW_FRAME=false` in found.js; Fleur De Leah as an
+  `@font-face` over `assets/fonts/` (OFL), `title.js` loads a shipped
+  face without asking Google; the title four tiles down (under the
+  phone's strip); founding lays a demolish behind the title with `out`
+  1 (`make` now honours `fall/out/scatter/jitter`). Verified on phone
+  emulation: face true with no Google link for it, title on the plate's
+  colour. BUILD 204.
 - [x] **Every edge in the fade** — 2026-08-28. `Survey.boundary()`:
   centre 0.55 W, 1.35 W × 1.1 H, core .55 — top/bottom ~80 % through the
   fade, left ~60 %, right ~25 %; the frame's oval reads it; `home()` is

@@ -7,6 +7,11 @@
 <meta name="theme-color" content="#1B1B21">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/icon.png">
+<!-- the town's face, shipped: Fleur De Leah under the SIL Open Font License
+     (assets/fonts/OFL-FleurDeLeah.txt), so the title is the same on a phone
+     with no Google Fonts as on the desk. A family named in the tune panel
+     that is not this one is still fetched from Google Fonts by src/title.js. -->
+<style>@font-face{font-family:"Fleur De Leah";src:url("assets/fonts/FleurDeLeah-Regular.ttf") format("truetype");font-display:swap}</style>
 <title>Loci Bitmap V8.1</title>
 <!-- a Chromium app-mode window takes its window and taskbar icon from the
      page favicon, so without this the window wears the browser's own -->
@@ -1006,7 +1011,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 203, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 204, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

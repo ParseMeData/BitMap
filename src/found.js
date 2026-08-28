@@ -28,6 +28,7 @@ const Found = (() => {
   const DEFAULT = '929 Myrtleford-Yackandandah Road, Barwidgee VIC 3737';
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   let el = null, frame = null, pending = null, busy = false, state = null, q = '', drag = null, raf = 0;
+  const SHOW_FRAME = false;
 
   /* ── the panel, one face per state ──────────────────────────────────── */
   function panel(){
@@ -100,7 +101,10 @@ const Found = (() => {
   }
   function tick(){
     raf = requestAnimationFrame(tick);
-    if (state !== 'framing' || !G.terr){ frameEl().hidden = true; return; }
+    /* the frame is not drawn while the map is being placed (Eden,
+       2026-08-28: it looked odd) — the screen at fit-all is the plate, and
+       the dialog says what to do; the code stays for a frame that is */
+    if (!SHOW_FRAME || state !== 'framing' || !G.terr){ frameEl().hidden = true; return; }
     /* the whole plate in view, always: the camera is held out at fit-all
        while the frame is up, and the plate then sits centred */
     G.camT[2] = G.fitAll;
@@ -214,6 +218,21 @@ const Found = (() => {
           }
         } catch (e){ note('no house — ' + (e.message || e)); }
       }
+      /* a patch of demolished ground behind the town's name, so the title
+         stands on the plate's own colour rather than on the grass */
+      try {
+        const parts0 = q.split(',').map(x => x.trim()).filter(Boolean);
+        const town0 = (parts0[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || parts0[0].slice(0, 28);
+        if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town0);
+        const tt = Palace.titleAt && Palace.titleAt();
+        if (tt && tt.w && tt.h){
+          /* no fall and out at one: the ground under the name is taken
+             right out, to the plate's own colour, with a scattered edge */
+          Build.add({kind: 'demolish', type: 'ellipse', x: tt.x, y: tt.y, w: tt.w * 1.35, h: tt.h * 2.4,
+                     fall: 0, out: 1, scatter: 0.5, jitter: 0.35, exact: true});
+          Build.commit();
+        }
+      } catch (e){ note('no mat — ' + (e.message || e)); }
       const parts = q.split(',').map(x => x.trim()).filter(Boolean);
       const name = parts[0].slice(0, 28);
       const town = (parts[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || name;

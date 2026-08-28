@@ -600,7 +600,9 @@ const Palace = (() => {
        what was drawn before. Still a map label, still draggable; the
        hand-placed offset is measured from this corner now. */
     const tw = (face ? w : Type.width(name, px, treat)), th = (face ? h : Type.height(px));
-    const cx = (G.sheetW || G.W) - tw / 2 - t * 1.5, cy = th / 2 + t * 1.5;
+    /* four tiles down from the top, which is under the strip of meters on
+       a phone (it stands top right there) */
+    const cx = (G.sheetW || G.W) - tw / 2 - t * 1.5, cy = th / 2 + t * 4;
     return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};
@@ -983,7 +985,7 @@ const Palace = (() => {
     wireTitle();
   }
 
-  return {init, show, close, sync, overlay, build, rename, named, refit,
+  return {init, show, close, sync, overlay, build, rename, named, refit, titleAt: () => titleAt(),
           cycleTreatment, cycleBorder, setTreatment, setBorder, setFont, resetTitle,
           setBright, setJitter, setTune, storeHeading: storeStyle,
           /* what a control that drives the cycle needs to draw itself: the

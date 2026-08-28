@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Sparks are the PAO material** — 2026-08-28. `hq.stock.sparks`
+  (start 6, cap 100), `COST.card = 1 spark` paid on the first word or
+  picture of a card (bag.js input handler and `attach`); `arrive()` banks
+  a collected spark; the meter is the stock's, not the round's. Verified:
+  6 → 5 on the first word, free after, refused at 0, +1 on collect. BUILD 180.
 - [x] **The strip: sparks, grains, blocks, bottom-left** — 2026-08-28.
   Round and Steps gone from the HUD; Sparks has a meter (`#hsparksbar`,
   got/total, empty while off); the three rows stack in the bottom-left

@@ -1905,9 +1905,16 @@ snapshot carries both.
 ### The drill, and the stock
 
 The HUD strip — three meters stacked in the bottom-left corner under the
-hub: **sparks** (how much of the round is in, in gold), **grains** in
-bone and **blocks** in flare (`src/stock.js`, `hq.stock`, a hundred of
-each at most). Grains build roads — a road on the town, a link on the
+hub: **sparks** in gold, **grains** in bone and **blocks** in flare
+(`src/stock.js`, `hq.stock`, a hundred of each at most).
+
+Sparks are the PAO system's own material. Every card of the bag — a
+number's person, its action, its object; a letter's three — costs **one
+spark** the first time it is given a word or a picture: a spark lets a
+character in, and an action and an object are each a spark of their own.
+Changing a card that is already filled is free. They are earned by the
+round: turn *Sparks* on in the tune panel and every one the walker
+collects is banked. A profile starts with six — two cards' worth. Grains build roads — a road on the town, a link on the
 region; blocks build places — a marker, a house, a building, a district
 of blocks or housing. Placing one costs its price (`COST` in stock.js:
 a road 5 grains, a link 3, a marker 5 blocks, a house or building 3, a

@@ -506,7 +506,13 @@ const Bag = (() => {
       w.placeholder = slot === 'character' ? 'who' : slot === 'action' ? 'does what' : 'to what';
       w.value = word(k);
       w.addEventListener('click', e => e.stopPropagation());
-      w.addEventListener('input', () => { setWord(k, w.value); tag.textContent = tagText(); });
+      /* the first word on an empty card is the card being opened, and a
+         card costs a spark (src/stock.js); short of one the field empties
+         and the note says so */
+      w.addEventListener('input', () => {
+        if (!filled(k) && w.value.trim() && typeof Stock !== 'undefined' && !Stock.pay('card')){ w.value = ''; return; }
+        setWord(k, w.value); tag.textContent = tagText();
+      });
       /* the count in the head follows the word once it is done, not on
          every keystroke, or the field would jump under you */
       w.addEventListener('change', () => { if (system) render(); });
@@ -781,6 +787,7 @@ const Bag = (() => {
   const tuneOf = k => { const h = hand(k); return h && h.tune ? h.tune : {}; };
 
   function attach(k, file){
+    if (!filled(k) && typeof Stock !== 'undefined' && !Stock.pay('card')) return Promise.resolve(false);
     return addToHand(k, file).then(ok => {
       if (ok) pics.delete(k);                    // a new picture, read afresh
       if (ok && system) render();

@@ -1,6 +1,13 @@
 'use strict';
 /* ── the stock: grains and blocks ───────────────────────────────────────
-   Two materials, two bars on the HUD strip beside the sparks.
+   Three materials, three bars stacked in the corner of the HUD.
+
+   SPARKS are the PAO system's own material. Every card of the bag — a
+   number's person, its action, its object; a letter's three — costs one
+   spark the first time it is given a word or a picture, so a spark is a
+   character allowed in, and an action and an object are each a spark of
+   their own. They are earned by the round: turn Sparks on in the tune
+   panel and every one the walker collects goes into the stock.
 
    GRAINS build roads — a road on the town, a link on the region. They
    are earned by drilling the memory systems: the drill chip on the bag
@@ -21,8 +28,9 @@
 const Stock = (() => {
   const KEY = 'hq.stock';
   const CAP = 100;
-  const START = {grains: 20, blocks: 10};
+  const START = {sparks: 6, grains: 20, blocks: 10};
   const COST = {
+    card:      {sparks: 1},
     road:      {grains: 5},
     link:      {grains: 3},
     marker:    {blocks: 5},
@@ -31,7 +39,8 @@ const Stock = (() => {
     buildings: {blocks: 4},
     houses:    {blocks: 4}
   };
-  const SAY = {grains: 'grains — drill a system for more (the bag)',
+  const SAY = {sparks: 'sparks — turn the round on (T, Sparks) and collect them',
+               grains: 'grains — drill a system for more (the bag)',
                blocks: 'blocks — run a route in the platformer for more'};
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
@@ -40,15 +49,17 @@ const Stock = (() => {
   function load(){
     const s = Store.json(KEY, null);
     if (!s || typeof s !== 'object') return Object.assign({}, START);
-    return {grains: clamp(s.grains), blocks: clamp(s.blocks)};
+    return {sparks: s.sparks === undefined ? START.sparks : clamp(s.sparks),
+            grains: clamp(s.grains), blocks: clamp(s.blocks)};
   }
   function save(){ Store.save(KEY, S, 'the stock'); ui(); }
 
   /* the bars. Width is the level over the cap; the number beside it is
      the level itself. */
   function ui(){
-    for (const k of ['grains', 'blocks']){
-      const bar = document.getElementById('h' + k), v = document.getElementById('h' + k + 'v');
+    for (const k of ['sparks', 'grains', 'blocks']){
+      const bar = document.getElementById('h' + k + (k === 'sparks' ? 'bar' : '')),
+            v = document.getElementById('h' + k + (k === 'sparks' ? '' : 'v'));
       if (bar) bar.style.width = (S[k] / CAP * 100).toFixed(0) + '%';
       if (v) v.textContent = String(S[k]);
     }

@@ -410,6 +410,7 @@ function arrive(){
   const w = toWorld(G.x, G.y);
   G.sparks.splice(i, 1);
   G.got++;
+  if (typeof Stock !== 'undefined') Stock.earn('sparks', 1);   // banked: a card's worth
   G.rings.push({x: w[0], y: w[1], t: 0});
   hud(true);
   if (G.got >= G.total){
@@ -608,10 +609,9 @@ $('#pause').addEventListener('pointerdown', e => { e.preventDefault(); togglePau
 let lastMsg = null;
 function hud(force){
   if (force){
-    $('#hsparks').textContent = SPARKS ? G.got + '/' + G.total : '\u2014';
-    /* the meter: how much of the round is in, nothing while sparks are off */
-    const bar = $('#hsparksbar');
-    if (bar) bar.style.width = SPARKS && G.total ? (G.got / G.total * 100).toFixed(0) + '%' : '0%';
+    /* the sparks meter is the stock's (src/stock.js): what the round has
+       banked, not how far this round has got */
+    if (typeof Stock !== 'undefined') Stock.ui();
   }
   if (G.msg !== lastMsg){ lastMsg = G.msg; $('#msg').textContent = G.msg; }
 }

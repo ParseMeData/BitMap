@@ -48,7 +48,13 @@ you how many rooms the walker can actually reach.
     ~/.cache/memory-quest-le-wall       the wallpaper's own profile, made the first
                                      time `./wallpaper.sh start` runs
     ~/Projects/halftone-platformer   upstream for platformer.html; still its own project
-    origin                           https://github.com/ParseMeData/memory-quest-le.git
+    origin                           https://github.com/ParseMeData/BitMap.git —
+                                     the `work` branch pushes to `main` there, and
+                                     GitHub Pages serves `main` at
+                                     https://parsemedata.github.io/BitMap/ (the web
+                                     version; see README *On the web*). Made
+                                     2026-08-28; the older memory-quest-le remote
+                                     is not configured on this box.
 
 **The moment the desktop plate runs there are two towns, not one.**
 `wallpaper.sh` launches on that second profile and opens no debugging port —

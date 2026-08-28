@@ -55,18 +55,22 @@ html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone)
 #tune::-webkit-scrollbar-thumb,#palette::-webkit-scrollbar-thumb,
 #route::-webkit-scrollbar-thumb,#porder::-webkit-scrollbar-thumb,
 #pjson::-webkit-scrollbar-thumb,.kgl::-webkit-scrollbar-thumb{background:var(--thumb)}
-#hud{position:fixed;left:16px;top:14px;padding:10px 14px;display:flex;gap:18px;
-  font-size:10px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
-#hud b{color:var(--dim);font-weight:400;margin-right:6px}
-#hud span{font-variant-numeric:tabular-nums}
+/* the strip: three meters stacked in the bottom-left corner, under the
+   hub — sparks, grains, blocks — each a label, a bar and its number.
+   Eden asked for it there, and for round and steps to go (2026-08-28). */
+#hud{position:fixed;left:16px;bottom:10px;padding:6px 12px;display:flex;flex-direction:column;gap:3px;
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
+#hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums}
+#hud b{color:var(--dim);font-weight:400;width:54px}
+#hud>span>span{min-width:24px;text-align:right}
 #hsparks{color:var(--gold)}
+#hsparksbar{background:var(--gold)}
 /* the stock: two bar levels, grains in gold and blocks in bone (src/stock.js) */
-#hud .bar{display:inline-block;width:44px;height:5px;margin-right:7px;vertical-align:middle;
+#hud .bar{display:inline-block;width:64px;height:5px;margin:0 8px 0 4px;
   border:1px solid rgba(237,234,227,.22)}
 #hud .bar i{display:block;height:100%;width:0;transition:width .25s}
-#hgrains{background:var(--gold)}
-#hblocks{background:var(--bone)}
-#hgrainsv{color:var(--gold)}
+#hgrains{background:var(--bone)}
+#hblocks{background:var(--flare)}
 /* the quiz a distraction puts: the drill's panel, over the plate (src/distract.js) */
 #quiz{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:400px;
   padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px}
@@ -701,9 +705,7 @@ body.arming,body.arming #gl{cursor:copy}
 </div>
 
 <div id="hud" class="glass">
-  <span><b>Sparks</b><span id="hsparks">0/0</span></span>
-  <span><b>Round</b><span id="hround">1</span></span>
-  <span><b>Steps</b><span id="hsteps">0</span></span>
+  <span><b>Sparks</b><i class="bar"><i id="hsparksbar"></i></i><span id="hsparks">&mdash;</span></span>
   <span><b>Grains</b><i class="bar"><i id="hgrains"></i></i><span id="hgrainsv">0</span></span>
   <span><b>Blocks</b><i class="bar"><i id="hblocks"></i></i><span id="hblocksv">0</span></span>
 </div>
@@ -844,7 +846,7 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 178, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 179, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',

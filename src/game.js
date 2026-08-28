@@ -609,8 +609,9 @@ let lastMsg = null;
 function hud(force){
   if (force){
     $('#hsparks').textContent = SPARKS ? G.got + '/' + G.total : '\u2014';
-    $('#hround').textContent = String(G.round);
-    $('#hsteps').textContent = String(G.steps);
+    /* the meter: how much of the round is in, nothing while sparks are off */
+    const bar = $('#hsparksbar');
+    if (bar) bar.style.width = SPARKS && G.total ? (G.got / G.total * 100).toFixed(0) + '%' : '0%';
   }
   if (G.msg !== lastMsg){ lastMsg = G.msg; $('#msg').textContent = G.msg; }
 }

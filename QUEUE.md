@@ -24,6 +24,10 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The strip: sparks, grains, blocks, bottom-left** — 2026-08-28.
+  Round and Steps gone from the HUD; Sparks has a meter (`#hsparksbar`,
+  got/total, empty while off); the three rows stack in the bottom-left
+  corner under the hub, label · bar · number. Gold / bone / flare. BUILD 179.
 - [x] **Distractions** — 2026-08-27. `src/distract.js` (`hq.distract`):
   settle on a reachable road tile of the current town plate on a ~90 s
   clock (≥6 tiles off, ≤3 a plate, not while a page or build is up), cut

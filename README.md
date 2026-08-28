@@ -1904,8 +1904,9 @@ snapshot carries both.
 
 ### The drill, and the stock
 
-The HUD strip carries two bar levels beside the sparks: **grains** in
-gold and **blocks** in bone (`src/stock.js`, `hq.stock`, a hundred of
+The HUD strip — three meters stacked in the bottom-left corner under the
+hub: **sparks** (how much of the round is in, in gold), **grains** in
+bone and **blocks** in flare (`src/stock.js`, `hq.stock`, a hundred of
 each at most). Grains build roads — a road on the town, a link on the
 region; blocks build places — a marker, a house, a building, a district
 of blocks or housing. Placing one costs its price (`COST` in stock.js:

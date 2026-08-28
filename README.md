@@ -1745,8 +1745,11 @@ anchor on the region — and the **first palace** is planted at the
 address, named for it, free, so every plate begins as one memory palace
 standing where its address is with the town round it to trace. *Stay*
 (or Esc) leaves the road ending where it was. A home plate with nothing
-on it asks the same at boot, and names the town; there *Later* puts it
-off, because a town may be about to be imported instead.
+on it is founded **unasked** at boot on the default address (`DEFAULT`
+in `src/found.js` — for now 929 Myrtleford-Yackandandah Road,
+Barwidgee), the notes saying how it is going; only if that fails does
+it ask, with the address in the field. A road end's panel opens with
+the default in the field too.
 
 **The ground is surveyed.** Once the map is frozen at the address, the
 survey (`src/survey.js`) asks OpenStreetMap — Overpass, keyless, from

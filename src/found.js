@@ -16,6 +16,9 @@
    because the plate does not exist until the address does.            */
 
 const Found = (() => {
+  /* the address a home plate with nothing on it is founded on, unasked
+     (Eden, 2026-08-28: "use this address as the default for now") */
+  const DEFAULT = '929 Myrtleford-Yackandandah Road, Barwidgee VIC 3737';
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
   let el = null, pending = null, busy = false;
 
@@ -50,7 +53,7 @@ const Found = (() => {
     p.querySelector('#foundwhy').textContent = why || '';
     p.querySelector('#foundno').hidden = !!pending ? false : false;
     p.querySelector('#foundno').textContent = pending ? 'Stay' : 'Later';
-    p.querySelector('#foundq').value = '';
+    p.querySelector('#foundq').value = DEFAULT;
     p.hidden = false;
     document.body.classList.add('founding');
     setTimeout(() => p.querySelector('#foundq').focus(), 50);
@@ -69,12 +72,14 @@ const Found = (() => {
      Look the address up; if it is somewhere, open the plate (a road end)
      or stay (home); freeze the map there; anchor the plate; plant the
      palace. Each step says what it is doing in the note line. */
-  async function go(){
+  async function go(address){
     if (busy) return;
-    const q = el.querySelector('#foundq').value.trim();
-    if (!q){ el.querySelector('#foundnote').textContent = 'type an address first'; return; }
+    const quiet = typeof address === 'string';        // founded unasked: no dialog to write into
+    if (!quiet) panel();
+    const q = quiet ? address.trim() : el.querySelector('#foundq').value.trim();
+    if (!q){ if (!quiet) el.querySelector('#foundnote').textContent = 'type an address first'; return; }
     busy = true;
-    const say = t => { el.querySelector('#foundnote').textContent = t; };
+    const say = t => { if (quiet) note(t); else el.querySelector('#foundnote').textContent = t; };
     try {
       say('looking for ' + q + '…');
       if (pending){
@@ -109,11 +114,13 @@ const Found = (() => {
       if (mk && typeof Atlas.rename === 'function' && Atlas.current() !== 'home') Atlas.rename(town);
       if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town);
       Basemap.setBar(false);
-      el.hidden = true;
+      if (el) el.hidden = true;
       document.body.classList.remove('founding');
       note(name + ' founded — the palace at the address is the first');
     } catch (e){
       say(String(e.message || e));
+      /* founded unasked and it failed: ask, with the address in the field */
+      if (quiet){ busy = false; ask(null, 'the default address could not be founded — ' + (e.message || e)); return; }
     }
     busy = false;
   }
@@ -124,9 +131,11 @@ const Found = (() => {
     if (G.markers.length || G.shapes.length) return false;
     const [lat, lon] = Basemap.at();
     if (lat || lon) return false;
-    ask(null, 'this plate has no place yet — the address is where the first palace stands');
+    /* unasked: the default address, and the notes say how it is going */
+    note('founding on ' + DEFAULT + '…');
+    go(DEFAULT);
     return true;
   }
 
-  return {ask, later, check, open, go};
+  return {ask, later, check, open, go, DEFAULT};
 })();

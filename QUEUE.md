@@ -24,6 +24,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The default address** — 2026-08-28. `Found.DEFAULT` = 929
+  Myrtleford-Yackandandah Road, Barwidgee VIC 3737; an empty home is
+  founded on it unasked at boot (`go(address)` quiet, notes as toasts),
+  the dialog only on failure; a road end's field is prefilled with it.
+  Verified: boot → 25 shapes, palace and Barwidgee, no dialog. BUILD 196.
 - [x] **The ground is surveyed** — 2026-08-28. `src/survey.js`: Overpass
   (three instances, two passes, GET) for highways, water, beaches,
   waterways in the plate's bbox (`Basemap.geoOf` of the corners); the

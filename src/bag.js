@@ -226,7 +226,7 @@ const Bag = (() => {
       const q = qs[at];
       const a = el.querySelector('#drilla').value.trim().toLowerCase(), w = q.w.toLowerCase();
       const ok = !!a && (a === w || (a.length >= 3 && w.indexOf(a) >= 0));
-      if (ok){ right++; if (typeof Stock !== 'undefined') Stock.earn('grains', 1); note('\u2713 ' + q.w + ' \u00b7 a grain'); }
+      if (ok){ right++; if (typeof Stock !== 'undefined') Stock.reward('drill'); note('\u2713 ' + q.w); }
       else note('\u2717 it was ' + q.w);
       at++;
       if (at >= qs.length){ close(); note('drill done \u00b7 ' + right + ' of ' + qs.length + ' \u00b7 ' + right + ' grain' + (right === 1 ? '' : 's')); }

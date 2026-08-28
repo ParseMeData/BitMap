@@ -778,6 +778,7 @@ function frame(now){
   Interior.prompt();
   if (typeof Region !== 'undefined') Region.prompt();
   if (typeof Distract !== 'undefined') Distract.prompt();
+  if (typeof Quest !== 'undefined') Quest.line();
   Basemap.sync();
 
   R.begin(w, h, t);
@@ -879,6 +880,8 @@ function boot(img){
   Hud.onTowns = openTowns;
   /* the focus column: one acronym from the journal, stood up on the plate */
   if (typeof Focus !== 'undefined') Focus.init();
+  /* the quest: the picked item's palace, and the line that says where */
+  if (typeof Quest !== 'undefined') Quest.init();
   applyPlate();
   spawn(); scatterSparks();
   VW = canvas.width; VH = canvas.height;

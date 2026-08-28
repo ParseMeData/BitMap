@@ -349,6 +349,9 @@ stale.
     src/distract.js      the distractions: what settles on a road and eats
                          it, the quiz that clears one, and the gate on a
                          jump across a plate that has one
+    src/quest.js         the quest: the acronym is the region, a letter a
+                         plate, an item a palace; the picked item's palace
+                         is the target, and walking in completes it
     src/country.js       Australia, decoded: one plane of SA3 ids and the
                          three levels above it derived at load; loaded on
                          the first open of the towns map, never at boot
@@ -1978,6 +1981,36 @@ was **added**, how many times it has been **run through**, and the
 **last run**. `run` counts a run and deals the cards back into the bag to
 be read; `delete` asks twice. `Esc` is back to the bag. Missions live
 under `hq.missions`, so a snapshot carries them.
+
+## The quest
+
+The core of the game (`src/quest.js`). The journal's **focused acronym
+is the region** — Skills › Music › RAITS — and the region plate's banner
+says so. Each **letter** of it is a **plate**: press `B` and under *Letter* in the palette say which letter the plate you are on
+is (S is Myrtleford South, A is the town centre); on the region every
+plate that is a letter wears its letter's tone, the same tone the focus
+column gives that letter, with the letter set on the diamond. Each
+**item** under a letter is a **palace** on that letter's plate: select a
+marker in build mode and the *Item* select beside its name lists the
+plate's letter's items (every letter's, on a plate that is no letter
+yet); the banner inside then reads `A · Arpeggios`, and the prompt at
+the door says it too.
+
+The **mission** is to get from palace to palace. Pick an item in the
+focus column and its palace is the target: a line at the top says where
+— `S · Modes → Myrtleford South · Hall · 1 plate away` — the target's
+town wears a gold ring on the region and its marker one on the plate,
+and every plate on the road between breeds distractions twice as fast.
+Walk in through that door and the quest is done: the reward goes into
+the stock and the pick is put down. An item with no palace yet says so
+in the line. Nothing about the quest is stored of its own — the target
+is the pick, the bindings are the plate's `letter` and the marker's
+`item`.
+
+**Rewards** (`Stock.REWARD`, generic amounts for now): a distraction
+cleared by its quiz, 2 grains; a right answer in a drill, 1 grain; a
+route walked in the platformer, a block a picture; the quest's palace
+entered, 5 blocks and a spark.
 
 ## Distractions
 

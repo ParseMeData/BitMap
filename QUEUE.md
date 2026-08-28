@@ -24,6 +24,22 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Plates are letters, palaces are items** — 2026-08-28.
+  `Atlas.setLetter` / `areas[id].letter`, `Markers.setItem` / `m.item`,
+  Letter and Item selects in the palette (`Quest.wire/sync*`), the region
+  drawn in letter tones with the letter on the diamond, banners and door
+  prompts carry `A · Arpeggios`. BUILD 182.
+- [x] **The quest** — 2026-08-28. `src/quest.js`: target from the pick,
+  `#quest` line with plates-away, gold rings on the region town and the
+  marker, distractions ×2 on the way (`Quest.onWay`), `Interior.enter`
+  → `Quest.arrive` rewards and puts the pick down. Verified on the rig:
+  RAITS focused, home = A, palace = A · Arpeggios, quest done +5 blocks
+  +1 spark; S · Modes on a second plate reads "1 plate away", onWay true.
+- [x] **Rewards** — 2026-08-28. `Stock.REWARD` and `Stock.reward(name)`:
+  puzzle 2 grains, drill 1 grain, run 1 block/picture, quest 5 blocks +
+  1 spark; distract.js, bag.js and quest.js pay through it.
+- [x] **The route is the plate's** — 2026-08-28. `Loci.route()` reads
+  `Atlas.mkey(Atlas.current())`, not `hq.markers`.
 - [x] **A page that installs** — 2026-08-28. `manifest.json`, viewport /
   theme-color / apple-touch-icon in the head, `sw.js` (precache 41 files,
   network-first, `ignoreSearch`, old caches dropped), registered over

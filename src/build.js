@@ -1658,6 +1658,8 @@ const Build = (() => {
       '<div id="kmarkers" class="fitonly"></div>' +
       '<input id="kmname" class="fitonly" type="text" spellcheck="false" ' +
       'placeholder="name this place" hidden>' +
+      /* which item of the plate's letter this palace is (src/quest.js) */
+      '<select id="kmitem" class="fitonly" hidden></select>' +
       /* History belongs to neither edit layer, because a mistake made while
          the plan was being moved is undone from wherever you happen to be
          standing when you notice it. */
@@ -1681,6 +1683,9 @@ const Build = (() => {
          looked at. */
       '<div id="khtune"></div>' +
       '<div class="knote" id="khnote"></div>' +
+      /* which letter of the focused acronym this plate is (src/quest.js) */
+      '<div class="plabel" id="kletterlab" hidden>Letter</div>' +
+      '<select id="kletter" hidden></select>' +
       '<div class="kfoot one"><button class="btn" id="kclear">Clear all</button></div>' +
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
@@ -1831,6 +1836,7 @@ const Build = (() => {
       tn.onkeydown = e => { e.stopPropagation(); if (e.code === 'Enter') tn.blur(); };
     }
     Markers.ui();
+    if (typeof Quest !== 'undefined') Quest.wire();
     syncUI();
   }
   /* the palette belongs to whichever registry is mounted, so it is thrown
@@ -2356,6 +2362,7 @@ const Build = (() => {
       nm.hidden = !mkSel;
       if (mkSel && document.activeElement !== nm) nm.value = mkSel.name || '';
     }
+    if (typeof Quest !== 'undefined'){ Quest.syncItem(mkSel); Quest.syncLetter(); }
     const st = $('#kstate');
     if (st){
       const mk = mkSel;

@@ -77,7 +77,9 @@ const Distract = (() => {
   function step(dt){
     const id = here(); if (!id || !G.terr || !G.reach || busy() || quiz) return;
     if (list(id).length >= MAX) return;
-    clock -= dt;
+    /* on the way to the quest's palace they come twice as fast: the journey
+       is the game (src/quest.js) */
+    clock -= dt * (typeof Quest !== 'undefined' && Quest.onWay(id) ? 2 : 1);
     if (clock > 0) return;
     clock = EVERY * (0.7 + Math.random() * 0.6);
     const t = G.terr, cand = [];
@@ -227,7 +229,12 @@ const Distract = (() => {
     if (!quiz || !quiz.q) return;
     const a = el.querySelector('#quiza').value.trim().toLowerCase(), w = quiz.q.a.toLowerCase();
     const ok = !!a && (a === w || (a.length >= 3 && w.indexOf(a) >= 0));
-    if (ok){ note('✓ ' + quiz.q.a + ' · the road is repaired'); clear(quiz.id, quiz.d); close(); return; }
+    if (ok){
+      note('✓ ' + quiz.q.a + ' · the road is repaired');
+      clear(quiz.id, quiz.d); close();
+      if (typeof Stock !== 'undefined' && Stock.reward) Stock.reward('puzzle');
+      return;
+    }
     note('✗ it was ' + quiz.q.a + ' · it asks another');
     ask();
   }

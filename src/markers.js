@@ -112,6 +112,9 @@ const Markers = (() => {
     return m;
   }
   function rename(m, s){ m.name = String(s || '').slice(0, 40); save(); }
+  /* which item of the plate's letter this palace is (src/quest.js):
+     {id: letter id, item: index}, or nothing */
+  function setItem(m, it){ if (it && it.id) m.item = {id: String(it.id), item: it.item | 0}; else delete m.item; save(); }
 
   /* ── order ──────────────────────────────────────────────────────────────
      A memory palace *is* its order: the loci have to be walked in the same
@@ -193,6 +196,9 @@ const Markers = (() => {
       if (k.n) m = number(a, m, k.n, k.x + r * 0.95, k.y - r * 0.95, r * 0.62, c);
       if (k === sel)
         m = put(a, m, k.x, k.y, 1, 0.37, 0.64, 0.9, r * 1.5, 1, 0, 0, 1);
+      /* the quest's target wears gold: this is the door you are going to */
+      if (typeof Quest !== 'undefined' && Quest.isTarget(k.uid))
+        m = put(a, m, k.x, k.y, 0.95, 0.76, 0.31, 0.7 + 0.3 * Math.sin(performance.now() / 300), r * 1.9, 1, 0, 0, 1);
     }
     return m;
   }
@@ -250,7 +256,7 @@ const Markers = (() => {
     try {
       Store.set(KEY, JSON.stringify(G.markers.map(m =>
         ({uid: m.uid, name: m.name || '', n: m.n || 0, gi: m.gi, x: m.x, y: m.y,
-          size: m.size, tint: m.tint}))));
+          size: m.size, tint: m.tint, item: m.item || null}))));
       if (typeof hqStoreOK === 'function') hqStoreOK('the markers');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the markers', e); }
   }
@@ -288,7 +294,7 @@ const Markers = (() => {
     ui();
   }
 
-  return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, nearest, mount,
+  return {init, ui, draw, place, hit, moveTo, remove, cycleTint, rename, setItem, nearest, mount,
           ordered, reorder, renumber, text, textWidth,
           armed: () => armed >= 0,
           disarm: () => { armed = -1; document.body.classList.remove('arming'); syncChips(); },

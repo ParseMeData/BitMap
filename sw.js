@@ -10,7 +10,7 @@
    VERSION is bumped by hand with BUILD when the list below changes — a
    worker that does not change is a worker the browser does not replace.
    Registered by index.html only over http(s); a file:// page cannot.  */
-const VERSION = 'mq-181';
+const VERSION = 'mq-182';
 const FILES = [
   './', './index.html', './platformer.html', './manifest.json', './assets/icon.png',
   './src/store.js', './src/stock.js', './assets/map.js', './src/render.js', './src/lattice.js',
@@ -19,7 +19,7 @@ const FILES = [
   './src/index.js', './src/palace.js', './src/doors.js', './src/interior.js', './src/trace.js',
   './src/basemap.js', './src/hud.js', './src/atlas.js', './src/region.js', './src/distract.js',
   './src/country.js', './src/towns.js', './src/bag.js', './src/missions.js', './src/journal.js',
-  './src/focus.js', './src/compass-art.js', './src/compass.js', './src/game.js',
+  './src/focus.js', './src/quest.js', './src/compass-art.js', './src/compass.js', './src/game.js',
   './src/snapshot.js', './assets/australia.js'
 ];
 self.addEventListener('install', e => {

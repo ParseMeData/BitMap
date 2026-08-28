@@ -260,6 +260,14 @@ body.ordering #palette{display:none}
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
 #inside b{color:var(--flare);font-weight:400}
 #inside em{color:var(--dim);font-style:normal}
+/* the quest line: top centre, above the interior's banner (src/quest.js) */
+#quest{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:6;
+  padding:7px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
+#quest b{color:var(--gold);font-weight:400}
+body.wall #quest,body.locus #quest,body.towns #quest,body.bag #quest,body.journal #quest{display:none}
+#kmitem,#kletter{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em;margin-top:4px}
 /* the region's banner is the interior's, word for word in the stylesheet */
 #region{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
   padding:8px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
@@ -723,6 +731,7 @@ body.arming,body.arming #gl{cursor:copy}
 </div>
 
 <div id="inside" class="glass" hidden></div>
+<div id="quest" class="glass" hidden></div>
 <div id="region" class="glass" hidden><b>The region</b><span>north is up</span><em>Esc leaves</em></div>
 <div id="enterhint" class="glass" hidden></div>
 <div id="locus" class="glass" hidden></div>
@@ -850,13 +859,13 @@ addEventListener('unhandledrejection', e => hqReport(
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 181, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 182, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

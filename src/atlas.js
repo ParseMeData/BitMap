@@ -267,10 +267,19 @@ const Atlas = (() => {
     if (typeof Hud !== 'undefined') Hud.onTowns = toggleMap;
   }
 
+  /* a plate may be one letter of the focused acronym (src/quest.js);
+     the id is the journal's letter id, kept even when that acronym is
+     not the one in focus */
+  function setLetter(id, lid){
+    const a = A.areas[id || A.current]; if (!a) return false;
+    if (lid) a.letter = String(lid); else delete a.letter;
+    save(); return true;
+  }
   return {init, go, add, end, openMap, closeMap, toggleMap,
           current: () => A.current, areas: () => A.areas,
           name: () => A.areas[A.current].name,
           rename: v => { A.areas[A.current].name = v; save(); },
+          setLetter, letterOf: id => (A.areas[id || A.current] || {}).letter || null,
           geo, setGeo, seed, layout: place,
           skey, mkey};
 })();

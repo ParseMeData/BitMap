@@ -57,6 +57,7 @@ const Interior = (() => {
     Build.commit(); Markers.commit();
     stack.push({
       uid: mk.uid, name: label(mk), scope: Kinds.scope(),
+      tag: typeof Quest !== 'undefined' ? Quest.tag(mk) : '',
       skey: Build.key(), mkey: Markers.key(), blank: BLANK,
       x: G.x, y: G.y, cam: G.cam.slice(), camT: G.camT.slice(),
       sparks: G.sparks, got: G.got, total: G.total, round: G.round,
@@ -79,6 +80,8 @@ const Interior = (() => {
        sent for. A palace you have already built stays as you left it. */
     if (typeof Palace !== 'undefined' && !G.shapes.length) Palace.show();
     else if (typeof Palace !== 'undefined') Palace.close();
+    /* walking in through the quest's door is the quest done (src/quest.js) */
+    if (typeof Quest !== 'undefined') Quest.arrive(mk);
     return true;
   }
 
@@ -121,7 +124,7 @@ const Interior = (() => {
     const n = document.createElement('span');
     n.textContent = stack[stack.length - 1].name;
     const e = document.createElement('em');
-    e.textContent = 'Esc leaves';
+    e.textContent = (stack[stack.length - 1].tag ? stack[stack.length - 1].tag + ' · ' : '') + 'Esc leaves';
     el.append(b, n, e);
     shown = null;
   }
@@ -145,9 +148,10 @@ const Interior = (() => {
        where you are standing. Out on the town a marker is a door into a
        room. Inside one it is a locus, and what it holds is the picture of
        whatever stands there — or the chance to say. */
+    const tg = !stack.length && typeof Quest !== 'undefined' ? Quest.tag(mk) : '';
     n.textContent = stack.length
       ? (loaded(mk) ? 'look at ' : 'add a picture to ') + locus(mk)
-      : (has(mk.uid) ? 'go inside ' : 'plan out ') + label(mk);
+      : (has(mk.uid) ? 'go inside ' : 'plan out ') + label(mk) + (tg ? ' · ' + tg : '');
     el.append(e, n);
   }
 

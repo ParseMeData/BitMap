@@ -287,7 +287,10 @@ const Loci = (() => {
 
   /* the route as data: rooms, their loci, and which of those have a picture */
   function route(){
-    const towns = byN(read('hq.markers'));
+    /* the plate you are on, not always home: inside a palace the mounted
+       markers are the loci, so the plate's key is asked of the atlas */
+    const mkey = typeof Atlas !== 'undefined' && Atlas.mkey ? Atlas.mkey(Atlas.current()) : 'hq.markers';
+    const towns = byN(read(mkey));
     return towns.map(t => ({
       uid: t.uid, name: (t.name || '').trim(), gi: t.gi, n: t.n || 0,
       room: read(RKEY(t.uid)).length > 0,

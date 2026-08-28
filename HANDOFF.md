@@ -171,6 +171,10 @@ Storage, all under `hq.`:
                          the platformer writes this key raw, having no Store
     hq.distract          {plates: {<id>: [{x, y, seed}]}}: where the
                          distractions sit, walk tiles per plate (src/distract.js)
+    hq.atlas … letter    a plate's `letter` is a journal letter id — which
+                         letter of the focused acronym it is (src/quest.js)
+    hq.markers… item     a marker's `item` is {id: letter id, item: index} —
+                         which of that letter's items its palace is
     hq.journal           {frame, notes}: the journal's tabs → sub-tabs →
                          acronyms, every letter with an id, and notes by
                          that id → {word, note, items}. A pre-v7.8 flat
@@ -415,6 +419,16 @@ stores each file under its bare path and matches with `ignoreSearch`,
 so the buster keeps doing its job against the browser's own cache while
 the worker's cache still answers offline. Bump `VERSION` in `sw.js` when
 the file list changes — an unchanged worker is never re-installed.
+
+**The quest stores nothing of its own.** The target is `hq.journal.pick`;
+the region is the focused row; a plate's letter and a marker's item are
+journal letter ids, minted once by `journal.js` and never reused, so a
+binding survives the acronym being renamed, reordered or taken out of
+focus — it is simply not shown until that acronym stands up again.
+Nothing in `quest.js` writes to storage; `Atlas.setLetter` and
+`Markers.setItem` are the two writers, and `Quest.arrive` puts the pick
+down through `Journal.setPick`. Keep it that way: a second copy of "which
+palace is which item" is the kind of copy that goes stale.
 
 **A distraction is stamped, not drawn into the grid.** `Distract.stamp`
 runs at the end of `restampTerrain`, after the shapes, and takes its

@@ -39,6 +39,13 @@ const Stock = (() => {
     buildings: {blocks: 4},
     houses:    {blocks: 4}
   };
+  /* what the game pays, generic amounts for now (Eden, 2026-08-28) */
+  const REWARD = {
+    puzzle: {grains: 2},               // a distraction cleared by its quiz
+    drill:  {grains: 1},               // one right answer in a drill
+    run:    {blocks: 1},               // a picture of a route walked (platformer.html)
+    quest:  {blocks: 5, sparks: 1}     // the quest's palace entered
+  };
   const SAY = {sparks: 'sparks — turn the round on (T, Sparks) and collect them',
                grains: 'grains — drill a system for more (the bag)',
                blocks: 'blocks — run a route in the platformer for more'};
@@ -83,6 +90,14 @@ const Stock = (() => {
     save();
     return true;
   }
+  /* pay a reward by name; says what came in */
+  function reward(name){
+    const r = REWARD[name]; if (!r) return false;
+    const said = [];
+    for (const m in r){ earn(m, r[m]); said.push(r[m] + ' ' + m); }
+    note('+ ' + said.join(', '));
+    return true;
+  }
   function earn(what, n){
     if (!(what in S)) return S;
     S[what] = clamp(S[what] + (n | 0));
@@ -98,6 +113,6 @@ const Stock = (() => {
     addEventListener('focus', () => { S = load(); ui(); });
   }
 
-  return {init, pay, earn, afford, cost, ui,
-          get: () => Object.assign({}, S), CAP, COST};
+  return {init, pay, earn, reward, afford, cost, ui,
+          get: () => Object.assign({}, S), CAP, COST, REWARD};
 })();

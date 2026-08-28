@@ -35,6 +35,7 @@ const Region = (() => {
   const SPAN = 0.6;                    // degrees of longitude across the plate, by default
   const STEP = 0.0125;                 // one atlas step, as src/atlas.js has it
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
+  const GROUND = [0.031, 0.031, 0.043];
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   let frame = null;                    // where we came from, while we are here
@@ -119,10 +120,19 @@ const Region = (() => {
     for (const sp of spots()){
       if (m > cap - 8 - sp.town.plates.length * 2) break;
       const c = sp.town.here ? FLARE : sp.anchored ? BONE : DIM;
+      const Q = typeof Quest !== 'undefined' ? Quest : null;
       for (let i = 0; i < sp.town.plates.length; i++){
-        const x = sp.x0 + i * sp.pitch;
-        m = put(a, m, x, sp.y, c[0], c[1], c[2], 0.3, r * 2.0, 0, 0, 0, 2);
-        m = put(a, m, x, sp.y, c[0], c[1], c[2], sp.anchored ? 1 : 0.7, r, 0, 0, 0, 1);
+        const x = sp.x0 + i * sp.pitch, pid = sp.town.plates[i];
+        /* a plate that is a letter of the region wears its letter's tone,
+           and the letter itself, in the plate's own ground colour */
+        const L = Q ? Q.letter(pid) : null;
+        const cc = L ? L.tone : c;
+        m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], 0.3, r * 2.0, 0, 0, 0, 2);
+        m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], sp.anchored ? 1 : 0.7, r, 0, 0, 0, 1);
+        if (L) m = Markers.text(a, m, L.ch, x - r * 0.28, sp.y, r * 0.55, GROUND, 1, cap);
+        if (sp.town.here && L) m = put(a, m, x, sp.y, FLARE[0], FLARE[1], FLARE[2], 0.9, r * 1.4, 1, 0, 0, 1);
+        if (Q && Q.targetPlate() === pid)
+          m = put(a, m, x, sp.y, 0.95, 0.76, 0.31, 0.7 + 0.3 * Math.sin(performance.now() / 300), r * 1.9, 1, 0, 0, 1);
       }
       const name = String(sp.town.name || '').toUpperCase();
       if (name) m = Markers.text(a, m, name, sp.x - Markers.textWidth(name, r * 0.5) / 2,
@@ -263,6 +273,10 @@ const Region = (() => {
     if (!el) return;
     el.hidden = !frame;
     shown = null;
+    /* the region is the focused acronym: Skills · Music · RAITS */
+    const f = typeof Journal !== 'undefined' && Journal.focused ? Journal.focused() : null;
+    const s = el.querySelector('span');
+    if (s) s.textContent = f ? f.tab + ' · ' + f.sub + ' · ' + f.letters.join('') + ' · north is up' : 'north is up';
   }
   function init(){ banner(); }
 

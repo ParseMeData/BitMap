@@ -172,8 +172,14 @@ const Survey = (() => {
           out.push({kind, type: 'line', pts: thin(run, cell * 3), width: cell * (kind === 'river' ? 3 : 1.5), exact: true});
       }
     }
-    /* the ground, and the rim */
-    out.unshift({kind: 'grass', type: 'rect', x: G.W / 2, y: G.H / 2, w: G.W, h: G.H, exact: true, variant: 'mixed'});
+    /* the ground, and the rim. The ground is four rects, not one: a shape
+       is generated in one pass of at most MAX_CELLS (26 000) cells and the
+       plate is 55 000, so a plate-sized field came out half drawn. Each
+       quarter is under the ceiling; no feather, so they meet edge to edge. */
+    const seed = (Math.random() * 1e6) | 0;
+    for (let qy = 0; qy < 2; qy++) for (let qx = 0; qx < 2; qx++)
+      out.unshift({kind: 'grass', type: 'rect', x: G.W * (qx + 0.5) / 2, y: G.H * (qy + 0.5) / 2,
+                   w: G.W / 2 + cell, h: G.H / 2 + cell, exact: true, variant: 'mixed', feather: 0, seed});
     const sw = G.sheetW || G.W;
     out.push({kind: 'boundary', type: 'ellipse', x: sw / 2, y: G.H / 2, w: sw * 1.02, h: G.H * 1.02, exact: true});
     return {out, turned, roads: keep.length, water: out.filter(s => s.kind === 'water').length};

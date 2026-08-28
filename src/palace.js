@@ -595,7 +595,12 @@ const Palace = (() => {
               x: (box[0] + box[2]) / 2,
               y: box[1] - Math.max(h * 1.15, h / 2 + t * (0.55 + NAME_TILES + 0.4))};
     if (!face) px = Math.min(px, Type.pitchFor(name, wide, treat));
-    const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+    /* The town's name rests in the plate's top-right corner, out of the
+       way of the town (Eden, 2026-08-28) — it lay across the middle of
+       what was drawn before. Still a map label, still draggable; the
+       hand-placed offset is measured from this corner now. */
+    const tw = (face ? w : Type.width(name, px, treat)), th = (face ? h : Type.height(px));
+    const cx = (G.sheetW || G.W) - tw / 2 - t * 1.5, cy = th / 2 + t * 1.5;
     return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};

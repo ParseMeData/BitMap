@@ -89,6 +89,12 @@ const Found = (() => {
       }
       const ok = await Basemap.find(q);
       if (!ok) throw new Error('nowhere by that name');
+      /* the whole plate in view, centred, before the picture is baked: the
+         tiles are laid for the view, so this is what makes the frozen map
+         cover the plate edge to edge and the survey have all of it */
+      say('framing the plate…');
+      G.camT[0] = G.W / 2; G.camT[1] = G.H / 2; G.camT[2] = G.fitAll;
+      await new Promise(r => setTimeout(r, 1400));
       say('waiting for the map…');
       await Basemap.ready(20000);
       say('freezing the map…');
@@ -102,6 +108,19 @@ const Found = (() => {
       let at = null;
       try { const sv = await Survey.run(lat, lon, say); at = sv.at; }
       catch (e){ say('no survey — ' + (e.message || e)); await new Promise(r => setTimeout(r, 1200)); }
+      /* a house at the address — one of the sheet's, drawn by lot — with
+         the palace's marker standing on it */
+      if (at && typeof Glyphs !== 'undefined'){
+        try {
+          const kinds = Glyphs.of('houses') || [];
+          if (kinds.length){
+            const pick = kinds[(Math.random() * kinds.length) | 0];
+            Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
+            Build.commit();
+            if (typeof restampTerrain === 'function') restampTerrain();
+          }
+        } catch (e){ note('no house — ' + (e.message || e)); }
+      }
       /* the first palace, at the address, named for it, and free */
       const parts = q.split(',').map(x => x.trim()).filter(Boolean);
       const name = parts[0].slice(0, 28);
@@ -114,6 +133,9 @@ const Found = (() => {
       if (mk && typeof Atlas.rename === 'function' && Atlas.current() !== 'home') Atlas.rename(town);
       if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town);
       Basemap.setBar(false);
+      /* and back to the distance the town is worked at, on the door */
+      if (at){ G.camT[0] = at[0]; G.camT[1] = at[1]; }
+      G.camT[2] = typeof home === 'function' ? home() : G.fitW;
       if (el) el.hidden = true;
       document.body.classList.remove('founding');
       note(name + ' founded — the palace at the address is the first');

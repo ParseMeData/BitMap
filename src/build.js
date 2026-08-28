@@ -461,6 +461,15 @@ const Build = (() => {
     changed();
     return G.shapes.length;
   }
+  /* one more shape on what is there — the house the founding plants
+     (src/found.js). `lay` replaces the plate and wants plain records;
+     handing it the shapes already on the plate, caches and all, is what
+     hung the page once. */
+  function add(d){
+    const s = make(d);
+    if (s) changed(s);
+    return s;
+  }
   function make(d){
       const k = Kinds.by[d.kind];
       if (!k) return null;
@@ -484,7 +493,7 @@ const Build = (() => {
                  width: snapW(d.width || cellSize() * 2),
                  pts: d.pts ? d.pts.map(q => [sc(q[0]), sc(q[1])]) : [[0, 0]],
                  ctrl: null,
-                 feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
+                 feather: d.feather !== undefined ? d.feather : k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
                  grain: 1, scale: 1,
                  jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
@@ -495,6 +504,8 @@ const Build = (() => {
                  blob: Array.isArray(d.blob) ? d.blob.map(q => [q[0], q[1]]) : null,
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
       if (s.type === 'warp' && !s.blob) s.blob = blobFrom(s.w, s.h);
+      /* a print is born the size of its glyph, laid as it is placed */
+      if (k.glyphs) glyphSize(s, k);
       aimFall(s);
       G.shapes.push(s);
       return s;
@@ -2595,7 +2606,7 @@ const Build = (() => {
     document.body.classList.toggle('rooms', mode === 'rooms');
     syncUI();
   }
-  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, refill, setMode,
+  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

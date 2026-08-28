@@ -342,7 +342,7 @@ const Title = (() => {
      its rim and stops there hard, at 24 it starts falling away from the
      word's very centre. The rim itself is the word's box with a little
      clear, stretched so the ends of a long name are still under it. */
-  const GROUND = [0.031, 0.031, 0.043];        // #08080B
+  const GROUND = [0.106, 0.106, 0.129];        // #1B1B21
   const FEATHER_MAX = 24;
   function oval(cols, rows){
     const cx = (cols - 1) / 2, cy = (rows - 1) / 2;

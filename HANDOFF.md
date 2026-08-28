@@ -495,6 +495,14 @@ it again. The connected-roads walk keys nodes on six decimals of
 lat/lon, which is what OSM's shared nodes come back as under `out
 geom`; do not round coarser, or parallel roads a metre apart join.
 
+**A transparent clear is black.** `R.clearA` is 0 while the map shows so
+the page shows through the plate, and a WebGL canvas is composited
+premultiplied: a clear colour at alpha 0 is not "nothing", it is added
+onto the page. With the ground at #08080B the doubling was invisible; at
+#1B1B21 the plate came up #363642. `begin()` clears to (0,0,0,0) when
+the alpha is 0 and to the ground premultiplied otherwise. Do not put the
+ground colour back into the transparent clear.
+
 **Pin takes the canvas and nothing else.** Its pointer handlers run on
 the window in the capture phase and stop propagation, which is right for
 a drag over the plate and wrong for everything that is not the plate —

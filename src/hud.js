@@ -39,7 +39,7 @@ const Hud = (() => {
      position and what marks one is inversion. */
   const BONE = [0.93, 0.92, 0.89];
   const FLARE = [1, 0.373, 0.635];
-  const GROUND = [0.031, 0.031, 0.043];
+  const GROUND = [0.106, 0.106, 0.129];
   /* the journal's diamond: aqua, STYLE.md's one cool note, the same triple
      `build.js` spends on the route dots — asked for as blue, and aqua is
      the blue this palette has; an eleventh colour is not the answer */

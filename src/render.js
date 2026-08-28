@@ -255,7 +255,13 @@ class Renderer {
     gl.uniform2f(this.u.u_res, w, h);
     gl.uniform1f(this.u.u_time, time);
     gl.uniform1f(this.u.u_glow, this.glow === undefined ? 1 : this.glow);
-    gl.clearColor(0.031, 0.031, 0.043, this.clearA === undefined ? 1 : this.clearA);
+    /* --ground #1B1B21. A transparent clear must be black: the canvas is
+       composited premultiplied, and a colour cleared at alpha 0 is ADDED
+       to the page behind it — the plate showed twice its ground while the
+       map was up (found 2026-08-28, the day the ground stopped being near
+       enough black to hide it). */
+    const a = this.clearA === undefined ? 1 : this.clearA;
+    if (a > 0) gl.clearColor(0.106 * a, 0.106 * a, 0.129 * a, a); else gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 

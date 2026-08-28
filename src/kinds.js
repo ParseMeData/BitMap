@@ -386,7 +386,7 @@ const Kinds = (() => {
   const C = {
     /* the plate itself — index.html's --ground and render.js's clearColor,
        kept in step by hand; a cell painted this is a cell that is not there */
-    plate:   [0.031, 0.031, 0.043],
+    plate:   [0.106, 0.106, 0.129],
     road:    [1.00, 0.99, 0.97], kerb:    [0.52, 0.52, 0.56],
     paving:  [0.30, 0.30, 0.34],
     grass:   [0.29, 0.50, 0.26], grassHi: [0.50, 0.70, 0.36], grassDim: [0.20, 0.36, 0.21],

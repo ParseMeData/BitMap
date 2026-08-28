@@ -26,6 +26,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The ground is the map's, Turn before print, demolish under the
+  palace** — 2026-08-28. Sampled the map as shown, #1B1B21, and made it
+  `--ground` and every constant of it (render, kinds, hud, region, title,
+  boot fill, basemap tone); the transparent clear was doubling it
+  (premultiplied) and is black now. Turn ◀ ▶ in the frame face
+  (`Basemap.turnLive`, printed as `place.rot`, survey not squared when
+  turned by hand). A demolish ellipse under the house. Verified: live
+  10° → printed 10°, plate #1B1B21 with the map on and off. BUILD 201.
 - [x] **Frame, print, confirm — and the phone's buttons back** —
   2026-08-28. Pin's capture-phase pointerdown swallowed every press that
   was not a `<button>` (the touch layer is divs): it takes the canvas

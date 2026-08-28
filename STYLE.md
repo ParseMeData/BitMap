@@ -99,7 +99,10 @@ Ten tokens, declared once in `index.html`, and there is no eleventh.
 
 Six that speak:
 
-    --ground   #08080B    the plate, and the ground under every panel
+    --ground   #1B1B21    the plate, and the ground under every panel —
+                          since 2026-08-28 the map's own background as it
+                          shows, so the plate and the traced place are one
+                          ground (it was #08080B)
     --bone     #EDEAE3    primary text; and the ground of anything selected
     --dim      #5A5A66    labels, secondary text, everything not being said
     --flare    #FF5FA2    the pink — panel heads, slider thumbs, the walker, error

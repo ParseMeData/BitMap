@@ -837,7 +837,7 @@ function boot(img){
   c.width = G.W; c.height = G.H;
   const cx = c.getContext('2d', {willReadFrequently: true});
   cx.imageSmoothingEnabled = false;
-  cx.fillStyle = '#08080B'; cx.fillRect(0, 0, G.W, G.H);
+  cx.fillStyle = '#1B1B21'; cx.fillRect(0, 0, G.W, G.H);
   cx.drawImage(img, 0, 0);
   G.px = cx.getImageData(0, 0, G.W, G.H).data;
 

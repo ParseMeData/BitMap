@@ -144,13 +144,13 @@ const Survey = (() => {
   }
   const thin = (pts, min) => pts.filter((p, i) => i === 0 || i === pts.length - 1 || Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) >= min);
 
-  function shapes(els, la, lo){
+  function shapes(els, la, lo, doSquare){
     const cell = G.A.cell, out = [];
     const ways = els.filter(e => e.type === 'way' && e.geometry);
     const roads = ways.filter(w => w.tags && w.tags.highway);
     const {keep, seg} = connected(roads, la, lo);
     let turned = 0;
-    if (seg) turned = square(seg);
+    if (seg && doSquare) turned = square(seg);     // not when the map was turned by hand
     const W = pts => pts.map(n => Basemap.worldOf(n.lat, n.lon)).filter(Boolean);
     for (const w of keep){
       const wd = WIDTH[w.tags.highway] || 1.6;
@@ -196,14 +196,14 @@ const Survey = (() => {
   }
 
   /* ── run ─────────────────────────────────────────────────────────────── */
-  async function run(la, lo, say){
-    say = say || note;
+  async function run(la, lo, say, opt){
+    say = say || note; opt = opt || {};
     const bb = bbox();
     if (!bb) throw new Error('no map to survey — freeze one first');
     say('surveying the ground…');
     const els = await fetchAll(bb, say);
     const had = G.shapes.map(s => Object.assign({}, s, {exact: true}));   // the road-end stub, if any
-    const {out, turned, roads, water} = shapes(els, la, lo);
+    const {out, turned, roads, water} = shapes(els, la, lo, opt.square !== false);
     Build.lay(had.concat(out));
     Build.commit();
     if (typeof restampTerrain === 'function') restampTerrain();

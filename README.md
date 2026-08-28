@@ -1747,9 +1747,14 @@ sits where you want it. **Print** bakes what is inside the frame into
 the plate's picture — toned so the map's background is the plate's own
 black and a road is a grey line on it — and a **confirm** follows:
 *Generate*, or *Back to the frame*. Nothing is drawn until you say.
-Generate runs the survey (below), plants a house from the sheet beside
-the road on the address's side, and the first palace on it, named for
-the address, free. The picture is handed over unpinned. A home plate
+**Turn ◀ ▶** turns the live map five degrees a press before it is
+printed; a map turned by hand is printed as turned and the survey does
+not square it. Generate runs the survey (below), plants a house from
+the sheet beside the road on the address's side on a ring of
+**demolished ground** — so the palace stands clear of the terrain — and
+the first palace on it, named for the address, free. The plate's ground
+is the map's own background as it shows, `#1B1B21`, so the town and the
+traced place are one surface. The picture is handed over unpinned. A home plate
 with nothing on it goes straight to the frame on the default address
 (`DEFAULT` in `src/found.js` — for now 929 Myrtleford-Yackandandah Road,
 Barwidgee) and waits for Print; *Later* puts it off, because a town may

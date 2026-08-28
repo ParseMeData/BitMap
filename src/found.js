@@ -66,11 +66,16 @@ const Found = (() => {
     face('<div class="plabel">Frame the plate</div>' +
       '<div id="foundwhy">' + q + '</div>' +
       '<div class="erow"><button class="btn" id="foundzo">Zoom &minus;</button><button class="btn" id="foundzi">Zoom +</button></div>' +
+      '<div class="erow"><button class="btn" id="foundtl" title="turn left 5&deg;">&#9664; Turn</button><button class="btn" id="foundtr" title="turn right 5&deg;">Turn &#9654;</button></div>' +
       '<div class="erow"><button class="btn" id="foundprint">Print</button>' +
       '<button class="btn" id="foundno">' + (Atlas.current() === 'home' && !pendingMade ? 'Later' : 'Back') + '</button></div>' +
       '<div class="knote" id="foundnote">drag the map under the frame · the oval is the boundary · print when it sits right</div>');
     el.querySelector('#foundzo').onclick = () => Basemap.step(-1);
     el.querySelector('#foundzi').onclick = () => Basemap.step(1);
+    /* turned by hand, the map is printed as turned and the survey does
+       not square it to the door's road */
+    el.querySelector('#foundtl').onclick = () => { Basemap.turnLive(-5); turnedByHand = true; };
+    el.querySelector('#foundtr').onclick = () => { Basemap.turnLive(5); turnedByHand = true; };
     el.querySelector('#foundprint').onclick = print;
     el.querySelector('#foundno').onclick = () => { if (Atlas.current() === 'home' && !pendingMade) later(); else askFace(''); };
   }
@@ -129,9 +134,9 @@ const Found = (() => {
   }
 
   /* ── the steps ─────────────────────────────────────────────────────── */
-  let pendingMade = false;
+  let pendingMade = false, turnedByHand = false;
   function ask(what, why){
-    pending = what || null; pendingMade = false; q = '';
+    pending = what || null; pendingMade = false; turnedByHand = false; q = '';
     state = 'ask';
     askFace(why);
     return true;
@@ -186,7 +191,7 @@ const Found = (() => {
       const [lat, lon] = Basemap.at();
       if (lat || lon) Atlas.setGeo(Atlas.current(), lat, lon);
       let at = null;
-      try { const sv = await Survey.run(lat, lon, say); at = sv.at; }
+      try { const sv = await Survey.run(lat, lon, say, {square: !turnedByHand}); at = sv.at; }
       catch (e){ say('no survey — ' + (e.message || e)); await new Promise(r => setTimeout(r, 1200)); }
       /* the house, beside the road on the address's side, and the palace on it */
       let houseW = 0;
@@ -197,6 +202,9 @@ const Found = (() => {
             const pick = kinds[(Math.random() * kinds.length) | 0];
             const rows = Glyphs.rows(pick); houseW = rows && rows[0] ? rows[0].length * G.A.cell : 0;
             at = Survey.aside(at, houseW);
+            /* a ring of demolished ground under the house, so the palace
+               stands clear of the terrain and reads at a glance */
+            Build.add({kind: 'demolish', type: 'ellipse', x: at[0], y: at[1], w: houseW * 2.6, h: houseW * 2.6, exact: true});
             Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
             Build.commit();
             if (typeof restampTerrain === 'function') restampTerrain();
@@ -237,7 +245,7 @@ const Found = (() => {
     if (G.markers.length || G.shapes.length) return false;
     const [lat, lon] = Basemap.at();
     if (lat || lon) return false;
-    pending = null; pendingMade = false; q = DEFAULT; state = 'ask';
+    pending = null; pendingMade = false; turnedByHand = false; q = DEFAULT; state = 'ask';
     panel();
     find();
     return true;

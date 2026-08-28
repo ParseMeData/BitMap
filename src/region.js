@@ -35,7 +35,7 @@ const Region = (() => {
   const SPAN = 0.6;                    // degrees of longitude across the plate, by default
   const STEP = 0.0125;                 // one atlas step, as src/atlas.js has it
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
-  const GROUND = [0.031, 0.031, 0.043];
+  const GROUND = [0.106, 0.106, 0.129];
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   let frame = null;                    // where we came from, while we are here

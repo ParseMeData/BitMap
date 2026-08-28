@@ -68,6 +68,7 @@ const Basemap = (() => {
   let pic = null, picURL = '';
   let place = null;          // {x, y, s0, mult, rot, w, h} — world anchor is the centre
   let placing = false, drag = null;
+  let liveRot = 0;                          // radians the live tiles are turned before a print (src/found.js)
   /* a stored picture comes back out of storage asynchronously, and the frame
      loop is already calling sync() by then. Without this the tile path runs
      for those few frames and fetches a whole sheet that adopt() immediately
@@ -159,7 +160,12 @@ const Basemap = (() => {
        exactly in a float, and the whole sheet lands nowhere. */
     const ax = (C[0] - G.cam[0]) * Zc + hw + (origin[0] - m0[0]) * k;
     const ay = (C[1] - G.cam[1]) * Zc + hh + (origin[1] - m0[1]) * k;
-    layer.style.transform = 'translate(' + ax.toFixed(2) + 'px,' + ay.toFixed(2) +
+    /* turned, when it is, about the sheet's centre on screen — the point
+       the search landed on — so a turn does not swing the town away */
+    const cx = (C[0] - G.cam[0]) * Zc + hw, cy = (C[1] - G.cam[1]) * Zc + hh;
+    const turn = liveRot ? 'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px) rotate(' +
+                 (liveRot * 180 / Math.PI).toFixed(3) + 'deg) translate(' + (-cx).toFixed(2) + 'px,' + (-cy).toFixed(2) + 'px) ' : '';
+    layer.style.transform = turn + 'translate(' + ax.toFixed(2) + 'px,' + ay.toFixed(2) +
                             'px) scale(' + k.toFixed(6) + ')';
   }
 
@@ -172,9 +178,10 @@ const Basemap = (() => {
     const span = Math.pow(2, z);
     /* a tile of margin all round, so panning and zooming do not outrun the
        sheet and leave a bare edge while the next row is still loading */
-    const x0 = Math.floor(a[0] / TILE) - 1, x1 = Math.floor(b[0] / TILE) + 1;
-    const y0 = Math.max(0, Math.floor(a[1] / TILE) - 1);
-    const y1 = Math.min(span - 1, Math.floor(b[1] / TILE) + 1);
+    const mg = liveRot ? 2 : 1;                 // a turned view reaches past its own corners
+    const x0 = Math.floor(a[0] / TILE) - mg, x1 = Math.floor(b[0] / TILE) + mg;
+    const y0 = Math.max(0, Math.floor(a[1] / TILE) - mg);
+    const y1 = Math.min(span - 1, Math.floor(b[1] / TILE) + mg);
     const range = src + z + ':' + x0 + ',' + y0 + ',' + x1 + ',' + y1;
     if (range === lastRange) return;
     lastRange = range;
@@ -300,6 +307,12 @@ const Basemap = (() => {
   /* slide the live tiles by a world delta — a drag of the map under the
      frame before it is printed (src/found.js): the search point moves the
      other way by the same distance in mercator px */
+  /* turn the live tiles by degrees, before a print */
+  function turnLive(deg){
+    if (pic) return false;
+    liveRot += deg * Math.PI / 180;
+    sync(); return true;
+  }
   function nudge(dx, dy){
     if (pic || !(lat || lon)) return false;
     const m = merc(lat, lon, z);
@@ -379,12 +392,18 @@ const Basemap = (() => {
     /* the picture's centre in mercator px at this zoom: what lets a place
        on the ground be found on the plate after the picture is dragged,
        turned or scaled (worldOf, below) */
-    await adopt(url, {x: cx, y: cy, s0: scale / f, mult: 1, rot: 0,
+    /* the turn the live tiles had is the picture's turn, about the same
+       point — the sheet's centre — so what was printed is what was seen */
+    const C0 = C, pr = liveRot;
+    const cxr = C0[0] + (cx - C0[0]) * Math.cos(pr) - (cy - C0[1]) * Math.sin(pr);
+    const cyr = C0[1] + (cx - C0[0]) * Math.sin(pr) + (cy - C0[1]) * Math.cos(pr);
+    liveRot = 0;
+    await adopt(url, {x: cxr, y: cyr, s0: scale / f, mult: 1, rot: pr,
                       mc: [origin[0] + minL + sw / 2, origin[1] + minT + sh / 2], z, mpx: scale});
     note('frozen · ' + cv.width + '×' + cv.height + ' · drag to place');
   }
 
-  const GROUND = [8, 8, 11];
+  const GROUND = [27, 27, 33];                 // --ground #1B1B21: the map's own background, as it showed
   function tone(g, w, h){
     let d; try { d = g.getImageData(0, 0, w, h); } catch (e){ return; }
     const px = d.data, hist = new Uint32Array(256);
@@ -765,7 +784,8 @@ const Basemap = (() => {
   });
 
   return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
-          worldOf, geoOf, setRot, nudge, step, setPlacing, placed: () => (place ? Object.assign({}, place) : null),
+          worldOf, geoOf, setRot, nudge, step, setPlacing, turnLive, liveRot: () => liveRot,
+          placed: () => (place ? Object.assign({}, place) : null),
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,

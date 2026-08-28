@@ -593,7 +593,12 @@ function zoomBy(f){ G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5
    still holds the whole plate. What changes is only where you start and
    where you land — nobody has to zoom to be looking at the right thing. */
 const ZSTEP = 1.25;
-const home = () => clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5);
+/* Never closer out than fit-all, since 2026-08-28: at the working zoom
+   the plate's full height fills the screen, so the ground reaches the
+   bottom of it (Eden asked for exactly that). Four notches out from fitW
+   was already under that floor on this screen; on a narrower one it is
+   the notches that hold. */
+const home = () => Math.max(G.fitAll, clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5));
 function toggleFull(){
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(() => {});

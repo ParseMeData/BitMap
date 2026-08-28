@@ -181,7 +181,10 @@ const Survey = (() => {
       out.unshift({kind: 'grass', type: 'rect', x: G.W * (qx + 0.5) / 2, y: G.H * (qy + 0.5) / 2,
                    w: G.W / 2 + cell, h: G.H / 2 + cell, exact: true, variant: 'mixed', feather: 0, seed});
     const sw = G.sheetW || G.W;
-    out.push({kind: 'boundary', type: 'ellipse', x: sw / 2, y: G.H / 2, w: sw * 1.02, h: G.H * 1.02, exact: true});
+    /* twice the sheet, with a wide core: the ground then reaches the
+       plate's own edge before the rim takes it (Eden, 2026-08-28 — it
+       stopped at the hub before) */
+    out.push({kind: 'boundary', type: 'ellipse', x: sw / 2, y: G.H / 2, w: sw * 2, h: G.H * 2, core: 0.6, exact: true});
     return {out, turned, roads: keep.length, water: out.filter(s => s.kind === 'water').length};
   }
   function poly(pts, kind, cell){

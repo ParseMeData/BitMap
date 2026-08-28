@@ -498,6 +498,7 @@ const Build = (() => {
                  grain: 1, scale: 1,
                  jitter: k.jitter0 || 0, scatter: k.scatter0 || 0,
                  fall: k.fall0 || 0, out: k.out0 || 0, aim: null,
+                 core: d.core !== undefined ? d.core : (k.core0 !== undefined ? k.core0 : 0.35),
                  pad: k.pad0 || 0, padFade: k.padFade0 || 0, padBreak: k.padBreak0 || 0,
                  mask: false,
                  variant: d.variant || firstVariant(k), tone: d.tone || 'stone',

@@ -26,6 +26,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The ground fills the screen** — 2026-08-28. The survey's boundary
+  is twice the sheet with core .6 (`make` honours `d.core`), the frame's
+  oval matches, and `home()` is floored at `G.fitAll` so the plate's
+  height fills the screen at the working zoom. Measured: green from row
+  1 to 943 of 944. BUILD 202.
 - [x] **The ground is the map's, Turn before print, demolish under the
   palace** — 2026-08-28. Sampled the map as shown, #1B1B21, and made it
   `--ground` and every constant of it (render, kinds, hud, region, title,

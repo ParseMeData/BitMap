@@ -110,8 +110,11 @@ const Found = (() => {
     f.style.left = sx(0) + 'px'; f.style.top = sy(0) + 'px';
     f.style.width = (sx(G.W) - sx(0)) + 'px'; f.style.height = (sy(G.H) - sy(0)) + 'px';
     const sw = G.sheetW || G.W, i = f.firstChild;
-    i.style.left = '0'; i.style.top = '0'; i.style.width = (sx(sw * 1.02) - sx(0)) + 'px'; i.style.height = (sy(G.H * 1.02) - sy(0)) + 'px';
-    i.style.transform = 'translate(-1%,-1%)';
+    /* the boundary as the survey lays it: twice the sheet, centred on it,
+       so on screen it is the plate's own edge with the corners cut */
+    i.style.width = (sx(sw * 2) - sx(0)) + 'px'; i.style.height = (sy(G.H * 2) - sy(0)) + 'px';
+    i.style.left = (sx(sw / 2) - sx(0) - (sx(sw * 2) - sx(0)) / 2) + 'px'; i.style.top = (sy(G.H / 2) - sy(0) - (sy(G.H * 2) - sy(0)) / 2) + 'px';
+    i.style.transform = 'none';
   }
   /* drag the map under the frame */
   function wireDrag(){

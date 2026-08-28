@@ -1769,7 +1769,10 @@ nodes, each cut at the plate's edge into runs — so a road that leaves
 the plate ends where the next plate would begin), every **body of
 water** near (lakes, dams, reservoirs as water, beaches as sand, rivers
 and streams as river and creek lines), a field of **grass** under it
-all, and a **boundary** laid by default that fades the town at the rim.
+all, and a **boundary** laid by default — twice the sheet, with a wide
+core, so the ground reaches the plate's own edge before the rim takes
+it — and at the working zoom the plate's full height fills the screen,
+so the ground runs from the top of the screen to the bottom.
 Before the shapes go down the frozen picture is **turned** so the road
 at the address lies perfectly vertical or horizontal — whichever is
 nearer — and the compass turns with it, so the roads on the plate agree

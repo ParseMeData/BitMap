@@ -21,7 +21,7 @@
    nothing downstream wants more. */
 
 const Loci = (() => {
-  const DB = 'hq.loci', STORE = 'img', MAX = 1200;
+  const DB = typeof HQ_DB === 'function' ? HQ_DB('hq.loci') : 'hq.loci', STORE = 'img', MAX = 1200;
   /* ── one store, its tenants told apart by the row's name ──────────────
      A locus's picture is row `locus:<uid>`; a card's is `card:<sys>:<label>:
      <slot>`, and each picture in its hand `card:…:alt:<n>`. The keys the

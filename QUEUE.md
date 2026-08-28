@@ -24,6 +24,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Players** — 2026-08-28. `Users` inline in index.html (`users`
+  key: Eden slug '', Test User slug 'test', default 123, SHA-256 hash once
+  set), a door before `start()` loads the scripts, `sessionStorage.hq.user`
+  for the session; `Store` prefixes every key with the slug, `HQ_DB` names
+  the stores, snapshot.js and the platformer follow. Player · Sign out /
+  Password in the tune panel. Verified on a fresh profile: door, wrong pw
+  refused, Eden bare keys, Test User on `test:` keys and `test:hq.loci`,
+  password change holds. BUILD 185.
 - [x] **The first plate is free** — 2026-08-28. `Stock.cost` answers
   nothing for road, link, marker, house, landmark, buildings and houses
   while on home (not the region); cards and repairs still pay. README

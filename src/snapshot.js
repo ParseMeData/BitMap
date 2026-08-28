@@ -16,11 +16,10 @@ const Snap = (() => {
   const SKIP = {'hq.lastError': 1, 'hq.loads': 1};
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
-  const keys = () => {
-    const out = [];
-    for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k.indexOf('hq.') === 0) out.push(k); }
-    return out.sort();
-  };
+  /* the signed-in user's keys, bare, through the store — which is what
+     puts the user's prefix on and takes it off (src/store.js) */
+  const keys = () => Store.keys('hq.').sort();
+  const DBN = n => (typeof HQ_DB === 'function' ? HQ_DB(n) : n);
   const isBasemapKey = k => k === 'hq.basemap' || (k.indexOf('hq.basemap.') === 0 && k.indexOf('hq.basemap.img') !== 0);
 
   /* both stores, opened the way their owners open them: version 1, and
@@ -49,15 +48,15 @@ const Snap = (() => {
     const state = {};
     for (const k of keys()){
       if (SKIP[k]) continue;
-      let v = localStorage.getItem(k);
+      let v = Store.get(k);
       if (isBasemapKey(k) && v){
         try { const bm = JSON.parse(v); if (bm && typeof bm === 'object' && bm.gkey){ bm.gkey = ''; v = JSON.stringify(bm); } }
         catch (e){}
       }
       state[k] = v;
     }
-    const pics = await readAll('hq.basemap', 'pic');
-    const loci = await readAll('hq.loci', 'img');
+    const pics = await readAll(DBN('hq.basemap'), 'pic');
+    const loci = await readAll(DBN('hq.loci'), 'img');
     const out = {version: 3, localStorage: state, picture: pics.img || null, loci};
     const others = {}; let n = 0;
     for (const k in pics) if (k !== 'img'){ others[k] = pics[k]; n++; }
@@ -101,12 +100,12 @@ const Snap = (() => {
       if (!ok){ note('import cancelled'); return false; }
     }
     const saved = snap.localStorage;
-    for (const k of keys()) if (!SKIP[k] && !(k in saved)) localStorage.removeItem(k);
-    for (const k in saved){ if (saved[k] == null) localStorage.removeItem(k); else localStorage.setItem(k, saved[k]); }
+    for (const k of keys()) if (!SKIP[k] && !(k in saved)) Store.del(k);
+    for (const k in saved){ if (saved[k] == null) Store.del(k); else Store.set(k, saved[k]); }
     const pics = Object.assign({}, snap.pictures || {});
     if (snap.picture) pics.img = snap.picture;
-    await writeAll('hq.basemap', 'pic', pics);
-    await writeAll('hq.loci', 'img', snap.loci || {});
+    await writeAll(DBN('hq.basemap'), 'pic', pics);
+    await writeAll(DBN('hq.loci'), 'img', snap.loci || {});
     note('imported ' + say(want) + ' — reloading');
     setTimeout(() => location.reload(), 600);
     return true;

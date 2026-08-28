@@ -1573,6 +1573,25 @@ deferred is whether a **cell** collides or a **tile** does. This is the answer
 in practice: a plan is authored on tiles and the pictures bake down to cells,
 which is exactly the resolution that document guessed at.
 
+## Players
+
+The page opens on a **door**: who is playing, then their password. Two
+players to start — **Eden** and **Test User** — and the default password
+is `123`; press `T` and under *Player* is **Password** to set your own
+(kept as a hash) and **Sign out**, which is back to the door. A reload
+within the session does not ask again; the platformer window the game
+opens inherits the player.
+
+Every player has a town of their own. The player's slug goes in front of
+every `hq.` key (`test:hq.shapes`) and into the names of the two picture
+stores (`test:hq.loci`), through `src/store.js` and `HQ_DB`, so nothing
+one player builds is in another's storage. Eden's slug is empty: the
+first player's town is the bare keys it always was — nothing moved — and
+`tools/snapshot.py`, which reads the bare keys, reads Eden's town and
+only Eden's. The players themselves live in `users` (not an `hq.` key,
+so no snapshot carries them); Export/Import under *Town* move the
+signed-in player's town.
+
 ## On the web
 
 The page is a static site and installs as one. Serve the folder from any

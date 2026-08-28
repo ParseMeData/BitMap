@@ -2578,7 +2578,12 @@ let hideHint = function(){ clearTimeout(hintT); const h = $('#hint'); if (h) h.c
    Scenes advance on completion rather than on a timer, for the same reason:
    the run is a sequence you finish, not a deck that drifts. After the last
    one it hands you back to the builder. */
-const MQ_KEY = 'hq.deck';
+/* whose town: the builder signs a user in (index.html, Users) and a window
+   it opens inherits the session; the same prefix goes on the keys and the
+   store's name here, or the route read would be another player's */
+const HQ_USER = (function(){ try { return sessionStorage.getItem('hq.user') || ''; } catch (e){ return ''; } })();
+const HQ_DB = n => (HQ_USER ? HQ_USER + ':' + n : n);
+const MQ_KEY = HQ_DB('hq.deck');
 function mqOrder(){
   try {
     const raw = JSON.parse(localStorage.getItem(MQ_KEY) || 'null');
@@ -2590,7 +2595,7 @@ function mqFetch(uids, into){
   return new Promise(res => {
     let db;
     const fail = () => res(false);
-    const r = indexedDB.open('hq.loci', 1);
+    const r = indexedDB.open(HQ_DB('hq.loci'), 1);
     r.onupgradeneeded = () => { try { r.result.createObjectStore('img'); } catch (e){} };
     r.onerror = fail;
     r.onsuccess = () => {
@@ -2846,7 +2851,7 @@ function routeDone(){
        stock (src/stock.js reads it back over there through the storage
        event). Raw localStorage, because this page has no Store. */
     try {
-      const K = 'hq.stock', s = JSON.parse(localStorage.getItem(K) || '{}') || {};
+      const K = HQ_DB('hq.stock'), s = JSON.parse(localStorage.getItem(K) || '{}') || {};
       s.grains = Math.max(0, s.grains | 0);
       s.blocks = Math.min(100, Math.max(0, (s.blocks | 0) + NIMG));
       localStorage.setItem(K, JSON.stringify(s));

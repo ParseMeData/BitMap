@@ -125,6 +125,20 @@ body.mapping #hud{display:none}
   text-align:center;z-index:5;background:rgba(8,8,11,.86);letter-spacing:.28em;
   text-transform:uppercase;font-size:11px}
 #fatal{color:var(--flare);z-index:9;background:var(--ground)}
+/* the door */
+#login{position:fixed;inset:0;display:grid;place-content:center;gap:14px;text-align:center;
+  z-index:10;background:var(--ground);letter-spacing:.28em;text-transform:uppercase;font-size:11px}
+#login .ltitle{font-size:16px;letter-spacing:.5em;color:var(--bone)}
+#login .lask{color:var(--dim)}
+#login .lusers{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#login .lusers .chip{padding:10px 18px;min-width:120px}
+#login .lpw{display:flex;gap:6px;justify-content:center}
+#login .lpw input{background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 12px/1.4 var(--mono);padding:7px 10px;letter-spacing:.2em;text-align:center;outline:0;width:160px}
+#login .lpw input:focus{border-color:var(--flare)}
+#login .lpw .btn{padding:7px 14px}
+#login .lnote{color:var(--faint);font-size:9px}
+#login .lnote.bad{color:var(--flare)}
 /* the atlas: the edge prompt and the mind map, both panels, both centred */
 #edge,#atlas{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:7;
   padding:14px 16px;display:flex;flex-direction:column;gap:9px;max-width:80vw;max-height:80vh;overflow:auto}
@@ -739,7 +753,20 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="toast" hidden></div>
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
-<div id="boot">building the lattice…</div>
+<!-- the door: who is playing, and their password, before a single game
+     script loads — every module reads its storage the moment it loads, and
+     whose storage that is has to be settled first (see the Users script) -->
+<div id="login" hidden>
+  <div class="ltitle">Loci Bitmap</div>
+  <div class="lask" id="lask">who is playing</div>
+  <div class="lusers" id="lusers"></div>
+  <div class="lpw" id="lpw" hidden>
+    <input id="lpass" type="password" placeholder="password" autocomplete="current-password">
+    <button class="btn" id="lgo">enter</button>
+  </div>
+  <div class="lnote" id="lnote">the default password is 123</div>
+</div>
+<div id="boot" hidden>building the lattice…</div>
 <div id="fatal" hidden><span id="fatalhead"></span><span id="fatalmsg"></span><span id="fatalhint">if this is a stale build, hard-reload with ctrl+shift+R</span></div>
 
 <div id="pause" hidden>
@@ -854,13 +881,105 @@ addEventListener('unhandledrejection', e => hqReport(
   'unhandled promise: ' + ((e.reason && e.reason.message) || e.reason)));
 </script>
 <script>
+/* ── the users ────────────────────────────────────────────────────────────
+   A small database of who plays here, in `users` (not an hq. key, so no
+   snapshot carries it): a name, a slug and a password hash each. The slug
+   is what keeps one player's town out of another's — src/store.js puts it
+   in front of every hq. key (`test:hq.shapes`), and the two IndexedDB
+   stores take it in their names (`test:hq.loci`) through HQ_DB. Eden's
+   slug is empty: the first user's town is the bare keys it always was, and
+   tools/snapshot.py, which reads the bare keys, still reads Eden's town.
+   Nothing below this script runs until a user has come through the door;
+   a reload within the session does not ask again (sessionStorage), and a
+   window the game opens — the platformer — inherits it. */
+var HQ_USER = '', HQ_DB = function(n){ return HQ_USER ? HQ_USER + ':' + n : n; };
+var Users = (function(){
+  var KEY = 'users', SESSION = 'hq.user';
+  var DEFAULT = {list: [{name: 'Eden', slug: '', pw: null}, {name: 'Test User', slug: 'test', pw: null}], last: ''};
+  function load(){
+    try { var u = JSON.parse(localStorage.getItem(KEY) || 'null'); if (u && u.list && u.list.length) return u; } catch (e){}
+    return JSON.parse(JSON.stringify(DEFAULT));
+  }
+  function save(u){ try { localStorage.setItem(KEY, JSON.stringify(u)); } catch (e){} }
+  /* a hash, not the word; SHA-256 through crypto.subtle where the page is a
+     secure context (file://, https, localhost), a plain fold where it is not */
+  function hash(s){
+    s = 'loci:' + s;
+    if (window.crypto && crypto.subtle && window.isSecureContext)
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function(b){
+        return Array.from(new Uint8Array(b)).map(function(x){ return ('0' + x.toString(16)).slice(-2); }).join('');
+      });
+    var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return Promise.resolve('w' + h.toString(16));
+  }
+  function check(user, pw){
+    /* no hash yet is the default password, 123 */
+    if (!user.pw) return Promise.resolve(pw === '123');
+    return hash(pw).then(function(h){ return h === user.pw; });
+  }
+  function setPassword(slug, pw){
+    var u = load(), user = u.list.filter(function(x){ return x.slug === slug; })[0];
+    if (!user) return Promise.resolve(false);
+    return hash(pw).then(function(h){ user.pw = h; save(u); return true; });
+  }
+  function current(){ try { return sessionStorage.getItem(SESSION); } catch (e){ return null; } }
+  function signIn(slug){
+    try { sessionStorage.setItem(SESSION, slug); } catch (e){}
+    var u = load(); u.last = slug; save(u);
+  }
+  function signOut(){ try { sessionStorage.removeItem(SESSION); } catch (e){} location.reload(); }
+  function name(){ var s = HQ_USER, u = load(); var x = u.list.filter(function(y){ return y.slug === s; })[0]; return x ? x.name : s || 'Eden'; }
+  return {load, save, check, setPassword, current, signIn, signOut, name, hash};
+})();
+
 /* Load every source with a per-load cache buster. A browser that has cached an
    older build cannot serve it back to us: the URL is different every time.
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 184, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 185, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
+  /* ── the door, then the game ─────────────────────────────────────────── */
+  function door(){
+    var el = document.getElementById('login'), list = document.getElementById('lusers');
+    var pw = document.getElementById('lpw'), inp = document.getElementById('lpass'), note = document.getElementById('lnote');
+    var u = Users.load(), picked = null;
+    list.innerHTML = '';
+    u.list.forEach(function(x){
+      var c = document.createElement('div');
+      c.className = 'chip' + (x.slug === u.last ? ' sel' : ''); c.textContent = x.name;
+      c.onclick = function(){
+        picked = x;
+        Array.prototype.forEach.call(list.children, function(y){ y.classList.toggle('sel', y === c); });
+        document.getElementById('lask').textContent = x.name;
+        pw.hidden = false; inp.value = ''; inp.focus();
+        note.className = 'lnote'; note.textContent = x.pw ? 'password' : 'the default password is 123';
+      };
+      list.appendChild(c);
+    });
+    function go(){
+      if (!picked) return;
+      Users.check(picked, inp.value).then(function(ok){
+        if (!ok){ note.className = 'lnote bad'; note.textContent = 'that is not the password'; inp.select(); return; }
+        Users.signIn(picked.slug);
+        enter(picked.slug);
+      });
+    }
+    document.getElementById('lgo').onclick = go;
+    inp.onkeydown = function(e){ if (e.key === 'Enter') go(); else if (e.key === 'Escape'){ pw.hidden = true; picked = null; } };
+    el.hidden = false;
+  }
+  function enter(slug){
+    HQ_USER = slug || '';
+    document.getElementById('login').hidden = true;
+    document.getElementById('boot').hidden = false;
+    document.title = document.title.replace(/ · .*$/, '') + (HQ_USER ? ' · ' + Users.name() : '');
+    start();
+  }
+  var was = Users.current();
+  if (was !== null) enter(was); else door();
+
+  function start(){
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
@@ -912,6 +1031,7 @@ addEventListener('unhandledrejection', e => hqReport(
     document.getElementById('fatalhead').textContent = 'the lattice never finished building';
     document.getElementById('fatalmsg').textContent = said || last || 'No error was recorded.';
   }, 8000);
+  }   /* start() */
 })();
 </script>
 </body>

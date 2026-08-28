@@ -27,14 +27,23 @@ const Store = (() => {
   const VKEY = 'hq.version';
   const watchers = [];
 
+  /* ── whose keys ───────────────────────────────────────────────────────
+     Every key goes in and out through `mk`/`un`: the signed-in user's slug
+     in front (`test:hq.shapes`), or nothing for the first user, whose town
+     is the bare keys it always was. Modules never see the prefix — they
+     ask for `hq.shapes` and get their own. Set by index.html before this
+     file loads; never changes while the page is up. */
+  const U = (typeof HQ_USER === 'string' && HQ_USER) ? HQ_USER + ':' : '';
+  const mk = k => U + k, un = k => k.slice(U.length);
+
   /* ── raw ──────────────────────────────────────────────────────────── */
-  const get = k => { try { return localStorage.getItem(k); } catch (e){ return null; } };
+  const get = k => { try { return localStorage.getItem(mk(k)); } catch (e){ return null; } };
   function set(k, v){
-    localStorage.setItem(k, v);                 // throws on quota, on purpose
+    localStorage.setItem(mk(k), v);             // throws on quota, on purpose
     tell(k, v);
   }
   function del(k){
-    try { localStorage.removeItem(k); } catch (e){}
+    try { localStorage.removeItem(mk(k)); } catch (e){}
     tell(k, null);
   }
   /* set-or-remove, never throwing: an empty value takes the key out, so a
@@ -63,7 +72,10 @@ const Store = (() => {
     try {
       for (let i = 0; i < localStorage.length; i++){
         const k = localStorage.key(i);
-        if (!prefix || k.indexOf(prefix) === 0) out.push(k);
+        if (k.indexOf(U) !== 0) continue;                       // another user's
+        if (U === '' && /^[a-z0-9_-]+:hq\./.test(k)) continue;  // theirs, not the bare town's
+        const b = un(k);
+        if (!prefix || b.indexOf(prefix) === 0) out.push(b);
       }
     } catch (e){}
     return out;
@@ -109,11 +121,12 @@ const Store = (() => {
     for (let i = v; i < LADDER.length; i++){
       try { LADDER[i](); }
       catch (e){ if (typeof hqReport === 'function') hqReport('store: step ' + (i + 1) + ' failed — ' + e.message); return i; }
-      try { localStorage.setItem(VKEY, String(i + 1)); } catch (e){ return i; }
+      try { localStorage.setItem(mk(VKEY), String(i + 1)); } catch (e){ return i; }
     }
     return VERSION;
   }
   const climbed = climb();
 
-  return {VERSION, version: () => climbed, get, set, del, put, json, save, keys, has, watch};
+  return {VERSION, version: () => climbed, get, set, del, put, json, save, keys, has, watch,
+          user: () => (U ? U.slice(0, -1) : '')};
 })();

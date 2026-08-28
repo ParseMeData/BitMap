@@ -102,6 +102,26 @@ function buildPanel(){
   }
   body.appendChild(spk);
 
+  /* who is playing: sign out to the door, or set a password (index.html, Users) */
+  if (typeof Users !== 'undefined'){
+    const ul = document.createElement('div');
+    ul.className = 'plabel'; ul.textContent = 'Player · ' + Users.name();
+    body.appendChild(ul);
+    const ur = document.createElement('div');
+    ur.className = 'chips two';
+    for (const [name, fn] of [['Sign out', () => Users.signOut()],
+                              ['Password', () => {
+                                const pw = window.prompt('a new password for ' + Users.name());
+                                if (pw == null) return;
+                                Users.setPassword(HQ_USER, pw).then(ok => hqNote(ok ? 'the password is set' : 'could not set it', !ok));
+                              }]]){
+      const c = document.createElement('div');
+      c.className = 'chip'; c.textContent = name; c.onclick = fn;
+      ur.appendChild(c);
+    }
+    body.appendChild(ur);
+  }
+
   /* the town, out to a file and back: what tools/snapshot.py does from a
      terminal, for a page that has none beside it (src/snapshot.js) */
   if (typeof Snap !== 'undefined'){

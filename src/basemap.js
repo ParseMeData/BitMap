@@ -544,7 +544,7 @@ const Basemap = (() => {
      file:// page is an opaque origin, though, and Chrome may refuse it
      outright — so the same data URL goes to localStorage when it does, and
      the picture survives either way. */
-  const DBN = 'hq.basemap', STORE = 'pic';
+  const DBN = typeof HQ_DB === 'function' ? HQ_DB('hq.basemap') : 'hq.basemap', STORE = 'pic';
   function idb(){
     return new Promise((res, rej) => {
       let r;

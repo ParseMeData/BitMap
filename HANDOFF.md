@@ -137,7 +137,14 @@ buster — `Date.now()` in the same string is, on every load, so a stale script
 cannot be served back at all. `BUILD` is a stamp, published as
 `window.HQ_BUILD`, so a page driven over CDP can say which build it is.
 
-Storage, all under `hq.`:
+Storage, all under `hq.` — for the first player. Every other player's
+keys carry that player's slug in front (`test:hq.shapes`) and their two
+databases take it in their names (`test:hq.loci`); `src/store.js` puts it
+on and takes it off, and `HQ_DB` in index.html names the stores, so no
+module below the store knows there are players at all. `users` (bare,
+not `hq.`) is the players: name, slug, password hash. The tools read
+bare keys and so see Eden's town only — a throwaway for another player
+is a throwaway with `sessionStorage['hq.user']` set.
 
     hq.shapes            the town
     hq.markers           the town's markers
@@ -402,6 +409,13 @@ and may not: home takes the underlay's search point once (`Atlas.seed`), a
 plate opened from a road end steps its neighbour's anchor one cell of the
 country raster the way the road went, and `Atlas.setGeo` pins any plate by
 hand. Nothing ever guesses an anchor for a plate that has none.
+
+**The door comes before the first script.** Every module reads its keys
+the moment its file runs — the bag's stack, the stock, the atlas — so
+whose keys they are has to be settled before `start()` appends a single
+`<script>`. That is why the login is inline in index.html and why
+`HQ_USER` is a plain global set there: `Store` reads it once at load and
+never again. Switching player is a reload, never a remount.
 
 **Two writers of one file shape.** `tools/snapshot.py` and
 `src/snapshot.js` both write and read the version-3 snapshot — every

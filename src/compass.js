@@ -190,11 +190,20 @@ const Compass = (() => {
      chrome canvas above is kept only for the tune panel's reading. */
   const ON_PLATE = true;
   const AT = 6;                      // tiles in from the plate's top-left corner, both ways
-  const SIZE_ON = 0.58;              // cells per cell of the rose's picture — half of the first cut (Eden, 2026-08-28)
+  const COLS_ON = 26;                // the rose read at this many cells across, and drawn one plate cell per cell
+  let facePlate = null;
+  function readPlate(){
+    if (typeof Title === 'undefined' || !Title.picture) return;
+    Title.picture(url('rose'), COLS_ON, {ink: 0, edge: 0, con: 1, bri: tuned('bri'), scatter: tuned('scatter'), szv: tuned('szv')})
+      .then(f => { facePlate = f; }).catch(() => {});
+  }
   function overlay(a, m, cap){
-    if (!ON_PLATE || !faces.rose || !G.terr || !G.A) return m;
+    if (!ON_PLATE || !G.terr || !G.A) return m;
+    if (!facePlate){ if (!overlay.asked){ overlay.asked = true; readPlate(); } return m; }
     if (typeof Interior !== 'undefined' && Interior.inside()) return m;
-    const f = faces.rose, ts = G.terr.tsz, px = G.A.cell * SIZE_ON;
+    /* one plate cell per cell of the picture: the rose is the same
+       resolution as the map it stands on */
+    const f = facePlate, ts = G.terr.tsz, px = G.A.cell;
     const cx = ts * AT, cy = ts * AT;
     const x0 = cx - f.cols * px / 2, y0 = cy - f.rows * px / 2;
     if (typeof Title !== 'undefined' && Title.mat)

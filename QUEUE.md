@@ -26,6 +26,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Hub and compass at the plate's grain** — 2026-08-28. hud.js builds
+  its dot tables from the plate's cell on screen (`pitchOf`, cached per
+  pitch) — HUB 24, RIM 34, SPAN 42 — and on a desk stands the cluster
+  beside the strip, 86 px up; `Hud.anchor()` and focus.js reading it. The
+  rose is read at 26 cells and drawn one plate cell per cell. BUILD 209.
 - [x] **Compass half, name bigger** — 2026-08-28. `SIZE_ON` .58, `AT` 6; Size default 16. BUILD 208.
 - [x] **The compass on the plate, the name bigger again** — 2026-08-28.
   Size default 12; `Compass.overlay` emits the rose's cells into the

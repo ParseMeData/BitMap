@@ -50,15 +50,15 @@ const Hud = (() => {
      inner edge clears the hub's points by a few pixels: the rings sit just
      outside the diamond rather than touching it. */
   const EDGE = 16;           // the inset every chrome panel sits at (index.html)
-  const LIFT = 132;          // the hub, above the bottom edge of the canvas
-  const HUB = 16;            // half-size of the middle diamond
+  const LIFT = 104;          // the hub, above the bottom edge of the canvas (nearer it since 2026-08-28)
+  const LIFT_DESK = 86;      // and on a desk, beside the strip, nearer still
+  const HUB = 24;            // half-size of the middle diamond (larger since 2026-08-28)
   /* hub centre → button centre. Tight, because the hub is not there when the
      four are: they gather where it stood, near enough to read as one thing
      and far enough apart (12px, point to point) that a press cannot land on
      two. */
-  const SPAN = 30;
-  const RIM = 24;            // button half-extent, centre to point
-  const DOT = 2.3;           // half-size of one dot on the rim, at full size
+  const SPAN = 42;
+  const RIM = 34;            // button half-extent, centre to point
   const TXT = 2.0;           // letterform pitch for ABC and 123
   const ART = 3.0;           // letterform pitch for the house and the rose
   const GRAB = RIM + 4;      // what counts as a press: the diamond, and a hair more
@@ -86,35 +86,39 @@ const Hud = (() => {
      button, `THIN` at its edge. Computed once — the tables never change,
      only their scale does — and a fixed-length table is a worst case you
      can count. */
-  const PITCH = 3.2;                       // grid step, the old fill's ring spacing
-  const K = Math.floor(RIM / PITCH);       // steps from centre to edge
+  /* The pitch is the plate's: its cell as it shows on screen at the
+     current zoom (since 2026-08-28 — it was a fixed 3.2 px, which read as
+     a finer material than the map beside it). The tables are rebuilt when
+     the pitch moves and kept while it holds. */
   const THIN = 0.42;                       // dot size at the edge, as a fraction of the centre's
-  const FILLO = (() => {
-    const out = [];
+  const pitchOf = g => Math.max(1.5, (G.A && G.A.cell ? G.A.cell : 3.15) * g.z / g.dpr);
+  let T = null;
+  function tables(pitch){
+    const P = Math.round(pitch * 20) / 20;
+    if (T && T.P === P) return T;
+    const K = Math.max(2, Math.floor(RIM / P)), KH = Math.max(2, Math.floor(HUB / P));
+    const FILLO = [];
     for (let j = -K; j <= K; j++)
       for (let i = -K; i <= K; i++){
         const d = Math.abs(i) + Math.abs(j);
         if (d > K) continue;
-        out.push([i * PITCH, j * PITCH, 1 - (1 - THIN) * d / K]);
+        FILLO.push([i * P, j * P, 1 - (1 - THIN) * d / K]);
       }
-    return out;
-  })();
-  const RIMO = FILLO.filter(o => Math.abs(o[0]) + Math.abs(o[1]) >= K * PITCH - 0.01);
-  /* The three at rest — hub, journal, build — are the same material as
-     the focus column above them (STYLE.md, *The lattice*): not one solid
-     diamond each but a diamond-shaped field of diamonds at the plate's
-     pitch, each dot 0.75 of the pitch, on ground. KH steps to the edge. */
-  const KH = Math.floor(HUB / PITCH);
-  const HUBO = (() => {
-    const out = [];
+    const RIMO = FILLO.filter(o => Math.abs(o[0]) + Math.abs(o[1]) >= K * P - 0.01);
+    /* The three at rest — hub, journal, build — are the same material as
+       the focus column above them (STYLE.md, *The lattice*): a diamond-
+       shaped field of diamonds at the plate's pitch, each dot 0.75 of the
+       pitch, on ground. KH steps to the edge. */
+    const HUBO = [];
     for (let j = -KH; j <= KH; j++)
       for (let i = -KH; i <= KH; i++){
         const d = Math.abs(i) + Math.abs(j);
-        if (d <= KH) out.push([i * PITCH, j * PITCH, d === KH ? 1 : 0]);   // [x, y, on the rim]
+        if (d <= KH) HUBO.push([i * P, j * P, d === KH ? 1 : 0]);   // [x, y, on the rim]
       }
-    return out;
-  })();
-  const HUB_DOT = PITCH * 0.75;
+    T = {P, K, KH, FILLO, RIMO, HUBO, HUB_DOT: P * 0.75, DOT: P * 0.75};
+    budget = 0;
+    return T;
+  }
 
   /* ── the house and the rose ────────────────────────────────────────────
      Written out as grids, for the reason `type.js` writes its font out: this
@@ -207,7 +211,16 @@ const Hud = (() => {
        #hud is top-left, #tune and #route top-right, #keys bottom-right.
        #palette takes this corner in build mode, where a HUD is not what
        you are looking at anyway. The lift clears #toast, which shares it. */
-    const ax = EDGE + SPAN + RIM, ay = b.height - LIFT;
+    /* On a desk the strip of meters has the corner, so the cluster stands
+       just to its right and lower, near the bottom (Eden, 2026-08-28); on
+       a phone the strip is top right and the corner is the cluster's. */
+    const mob = document.body.classList.contains('mobile');
+    const strip = mob ? null : document.getElementById('hud');
+    const sr = strip && !strip.hidden ? strip.getBoundingClientRect() : null;
+    const ax = (sr ? sr.right - b.left + 14 : EDGE) + SPAN + RIM;
+    const lift = sr ? LIFT_DESK : LIFT;
+    const ay = b.height - lift;
+    anchorNow = {x: ax, y: lift, dx: JX, r: HUB, span: SPAN, rim: RIM};
     return {b, dpr, z, u,
             x: (ax * dpr - VW / 2) / z + G.cam[0],
             y: (ay * dpr - VH / 2) / z + G.cam[1]};
@@ -228,7 +241,8 @@ const Hud = (() => {
   let budget = 0;
   function cost(){
     if (budget) return budget;
-    let n = 3 * HUBO.length + RINGS.length * (RIMO.length + FILLO.length) + FILLO.length;
+    const t = T || tables(3.2);
+    let n = 3 * t.HUBO.length + RINGS.length * (t.RIMO.length + t.FILLO.length) + t.FILLO.length;
     for (const r of RINGS){
       if (r.text) n += Type.cost(r.text);
       else for (const row of r.art)
@@ -241,7 +255,9 @@ const Hud = (() => {
   function overlay(a, m, cap){
     if (!shown()) return m;
     const g = geom();
-    if (!g || m > cap - cost()) return m;      // whole, or not at all
+    if (!g) return m;
+    const {FILLO, RIMO, HUBO, HUB_DOT, DOT} = tables(pitchOf(g));
+    if (m > cap - cost()) return m;            // whole, or not at all
     const hov = pick(g, ptr ? toWorld(ptr, g) : null);
 
     /* the hub wears the flare, the way a panel head does: it is the one part
@@ -474,7 +490,10 @@ const Hud = (() => {
     open = false;
     tap(key);
   }
-  const api = {init, overlay, hit, cost, press,
+  /* where the hub stands, in CSS px — x from the left, y up from the
+     bottom — with its measures, for the focus column that stands on it */
+  let anchorNow = {x: EDGE + SPAN + RIM, y: LIFT, dx: JX, r: HUB, span: SPAN, rim: RIM};
+  const api = {init, overlay, hit, cost, press, anchor: () => anchorNow,
                opened: () => open, fold: () => { open = false; },
                onLetters: null, onNumbers: null, onTowns: null, onHome: null,
                onJournal: null, onBuild: null};

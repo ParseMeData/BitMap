@@ -29,12 +29,16 @@
 const Focus = (() => {
   /* the hub, as hud.js places it: the pair's centres at x = EDGE + SPAN +
      RIM and + JX, y = height − LIFT, half-size HUB */
-  const HUB_X = 16 + 30 + 24, HUB_DX = 16 * 2 + 12, HUB_Y = 132, HUB_R = 16;
-  const AXIS = HUB_X + HUB_DX / 2;            // the column's centre line: between the pair
+  /* read off the HUD itself, every frame, since 2026-08-28 — the hub
+     moved (beside the strip on a desk) and a column anchored to numbers
+     copied from it stood on the wrong spot */
+  const hub = () => (typeof Hud !== 'undefined' && Hud.anchor ? Hud.anchor() : {x: 70, y: 132, dx: 44, r: 16, span: 30, rim: 24});
+  const HUB_X = () => hub().x, HUB_DX = () => hub().dx, HUB_Y = () => hub().y, HUB_R = () => hub().r;
+  const AXIS = () => HUB_X() + HUB_DX() / 2;  // the column's centre line: between the pair
   const TOP = 270;                            // under the compass
   const SIZE = 84, GAP = 12;                  // a letter diamond, and the space between two
   const ROW = 0.78;                           // an item diamond, as a fraction of a letter's
-  const PICK_R = HUB_R * 2;                   // the folded diamond: twice the hub's
+  const PICK_R = () => HUB_R() * 2;           // the folded diamond: twice the hub's
   const WIDTH = 460;
   let el = null, cv = null, ctx = null, raf = 0;
   let open = -1, rowOpen = false, rowK = -1, hoverItem = -1, cursor = -1, folded = false, hubSel = null, painted = '', F = null, P = null, DPR = 1;
@@ -96,7 +100,7 @@ const Focus = (() => {
   const cur = {y: [], al: []};
   function layout(){
     const H = innerHeight, n = F.letters.length;
-    const foot = H - HUB_Y - HUB_R - GAP;     // the last letter's lower point: the hub's own gap above the pair
+    const foot = H - HUB_Y() - HUB_R() - GAP;     // the last letter's lower point: the hub's own gap above the pair
     const room = foot - TOP;
     const size = Math.max(40, Math.min(SIZE, (room - GAP * (n - 1)) / n));
     /* the gap after letter k (between k and k+1), by how far the pair is
@@ -116,7 +120,7 @@ const Focus = (() => {
     hits = [];
     for (let k = 0; k < n; k++){
       if (cur.y[k] == null){ cur.y[k] = ys[k]; cur.al[k] = als[k]; }
-      hits.push({x: AXIS, y: cur.y[k], r: size / 2, k, ty: ys[k], tal: als[k]});
+      hits.push({x: AXIS(), y: cur.y[k], r: size / 2, k, ty: ys[k], tal: als[k]});
     }
     row = null;
     /* a row is drawn for the letter it was opened on — `rowK` — while it
@@ -127,7 +131,7 @@ const Focus = (() => {
       const h = hits[k], rr = h.r * ROW, step = rr * 1.15, x0 = h.x + h.r * 1.35 + rr;
       row = {k, h, rr, step, x0, n: (F.items[k] || []).length};
     }
-    fold = {x: AXIS, y: H - HUB_Y - PICK_R, r: PICK_R};
+    fold = {x: AXIS(), y: H - HUB_Y() - PICK_R(), r: PICK_R()};
   }
 
   /* one diamond-shaped region of the lattice, centred in CSS px */
@@ -270,7 +274,7 @@ const Focus = (() => {
     const text = [];                          // type is laid after the lattice, in order
     const stand = val('stand');               // 0 down in the hub … 1 standing
     const fd = val('fold');                   // 0 standing … 1 folded to the pick
-    const hubTop = innerHeight - HUB_Y - HUB_R;
+    const hubTop = innerHeight - HUB_Y() - HUB_R();
 
     /* the letters: each rises out of the hub in turn, the last first;
        folding, each sinks into the pick diamond */
@@ -361,10 +365,10 @@ const Focus = (() => {
     /* and on the hub diamond the keys have walked down to: the three at
        rest, or one of the four when the hub has been pressed open */
     if (hubSel && typeof Hud !== 'undefined'){
-      const H0 = innerHeight - HUB_Y, four = Hud.opened && Hud.opened();
+      const hb = hub(), H0 = innerHeight - hb.y, four = Hud.opened && Hud.opened();
       const at = four
-        ? {letters: [HUB_X, H0 - 30, 24], numbers: [HUB_X - 30, H0, 24], home: [HUB_X + 30, H0, 24], towns: [HUB_X, H0 + 30, 24]}
-        : {hub: [HUB_X, H0, HUB_R], journal: [HUB_X + HUB_DX, H0, HUB_R], build: [HUB_X + HUB_DX / 2, H0 + HUB_DX / 2, HUB_R]};
+        ? {letters: [hb.x, H0 - hb.span, hb.rim], numbers: [hb.x - hb.span, H0, hb.rim], home: [hb.x + hb.span, H0, hb.rim], towns: [hb.x, H0 + hb.span, hb.rim]}
+        : {hub: [hb.x, H0, hb.r], journal: [hb.x + hb.dx, H0, hb.r], build: [hb.x + hb.dx / 2, H0 + hb.dx / 2, hb.r]};
       const c = at[hubSel];
       if (c) bracket(c[0], c[1], c[2], 5);
     }
@@ -610,7 +614,7 @@ const Focus = (() => {
     dwelling = false;
     if (mv || wasMoving) painted = '';
     wasMoving = mv;
-    const key = [innerHeight, DPR, open, rowOpen, hoverItem, cursor, folded, hubSel, !!leaving, typeof Hud !== 'undefined' && Hud.opened && Hud.opened(), P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
+    const key = [innerHeight, DPR, JSON.stringify(hub()), open, rowOpen, hoverItem, cursor, folded, hubSel, !!leaving, typeof Hud !== 'undefined' && Hud.opened && Hud.opened(), P ? P.id + ':' + P.item : '', F.letters.join(''), F.words.join('|'),
                  F.items.map(i => i.join('|')).join('/'), pitch().toFixed(2)].join('#');
     if (key === painted) return;
     painted = key;

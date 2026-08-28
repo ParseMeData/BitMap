@@ -79,7 +79,9 @@ thing read up close. Add a row here or do not use a new one.
     compass                    .80   rests; Eden's tune sits at .45 (hq.compass)
     towns map                 1.00   the land; edges and dots the same
     the hub's three           1.00   hub, journal, build: fields of the
-                                     plate's diamonds at PITCH 3.2, dot 0.75
+                                     plate's diamonds at the plate's own
+                                     pitch on screen (since 2026-08-28;
+                                     3.2 px before), dot 0.75
     focus type                  —    every letter and word on the focus is
                                      the chrome's mono, drawn as type over
                                      the diamonds — not lattice. (A path to

@@ -361,6 +361,11 @@ acronym with nothing to pick. The counter is what makes an id unique;
 `dedupe()` on load re-mints any later duplicate a profile from that build
 still holds. If a thing needs an id, mint it here, not with `Date.now()`.
 
+**The focus column stands on the hub it is told about.** `Hud.anchor()`
+is where the hub is, in CSS px, with its measures; `focus.js` reads it
+every frame. It once carried copies of hud.js's numbers, and the day the
+hub moved beside the strip the folded pick stood on the old spot.
+
 **The focus column takes no pointer.** `src/focus.js` draws on a canvas
 with `pointer-events:none` and listens on the window in the capture
 phase, stopping only an event that lands on one of its diamonds. Without

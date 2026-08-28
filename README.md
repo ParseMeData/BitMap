@@ -1936,7 +1936,8 @@ Join it to a road the walker can reach and both go away.
 
 On the plate, since 2026-08-28, like the town's name: a star rose with a
 long north spike, drawn into the map at the plate's top-left corner
-six tiles in, small, at the plate's own pitch, over a light dithered mat of
+six tiles in, small, one plate cell per cell of the drawing so it is the
+same grain as the roads, at the plate's own pitch, over a light dithered mat of
 the ground's diamonds — part of the map rather than chrome laid on it.
 It follows the map — the traced underlay's own rotation (`Basemap.rot`),
 the one number in the game that says which way north is — and turns

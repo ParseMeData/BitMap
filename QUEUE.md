@@ -20,13 +20,14 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
-- [ ] [auto] **Tag v8.1 and clone** — `snapshots/v8.1.json` from the live
-  town, tag, push, and `~/Projects/Loci Bitmap V8.1` as the frozen copy.
-
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **Tag v8.1 and clone** — 2026-08-28. `snapshots/v8.1.json` from the
+  live profile (headless on 9222, the game not running), tag v8.1,
+  pushed with the branch, `~/Projects/Loci Bitmap V8.1` checked out at
+  the tag.
 - [x] **Mobile** — 2026-08-28. `MOBILE` in index.html (coarse pointer or
   < 800 px) → `body.mobile`; no door there; `src/touch.js` d-pad and key
   column pressing synthetic KeyboardEvents, pinch → zoomBy; a stylesheet

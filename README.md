@@ -193,6 +193,14 @@ five US cents an hour. Port 8080 is never opened in the security group; only
 takes the disk with it, so anything on the box that was not pushed is gone.
 It asks you to type the word.
 
+**v8.1** — 2026-08-28. The web: a page that installs, the town out to a
+file and back, players at a door on the desk and none on a phone. The
+region plate, the trace, grains and blocks, distractions, the quest —
+the acronym is the region, a letter a plate, an item a palace. The
+printed sheet never shown; Esri's dark canvas; the map dialog top
+right; the star compass locked to the map; the strip of three meters;
+and the phone: the keys drawn on the screen, every panel a sheet.
+
 ## Controls
 
 | | |

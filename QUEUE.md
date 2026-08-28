@@ -26,6 +26,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The mat dithered, the name a touch larger, a shadow for the
+  compass** — 2026-08-28. Size default 10; mat cover .4 and feather 18,
+  every mat diamond rolled and the rim thinned by lot (title.js `mat`);
+  compass.js paints an oval of ground diamonds under the rose through
+  `Title.paint`, dithered the same way. BUILD 206.
 - [x] **The name, smaller, to the right, on its mat** — 2026-08-28. Size
   default 8 cells (was 14); the title centred past the sheet's right edge
   (`cx = sheetW + tw * 0.2`); the demolish behind it dropped — it read as

@@ -16,7 +16,7 @@
 const Compass = (() => {
   const KEY = 'hq.compass';                    // {tune}
   const BOX = 200;                             // the element, CSS px (index.html agrees)
-  let el = null, rose = null;
+  let el = null, rose = null, shadow = null;
   let shown = -1, last = null, raf = 0, faces = {}, painted = null;
   /* the pitch: about three CSS pixels a diamond, which is the plate's own
      cell at the zoom the town is read at; each cut is read at as many
@@ -75,7 +75,14 @@ const Compass = (() => {
     rose.width = SIZE.rose[0] * SCALE; rose.height = SIZE.rose[1] * SCALE;
     rose.style.width = SIZE.rose[0] + 'px'; rose.style.height = SIZE.rose[1] + 'px';
     rose.style.left = ((BOX - SIZE.rose[0]) / 2) + 'px'; rose.style.top = ((BOX - SIZE.rose[1]) / 2) + 'px';
-    el.append(rose);
+    /* a shadow under the rose: an oval of the ground's own diamonds,
+       dithered to nothing at its rim, so the compass reads over whatever
+       the plate has under it (Eden, 2026-08-28) — the title's mat, in chrome */
+    shadow = document.createElement('canvas');
+    shadow.className = 'shadow';
+    shadow.width = BOX * SCALE; shadow.height = BOX * SCALE;
+    shadow.style.cssText = 'position:absolute;left:0;top:0;width:' + BOX + 'px;height:' + BOX + 'px;pointer-events:none';
+    el.append(shadow, rose);
     document.body.append(el);
     read();
     return el;
@@ -91,8 +98,26 @@ const Compass = (() => {
         .then(f => { faces[k] = f; }));
     Promise.all(all).then(() => { painted = null; paint(); }).catch(() => {});
   }
+  const GROUND = [0.106, 0.106, 0.129];
+  const roll = (u, v, s) => (typeof Kinds !== 'undefined' && Kinds.hash ? Kinds.hash(u, v, s) : 0.5);
+  function paintShadow(){
+    if (!shadow || typeof Title === 'undefined' || !Title.paint) return;
+    const pitch = tuned('pitch'), N = Math.max(8, Math.round(BOX / pitch));
+    const c = (N - 1) / 2, rx = N * 0.40, ry = N * 0.40, f0 = 0.25, S = 2;
+    const cells = [];
+    for (let j = 0; j < N; j += S) for (let i = 0; i < N; i += S){
+      const r = Math.hypot((i - c) / rx, (j - c) / ry);
+      if (r >= 1) continue;
+      let e = 1;
+      if (r > f0){ const t = (1 - r) / (1 - f0); e = t * t * (3 - 2 * t); }
+      if (roll(i, j, 7) > e + 0.12) continue;
+      cells.push({x: i, y: j, al: 0.55 * e * (0.55 + 0.45 * roll(i, j, 3)), rgb: GROUND, sz: S * 1.05});
+    }
+    Title.paint(shadow, {cols: N, rows: N, cells}, {weight: tuned('weight'), shade: 0, tint: GROUND, tint2: GROUND});
+  }
   function paint(){
     const ink = BONE;
+    paintShadow();
     const stamp = ink + '|' + tuned('weight');
     if (painted === stamp) return;
     painted = stamp;

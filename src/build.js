@@ -782,8 +782,13 @@ const Build = (() => {
          influence, it is outside the map, and the tool has to be asked
          about it to say so. So a radial modifier is gathered against every
          shape and answers for the ones it does not touch as well. */
+      /* and only what was there before it: a modifier weathers the shapes
+         older than itself and leaves what is laid over it afterwards
+         standing — a house planted on demolished ground is a house, not
+         rubble (found 2026-08-29, when the founding's patch ate its own
+         house). Hand use reads the same: you demolish what is there. */
       const m = (!mods.length || isMod(s)) ? null
-        : mods.filter(x => isRadial(x) || bbHit(box[i], reachBox(x)));
+        : mods.filter(x => x.id > s.id && (isRadial(x) || bbHit(box[i], reachBox(x))));
       modOf[i] = m && m.length ? m : null;
       const key = modOf[i] ? modOf[i].map(x => x.id).join(',') : '';
       if (key !== (s._modKey || '')) s._buf = null;

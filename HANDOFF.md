@@ -651,6 +651,13 @@ The six in `TONES` were chosen against STYLE.md's warning that a saturated
 kind becomes the only thing on the screen — the first cut of the landmark
 already proved that once, in gold.
 
+**A modifier weathers only what was there before it.** `rebuild()`
+gathers a shape's demolish areas from those with a *higher* id — laid
+after it. Before 2026-08-29 a modifier acted on whatever it lay over,
+and the founding's patch under the house ate the house laid on it a
+moment later. The rule reads the same for a hand: you demolish what is
+there; what you build on the rubble afterwards stands.
+
 **A print occludes under its ink, not its box.** `covered()` takes the
 ground under every occluder's footprint, and a landmark's footprint is a
 rectangle around a building that is not one — so the terrain vanished in a

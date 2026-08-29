@@ -941,17 +941,15 @@ const Palace = (() => {
   function drop(e){
     if (!drag) return;
     if (e) e.stopPropagation();
-    /* Dropped back where it would have centred itself: the hand-placed
-       position goes with it. That is the way back to the default you can
-       find without being told about it, and the tolerance is the title's
-       own height so it scales with the town rather than with the zoom. */
-    const back = off && Math.hypot(off.dx, off.dy) < drag.h;
-    if (back) off = null;
+    /* Wherever it is dropped is where it stays — there is no snapping
+       back to the default any more (it snapped when dropped within its
+       own height of where it would centre itself, which read as the name
+       refusing a small move; Eden, 2026-08-29). `Palace.resetTitle()` is
+       the way back to the default, on purpose. */
     const moved = !drag.was && off;
     drag = null;
     storeOff();
-    if (back) note('the town name centres itself again');
-    else if (moved) note('the town name is placed by hand now · drop it back on the middle to undo that');
+    if (moved) note('the town name is placed by hand now');
   }
 
   const TOWN = 'hq.town';

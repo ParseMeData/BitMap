@@ -26,6 +26,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The name never snaps back; the house stands on its patch** —
+  2026-08-29. `drop()` no longer resets an offset within the title's own
+  height of the default; `rebuild()` applies a modifier only to shapes
+  older than it (`x.id > s.id`), so the founding's full-out patch no
+  longer eats the house laid after it. Verified: a 25/15 drag kept; a
+  house on a full-out patch draws 69 cells. BUILD 217.
 - [x] **Softer fade, the name free, the house on bare plate** —
   2026-08-29. `Title.mat`: oval 1.4×/2.1× the word, core .55, cubic
   tail; the title clamp gone — it stays where dropped, on or off the

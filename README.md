@@ -1772,18 +1772,20 @@ paths, footways, cycleways or service lanes, which printed a pixel wide),
 the way nearest the door and everything reachable from it through shared
 nodes, each cut at the plate's edge into runs so a road that leaves the
 plate ends where the next plate would begin, none narrower than two
-cells, and every run **ruled**: simplified to its bends, then each
-segment turned to the nearest of 0°, 22½°, 45°, 67½° and 90°, kept as
-long as its projection on that heading — so a road prints straight where
-the map has it straight, bends in those steps, and meets another square;
-the door's road, squared by the map's own turn, comes out exactly
-vertical or horizontal. Every bend is then **assessed** against the road
-as the map has it: a real road that rounds the corner leaves its points
-well inside the ruled angle, so a turn under 80° whose nearest original
-point is more than .4 of a tile from the vertex becomes a **clean
-continuous curve** — the vertex pulled back along both legs and the
-middle leg bowed through where it was — while a sharper turn, or a road
-that passes through the corner, stays a corner. Ruled ends are put back
+cells, and every run **ruled** — straights and curves, nothing else.
+Each length of the road as the map has it is given a heading, horizontal
+or vertical by which way it mostly goes (45° for a length that is long
+and truly diagonal), and consecutive lengths on one heading are one
+**straight**, on the line through their length-weighted middle. Between
+two straights there is **one curve**: where the headings differ, a turn
+about the corner where the two lines meet — the road leaves the first
+straight three tiles before the corner and joins the second three after,
+bowed through it; where they are the same heading, a step across — an S
+from the one line to the other, two bows meeting halfway with the same
+tangent. So a road that wanders a few degrees prints dead straight, a
+bend is one clean curve, a dog-leg is a clean S, and the door's road,
+squared by the map's own turn, is exactly vertical or horizontal.
+Ruled ends are put back
 on the runs they meet, and only what **touches the door's road**,
 through touches on the plate, is printed: a run joined to it only off
 the plate is an island and is not — every **body of

@@ -39,14 +39,22 @@ const Survey = (() => {
   const WIDTH = {motorway: 4, trunk: 4, primary: 3.2, secondary: 2.8, tertiary: 2.4, residential: 2,
                  unclassified: 2, living_street: 2};
   const MAIN = w => !!(w.tags && WIDTH[w.tags.highway]);
-  /* ── squared ────────────────────────────────────────────────────────
-     A run is simplified to its bends and then every segment is turned to
-     the nearest of 0, 22½, 45, 67½ and 90 degrees, each kept as long as
-     its projection on that heading — so a road prints straight where the
-     map has it straight, bends in those steps, and meets another at a
-     right angle. The door's road, squared by the map's own turn, comes
-     out exactly vertical or horizontal. */
-  const STEP = Math.PI / 8;
+  /* ── ruled ──────────────────────────────────────────────────────────
+     A road is straights and curves, nothing else (Eden, 2026-08-29). The
+     run as the map has it is simplified to its bends, each length given
+     a heading — horizontal or vertical by which way it mostly goes, or
+     45° for a length that is long and truly diagonal — and consecutive
+     lengths on one heading are one STRAIGHT, on the line through their
+     length-weighted middle. Between two straights there is ONE CURVE:
+     where the headings differ, a turn about the corner where the two
+     lines meet — the road leaves the first straight R before the corner
+     and joins the second R after it, bowed through the corner; where
+     they are the same heading a step across, an S from the one line to
+     the other, two bows meeting halfway with the same tangent. So a road
+     that wanders a few degrees prints dead straight, a bend is a bend,
+     and a dog-leg is a clean S — and the door's road, squared by the
+     map's turn, is exactly vertical. Returns {pts, ctrl}.             */
+  const R_TURN = 3;                           // tiles: how far from the corner a turn begins
   function simplify(pts, tol){
     if (pts.length < 3) return pts;
     const d2 = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9;
@@ -61,47 +69,77 @@ const Survey = (() => {
     }
     return pts.filter((p, i) => keep[i]);
   }
-  function rectify(run){
-    const out = [run[0].slice()];
-    for (let i = 1; i < run.length; i++){
-      const a = out[out.length - 1], b = run[i];
-      const dx = b[0] - a[0], dy = b[1] - a[1];
-      const q = Math.round(Math.atan2(dy, dx) / STEP) * STEP;
-      const len = dx * Math.cos(q) + dy * Math.sin(q);        // the segment on its heading
-      if (len < G.A.cell) continue;
-      out.push([a[0] + Math.cos(q) * len, a[1] + Math.sin(q) * len]);
-    }
-    return out.length > 1 ? out : run;
+  /* a length's heading: 0 or 90, or 45/135 for a long true diagonal */
+  function headingOf(a, b, ts){
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    const ang = ((Math.atan2(dy, dx) * 180 / Math.PI) % 180 + 180) % 180;
+    if (L >= ts * 4 && ang > 30 && ang < 60) return 45;
+    if (L >= ts * 4 && ang > 120 && ang < 150) return 135;
+    return Math.abs(dx) >= Math.abs(dy) ? 0 : 90;
   }
-  /* ── bend or curve ────────────────────────────────────────────────────
-     Every inner vertex of a ruled run is assessed against the road as
-     the map has it (`orig`, the run before it was simplified). A real
-     road that ROUNDS the corner leaves its points inside the ruled angle,
-     well off the vertex; one that turns there passes through it. So: the
-     turn under 80° and the nearest original point further than .4 tile
-     from the vertex → a curve — the vertex is pulled back along both legs
-     and the middle leg bowed through where the vertex was, so the road
-     arrives and leaves on the ruled headings and rounds between them.
-     Sharper than that, or a road that goes through the corner, stays a
-     corner: an intersection is square, and a bend that is a bend stays
-     one. Returns {pts, ctrl}. */
-  function bends(pts, orig){
-    const ts = G.terr.tsz, out = [pts[0]], ctrl = [null];
-    const near = v => { let d = Infinity; for (const o of orig) d = Math.min(d, Math.hypot(o[0] - v[0], o[1] - v[1])); return d; };
-    for (let i = 1; i < pts.length - 1; i++){
-      const p = out[out.length - 1], v = pts[i], n = pts[i + 1];
-      const a1 = Math.atan2(v[1] - p[1], v[0] - p[0]), a2 = Math.atan2(n[1] - v[1], n[0] - v[0]);
-      let turn = Math.abs(a2 - a1); if (turn > Math.PI) turn = 2 * Math.PI - turn;
-      const cut = near(v);
-      const curve = turn > Math.PI / 15 && turn < Math.PI * 80 / 180 && cut > ts * 0.4;
-      if (!curve){ out.push(v); ctrl.push(null); continue; }
-      const l1 = Math.hypot(v[0] - p[0], v[1] - p[1]), l2 = Math.hypot(n[0] - v[0], n[1] - v[1]);
-      const d = Math.min(l1 / 2, l2 / 2, Math.max(ts, Math.min(ts * 3, cut * 2.2)));
-      const q1 = [v[0] - Math.cos(a1) * d, v[1] - Math.sin(a1) * d], q2 = [v[0] + Math.cos(a2) * d, v[1] + Math.sin(a2) * d];
-      out.push(q1); ctrl.push(v);        // the leg q1 → q2 bows through the corner
-      out.push(q2); ctrl.push(null);
+  const dirOf = h => [Math.cos(h * Math.PI / 180), Math.sin(h * Math.PI / 180)];
+  /* the point where two lines meet, or null when they are parallel */
+  function meet(p, u, q, v){
+    const det = u[0] * v[1] - u[1] * v[0];
+    if (Math.abs(det) < 1e-9) return null;
+    const t = ((q[0] - p[0]) * v[1] - (q[1] - p[1]) * v[0]) / det;
+    return [p[0] + u[0] * t, p[1] + u[1] * t];
+  }
+  function rule(run){
+    const ts = G.terr.tsz, pts = simplify(run, ts * 0.6);
+    if (pts.length < 2) return null;
+    /* lengths → straights */
+    const S = [];
+    for (let i = 0; i + 1 < pts.length; i++){
+      const h = headingOf(pts[i], pts[i + 1], ts), L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+      const last = S[S.length - 1];
+      if (last && last.h === h){ last.pts.push(pts[i + 1]); last.len += L; }
+      else S.push({h, pts: [pts[i], pts[i + 1]], len: L});
     }
-    out.push(pts[pts.length - 1]);
+    for (const st of S){
+      /* the line: the heading, through the length-weighted middle */
+      let sx = 0, sy = 0, sw = 0;
+      for (let i = 0; i + 1 < st.pts.length; i++){
+        const a = st.pts[i], b = st.pts[i + 1], w = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        sx += (a[0] + b[0]) / 2 * w; sy += (a[1] + b[1]) / 2 * w; sw += w;
+      }
+      st.c = [sx / (sw || 1), sy / (sw || 1)]; st.u = dirOf(st.h);
+      /* the first and last of its points, on the line */
+      const on = p => { const t = (p[0] - st.c[0]) * st.u[0] + (p[1] - st.c[1]) * st.u[1]; return [st.c[0] + st.u[0] * t, st.c[1] + st.u[1] * t]; };
+      st.a = on(st.pts[0]); st.b = on(st.pts[st.pts.length - 1]);
+      /* running the right way along its own heading */
+      if ((st.b[0] - st.a[0]) * st.u[0] + (st.b[1] - st.a[1]) * st.u[1] < 0) st.u = [-st.u[0], -st.u[1]];
+    }
+    /* straights → the road: each straight's start and end, and a curve between */
+    const out = [], ctrl = [];
+    const push = (p, c) => { out.push(p); ctrl.push(c === undefined ? null : c); };
+    let from = S[0].a;
+    for (let k = 0; k < S.length; k++){
+      const A = S[k], B = S[k + 1];
+      if (!B){ push(from); push(A.b); break; }
+      const X = meet(A.c, A.u, B.c, B.u);
+      if (X){
+        /* a turn about the corner, R before it to R after */
+        const dA = Math.min(R_TURN * ts, Math.hypot(X[0] - from[0], X[1] - from[1]) * 0.6);
+        const dB = Math.min(R_TURN * ts, Math.hypot(B.b[0] - X[0], B.b[1] - X[1]) * 0.6);
+        const p = [X[0] - A.u[0] * dA, X[1] - A.u[1] * dA], q = [X[0] + B.u[0] * dB, X[1] + B.u[1] * dB];
+        push(from); push(p, X);                  // from → p straight, p → q bowed through X
+        from = q;
+      } else {
+        /* parallel: an S from the one line to the other, about the vertex they share */
+        const v = A.pts[A.pts.length - 1];
+        const pa = [A.c[0] + A.u[0] * ((v[0] - A.c[0]) * A.u[0] + (v[1] - A.c[1]) * A.u[1]), A.c[1] + A.u[1] * ((v[0] - A.c[0]) * A.u[0] + (v[1] - A.c[1]) * A.u[1])];
+        const pb = [B.c[0] + B.u[0] * ((v[0] - B.c[0]) * B.u[0] + (v[1] - B.c[1]) * B.u[1]), B.c[1] + B.u[1] * ((v[0] - B.c[0]) * B.u[0] + (v[1] - B.c[1]) * B.u[1])];
+        const off = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+        if (off < ts * 0.5){ push(from); from = pb; continue; }     // near enough one line
+        const half = Math.max(ts * 1.5, off);
+        const p = [pa[0] - A.u[0] * half, pa[1] - A.u[1] * half], q = [pb[0] + B.u[0] * half, pb[1] + B.u[1] * half];
+        const m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+        const c1 = [pa[0], pa[1]], c2 = [pb[0], pb[1]];             // on each line, so the tangents hold
+        push(from); push(p, c1); push(m, c2);
+        from = q;
+      }
+    }
     return {pts: out, ctrl: ctrl.slice(0, out.length - 1)};
   }
   /* ── joined, or an island ─────────────────────────────────────────────
@@ -265,10 +303,9 @@ const Survey = (() => {
     for (const w of keep){
       const wd = Math.max(2, WIDTH[w.tags.highway] || 2);
       for (const run of clipRuns(W(w.geometry))){
-        const sq = rectify(simplify(run, G.terr.tsz * 0.6));
-        if (sq.length < 2) continue;
-        const b = bends(sq, run);
-        runs.push({pts: b.pts, ctrl: b.ctrl, wd});
+        const rl = rule(run);
+        if (!rl || rl.pts.length < 2) continue;
+        runs.push({pts: rl.pts, ctrl: rl.ctrl, wd});
       }
     }
     const door = Basemap.worldOf(la, lo) || [G.W / 2, G.H / 2];

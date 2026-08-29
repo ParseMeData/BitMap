@@ -26,6 +26,11 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Straights and curves** — 2026-08-29. `rule()` in survey.js: H/V
+  (45 for long diagonals) straights on weighted lines, one curve between
+  each pair — a turn about the lines' corner (R 3 tiles) or an S across
+  parallels; `rectify`/`bends` gone. Verified over http: 3 runs, 7
+  straights on 0/90/135, 4 curves. BUILD 213.
 - [x] **Bends assessed, islands dropped** — 2026-08-29. `bends()`:
   turn < 80° and nearest original point > .4 tile from the vertex → a
   curve (vertex pulled back d along both legs, `ctrl` of the middle leg =

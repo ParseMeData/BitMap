@@ -411,6 +411,9 @@ stale.
                          halved, because a file:// image cannot be a mask
     tools/glyphs.py      the sheets in assets/, sliced into src/glyphs.js —
                          a build step run by hand when the art changes
+    tools/assets.py      every printed glyph out to ~/Desktop/Loci Assets,
+                         one PNG each in folders by type, to be sorted and
+                         added to by hand
     tools/kwinrule.py    the KWin rule the desktop plate is pinned by
     tools/aws-dev-box.sh the EC2 box: up, tunnel, ip, stop, start, destroy —
                          tools/aws-bootstrap.sh is what it runs on first boot
@@ -1493,6 +1496,19 @@ on to the last, which says so. Which room you are up to is kept per
 palace under `hq.trace.<uid>`, so a trace put down is picked up again.
 `V` again, or leaving the building, shows the plan as it was; the number
 is kept.
+
+### The asset folders
+
+`tools/assets.py export` writes every printed thing the game can put on
+a plate — the houses and buildings of the two sheets — out to
+**`~/Desktop/Loci Assets/`**, one PNG per glyph at eight screen pixels a
+cell (bone a lit cell, the ground grey a window or doorway, transparent
+nothing), in folders by type: `Houses/`, `Buildings/`, `Trees/`,
+`Mountains/`, `Landmarks/`, `Patterns/`, with the two source sheets in
+`_sheets/` and a README. Sort them by moving files between folders; add
+new ones as PNGs on the same scale. The game does not yet read the
+folders back — it still ships `src/glyphs.js` cut from the sheets —
+which is the next step.
 
 ## The route, and playing it
 

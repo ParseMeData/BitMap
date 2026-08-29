@@ -26,6 +26,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Asset folders on the desktop** — 2026-08-29. `tools/assets.py
+  export`: `src/glyphs.js` → `~/Desktop/Loci Assets/{Houses,Buildings,
+  Trees,Mountains,Landmarks,Patterns,_sheets}`, one 8× PNG a glyph (31
+  houses by `sets.houses`, 35 buildings), sheets copied, README written.
+- [ ] **The game reads the asset folders** — next: `tools/assets.py
+  import` (or glyphs.py taught the folders) rebuilding `src/glyphs.js`
+  from the PNGs, each folder a set the kinds can offer, so a file moved
+  or added on the desktop is a glyph in the palette.
 - [x] **A path, and the wheel walks** — 2026-08-29. `path` kind (roads
   layer, 1 cell, road white, walk 2; palette after Roundabout; 2 grains,
   free on home). The wheel no longer zooms: `rail` from the facing axis,

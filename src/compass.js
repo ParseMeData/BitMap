@@ -190,7 +190,7 @@ const Compass = (() => {
      chrome canvas above is kept only for the tune panel's reading. */
   const ON_PLATE = true;
   const AT = 6;                      // tiles in from the plate's top-left corner, both ways
-  const COLS_ON = 34;                // the rose read at this many cells across, and drawn one plate cell per cell
+  const COLS_ON = 40;                // the rose read at this many cells across, and drawn one plate cell per cell
   let facePlate = null;
   function readPlate(){
     if (typeof Title === 'undefined' || !Title.picture) return;
@@ -201,6 +201,9 @@ const Compass = (() => {
     if (!ON_PLATE || !G.terr || !G.A) return m;
     if (!facePlate){ if (!overlay.asked){ overlay.asked = true; readPlate(); } return m; }
     if (typeof Interior !== 'undefined' && Interior.inside()) return m;
+    /* not while a plate is being founded: the compass is part of the town,
+       and there is no town until Generate (Eden, 2026-08-29) */
+    if (typeof Found !== 'undefined' && Found.state && Found.state()) return m;
     /* one plate cell per cell of the picture: the rose is the same
        resolution as the map it stands on */
     const f = facePlate, ts = G.terr.tsz, px = G.A.cell;

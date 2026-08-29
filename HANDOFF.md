@@ -543,6 +543,13 @@ build mode, and it pins every plate of the town at once so the group
 keeps its shape. `hq.region` is the projection and is set once from
 home's anchor; nothing recentres it.
 
+**Two `square`s once lived in survey.js.** The map turner
+(`square(seg)`) and the road rectifier were both declared `square`; the
+later declaration won and every road run was handed to the turner, which
+returned a number, and the plate came up with no roads and no error. The
+rectifier is `rectify`. A second function of the same name in one scope
+is not an error to JavaScript; it is to us.
+
 **The survey maps through the picture, not the search point.**
 `Basemap.worldOf(lat, lon)` reads the frozen picture's `mc` (its centre
 in mercator px, kept at freeze), its `mpx`, `mult`, `rot` and centre —

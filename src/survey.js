@@ -33,15 +33,54 @@ const Survey = (() => {
                 'https://overpass.kumi.systems/api/interpreter'];
   const WAIT = 75000;                 // ms an instance gets before the next is tried
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
+  /* the roads that are roads: no tracks, paths, footways, cycleways or
+     service lanes (Eden, 2026-08-29 — they printed a pixel wide and were
+     not the road to the door); none narrower than two cells */
   const WIDTH = {motorway: 4, trunk: 4, primary: 3.2, secondary: 2.8, tertiary: 2.4, residential: 2,
-                 unclassified: 2, service: 1.6, track: 1.4, path: 1.2, footway: 1.2, cycleway: 1.2, living_street: 2};
+                 unclassified: 2, living_street: 2};
+  const MAIN = w => !!(w.tags && WIDTH[w.tags.highway]);
+  /* ── squared ────────────────────────────────────────────────────────
+     A run is simplified to its bends and then every segment is turned to
+     the nearest of 0, 22½, 45, 67½ and 90 degrees, each kept as long as
+     its projection on that heading — so a road prints straight where the
+     map has it straight, bends in those steps, and meets another at a
+     right angle. The door's road, squared by the map's own turn, comes
+     out exactly vertical or horizontal. */
+  const STEP = Math.PI / 8;
+  function simplify(pts, tol){
+    if (pts.length < 3) return pts;
+    const d2 = (p, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9;
+      const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L));
+      return Math.hypot(p[0] - a[0] - dx * t, p[1] - a[1] - dy * t); };
+    const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length){
+      const [i, j] = stack.pop(); let far = 0, at = -1;
+      for (let k = i + 1; k < j; k++){ const d = d2(pts[k], pts[i], pts[j]); if (d > far){ far = d; at = k; } }
+      if (at > 0 && far > tol){ keep[at] = 1; stack.push([i, at], [at, j]); }
+    }
+    return pts.filter((p, i) => keep[i]);
+  }
+  function rectify(run){
+    const out = [run[0].slice()];
+    for (let i = 1; i < run.length; i++){
+      const a = out[out.length - 1], b = run[i];
+      const dx = b[0] - a[0], dy = b[1] - a[1];
+      const q = Math.round(Math.atan2(dy, dx) / STEP) * STEP;
+      const len = dx * Math.cos(q) + dy * Math.sin(q);        // the segment on its heading
+      if (len < G.A.cell) continue;
+      out.push([a[0] + Math.cos(q) * len, a[1] + Math.sin(q) * len]);
+    }
+    return out.length > 1 ? out : run;
+  }
 
   /* ── the ground inside the plate ──────────────────────────────────── */
   function bbox(){
     const pts = [[0, 0], [G.W, 0], [0, G.H], [G.W, G.H]].map(p => Basemap.geoOf(p[0], p[1]));
     if (pts.some(p => !p)) return null;
     const la = pts.map(p => p[0]), lo = pts.map(p => p[1]);
-    return [Math.min(...la), Math.min(...lo), Math.max(...la), Math.max(...lo)];
+    const bb = [Math.min(...la), Math.min(...lo), Math.max(...la), Math.max(...lo)];
+    return bb.every(isFinite) ? bb : null;
   }
   async function fetchAll(bb, say){
     const b = bb.join(',');
@@ -115,7 +154,8 @@ const Survey = (() => {
     const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
     const want = Math.round(ang / (Math.PI / 2)) * (Math.PI / 2);
     const p = Basemap.placed();
-    const rot = (p ? p.rot : 0) + (want - ang);
+    const rot = ((p && isFinite(p.rot)) ? p.rot : 0) + (want - ang);
+    if (!isFinite(rot)) return 0;
     Basemap.setRot(rot);
     return (want - ang) * 180 / Math.PI;
   }
@@ -147,15 +187,17 @@ const Survey = (() => {
   function shapes(els, la, lo, doSquare){
     const cell = G.A.cell, out = [];
     const ways = els.filter(e => e.type === 'way' && e.geometry);
-    const roads = ways.filter(w => w.tags && w.tags.highway);
+    const roads = ways.filter(MAIN);
     const {keep, seg} = connected(roads, la, lo);
     let turned = 0;
     if (seg && doSquare) turned = square(seg);     // not when the map was turned by hand
     const W = pts => pts.map(n => Basemap.worldOf(n.lat, n.lon)).filter(Boolean);
     for (const w of keep){
-      const wd = WIDTH[w.tags.highway] || 1.6;
-      for (const run of clipRuns(W(w.geometry)))
-        out.push({kind: 'road', type: 'line', pts: thin(run, cell * 2), width: cell * wd, exact: true, variant: 'mixed'});
+      const wd = Math.max(2, WIDTH[w.tags.highway] || 2);
+      for (const run of clipRuns(W(w.geometry))){
+        const sq = rectify(simplify(run, G.terr.tsz * 0.6));
+        if (sq.length > 1) out.push({kind: 'road', type: 'line', pts: sq, width: cell * wd, exact: true, variant: 'mixed'});
+      }
     }
     const isWater = w => w.tags && (w.tags.natural === 'water' || w.tags.water || w.tags.landuse === 'reservoir');
     const closed = w => w.geometry.length > 3 && w.geometry[0].lat === w.geometry[w.geometry.length - 1].lat && w.geometry[0].lon === w.geometry[w.geometry.length - 1].lon;

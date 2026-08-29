@@ -26,6 +26,15 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Roads ruled, house chosen, compass after, mat scattered** —
+  2026-08-29. Survey: main highway types only, width ≥ 2 cells, each run
+  `simplify` (DP, .6 tile) then `rectify` to 22½° steps; a `square` name
+  collision that silently dropped every road found and fixed; non-finite
+  rotations refused in freeze/setRot/turnLive/adopt/bbox/square and
+  `print()` refuses without a picture. Confirm face: ◀ ▶ house chooser
+  with a preview. Compass at 40 cells, hidden while founding. Mat .55,
+  feather 22, rolled cover and size. Verified over http: 9 runs, all
+  headings on the steps, min width 2 cells. BUILD 211.
 - [x] **Compass bigger, hub in the corner, lower** — 2026-08-28. Rose at 34 cells; the cluster at the corner on desk and phone, 78 px up on a desk, the strip moved to its right (`#hud{left:196px}`). BUILD 210.
 - [x] **Hub and compass at the plate's grain** — 2026-08-28. hud.js builds
   its dot tables from the plate's cell on screen (`pitchOf`, cached per

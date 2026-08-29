@@ -80,14 +80,41 @@ const Found = (() => {
     el.querySelector('#foundprint').onclick = print;
     el.querySelector('#foundno').onclick = () => { if (Atlas.current() === 'home' && !pendingMade) later(); else askFace(''); };
   }
+  /* the house the first palace stands on: one of the sheet's, chosen
+     here, before anything is drawn (Eden, 2026-08-29) */
+  let houseAt = 0;
+  const houses = () => (typeof Glyphs !== 'undefined' && Glyphs.of('houses')) || [];
+  function housePick(d){
+    const list = houses(); if (!list.length) return null;
+    houseAt = ((houseAt + (d || 0)) % list.length + list.length) % list.length;
+    const cv = el && el.querySelector('#foundhouse');
+    if (cv){
+      const rows = Glyphs.rows(list[houseAt]) || [];
+      const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+      const n = Math.max(rows.length, rows[0] ? rows[0].length : 1), s = Math.floor(cv.width / (n + 2));
+      const ox = (cv.width - (rows[0] ? rows[0].length : 0) * s) / 2, oy = (cv.height - rows.length * s) / 2;
+      rows.forEach((r, j) => { for (let i = 0; i < r.length; i++){
+        if (r[i] === '0') continue;
+        g.fillStyle = r[i] === '2' ? '#1B1B21' : '#EDEAE3';
+        g.beginPath(); g.moveTo(ox + i * s + s / 2, oy + j * s); g.lineTo(ox + i * s + s, oy + j * s + s / 2);
+        g.lineTo(ox + i * s + s / 2, oy + j * s + s); g.lineTo(ox + i * s, oy + j * s + s / 2); g.fill(); } });
+      const lab = el.querySelector('#foundhousen'); if (lab) lab.textContent = list[houseAt] + ' · ' + (houseAt + 1) + ' of ' + list.length;
+    }
+    return list[houseAt];
+  }
   function confirmFace(){
     face('<div class="plabel">Printed</div>' +
       '<div id="foundwhy">generate the roads, the water, the ground and the first palace here?</div>' +
+      '<div class="erow"><button class="btn" id="foundhl">&#9664;</button><canvas id="foundhouse" width="96" height="96"></canvas><button class="btn" id="foundhr">&#9654;</button></div>' +
+      '<div class="knote" id="foundhousen"></div>' +
       '<div class="erow"><button class="btn" id="foundgen">Generate</button>' +
       '<button class="btn" id="foundback">Back to the frame</button></div>' +
-      '<div class="knote" id="foundnote">nothing is drawn until you say</div>');
+      '<div class="knote" id="foundnote">the house the first palace stands on &middot; nothing is drawn until you say</div>');
     el.querySelector('#foundgen').onclick = generate;
     el.querySelector('#foundback').onclick = back;
+    el.querySelector('#foundhl').onclick = () => housePick(-1);
+    el.querySelector('#foundhr').onclick = () => housePick(1);
+    housePick(0);
   }
 
   /* ── the frame: the plate's edge and the boundary's oval, on screen ── */
@@ -179,6 +206,9 @@ const Found = (() => {
       await Basemap.ready(15000);
       say('printing…');
       await Basemap.freeze();
+      /* freeze says what went wrong in the map's own note line and does
+         not throw; a plate is not printed until there is a picture */
+      if (!Basemap.placed()) throw new Error('not printed — ' + ((document.getElementById('mapnote') || {}).textContent || 'the map would not bake'));
       Basemap.setPlacing(false);
       state = 'confirm';
       confirmFace();
@@ -206,7 +236,7 @@ const Found = (() => {
         try {
           const kinds = Glyphs.of('houses') || [];
           if (kinds.length){
-            const pick = kinds[(Math.random() * kinds.length) | 0];
+            const pick = kinds[houseAt % kinds.length];
             const rows = Glyphs.rows(pick); houseW = rows && rows[0] ? rows[0].length * G.A.cell : 0;
             at = Survey.aside(at, houseW);
             /* a ring of demolished ground under the house, so the palace

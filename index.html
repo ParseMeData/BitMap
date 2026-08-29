@@ -197,6 +197,7 @@ body.mobile #pcopy,body.mobile #ctune,body.mobile #premix,body.mobile #pplayerla
   font:400 11px/1.4 var(--mono);padding:7px 9px;letter-spacing:.06em;outline:0}
 #found #foundq:focus{border-color:var(--flare)}
 #found .erow .btn{flex:1}
+#found #foundhouse{width:96px;height:96px;flex:0 0 96px;background:var(--well);border:1px solid rgba(237,234,227,.22)}
 /* while the frame is up the panel stands aside, top right, so the frame's middle is clear */
 body.founding #found{left:auto;right:16px;top:14px;transform:none}
 body.mobile #found{width:auto;left:8px;right:8px;top:8px;transform:none}
@@ -1011,7 +1012,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 210, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 211, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

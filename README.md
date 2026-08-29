@@ -1746,8 +1746,10 @@ and the frame itself is not drawn (it looked odd; `SHOW_FRAME` in
 **Zoom − +** for more or less ground, until the town sits where you
 want it. **Print** bakes what is inside the frame into
 the plate's picture — toned so the map's background is the plate's own
-black and a road is a grey line on it — and a **confirm** follows:
-*Generate*, or *Back to the frame*. Nothing is drawn until you say.
+black and a road is a grey line on it — and a **confirm** follows, with
+the **house** the first palace will stand on to choose (◀ ▶ through the
+sheet's, with a preview): *Generate*, or *Back to the frame*. Nothing is
+drawn until you say, and the compass is not shown until it is.
 **Turn ◀ ▶** turns the live map five degrees a press before it is
 printed; a map turned by hand is printed as turned and the survey does
 not square it. Generate runs the survey (below), plants a house from
@@ -1764,10 +1766,18 @@ be about to be imported instead.
 **The ground is surveyed.** Once the map is frozen at the address, the
 survey (`src/survey.js`) asks OpenStreetMap — Overpass, keyless, from
 the page — for what lies inside the plate and lays it as the plate's own
-shapes: the **roads connected to the address** and no others (the way
-nearest the door, and everything reachable from it through shared
-nodes, each cut at the plate's edge into runs — so a road that leaves
-the plate ends where the next plate would begin), every **body of
+shapes: the **roads connected to the address** and no others — roads
+that are roads (motorway to unclassified and living streets; no tracks,
+paths, footways, cycleways or service lanes, which printed a pixel wide),
+the way nearest the door and everything reachable from it through shared
+nodes, each cut at the plate's edge into runs so a road that leaves the
+plate ends where the next plate would begin, none narrower than two
+cells, and every run **ruled**: simplified to its bends, then each
+segment turned to the nearest of 0°, 22½°, 45°, 67½° and 90°, kept as
+long as its projection on that heading — so a road prints straight where
+the map has it straight, bends in those steps, and meets another square;
+the door's road, squared by the map's own turn, comes out exactly
+vertical or horizontal — every **body of
 water** near (lakes, dams, reservoirs as water, beaches as sand, rivers
 and streams as river and creek lines), a field of **grass** under it
 all, and a **boundary** laid by default, set so every edge of the plate lies

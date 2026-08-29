@@ -303,13 +303,13 @@ const Basemap = (() => {
     return unmerc(place.mc[0] + ux, place.mc[1] + uy, place.z || z);
   }
   /* turn the placed picture to a heading, in radians */
-  function setRot(r){ if (!place) return false; place.rot = r; setRotUI(); sync(); save(); return true; }
+  function setRot(r){ if (!place || !isFinite(r)) return false; place.rot = r; setRotUI(); sync(); save(); return true; }
   /* slide the live tiles by a world delta — a drag of the map under the
      frame before it is printed (src/found.js): the search point moves the
      other way by the same distance in mercator px */
   /* turn the live tiles by degrees, before a print */
   function turnLive(deg){
-    if (pic) return false;
+    if (pic || !isFinite(deg)) return false;
     liveRot += deg * Math.PI / 180;
     sync(); return true;
   }
@@ -394,7 +394,7 @@ const Basemap = (() => {
        turned or scaled (worldOf, below) */
     /* the turn the live tiles had is the picture's turn, about the same
        point — the sheet's centre — so what was printed is what was seen */
-    const C0 = C, pr = liveRot;
+    const C0 = C, pr = isFinite(liveRot) ? liveRot : 0;
     const cxr = C0[0] + (cx - C0[0]) * Math.cos(pr) - (cy - C0[1]) * Math.sin(pr);
     const cyr = C0[1] + (cx - C0[0]) * Math.sin(pr) + (cy - C0[1]) * Math.cos(pr);
     liveRot = 0;
@@ -434,7 +434,7 @@ const Basemap = (() => {
         /* named field by field rather than merged, so nothing an older save
            happened to leave in the object can ride along into this one */
         place = {x: p.x, y: p.y, s0: p.s0, mult: p.mult == null ? 1 : p.mult,
-                 rot: p.rot || 0, w: im.naturalWidth, h: im.naturalHeight,
+                 rot: isFinite(p.rot) ? p.rot : 0, w: im.naturalWidth, h: im.naturalHeight,
                  mc: Array.isArray(p.mc) ? [p.mc[0], p.mc[1]] : null, z: p.z || null, mpx: p.mpx || null};
         setPlacing(true);
         paint(); syncUI(); sync(); save();

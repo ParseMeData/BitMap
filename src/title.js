@@ -72,8 +72,8 @@ const Title = (() => {
     dither: {lo: 0,   hi: 1,   dflt: 1},
     /* the mat: how far the plate under the name is dimmed, 0 for none,
        and where its oval starts to fade — 0 at the rim, 24 at the centre */
-    mat:    {lo: 0,   hi: 1,   dflt: 0.4},     // lighter and further feathered since 2026-08-28: a shadow, not a hole
-    feather: {lo: 0,  hi: 24,  dflt: 18},
+    mat:    {lo: 0,   hi: 1,   dflt: 0.55},    // a shadow, not a hole: scattered and feathered wide (2026-08-29)
+    feather: {lo: 0,  hi: 24,  dflt: 22},
     /* the shade: how much darker the foot of a word is than its top —
        a sheen down the lettering, on the plate and on the cards alike */
     shade:  {lo: 0,   hi: 0.7, dflt: 0.25}
@@ -378,9 +378,9 @@ const Title = (() => {
         /* dithered: a diamond near the rim is there or not by lot, and
            every diamond's cover is rolled a little, so the oval has no
            edge to see — the plate's own scatter, in the mat */
-        if (roll(gx, gy, 7) > e + 0.12) continue;
+        if (roll(gx, gy, 7) > e * 0.85 + 0.05) continue;
         m = put(a, m, x0 + gx * px, y0 + gy * px, GROUND[0], GROUND[1], GROUND[2],
-                per * e * (0.55 + 0.45 * roll(gx, gy, 3)), S * px, 0, 0, 0, 1);
+                per * e * (0.3 + 0.7 * roll(gx, gy, 3)), S * px * (0.8 + 0.5 * roll(gx, gy, 5)), 0, 0, 0, 1);
       }
     return m;
   }

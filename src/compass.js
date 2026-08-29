@@ -49,11 +49,14 @@ const Compass = (() => {
   function load(){
     try {
       const v = JSON.parse(Store.get(KEY) || 'null');
-      if (v && typeof v === 'object' && v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
+      if (v && typeof v === 'object'){
+        if (v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
+        if (Array.isArray(v.at) && isFinite(v.at[0]) && isFinite(v.at[1])) at = [+v.at[0], +v.at[1]];
+      }
     } catch (e){}
   }
   function store(){
-    try { Store.set(KEY, JSON.stringify({tune})); } catch (e){}
+    try { Store.set(KEY, JSON.stringify({tune, at})); } catch (e){}
   }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
@@ -111,7 +114,7 @@ const Compass = (() => {
       let e = 1;
       if (r > f0){ const t = (1 - r) / (1 - f0); e = t * t * (3 - 2 * t); }
       if (roll(i, j, 7) > e + 0.12) continue;
-      cells.push({x: i, y: j, al: 0.55 * e * (0.55 + 0.45 * roll(i, j, 3)), rgb: GROUND, sz: S * 1.05});
+      cells.push({x: i, y: j, al: 0.85 * e * (0.55 + 0.45 * roll(i, j, 3)), rgb: GROUND, sz: S * 1.05});
     }
     Title.paint(shadow, {cols: N, rows: N, cells}, {weight: tuned('weight'), shade: 0, tint: GROUND, tint2: GROUND});
   }
@@ -189,7 +192,11 @@ const Compass = (() => {
      diamonds — so it is part of the map, at the map's pitch, and the
      chrome canvas above is kept only for the tune panel's reading. */
   const ON_PLATE = true;
-  const AT = 6;                      // tiles in from the plate's top-left corner, both ways
+  const AT = 6;                      // tiles in from the plate's top-left corner, both ways, until moved
+  /* where it stands, moved by hand and kept: `at` in hq.compass, world
+     units; nothing when it has never been moved */
+  let at = null, drag = null;
+  const where = () => (at ? at : [G.terr.tsz * AT, G.terr.tsz * AT]);
   const COLS_ON = 40;                // the rose read at this many cells across, and drawn one plate cell per cell
   let facePlate = null;
   function readPlate(){
@@ -207,10 +214,10 @@ const Compass = (() => {
     /* one plate cell per cell of the picture: the rose is the same
        resolution as the map it stands on */
     const f = facePlate, ts = G.terr.tsz, px = G.A.cell;
-    const cx = ts * AT, cy = ts * AT;
+    const [cx, cy] = where();
     const x0 = cx - f.cols * px / 2, y0 = cy - f.rows * px / 2;
     if (typeof Title !== 'undefined' && Title.mat)
-      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, 0.4, cap, 18);
+      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, 0.85, cap, 18);
     const th = heading() * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
     const hs = px * 0.75 * tuned('weight');
     for (const c of f.cells){
@@ -224,11 +231,46 @@ const Compass = (() => {
     return m;
   }
 
+  /* ── moved by hand ────────────────────────────────────────────────────
+     Take the rose on the plate and put it where you like; it stays there
+     (Eden, 2026-08-29). The same rule as the title's drag: not paused,
+     not inside, not while a picture is pinned; capture-phase on the
+     window, and only a press that lands on the rose is taken, so nothing
+     under it loses a click. */
+  const toWorld = ev => { const b = canvas.getBoundingClientRect(), k = VW / (b.width || 1);
+    return [((ev.clientX - b.left) * k - VW / 2) / G.cam[2] + G.cam[0], ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]]; };
+  function may(){
+    if (!ON_PLATE || !G.terr || !facePlate || G.paused || WALL) return false;
+    if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    if (typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) return false;
+    if (typeof Found !== 'undefined' && Found.state && Found.state()) return false;
+    return true;
+  }
+  function wireDrag(){
+    addEventListener('pointerdown', e => {
+      if (e.button !== 0 || e.target !== canvas || !may()) return;
+      const p = toWorld(e), [cx, cy] = where(), half = facePlate.cols * G.A.cell / 2;
+      if (Math.abs(p[0] - cx) > half || Math.abs(p[1] - cy) > half) return;
+      drag = {ox: p[0] - cx, oy: p[1] - cy};
+      e.stopPropagation(); e.preventDefault();
+    }, true);
+    addEventListener('pointermove', e => {
+      if (!drag) return;
+      const p = toWorld(e);
+      at = [p[0] - drag.ox, p[1] - drag.oy];
+      e.stopPropagation();
+    }, true);
+    const up = e => { if (!drag) return; drag = null; store(); e.stopPropagation(); };
+    addEventListener('pointerup', up, true);
+    addEventListener('pointercancel', up, true);
+  }
+
   function init(){
     if (typeof COMPASS_ART === 'undefined') return;
     load(); build();
     if (ON_PLATE && el) el.style.display = 'none';
+    wireDrag();
     if (!raf) tick();
   }
-  return {init, heading, overlay};
+  return {init, heading, overlay, at: () => where().slice(), dragging: () => !!drag};
 })();

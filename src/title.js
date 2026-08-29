@@ -72,7 +72,7 @@ const Title = (() => {
     dither: {lo: 0,   hi: 1,   dflt: 1},
     /* the mat: how far the plate under the name is dimmed, 0 for none,
        and where its oval starts to fade — 0 at the rim, 24 at the centre */
-    mat:    {lo: 0,   hi: 1,   dflt: 0.55},    // a shadow, not a hole: scattered and feathered wide (2026-08-29)
+    mat:    {lo: 0,   hi: 1,   dflt: 0.85},    // solid under the letters, dithered away past them (2026-08-29)
     feather: {lo: 0,  hi: 24,  dflt: 22},
     /* the shade: how much darker the foot of a word is than its top —
        a sheen down the lettering, on the plate and on the cards alike */
@@ -369,10 +369,14 @@ const Title = (() => {
         const r = Math.hypot((gx - o.cx) / o.rx, (gy - o.cy) / o.ry);
         if (r >= 1) continue;
         if (cap !== undefined && m > cap - 1) return m;
-        /* 1 inside the start of the fade, easing to 0 at the rim */
+        /* Solid under the word — its own box is the core, whatever the
+           feather says, so a name over terrain reads on the plate's colour
+           and not through the trees — and from there easing to 0 at the
+           rim; the feather only ever softens the part past the box. */
+        const core = Math.max(f0, 0.78);
         let e = 1;
-        if (r > f0){
-          const t = (1 - r) / Math.max(1e-6, 1 - f0);
+        if (r > core){
+          const t = (1 - r) / Math.max(1e-6, 1 - core);
           e = t * t * (3 - 2 * t);
         }
         /* dithered: a diamond near the rim is there or not by lot, and

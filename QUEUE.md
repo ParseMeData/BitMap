@@ -26,6 +26,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Title and compass moved by hand, kept, on solid mats** —
+  2026-08-29. Compass drag on the plate (`wireDrag`, capture, only a
+  press on the rose), `at` kept in `hq.compass`; the title's drag was
+  already there and keeps `hq.title.off`. `Title.mat`: a solid core
+  under the word's box (cover .85) with the dithered fade past it; the
+  compass mat the same. Verified: both dragged, both back after reload.
+  BUILD 214.
 - [x] **Straights and curves** — 2026-08-29. `rule()` in survey.js: H/V
   (45 for long diagonals) straights on weighted lines, one curve between
   each pair — a turn about the lines' corner (R 3 tiles) or an S across

@@ -1506,9 +1506,18 @@ cell (bone a lit cell, the ground grey a window or doorway, transparent
 nothing), in folders by type: `Houses/`, `Buildings/`, `Trees/`,
 `Mountains/`, `Landmarks/`, `Patterns/`, with the two source sheets in
 `_sheets/` and a README. Sort them by moving files between folders; add
-new ones as PNGs on the same scale. The game does not yet read the
-folders back — it still ships `src/glyphs.js` cut from the sheets —
-which is the next step.
+new ones as PNGs on the same scale. `tools/assets.py slice` reads every
+picture in the folders beside it on the desktop (trees, plants, houses,
+signs, icons, distractions, patterns — whatever is there), finds each
+picture's background and the pixel pitch it was drawn at (or its own
+pixels, when it was not upscaled), reads the art back at that
+resolution as lit-or-not, cuts it into its sprites, and writes each as
+a PNG on the same scale into a folder of the same name under Loci
+Assets — a sprite bigger than the 32-cell grid brought down to fit, a
+pattern cut into 32-cell tiles. Files moved in by hand are left alone;
+the last run's are replaced. The game does not yet read the folders
+back — it still ships `src/glyphs.js` cut from the sheets — which is
+the next step.
 
 ## The route, and playing it
 

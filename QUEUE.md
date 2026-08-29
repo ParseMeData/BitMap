@@ -26,6 +26,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The desktop's pictures sliced into assets** — 2026-08-29.
+  `tools/assets.py slice`: background by mode colour, pitch by phase vote
+  (largest of the near-best, bounded by the picture, pitch 1 when nothing
+  scores), native read-back, connected sprites across a 1-cell gap,
+  oversize fitted to 32 (patterns tiled), 8× PNGs into Trees/Plants/
+  Houses/Signs/Icons/Distractions/Patterns. ~220 sprites; sheets checked
+  by eye.
 - [x] **Asset folders on the desktop** — 2026-08-29. `tools/assets.py
   export`: `src/glyphs.js` → `~/Desktop/Loci Assets/{Houses,Buildings,
   Trees,Mountains,Landmarks,Patterns,_sheets}`, one 8× PNG a glyph (31

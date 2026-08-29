@@ -26,6 +26,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Softer fade, the name free, the house on bare plate** —
+  2026-08-29. `Title.mat`: oval 1.4×/2.1× the word, core .55, cubic
+  tail; the title clamp gone — it stays where dropped, on or off the
+  plate, the rescue only for a saved place wholly off it; the house's
+  patch a rect 1.5× the footprint with `out` 1, feather 3, scatter .7.
+  Verified: title dragged to x 796 of 755 and kept after reload. BUILD 216.
 - [x] **Title within reach, mats at the plate's grain** — 2026-08-29.
   `titleAt` clamps the name onto the plate (an offset saved against the
   old centre default had carried Eden's past the edge, which read as

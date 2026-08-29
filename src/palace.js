@@ -605,10 +605,12 @@ const Palace = (() => {
        name can extend off screen, the walker goes to it if a road does
        (Eden, 2026-08-28) */
     const cx = (G.sheetW || G.W) + tw * 0.2, cy = th / 2 + t * 4;
-    /* and never off the plate: an offset saved against an older default
-       could carry the name past the edge, out of reach of a hand */
-    const tx = Math.max(tw * 0.25, Math.min(G.W - tw * 0.1, cx + (off ? off.dx : 0)));
-    const ty = Math.max(th / 2, Math.min(G.H - th / 2, cy + (off ? off.dy : 0)));
+    /* Wherever it was put, it stays (Eden, 2026-08-29) — with one rescue:
+       an offset saved against an older default that carries the name
+       clean off the plate, where no hand can reach it, is dropped once. */
+    let tx = cx + (off ? off.dx : 0), ty = cy + (off ? off.dy : 0);
+    const hw = (face ? w : Type.width(name, px, treat)) / 2, hh = (face ? h : Type.height(px)) / 2;
+    if (off && (tx + hw < 0 || tx - hw > G.W || ty + hh < 0 || ty - hh > G.H)){ off = null; storeOff(); tx = cx; ty = cy; }
     return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
             x: tx, y: ty};

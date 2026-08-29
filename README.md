@@ -1803,8 +1803,10 @@ both ends.
 Before the shapes go down the frozen picture is **turned** so the road
 at the address lies perfectly vertical or horizontal — whichever is
 nearer — and the compass turns with it, so the roads on the plate agree
-with the picture under them and the connecting road runs square. A **house** — one of the sheet's, drawn by lot — is planted at the
-address with the first palace's marker standing on it; the palace can be
+with the picture under them and the connecting road runs square. A **house** — one of the sheet's, chosen at the confirm — is planted at
+the address on a patch of ground taken right out, a little past its
+footprint with a dithered edge, so nothing but the plate is behind the
+building; the first palace's marker stands on it; the palace can be
 dragged anywhere within the boundary afterwards like any marker. Before
 the picture is baked the camera frames the whole plate, so the frozen
 map covers it edge to edge, and afterwards it comes back to the working

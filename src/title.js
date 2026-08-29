@@ -353,9 +353,11 @@ const Title = (() => {
      clear, stretched so the ends of a long name are still under it. */
   const GROUND = [0.106, 0.106, 0.129];        // #1B1B21
   const FEATHER_MAX = 24;
+  /* wider than the word since 2026-08-29, so the fade past the solid
+     core has room to go out slowly */
   function oval(cols, rows){
     const cx = (cols - 1) / 2, cy = (rows - 1) / 2;
-    return {cx, cy, rx: cols / 2 * 1.12 + 4, ry: rows / 2 * 1.45 + 4};
+    return {cx, cy, rx: cols / 2 * 1.4 + 8, ry: rows / 2 * 2.1 + 8};
   }
   /* one diamond per cell since 2026-08-29 — the mat is the plate's own
      grain, as the letters are; it was one per three, which read as a
@@ -377,11 +379,11 @@ const Title = (() => {
            feather says, so a name over terrain reads on the plate's colour
            and not through the trees — and from there easing to 0 at the
            rim; the feather only ever softens the part past the box. */
-        const core = Math.max(f0, 0.78);
+        const core = Math.max(f0, 0.55);
         let e = 1;
         if (r > core){
           const t = (1 - r) / Math.max(1e-6, 1 - core);
-          e = t * t * (3 - 2 * t);
+          e = t * t * t;                       // a long tail: most of the fade is nearly nothing
         }
         /* dithered: a diamond near the rim is there or not by lot, and
            every diamond's cover is rolled a little, so the oval has no

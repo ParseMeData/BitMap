@@ -241,7 +241,11 @@ const Found = (() => {
             at = Survey.aside(at, houseW);
             /* a ring of demolished ground under the house, so the palace
                stands clear of the terrain and reads at a glance */
-            Build.add({kind: 'demolish', type: 'ellipse', x: at[0], y: at[1], w: houseW * 2.6, h: houseW * 2.6, exact: true});
+            /* the ground under the building taken right out — no terrain
+               behind the shape, only the plate — with a dithered edge a
+               little past its footprint (Eden, 2026-08-29) */
+            Build.add({kind: 'demolish', type: 'rect', x: at[0], y: at[1], w: houseW * 1.5, h: houseW * 1.5,
+                       fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4, exact: true});
             Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
             Build.commit();
             if (typeof restampTerrain === 'function') restampTerrain();

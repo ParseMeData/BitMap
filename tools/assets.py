@@ -12,6 +12,19 @@ hand (Eden, 2026-08-29):
     tools/assets.py export            # glyphs.js → the folders (8× scale)
     tools/assets.py slice             # the desktop's own picture folders →
                                       # one PNG per sprite, same scale
+    tools/assets.py import            # the folders → src/glyphs.js: every
+                                      # folder a set, every PNG a glyph
+
+`import` is what makes the folders the game's: each folder under Loci
+Assets (not _sheets) becomes a set named for it in lower case — houses,
+buildings, trees, plants, icons, signs, distractions, patterns,
+mountains, landmarks — and each PNG in it a glyph named for the file,
+read at eight pixels a cell: bone is lit, the ground grey is the
+sprite's own inside, anything else nothing. A sprite with no inside
+marked (a new one, not from `export`) has its inside found the way
+glyphs.py finds it — flood-filled from outside, the unreached dark
+written '2', and a ring of it grown round the whole. `src/kinds.js`
+offers each set as a print kind in the palette.
 
 `slice` reads every image in the folders beside Loci Assets on the desktop
 (trees, plants, houses, signs, icons, distractions, patterns — whatever is
@@ -230,6 +243,39 @@ def slice_all():
             print(f'  {d.name}/{f.name[:24]:24s} bg {bg} pitch {pitch:.2f} ({q:.2f}) {nx}x{ny} cells → {n} sprites')
     print(f'sliced {total} sprites into {OUT}')
 
+def import_all():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('glyphs', ROOT / 'tools' / 'glyphs.py')
+    GL = importlib.util.module_from_spec(spec); spec.loader.exec_module(GL)
+    glyphs, sets = {}, {}
+    for d in sorted(OUT.iterdir()):
+        if not d.is_dir() or d.name.startswith('_') or d.name.startswith('.'): continue
+        names = []
+        for f in sorted(d.glob('*.png')):
+            im = Image.open(f).convert('RGBA'); W, H = im.size
+            k = SCALE if (W % SCALE == 0 and H % SCALE == 0) else max(1, round(W / 32))
+            nx, ny = W // k, H // k
+            px = im.load(); rows = []; marked = False
+            for j in range(ny):
+                r = ''
+                for i in range(nx):
+                    cr, cg, cb, ca = px[int((i + 0.5) * k), int((j + 0.5) * k)]
+                    if ca < 64: r += '0'
+                    elif abs(cr - GROUND[0]) + abs(cg - GROUND[1]) + abs(cb - GROUND[2]) < 60: r += '2'; marked = True
+                    else: r += '1'
+                rows.append(r)
+            if not any('1' in r for r in rows): continue
+            if nx > CAP or ny > CAP: print(f'  skip {d.name}/{f.name}: {nx}x{ny} is over the grid'); continue
+            if not marked: rows = GL.body(rows)
+            if len(rows) > CAP or len(rows[0]) > CAP:
+                rows = [r[:CAP] for r in rows[:CAP]]
+            name = f.stem
+            if name in glyphs: name = d.name.lower() + '-' + name
+            glyphs[name] = rows; names.append(name)
+        if names: sets[d.name.lower()] = names
+    GL.write(glyphs, CAP, sets)
+    print(f'wrote src/glyphs.js: {len(glyphs)} glyphs in {len(sets)} sets — ' + ', '.join(f'{k} {len(v)}' for k, v in sets.items()))
+
 def export():
     D = table()
     for f in FOLDERS: (OUT / f).mkdir(parents=True, exist_ok=True)
@@ -259,4 +305,5 @@ if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'export'
     if cmd == 'export': export()
     elif cmd == 'slice': slice_all()
+    elif cmd == 'import': import_all()
     else: sys.exit(__doc__)

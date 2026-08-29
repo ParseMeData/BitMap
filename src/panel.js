@@ -102,8 +102,9 @@ function buildPanel(){
   }
   body.appendChild(spk);
 
-  /* who is playing: sign out to the door, or set a password (index.html, Users) */
-  if (typeof Users !== 'undefined'){
+  /* who is playing: sign out to the door, or set a password (index.html, Users)
+     — only while there is a door */
+  if (typeof Users !== 'undefined' && typeof DOOR !== 'undefined' && DOOR){
     const ul = document.createElement('div');
     ul.className = 'plabel'; ul.id = 'pplayerlabel'; ul.textContent = 'Player · ' + Users.name();
     body.appendChild(ul);
@@ -137,6 +138,19 @@ function buildPanel(){
       tr.appendChild(c);
     }
     body.appendChild(tr);
+    /* and back to a blank page: every hq. key and both picture stores
+       gone, then a reload, which founds an empty home again (Eden,
+       2026-08-29). It asks, because there is no undo but an export. */
+    const rr = document.createElement('div');
+    rr.className = 'chips two';
+    const rc = document.createElement('div');
+    rc.className = 'chip'; rc.textContent = 'Reset — blank page';
+    rc.onclick = () => {
+      if (!window.confirm('Reset the map to a blank page?\n\nEverything on every plate goes — the town, the palaces, the pictures. Export first if you want it kept.')) return;
+      Snap.load({version: 3, localStorage: {}, picture: null, loci: {}}, false);
+    };
+    rr.appendChild(rc);
+    body.appendChild(rr);
   }
 
   const head = document.createElement('div');

@@ -37,6 +37,8 @@ const Stock = (() => {
     marker:    {blocks: 5},
     house:     {blocks: 3},
     landmark:  {blocks: 3},
+    building:  {blocks: 3}, mountain: {blocks: 3}, creature: {blocks: 2},
+    flora:     {blocks: 1}, plant: {blocks: 1}, leaf: {blocks: 1}, sign: {blocks: 1}, pattern: {blocks: 1},
     buildings: {blocks: 4},
     houses:    {blocks: 4}
   };
@@ -79,7 +81,8 @@ const Stock = (() => {
      so the town can be laid out without grinding for it (Eden,
      2026-08-28). Every other plate pays. A card is not building and
      still costs its spark wherever you are; a repair is a repair. */
-  const FREE = {road: 1, path: 1, link: 1, marker: 1, house: 1, landmark: 1, buildings: 1, houses: 1};
+  const FREE = {road: 1, path: 1, link: 1, marker: 1, house: 1, landmark: 1, buildings: 1, houses: 1,
+                building: 1, flora: 1, plant: 1, leaf: 1, sign: 1, creature: 1, pattern: 1, mountain: 1};
   const onHome = () => typeof Atlas !== 'undefined' && Atlas.current() === 'home' &&
     !(typeof Region !== 'undefined' && Region.on());
   /* what placing one of `kind` costs; nothing, for a kind not listed, or

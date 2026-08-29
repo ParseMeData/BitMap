@@ -1515,9 +1515,14 @@ resolution as lit-or-not, cuts it into its sprites, and writes each as
 a PNG on the same scale into a folder of the same name under Loci
 Assets — a sprite bigger than the 32-cell grid brought down to fit, a
 pattern cut into 32-cell tiles. Files moved in by hand are left alone;
-the last run's are replaced. The game does not yet read the folders
-back — it still ships `src/glyphs.js` cut from the sheets — which is
-the next step.
+the last run's are replaced. **`tools/assets.py import`** makes the folders the game's: every
+folder a set named for it in lower case, every PNG a glyph named for the
+file, written to `src/glyphs.js` — and each set is a **print kind in the
+palette** under Buildings: Houses, Landmarks, Buildings, Trees, Plants,
+Icons, Signs, Distractions, Patterns, Mountains, each drawn as a
+landmark is, one diamond a cell. Trees, plants, icons, signs and
+patterns do not block the walker; the rest do. Move a file between
+folders on the desktop, add one, run `import`, and the palette follows.
 
 ## The route, and playing it
 
@@ -1618,22 +1623,19 @@ which is exactly the resolution that document guessed at.
 
 ## Players
 
-The page opens on a **door**: who is playing, then their password. Two
-players to start — **Eden** and **Test User** — and the default password
-is `123`; press `T` and under *Player* is **Password** to set your own
-(kept as a hash) and **Sign out**, which is back to the door. A reload
-within the session does not ask again; the platformer window the game
-opens inherits the player.
+There is **no door** since 2026-08-29: the page opens straight into the
+first player's town — the one `tools/snapshot.py` reads. The players
+and their passwords (Eden, Test User, `123`) are kept in the code
+(`Users` in index.html) for a day a door is wanted again; `DOOR` there
+is the switch, and the *Player* rows of the tune panel come back with
+it. Every player's keys still carry their slug, so a second town is a
+switch away.
 
-Every player has a town of their own. The player's slug goes in front of
-every `hq.` key (`test:hq.shapes`) and into the names of the two picture
-stores (`test:hq.loci`), through `src/store.js` and `HQ_DB`, so nothing
-one player builds is in another's storage. Eden's slug is empty: the
-first player's town is the bare keys it always was — nothing moved — and
-`tools/snapshot.py`, which reads the bare keys, reads Eden's town and
-only Eden's. The players themselves live in `users` (not an `hq.` key,
-so no snapshot carries them); Export/Import under *Town* move the
-signed-in player's town.
+**Reset — blank page**, under *Town* in the tune panel, takes every
+`hq.` key and both picture stores out and reloads: the town, every
+plate, every palace and picture, gone, and an empty home founds itself
+again on the default address. It asks first; an export is the only
+undo.
 
 ## On the web
 

@@ -483,6 +483,14 @@ and nothing was rewritten for touch. Keep it that way: a mobile-only
 code path in a module is a second game to keep. What differs on a phone
 is stylesheet — sheets in place of panels — and what is not shown.
 
+**The door is off, not gone.** `DOOR = false` in index.html signs the
+first player in unasked; `Users`, the slug prefix in `Store` and the
+Player rows stay in the code behind that one switch. The asset sets
+are `src/glyphs.js`'s `sets`, one per desktop folder, written by
+`tools/assets.py import` — `glyphs.py` is the older way in from the two
+sheets and still works; both write the same file, so run one or the
+other, never expect both to hold.
+
 **The door comes before the first script.** Every module reads its keys
 the moment its file runs — the bag's stack, the stock, the atlas — so
 whose keys they are has to be settled before `start()` appends a single

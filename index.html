@@ -1012,7 +1012,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 218, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 219, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){
@@ -1052,10 +1052,13 @@ var Users = (function(){
     start();
   }
   if (MOBILE) document.body.classList.add('mobile');
+  /* No door at all since 2026-08-29 (Eden): straight into the first
+     player's town — the one the desk's tools read. The players and their
+     passwords are kept in the code (Users, above) for a day a door is
+     wanted again; DOOR is the switch. */
+  var DOOR = false;
   var was = Users.current();
-  /* no door on the phone (Eden, 2026-08-28): straight into the first
-     player's town — the one the desk's tools read too */
-  if (MOBILE){ Users.signIn(''); enter(''); }
+  if (!DOOR || MOBILE){ Users.signIn(''); enter(''); }
   else if (was !== null) enter(was); else door();
 
   function start(){

@@ -1770,9 +1770,30 @@ const Kinds = (() => {
        table failed to load, and they are in tiles like every other kind's. */
     /* labelled Buildings on the chip; the id stays `landmark` because every
        saved town names its shapes by id */
-    {id: 'landmark',  label: 'Buildings', layer: 'built',  types: ['rect'],
-     glyphs: 'landmark', w0: 4, h0: 4, feather0: 0,
+    {id: 'landmark',  label: 'Landmarks', layer: 'built',  types: ['rect'],
+     glyphs: 'landmarks', w0: 4, h0: 4, feather0: 0,
      walk: 0, stamp: 0, gen: landmark,  swatch: '#D8D2C6'},
+    /* ── the asset folders, one print kind each ──────────────────────────
+       ~/Desktop/Loci Assets, read in by tools/assets.py import: every
+       folder a set, every PNG a glyph, and each set a kind here that
+       draws the way a landmark does (Eden, 2026-08-29). Trees and plants
+       and signs do not block the walker; the rest do. */
+    {id: 'building',  label: 'Buildings', layer: 'built',  types: ['rect'],
+     glyphs: 'buildings', w0: 4, h0: 4, feather0: 0, walk: 0, stamp: 0, gen: landmark, swatch: '#C9C3B7'},
+    {id: 'flora',     label: 'Trees',     layer: 'built',  types: ['rect'],
+     glyphs: 'trees', w0: 3, h0: 3, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#7BB86F'},
+    {id: 'plant',     label: 'Plants',    layer: 'built',  types: ['rect'],
+     glyphs: 'plants', w0: 2, h0: 2, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#9FCB8F'},
+    {id: 'leaf',      label: 'Icons',     layer: 'built',  types: ['rect'],
+     glyphs: 'icons', w0: 2, h0: 2, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#B8D9A8'},
+    {id: 'sign',      label: 'Signs',     layer: 'built',  types: ['rect'],
+     glyphs: 'signs', w0: 2, h0: 2, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#C9A488'},
+    {id: 'creature',  label: 'Distractions', layer: 'built', types: ['rect'],
+     glyphs: 'distractions', w0: 3, h0: 3, feather0: 0, walk: 0, stamp: 0, gen: landmark, swatch: '#FF5FA2'},
+    {id: 'pattern',   label: 'Patterns',  layer: 'built',  types: ['rect'],
+     glyphs: 'patterns', w0: 4, h0: 4, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#EDEAE3'},
+    {id: 'mountain',  label: 'Mountains', layer: 'built',  types: ['rect'],
+     glyphs: 'mountains', w0: 4, h0: 4, feather0: 0, walk: 0, stamp: 0, gen: landmark, swatch: '#8A8A90'},
     /* ── the demolish area ─────────────────────────────────────────────
        Not deletion and not occlusion: a MODIFIER, and the engine's third
        verb. `Remove wall` in the floor registry is the wrong model to copy
@@ -1869,7 +1890,15 @@ const Kinds = (() => {
     {label: 'Blocks',     kind: 'buildings', type: 'rect'},
     {label: 'Housing',    kind: 'houses',    type: 'rect'},
     {label: 'Houses',     kind: 'house',     type: 'rect'},
-    {label: 'Buildings',  kind: 'landmark',  type: 'rect'},
+    {label: 'Landmarks',  kind: 'landmark',  type: 'rect'},
+    {label: 'Buildings',  kind: 'building',  type: 'rect'},
+    {label: 'Trees',      kind: 'flora',     type: 'rect'},
+    {label: 'Plants',     kind: 'plant',     type: 'rect'},
+    {label: 'Icons',      kind: 'leaf',      type: 'rect'},
+    {label: 'Signs',      kind: 'sign',      type: 'rect'},
+    {label: 'Distractions', kind: 'creature', type: 'rect'},
+    {label: 'Patterns',   kind: 'pattern',   type: 'rect'},
+    {label: 'Mountains',  kind: 'mountain',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
     /* an oval by default: a town thins out into the country in every
        direction at once, and a rect is the answer you reach for when it

@@ -1,8 +1,11 @@
 # Handoff
 
-Written 24 Aug 2026, at tag **v5.0**. Read `README.md` for how any single
-thing works, and `STYLE.md` before changing anything you can see; this is
-the shape of the whole and the things that are not obvious from the code.
+Written 24 Aug 2026 at tag **v5.0**; the log at the head brought up to
+29 Aug 2026, build 210, past tag **v8.1**. Read `README.md` for how any
+single thing works, and `STYLE.md` before changing anything you can see;
+this is the shape of the whole and the things that are not obvious from
+the code. **A fresh session starts at *Where we are*, then *Working on
+it*, then `QUEUE.md`.**
 
 ---
 
@@ -73,38 +76,81 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## State at v5.0
+## Where we are — 29 Aug 2026, build 210
 
-Where the branches and the tags actually stand is a thing to read, not a thing
-to write down — a transcript of it is wrong by the next commit, and wrong in a
-way nobody notices:
+**The line.** `~/Projects/memory-quest-le`, branch `work`, pushed to
+`origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages
+serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
+there within about a minute; `until curl … | grep "var BUILD = N"` is how
+the session waited for it. Tag **v8.1** (28 Aug) is the last tag, with
+`snapshots/v8.1.json` beside it and a frozen clone at `~/Projects/Loci
+Bitmap V8.1`; seventeen commits since, untagged. `gh` is installed and
+logged in as ParseMeData. Commits are made as Eden through the env vars in
+`QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and
+`VERSION` in sw.js together.
 
-    git branch -v        # every branch, its head and what that commit says
-    git tag -l           # every version that exists
+**What the game is now** (all since 27 Aug; README has each in full):
 
-The town: 39 shapes, 5 markers, all five with a floor plan inside them, on a
-blank plate over the frozen Myrtleford underlay. Sparks are off.
+- *The web.* `manifest.json` + `sw.js` make the page install and run
+  offline; `src/snapshot.js` is Export/Import of the town under *Town* in
+  the tune panel, in `tools/snapshot.py`'s file shape. Players: a door on
+  the desk (Eden, Test User, password 123, `users` key; every player's
+  town under a slug prefix on the keys), no door on a phone.
+- *Mobile.* `body.mobile` (coarse pointer or < 800 px): a touch layer of
+  synthetic keys (`src/touch.js`), every panel a sheet, no pause on blur.
+- *The world.* The country map is behind a switch; the **region plate**
+  (`src/region.js`) is our towns drawn flat, north up, links for roads.
+  The **quest** (`src/quest.js`): the focused acronym is the region, a
+  letter a plate (`areas[id].letter`), an item a palace (`marker.item`),
+  the picked item's palace the target; distractions (`src/distract.js`)
+  eat roads and gate jumps; grains/blocks/sparks (`src/stock.js`) pay for
+  building, the first plate free; the trace (`src/trace.js`) and minimal
+  view. Rewards are generic amounts in `Stock.REWARD`.
+- *Founding.* No plate exists without an address (`src/found.js`): ask →
+  live map under the (now hidden) frame, drag / Zoom ± / Turn ◀ ▶ →
+  **Print** (the picture toned to the plate's ground) → **confirm** →
+  **Generate**: the survey (`src/survey.js`, OpenStreetMap through
+  Overpass — three mirrors, the desk's `file://` page can only use
+  Mail.ru's, ~40 s) lays the roads connected to the address, the water,
+  four grass quarters and a boundary sized so every plate edge is in its
+  dithered fade; the map is squared to the door's road unless turned by
+  hand; a house from the sheet and the first palace go beside the road on
+  the address's side. An empty home founds itself unasked on
+  `Found.DEFAULT` = 929 Myrtleford-Yackandandah Road, Barwidgee.
+- *The look.* The ground is **#1B1B21** everywhere (the map's own shade;
+  the transparent GL clear must stay black — see *Decisions*). The printed
+  sheet is never shown. Esri's dark canvas is the only map (CARTO
+  watermarks keyless tiles now); Fade rests at ¼; Fade/Scale sliders
+  hidden, Turn is two arrows, the map dialog is top right and its ✕ takes
+  the map with it. The title is Fleur De Leah (shipped, OFL), read at 16
+  cells, set to the right so it runs off the sheet, on a light dithered
+  mat. The compass is the star rose drawn **on the plate** at its top-left
+  (`Compass.overlay`, one plate cell per cell of the drawing), turned with
+  the map, never by hand. The hub's diamonds are on the plate's own pitch,
+  larger, in the bottom-left corner; the strip of three meters stands to
+  their right on a desk, top right on a phone.
 
-| # | rooms typed | shapes | rooms | doors | gaps | loci | reachable |
-|---|---|---|---|---|---|---|---|
-| 1 | hall, bedroom, bathroom, kitchen, study | 40 | 5 | 4 | 0 | 0 | 105/409 |
-| 2 | lounge, kitchen, hall, office, bedroom ×2, laundry, bathroom | 31 | 8 | 0 | 2 | 0 | 128/713 |
-| 3 | pateo, dinning room, lounge room, kitchen, office, bedroom ×2, laundry, toilet, bathroom | 44 | 10 | 6 | 3 | 0 | 245/396 |
-| 4 | porch, lounge, dinning room, kitchen, office, bedroom, bathroom | 38 | 7 | 6 | 0 | 0 | 10/501 |
-| 5 | veranda, dinning, lounge, kitchen, hallway, office, bedroom ×2, laundry, toilet, bathroom | 47 | 11 | 3 | 4 | 0 | 445/575 |
+**The live town** (Eden's profile, `~/.cache/memory-quest-le`, bare keys):
+Myrtleford as at v8.1 — 39 shapes, 1 marker (Barwidgee, a palace of 11
+rooms), 14 locus pictures, the frozen Myrtleford picture (baked before
+the tone step, so still Esri grey; Thaw → Print brings it to the ground).
+Nothing since v8.1 touched it; every new mechanism was verified on a
+throwaway profile against `snapshots/v8.1.json`. Its bindings (letters,
+items) are unset — see *Open threads*.
 
-**No palace is named and no palace has loci.** Two locus pictures survive in
-the IndexedDB store, orphaned — no marker points at them. So `P` has nothing
-to play. That is the obvious next thing to do.
+**How the session tested.** A headless throwaway on its own profile and
+port, restored from a snapshot, driven over CDP:
 
-Every palace is also partly unreachable. Rooms have been resized and dragged
-away from their doors, which disconnects them; the fix is more doors or wall
-gaps, and the palette says how many rooms are joined while you work. Every
-figure above was recomputed from `snapshots/v5.0.json` for this release except
-*reachable*, which is a flood fill that only exists in a running page: those
-ten numbers were measured at v4.6. No palace's shapes have changed a byte
-since and no reachability code was touched, but read them as a measurement
-with a date on it rather than as today's.
+    S=<scratch>; XDG_CACHE_HOME=$S/cache ./play.sh --remote-debugging-port=9223 \
+      --headless=new --window-size=1600,1000 --use-angle=gl --enable-gpu --ignore-gpu-blocklist
+    MQ_PORT=9223 tools/snapshot.py restore snapshots/v8.1.json --port 9223 --yes
+    # then tools/cdp.py attach(port=9223).js('…'), Page.captureScreenshot;
+    # sessionStorage.setItem('hq.user','') + reload passes the door;
+    # Emulation.setDeviceMetricsOverride(390×844, mobile) is the phone.
+
+The three GL flags are not optional — see *A headless rig needs the real
+GPU*. `pkill -f` patterns must not match the shell's own command line
+(`cach[e]`).
 
 ---
 
@@ -902,6 +948,31 @@ thing that was measured, and the mistake that was made on the way.
 ---
 
 ## Open threads
+
+- **Eden's live town has no bindings.** Letters on plates, items on
+  markers, the quest — all built and verified on the rig, none set in the
+  live profile: Journal › Skills › Music › RAITS › focus; `B` on
+  Myrtleford → Letter → A; a road end south → found a plate → Letter → S;
+  each marker → Item. Nothing does this for the player.
+- **The live Myrtleford picture predates the tone step** and shows Esri's
+  grey under the town; Thaw → Print re-bakes it to the ground. Its
+  boundary and title also predate their new defaults (a boundary is a
+  shape on the plate; the title's Size/mat are tune keys the town may
+  carry — `hq.title.*`).
+- **Remote sync was asked for and parked.** Eden wants the same town on
+  every device; that needs a server (Supabase was proposed, half a day's
+  work) — not started, browser storage for now.
+- **The survey from a desk is slow** (~40 s on Mail.ru's mirror) and that
+  mirror has refused once and answered the next moment; two passes over
+  three instances cover it. From the web it is a second.
+- **The phone has never been tested on a phone.** Every mobile check was
+  Chrome's emulation on the rig; iOS Safari in particular (pointer events,
+  `touchstart` cancellation, the PWA) is untried on glass.
+- **Cards fade, a spark revives them** — the one item in `QUEUE.md`,
+  Eden's idea for later.
+- **Build mode by touch** works but its grips are desk-sized.
+
+The older threads, still true:
 
 - **Loci are gone from every palace** and two pictures are orphaned in the
   store. Nothing to play until markers are placed inside a palace and pictures

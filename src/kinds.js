@@ -1151,10 +1151,24 @@ const Kinds = (() => {
      off the glyph or not a print at all. Shared by the generator and by
      `covered`, so a print takes exactly the ground it draws on. Its box is
      a frame around the drawing, and a frame takes nothing. */
+  /* ── a print at its size ───────────────────────────────────────────────
+     `mult` is how many cells one pixel of the glyph covers — 1 is one
+     diamond a pixel, 2 is four, and so on: whole multiples, so a print
+     never warps. A glyph that carries DETAIL (a version at twice the
+     cells, from a source drawn finer than the grid — Glyphs.detail) is
+     read from that version once it is drawn at 2× or more, so making it
+     bigger shows more of the drawing rather than bigger pixels. The
+     footprint is the same either way: base pixels × cell × mult. */
+  function glyphRows(s){
+    if (typeof Glyphs === 'undefined') return null;
+    const m = Math.max(1, Math.round(s.mult || 1));
+    if (m >= 2 && Glyphs.detail){ const d = Glyphs.detail(s.variant); if (d && d.length) return d; }
+    return Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
+  }
   function glyphAt(s, x, y){
     const k = REG[scope].by[s.kind];
     if (!k || !k.glyphs || typeof Glyphs === 'undefined') return '0';
-    const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
+    const rows = glyphRows(s);
     if (!rows || !rows.length) return '0';
     const N = rows.length, M = rows[0].length;
     const fit = Math.min((s.w || 1) / M, (s.h || 1) / N);
@@ -1184,8 +1198,9 @@ const Kinds = (() => {
 
   function landmark(s, cell, buf){
     if (typeof Glyphs === 'undefined') return;
+    const rowsAt = glyphRows(s);
     const T = TONE[s.tone] || TONE.stone;
-    const rows = Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
+    const rows = rowsAt;
     if (!rows || !rows.length) return;
     const N = rows.length, M = rows[0].length;
     const lit = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '1';

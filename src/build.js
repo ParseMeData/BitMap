@@ -332,7 +332,7 @@ const Build = (() => {
                pts: [[snapC(wx), snapC(wy)]],
                feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                bright: defs.bright * (k.bright0 || 1),
-               grain: defs.grain, scale: defs.scale,
+               grain: defs.grain, scale: defs.scale, mult: 1,
                /* a kind that draws nothing has to be born already doing
                   something, or dropping it reads as a tool that is broken */
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
@@ -405,9 +405,9 @@ const Build = (() => {
     if (!k.glyphs || typeof Glyphs === 'undefined') return;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return;
-    const c = cellSize();
-    s.w = rows[0].length * c;
-    s.h = rows.length * c;
+    const c = cellSize(), m = Math.max(1, Math.round(s.mult || 1));
+    s.w = rows[0].length * c * m;
+    s.h = rows.length * c * m;
   }
 
   /* ── and grows only in whole multiples of itself ───────────────────────
@@ -440,8 +440,8 @@ const Build = (() => {
     if (!k || !k.glyphs || typeof Glyphs === 'undefined') return null;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return null;
-    const c = cellSize();
-    return {w: rows[0].length * c, h: rows.length * c, n: 1};
+    const c = cellSize(), m = Math.max(1, Math.round(s.mult || 1));
+    return {w: rows[0].length * c * m, h: rows.length * c * m, n: 1};
   }
 
   /* ── a plan arriving whole ──────────────────────────────────────────────
@@ -495,7 +495,7 @@ const Build = (() => {
                  ctrl: Array.isArray(d.ctrl) ? d.ctrl.map(c => (c ? [c[0], c[1]] : null)) : null,
                  feather: d.feather !== undefined ? d.feather : k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
-                 grain: 1, scale: 1,
+                 grain: 1, scale: 1, mult: Math.max(1, Math.round(d.mult || 1)),
                  jitter: d.jitter !== undefined ? d.jitter : (k.jitter0 || 0),
                  scatter: d.scatter !== undefined ? d.scatter : (k.scatter0 || 0),
                  fall: d.fall !== undefined ? d.fall : (k.fall0 || 0),
@@ -1742,7 +1742,7 @@ const Build = (() => {
       $('#kshapes').appendChild(c);
     }
     for (const [key, label, min, max, step] of
-         [['size', 'Width', 1, 60, 1], ['feather', 'Feather', 0, 14, 1],
+         [['size', 'Width', 1, 60, 1], ['mult', 'Size ×', 1, 4, 1], ['feather', 'Feather', 0, 14, 1],
           ['bright', 'Bright', 40, 220, 5], ['grain', 'Grain', 1, 4, 1],
           ['scale', 'Scale', 40, 200, 5], ['jitter', 'Jitter', 0, 150, 5],
           ['scatter', 'Scatter', 0, 100, 5], ['fall', 'Fall', 0, 100, 5],
@@ -1917,6 +1917,12 @@ const Build = (() => {
       const k = key.slice(1);
       Palace.setTune(k, (k === 'detail' || k === 'feather') ? v : v / 100);
       return syncHead();
+    }
+    /* a print's size: whole multiples of its own pixels, never a stretch */
+    if (key === 'mult'){
+      if (sel && isPrint(sel)){ sel.mult = Math.max(1, Math.round(v)); glyphSize(sel, Kinds.by[sel.kind]); changed(sel); }
+      else defs.mult = Math.max(1, Math.round(v));
+      syncUI(); return;
     }
     if (key === 'feather') return set('feather', v);
     if (key === 'bright')  return set('bright', v / 100);
@@ -2098,7 +2104,8 @@ const Build = (() => {
       const key = r.dataset.key, lab = r.querySelector('label');
       if (key === 'core') r.hidden = !rad;
       else if (key === 'fall' || key === 'feather') r.hidden = rad;
-      else if (key === 'size') r.hidden = isPrint(sel);   // a print has one size
+      else if (key === 'size') r.hidden = isPrint(sel);   // a print has one size — in whole multiples, below
+      else if (key === 'mult') r.hidden = !isPrint(sel);
       if (key === 'core'){
         const v = sel ? (sel.core === undefined ? defs.core : sel.core) : defs.core;
         r._set(Math.round(v * 100), v ? Math.round(v * 100) + '%' : 'from the middle',
@@ -2109,6 +2116,11 @@ const Build = (() => {
       } else if (key === 'bright'){
         const b = sel ? (sel.bright || 1) : defs.bright;
         r._set(Math.round(b * 100), b.toFixed(2) + '\u00d7', true);
+      } else if (key === 'mult'){
+        const v = sel ? Math.max(1, Math.round(sel.mult || 1)) : (defs.mult || 1);
+        /* 'fine' when the glyph has detail to show at this size */
+        const fine = !!(sel && v >= 2 && typeof Glyphs !== 'undefined' && Glyphs.detail && Glyphs.detail(sel.variant));
+        r._set(v, v + '\u00d7' + (fine ? ' fine' : ''), true, 1, 4);
       } else if (key === 'grain'){
         const v = sel ? (sel.grain || 1) : defs.grain;
         r._set(v, v === 1 ? 'full' : '1/' + v, true, 1, 4);
@@ -2443,7 +2455,7 @@ const Build = (() => {
         kind: s.kind, type: s.type, seed: s.seed, variant: s.variant, tone: s.tone || 'stone', rot: s.rot || 0,
         label: s.label || '', n: s.n || 0, room: s.room || 0,
         feather: s.feather, bright: s.bright, mask: s.mask,
-        grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter,
+        grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter, mult: s.mult || 1,
         fall: s.fall || 0, out: s.out || 0, quad: s.quad || null, blob: s.blob || null,
         core: s.core === undefined ? 0.35 : s.core,
         aim: s.aim ? [s.aim[0], s.aim[1]] : null,
@@ -2521,7 +2533,7 @@ const Build = (() => {
           rot: s.rot || 0,
           feather: s.feather === undefined ? 0 : s.feather,
           bright: s.bright || 1, mask: !!s.mask,
-          grain: s.grain || 1, scale: s.scale || 1,
+          grain: s.grain || 1, scale: s.scale || 1, mult: s.mult || 1,
           jitter: s.jitter || 0, scatter: s.scatter || 0,
           /* absent on every shape saved before Fall existed, and 0 is what
              those were doing — so an old town comes back unchanged */

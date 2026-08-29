@@ -80,6 +80,7 @@ def png(rows):
 import math
 from collections import Counter
 CAP = 32
+CAP2 = 64            # a sprite finer than the grid is kept to here as its DETAIL
 
 def background(im):
     """the commonest colour, on a coarse quantisation"""
@@ -191,8 +192,9 @@ def fit(rows):
     to four times over; bigger than that is not a sprite at this pitch"""
     h = len(rows); w = len(rows[0])
     if w <= CAP and h <= CAP: return rows
-    k = max(w, h) / CAP
-    if k > 4: return None
+    k = max(w, h) / CAP2
+    if k > 2: return None
+    if k <= 1: return rows
     nw, nh = max(1, round(w / k)), max(1, round(h / k))
     out = []
     for j in range(nh):
@@ -247,7 +249,15 @@ def import_all():
     import importlib.util
     spec = importlib.util.spec_from_file_location('glyphs', ROOT / 'tools' / 'glyphs.py')
     GL = importlib.util.module_from_spec(spec); spec.loader.exec_module(GL)
-    glyphs, sets = {}, {}
+    glyphs, sets, detail = {}, {}, {}
+    def down(rows, cap):
+        h = len(rows); w = len(rows[0]); k = max(w, h) / cap
+        if k <= 1: return rows
+        nw, nh = max(1, round(w / k)), max(1, round(h / k)); out = []
+        for j in range(nh):
+            y = min(h - 1, int((j + 0.5) * k))
+            out.append(''.join(rows[y][min(w - 1, int((i + 0.5) * k))] if rows[y][min(w - 1, int((i + 0.5) * k))] != '0' else '0' for i in range(nw)))
+        return out
     for d in sorted(OUT.iterdir()):
         if not d.is_dir() or d.name.startswith('_') or d.name.startswith('.'): continue
         names = []
@@ -265,16 +275,27 @@ def import_all():
                     else: r += '1'
                 rows.append(r)
             if not any('1' in r for r in rows): continue
-            if nx > CAP or ny > CAP: print(f'  skip {d.name}/{f.name}: {nx}x{ny} is over the grid'); continue
+            if nx > CAP2 or ny > CAP2: print(f'  skip {d.name}/{f.name}: {nx}x{ny} is over even the detail grid'); continue
             if not marked: rows = GL.body(rows)
-            if len(rows) > CAP or len(rows[0]) > CAP:
-                rows = [r[:CAP] for r in rows[:CAP]]
             name = f.stem
             if name in glyphs: name = d.name.lower() + '-' + name
+            # finer than the grid: the detail is the drawing itself (to 64),
+            # the glyph is it brought down to the grid
+            if len(rows) > CAP or len(rows[0]) > CAP:
+                detail[name] = down(rows, CAP2)
+                rows = down(rows, CAP)
             glyphs[name] = rows; names.append(name)
         if names: sets[d.name.lower()] = names
-    GL.write(glyphs, CAP, sets)
-    print(f'wrote src/glyphs.js: {len(glyphs)} glyphs in {len(sets)} sets — ' + ', '.join(f'{k} {len(v)}' for k, v in sets.items()))
+    # written here rather than by glyphs.py's write(), for the detail table
+    import json
+    names = sorted(glyphs)
+    blob = json.dumps({'grid': CAP, 'sets': sets, 'glyphs': {n: glyphs[n] for n in names},
+                       'detail': {n: detail[n] for n in sorted(detail)}}, indent=0, separators=(',', ':'))
+    with open(GL.OUT, 'w', encoding='utf8') as fh:
+        fh.write(GL.HEADER % (len(names), CAP, CAP))
+        fh.write('/*DATA*/\n' + blob + '\n/*END*/\n')
+        fh.write(GL.FOOTER)
+    print(f'wrote src/glyphs.js: {len(glyphs)} glyphs in {len(sets)} sets, {len(detail)} with detail — ' + ', '.join(f'{k} {len(v)}' for k, v in sets.items()))
 
 def export():
     D = table()

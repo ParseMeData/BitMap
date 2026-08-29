@@ -76,7 +76,21 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 29 Aug 2026, build 210
+## Where we are — 29 Aug 2026, build 220
+
+- **Build 220 (29 Aug 2026) — a print grows in whole multiples, and shows
+  its detail when it has some.** A print's Adjust row now offers **Size ×**
+  (1–4, whole numbers; `s.mult`) instead of the width slider: each pixel of
+  the glyph covers mult×mult cells, so nothing is ever stretched or warped
+  (`glyphSize`/`glyphSnap` in build.js multiply by it; `Kinds.glyphRows(s)`
+  in kinds.js picks the rows). Sprites whose source is finer than the
+  32-cell grid keep a **detail** version (up to 64 cells) in `glyphs.js`
+  (`D.detail`, `Glyphs.detail(name)`): `tools/assets.py slice` no longer
+  brings them down to 32 (only to 64), and `import` writes the base (fitted
+  to 32) and the detail; 50 of the 327 glyphs have one. At Size × 2 or more
+  such a print is drawn from its detail (the row reads "2× fine"), so making
+  it bigger shows more of the drawing. Footprint is the same either way.
+  Saved with the shape (`mult`, default 1); old towns load unchanged.
 
 **The line.** `~/Projects/memory-quest-le`, branch `work`, pushed to
 `origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages

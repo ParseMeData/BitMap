@@ -1967,8 +1967,8 @@ shift-drag, so the spike points where north is on the plate; on the
 region it reads north-up. It is never turned by hand — but it can be
 **moved**: take the rose and put it where you like, and it stays there
 (`at` in `hq.compass`), as the town's name can be dragged and stays
-(`hq.title.off`). Both stand on a mat of the ground's own diamonds —
-solid under the mark, dithered away past it — so wherever you put them
+(`hq.title.off`). Both stand on a mat of the ground's own diamonds, one a cell like
+everything else — solid under the mark, dithered away past it — so wherever you put them
 over terrain they read on the plate's colour and not through the trees. The drawing is
 `assets/compass.png`; `tools/compass.py` cuts the rose out of it and it
 goes through the same tone pass as a card's picture. It is tuned where

@@ -26,6 +26,12 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Title within reach, mats at the plate's grain** — 2026-08-29.
+  `titleAt` clamps the name onto the plate (an offset saved against the
+  old centre default had carried Eden's past the edge, which read as
+  locked); `Title.mat` at one diamond a cell (`MAT_S`), `ENTMAX` 32768
+  to hold it. Verified on the v8.1 town: title 955 → 714, drag works.
+  BUILD 215.
 - [x] **Title and compass moved by hand, kept, on solid mats** —
   2026-08-29. Compass drag on the plate (`wireDrag`, capture, only a
   press on the rose), `at` kept in `hq.compass`; the title's drag was

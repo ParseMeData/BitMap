@@ -605,9 +605,13 @@ const Palace = (() => {
        name can extend off screen, the walker goes to it if a road does
        (Eden, 2026-08-28) */
     const cx = (G.sheetW || G.W) + tw * 0.2, cy = th / 2 + t * 4;
+    /* and never off the plate: an offset saved against an older default
+       could carry the name past the edge, out of reach of a hand */
+    const tx = Math.max(tw * 0.25, Math.min(G.W - tw * 0.1, cx + (off ? off.dx : 0)));
+    const ty = Math.max(th / 2, Math.min(G.H - th / 2, cy + (off ? off.dy : 0)));
     return {name, px, face, inside: false, alpha: face ? 0.88 : 0.38, home: [cx, cy],
             w: face ? w : Type.width(name, px, treat), h: face ? h : Type.height(px),
-            x: cx + (off ? off.dx : 0), y: cy + (off ? off.dy : 0)};
+            x: tx, y: ty};
   }
   /* everything that has been drawn, which is what a town's name goes over */
   function built(){

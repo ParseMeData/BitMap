@@ -357,9 +357,13 @@ const Title = (() => {
     const cx = (cols - 1) / 2, cy = (rows - 1) / 2;
     return {cx, cy, rx: cols / 2 * 1.12 + 4, ry: rows / 2 * 1.45 + 4};
   }
+  /* one diamond per cell since 2026-08-29 — the mat is the plate's own
+     grain, as the letters are; it was one per three, which read as a
+     coarser, larger material behind them */
+  const MAT_S = 1;
   function mat(a, m, cols, rows, x0, y0, px, cover, cap, feather){
     if (!(cover > 0)) return m;
-    const S = 3, o = oval(cols, rows);
+    const S = MAT_S, o = oval(cols, rows);
     const per = 1 - Math.sqrt(1 - Math.min(cover, 0.98));
     const f0 = 1 - clamp((feather === undefined ? 10 : feather) / FEATHER_MAX, 0, 1);
     const gx0 = Math.floor(o.cx - o.rx), gx1 = Math.ceil(o.cx + o.rx);
@@ -391,7 +395,7 @@ const Title = (() => {
   /* the grid's box over the oval, which over-counts the corners: a cap
      check that errs on the safe side */
   const matCost = (cols, rows) => {
-    const S = 3, o = oval(cols, rows);
+    const S = MAT_S, o = oval(cols, rows);
     return (Math.floor(2 * o.rx / S) + 2) * (Math.floor(2 * o.ry / S) + 2);
   };
 

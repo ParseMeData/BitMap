@@ -93,7 +93,7 @@ function fatal(e){
   document.title = 'Memory Quest Low Effort — ' + head;
 }
 
-const ENTMAX = 8192;
+const ENTMAX = 32768;          // raised 2026-08-29 for mats at one diamond a cell
 const ENT = new Float32Array(ENTMAX * 17);
 const DPR = () => Math.min(window.devicePixelRatio || 1, DPRCAP);
 let VW = 1, VH = 1;

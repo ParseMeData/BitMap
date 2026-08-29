@@ -209,7 +209,8 @@ and the phone: the keys drawn on the screen, every panel a sheet.
 | `Shift` | sprint |
 | `Space` | recrystallise the map |
 | `Tab` (hold) | overview of the whole map |
-| wheel, `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at |
+| wheel | walk the road &nbsp;·&nbsp; down is onward, up is back, on the axis you face; rest a second on a crossing and the wheel takes the crossing road |
+| `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at (a pinch on a phone) |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
@@ -2112,6 +2113,12 @@ a road 5 grains, a link 3, a marker 5 blocks, a house or building 3, a
 district 4) and is refused, with a note that says the price, when you
 are short. Nothing that stands is ever taken back; a profile with no
 stock starts with twenty grains and ten blocks.
+
+**A path** is the palette's footway, under Roads beside Road and
+Roundabout: a line one cell wide in the road's white, walkable, for
+where the walker should go off the road — a track to a door, a way
+across a paddock. Two grains on a plate that pays; the survey never
+lays one.
 
 **The first plate is free.** On the home plate — the town you set out
 from — roads, links, markers, houses, buildings and districts cost

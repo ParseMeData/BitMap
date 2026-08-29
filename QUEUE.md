@@ -26,6 +26,13 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **A path, and the wheel walks** — 2026-08-29. `path` kind (roads
+  layer, 1 cell, road white, walk 2; palette after Roundabout; 2 grains,
+  free on home). The wheel no longer zooms: `rail` from the facing axis,
+  wheel down onward / up back through `tryStep`; `railRest` turns the
+  rail onto a crossing road after a second's rest (`crossing()`), once
+  per rest; the keys drop the rail. Verified: path stamps 15 tiles, wheel
+  walks 6 tiles, a crossing turns the rail. BUILD 218.
 - [x] **The name never snaps back; the house stands on its patch** —
   2026-08-29. `drop()` no longer resets an offset within the title's own
   height of the default; `rebuild()` applies a modifier only to shapes

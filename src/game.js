@@ -563,8 +563,40 @@ addEventListener('keyup', e => keys.delete(e.code));
    nothing (Eden, 2026-08-28): no pause on blur there, as on the wall */
 const MOBILE_UI = () => document.body.classList.contains('mobile');
 addEventListener('blur', () => { keys.clear(); if (!WALL && !MOBILE_UI() && !G.paused) togglePause(true); });
-canvas.addEventListener('wheel', e => { e.preventDefault(); zoomBy(Math.pow(1.14, -Math.sign(e.deltaY))); },
-                        {passive: false});
+/* ── the wheel walks ─────────────────────────────────────────────────────
+   Since 2026-08-29 the wheel does not zoom (that is + − 0, and a pinch on a
+   phone): it moves the walker along its road — down is onward, up is back
+   — on a RAIL, the axis the walker is facing, held while it travels. Rest
+   on an intersection for a second and the rail turns onto the crossing
+   road; move and the rail is yours again. tryStep does the cornering. */
+let rail = null, restT = 0, turned = false;
+const railFrom = f => (Math.abs(f[0]) >= Math.abs(f[1]) ? [Math.sign(f[0]) || 1, 0] : [0, Math.sign(f[1]) || 1]);
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (!G.terr || G.paused) return;
+  const s = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+  if (!s) return;
+  if (!rail || turned === 'fresh'){ rail = railFrom(G.face); turned = false; }
+  wake();
+  tryStep(rail[0] * s, rail[1] * s);
+  restT = 0;
+}, {passive: false});
+/* is the walker standing where a road crosses the rail? */
+function crossing(){
+  if (!rail) return null;
+  const px = rail[1] ? 1 : 0, py = rail[0] ? 1 : 0;   // the perpendicular axis
+  if (wAt(G.x + px, G.y + py)) return [px, py];
+  if (wAt(G.x - px, G.y - py)) return [-px, -py];
+  return null;
+}
+function railRest(dt){
+  if (!rail) return;
+  if (G.moving){ restT = 0; turned = false; return; }
+  restT += dt;
+  if (turned || restT < 1) return;
+  const c = crossing();
+  if (c){ rail = c; turned = true; if (typeof hqNote === 'function') hqNote('the wheel takes the crossing road', false); }
+}
 /* the plate hands control back the moment you steer it */
 function wake(){
   G.idleFor = 0;
@@ -678,8 +710,9 @@ function frame(now){
       }
     }
     if (!G.moving){
-      for (const [code, dx, dy] of DIRS) if (keys.has(code)){ tryStep(dx, dy); break; }
+      for (const [code, dx, dy] of DIRS) if (keys.has(code)){ tryStep(dx, dy); rail = null; break; }
     }
+    railRest(dt);
   }
 
   /* player world position with a springy hop between tiles */

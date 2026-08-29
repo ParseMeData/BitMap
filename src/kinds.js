@@ -959,6 +959,18 @@ const Kinds = (() => {
     }
   }
 
+  /* ── PATH ──────────────────────────────────────────────────────────────
+     A footway: one cell wide, in the road's white, walkable — for where
+     the walker should go off the road (Eden, 2026-08-29). Drawn by hand
+     in the palette under Roads; the survey never lays one. */
+  function path(s, cell, buf){
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      if (hash(u, v, s.seed) > 0.96) return;
+      buf.cell(x, y, C.road, 0.92 * fade, 0.9, 0, 0.78 * fade, 0.96, 0,
+               0.02, hash(u, v, s.seed + 7));
+    });
+  }
+
   /* ── LINK ──────────────────────────────────────────────────────────────
      The region's road: a line one cell wide between two towns, in the
      kerb's grey rather than the road's white, because it is not a road —
@@ -1712,6 +1724,10 @@ const Kinds = (() => {
      walk: 2, stamp: 6, gen: road,      swatch: '#FFFFFF',
      bright0: 1.3, feather0: 0, pad0: 1.2, padFade0: 0.8, padBreak0: 0.3,
      connects: true},
+    {id: 'path',      label: 'Path',      layer: 'roads',  types: ['line'],
+     walk: 2, stamp: 6, gen: path,      swatch: '#EDEAE3', width0: 1,
+     bright0: 1.2, feather0: 0, pad0: 0, padFade0: 0, padBreak0: 0,
+     connects: true},
     /* relabelled Blocks and Housing when they moved under Terrain, so the
        word Houses is free for the drawn ones; the ids stay, because every
        saved town names its shapes by id */
@@ -1849,6 +1865,7 @@ const Kinds = (() => {
     {label: 'Park',       kind: 'park',      type: 'rect'},
     {label: 'Road',       kind: 'road',      type: 'line'},
     {label: 'Roundabout', kind: 'road',      type: 'ring'},
+    {label: 'Path',       kind: 'path',      type: 'line'},
     {label: 'Blocks',     kind: 'buildings', type: 'rect'},
     {label: 'Housing',    kind: 'houses',    type: 'rect'},
     {label: 'Houses',     kind: 'house',     type: 'rect'},

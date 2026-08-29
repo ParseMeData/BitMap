@@ -809,7 +809,7 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="keys" class="glass">
   <em>WASD</em> move &nbsp; <em>Shift</em> sprint<br>
   <em>Space</em> recrystallise &nbsp; <em>Tab</em> overview<br>
-  <em>Wheel</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
+  <em>Wheel</em> walk the road &nbsp; <em>+ &minus; 0</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
   <em>B</em> build &nbsp; <em>O</em> rooms &nbsp; <em>V</em> minimal &nbsp; <em>Enter</em> open &nbsp; <em>P</em> play
 </div>
 
@@ -1012,7 +1012,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 217, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 218, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

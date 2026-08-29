@@ -1522,7 +1522,12 @@ palette** under Buildings: Houses, Landmarks, Buildings, Trees, Plants,
 Icons, Signs, Distractions, Patterns, Mountains, each drawn as a
 landmark is, one diamond a cell. Trees, plants, icons, signs and
 patterns do not block the walker; the rest do. Move a file between
-folders on the desktop, add one, run `import`, and the palette follows.
+folders on the desktop, add one, run `import`, and the palette follows. A print grows only in **whole multiples** — its Adjust row has
+**Size ×** (1–4) in place of the width slider, each pixel covering that
+many cells each way, so it is never stretched or warped. A sprite drawn
+finer than the 32-cell grid (up to 64 cells) keeps that finer drawing as
+its **detail** (`Glyphs.detail`), and from Size × 2 the print is drawn
+from it — bigger shows more, not bigger pixels.
 
 ## The route, and playing it
 

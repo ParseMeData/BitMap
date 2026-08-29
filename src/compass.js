@@ -220,13 +220,30 @@ const Compass = (() => {
       m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, 0.85, cap, 18);
     const th = heading() * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
     const hs = px * 0.75 * tuned('weight');
+    /* ── the same screen the prints are drawn in ─────────────────────────
+       A rose stamped solid is a silhouette, and a silhouette is the one
+       thing on the plate that reads as a cut-out (Eden, 2026-08-29: the
+       compass was missing the checkered diamond format). So it is
+       halftoned the way a landmark's body is in kinds.js: the rim — any
+       cell with an empty neighbour — stays solid so the rose keeps a
+       drawn edge, and inside it a checker sets the pitch, the off cells
+       drawn small and dim, the on cells a touch under full. */
+    if (!f.at){
+      f.at = new Set();
+      for (const c of f.cells) f.at.add(c.x + ',' + c.y);
+    }
+    const has = (x, y) => f.at.has(x + ',' + y);
     for (const c of f.cells){
       if (cap !== undefined && m > cap - 1) return m;
       const lx = (c.x + 0.5) * px - f.cols * px / 2, ly = (c.y + 0.5) * px - f.rows * px / 2;
       const k = (c.y + 1) / (f.rows + 1);
       const col = mix(BONE, DIM, GREY * k);
+      const rim = !has(c.x - 1, c.y) || !has(c.x + 1, c.y) || !has(c.x, c.y - 1) || !has(c.x, c.y + 1);
+      const screen = (c.x + c.y) & 1;
+      const sz = rim ? 1.0 : screen ? 0.58 : 0.88;
+      const al = rim ? 0.9 : screen ? 0.6 : 0.78;
       m = put(a, m, cx + lx * cs - ly * sn, cy + lx * sn + ly * cs,
-              col[0], col[1], col[2], 0.9 * c.al, hs * (c.sz || 1), 0, 0, 0, 1);
+              col[0], col[1], col[2], al * c.al, hs * sz * (c.sz || 1), 0, 0, 0, 1);
     }
     return m;
   }

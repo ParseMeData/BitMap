@@ -76,7 +76,14 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 29 Aug 2026, build 221
+## Where we are — 29 Aug 2026, build 222
+
+- **Build 222 (29 Aug 2026) — the compass in the prints' screen.** The rose
+  on the plate was stamped solid (every cell one full diamond) and read as
+  a dot silhouette beside the halftoned prints. `Compass.overlay` now
+  screens it the way `landmark()` screens a body: rim cells (an empty
+  4-neighbour) solid, inside a checker — off cells small and dim (0.58,
+  0.6), on cells a touch under full (0.88, 0.78). Same `put`, same diamond.
 
 - **Build 221 (29 Aug 2026) — Structures, a Patterns row, half sizes, the
   Clear tool, the picker first.** The built layer is labelled

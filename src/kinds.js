@@ -1161,8 +1161,8 @@ const Kinds = (() => {
      footprint is the same either way: base pixels × cell × mult. */
   function glyphRows(s){
     if (typeof Glyphs === 'undefined') return null;
-    const m = Math.max(1, Math.round(s.mult || 1));
-    if (m >= 2 && Glyphs.detail){ const d = Glyphs.detail(s.variant); if (d && d.length) return d; }
+    const m = Math.max(1, Math.round((s.mult || 1) * 2) / 2);
+    if (m >= 1.5 && Glyphs.detail){ const d = Glyphs.detail(s.variant); if (d && d.length) return d; }
     return Glyphs.rows(s.variant) || Glyphs.rows(Glyphs.names[0]);
   }
   function glyphAt(s, x, y){
@@ -1662,7 +1662,7 @@ const Kinds = (() => {
        the drawn buildings are two layers, because they are two ways of
        saying "built": one is ground cover and one is a thing on it */
     {id: 'terrain', label: 'Terrain',  z: 2},
-    {id: 'built',  label: 'Buildings', z: 2}
+    {id: 'built',  label: 'Structures', z: 2}
   ];
 
   const AREA = ['rect', 'ellipse', 'warp'];
@@ -1806,7 +1806,9 @@ const Kinds = (() => {
     {id: 'creature',  label: 'Distractions', layer: 'built', types: ['rect'],
      glyphs: 'distractions', w0: 3, h0: 3, feather0: 0, walk: 0, stamp: 0, gen: landmark, swatch: '#FF5FA2'},
     {id: 'pattern',   label: 'Patterns',  layer: 'built',  types: ['rect'],
-     glyphs: 'patterns', w0: 4, h0: 4, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#EDEAE3'},
+     glyphs: 'patterns', w0: 4, h0: 4, feather0: 0, walk: 1, stamp: 0, gen: landmark, swatch: '#EDEAE3',
+     /* for looks, not for living in: the palette hangs it in its own row */
+     aesthetic: true},
     {id: 'mountain',  label: 'Mountains', layer: 'built',  types: ['rect'],
      glyphs: 'mountains', w0: 4, h0: 4, feather0: 0, walk: 0, stamp: 0, gen: landmark, swatch: '#8A8A90'},
     /* ── the demolish area ─────────────────────────────────────────────
@@ -1880,8 +1882,25 @@ const Kinds = (() => {
      walk: 1, stamp: 9, gen: nothing,   swatch: '#5FBFC4',
      modifies: true, radial: true, core0: 0.35,
      jitter0: 0.4, scatter0: 0.35, out0: 1,
-     feather0: 0, fall0: 0, pad0: 0, padFade0: 0, padBreak0: 0}
+     feather0: 0, fall0: 0, pad0: 0, padFade0: 0, padBreak0: 0},
+    /* ── the clearing ──────────────────────────────────────────────────
+       The fourth tool, and the only one that DELETES: an occluder that
+       draws nothing, so the terrain under it is simply not there — the
+       same hard-edged nothing a print's own ground leaves, without the
+       print. It is picky (`clears`, filled in below): it takes ground from
+       the terrain kinds and from nothing built, so a house or a sign
+       inside the clearing stands on it untouched, and roads run through.
+       Born hard — no feather, no scatter — because a clearing with a soft
+       edge is a demolition, and that tool already exists. */
+    {id: 'clear',    label: 'Clear',    layer: 'built',  types: AREA,
+     walk: 1, stamp: 9, gen: nothing,   swatch: '#5FBFC4', tool: true,
+     feather0: 0, jitter0: 0, scatter0: 0, fall0: 0, out0: 0,
+     pad0: 0, padFade0: 0, padBreak0: 0, clears: []}
   ];
+  /* the clearing takes terrain — everything that is not a print, not a
+     road and not one of the tools */
+  LIST.find(k => k.id === 'clear').clears =
+    LIST.filter(k => !k.glyphs && !k.modifies && !k.tool && k.layer !== 'roads').map(k => k.id);
   /* what the palette offers: a kind plus the shape it starts as, so a
      roundabout is one chip rather than a mode you have to know about */
   const PALETTE = [
@@ -1915,6 +1934,7 @@ const Kinds = (() => {
     {label: 'Patterns',   kind: 'pattern',   type: 'rect'},
     {label: 'Mountains',  kind: 'mountain',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
+    {label: 'Clear',      kind: 'clear',     type: 'rect'},
     /* an oval by default: a town thins out into the country in every
        direction at once, and a rect is the answer you reach for when it
        does not — one chip away on the Shape row */

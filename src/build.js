@@ -405,7 +405,7 @@ const Build = (() => {
     if (!k.glyphs || typeof Glyphs === 'undefined') return;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return;
-    const c = cellSize(), m = Math.max(1, Math.round(s.mult || 1));
+    const c = cellSize(), m = Math.max(1, Math.round((s.mult || 1) * 2) / 2);
     s.w = rows[0].length * c * m;
     s.h = rows.length * c * m;
   }
@@ -440,7 +440,7 @@ const Build = (() => {
     if (!k || !k.glyphs || typeof Glyphs === 'undefined') return null;
     const rows = Glyphs.rows(s.variant);
     if (!rows || !rows.length) return null;
-    const c = cellSize(), m = Math.max(1, Math.round(s.mult || 1));
+    const c = cellSize(), m = Math.max(1, Math.round((s.mult || 1) * 2) / 2);
     return {w: rows[0].length * c * m, h: rows.length * c * m, n: 1};
   }
 
@@ -495,7 +495,7 @@ const Build = (() => {
                  ctrl: Array.isArray(d.ctrl) ? d.ctrl.map(c => (c ? [c[0], c[1]] : null)) : null,
                  feather: d.feather !== undefined ? d.feather : k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
-                 grain: 1, scale: 1, mult: Math.max(1, Math.round(d.mult || 1)),
+                 grain: 1, scale: 1, mult: Math.max(1, Math.round((d.mult || 1) * 2) / 2),
                  jitter: d.jitter !== undefined ? d.jitter : (k.jitter0 || 0),
                  scatter: d.scatter !== undefined ? d.scatter : (k.scatter0 || 0),
                  fall: d.fall !== undefined ? d.fall : (k.fall0 || 0),
@@ -1654,12 +1654,18 @@ const Build = (() => {
       '<div class="plabel fitonly" id="kmodlabel">Modify</div>' +
       '<div id="kmods" class="kgrid fitonly"></div>' +
       '<div class="knote fitonly" id="kmodnote">a boundary lands as the plate &middot; ' +
-      'pull it in to where the town stops</div>' +
+      'pull it in to where the town stops &middot; clear takes the terrain under it and nothing built</div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
-      '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
+      /* the patterns: on the structures layer for the same reason the
+         buildings are, but for looks rather than for living in */
+      '<div class="plabel fitonly" id="kpatlabel">Patterns &middot; aesthetics</div>' +
+      '<div id="kpats" class="kgrid fitonly"></div>' +
+      /* the asset picker sits right under the chips that arm it, so what
+         you are about to place is chosen before the plate is clicked */
       '<div class="plabel fitonly" id="kvarlabel">Type</div>' +
       '<div id="kvariants" class="kgrid fitonly"></div>' +
+      '<div class="plabel fitonly">Shape</div><div id="kshapes" class="kgrid fitonly"></div>' +
       '<div class="plabel fitonly" id="ktonelabel">Tone</div>' +
       '<div id="ktones" class="kgrid fitonly"></div>' +
       '<div class="knote fitonly" id="kstrand" hidden>this road is not joined to the ' +
@@ -1742,7 +1748,7 @@ const Build = (() => {
       $('#kshapes').appendChild(c);
     }
     for (const [key, label, min, max, step] of
-         [['size', 'Width', 1, 60, 1], ['mult', 'Size ×', 1, 4, 1], ['feather', 'Feather', 0, 14, 1],
+         [['size', 'Width', 1, 60, 1], ['mult', 'Size ×', 10, 40, 5], ['feather', 'Feather', 0, 14, 1],
           ['bright', 'Bright', 40, 220, 5], ['grain', 'Grain', 1, 4, 1],
           ['scale', 'Scale', 40, 200, 5], ['jitter', 'Jitter', 0, 150, 5],
           ['scatter', 'Scatter', 0, 100, 5], ['fall', 'Fall', 0, 100, 5],
@@ -1920,8 +1926,10 @@ const Build = (() => {
     }
     /* a print's size: whole multiples of its own pixels, never a stretch */
     if (key === 'mult'){
-      if (sel && isPrint(sel)){ sel.mult = Math.max(1, Math.round(v)); glyphSize(sel, Kinds.by[sel.kind]); changed(sel); }
-      else defs.mult = Math.max(1, Math.round(v));
+      /* the slider counts tenths; the size is whole and half multiples */
+      const m = Math.max(1, Math.round(v / 10 * 2) / 2);
+      if (sel && isPrint(sel)){ sel.mult = m; glyphSize(sel, Kinds.by[sel.kind]); changed(sel); }
+      else defs.mult = m;
       syncUI(); return;
     }
     if (key === 'feather') return set('feather', v);
@@ -2032,7 +2040,7 @@ const Build = (() => {
     if (!list) return;
     const glyph = !!(k && k.glyphs);
     box.classList.toggle('kgl', glyph);
-    if (lab) lab.textContent = glyph ? 'Building' : 'Variant';
+    if (lab) lab.textContent = glyph ? 'Asset' : 'Variant';
     const current = sel && sel.kind === id ? sel.variant : (defs.variant[id] || list[0]);
     for (const v of list){
       const c = document.createElement('div');
@@ -2117,10 +2125,10 @@ const Build = (() => {
         const b = sel ? (sel.bright || 1) : defs.bright;
         r._set(Math.round(b * 100), b.toFixed(2) + '\u00d7', true);
       } else if (key === 'mult'){
-        const v = sel ? Math.max(1, Math.round(sel.mult || 1)) : (defs.mult || 1);
+        const v = sel ? Math.max(1, Math.round((sel.mult || 1) * 2) / 2) : (defs.mult || 1);
         /* 'fine' when the glyph has detail to show at this size */
-        const fine = !!(sel && v >= 2 && typeof Glyphs !== 'undefined' && Glyphs.detail && Glyphs.detail(sel.variant));
-        r._set(v, v + '\u00d7' + (fine ? ' fine' : ''), true, 1, 4);
+        const fine = !!(sel && v >= 1.5 && typeof Glyphs !== 'undefined' && Glyphs.detail && Glyphs.detail(sel.variant));
+        r._set(Math.round(v * 10), v + '\u00d7' + (fine ? ' fine' : ''), true, 10, 40);
       } else if (key === 'grain'){
         const v = sel ? (sel.grain || 1) : defs.grain;
         r._set(v, v === 1 ? 'full' : '1/' + v, true, 1, 4);
@@ -2184,6 +2192,9 @@ const Build = (() => {
       lastKind = p.kind;
       document.body.classList.add('arming');
       syncUI();
+      /* a print: the picker is brought into view so the asset is chosen
+         before the plate is clicked */
+      if (k.glyphs){ const b = $('#kvariants'); if (b && !b.hidden) b.scrollIntoView({block: 'nearest'}); }
     });
     return c;
   }
@@ -2199,17 +2210,21 @@ const Build = (() => {
      it is a button rather than a chip — so indoors the row would be an
      empty heading, and it takes itself down. */
   function syncKinds(){
-    const box = $('#kkinds'), mbox = $('#kmods');
+    const box = $('#kkinds'), mbox = $('#kmods'), pbox = $('#kpats');
     if (!box) return;
     box.innerHTML = '';
     if (mbox) mbox.innerHTML = '';
+    if (pbox) pbox.innerHTML = '';
     for (const p of Kinds.palette){
       const k = Kinds.by[p.kind];
       if (!k) continue;
-      if (k.modifies){ if (mbox) mbox.appendChild(kindChip(p, k)); continue; }
+      if (k.modifies || k.tool){ if (mbox) mbox.appendChild(kindChip(p, k)); continue; }
       if (k.layer !== layer) continue;
+      if (k.aesthetic && pbox){ pbox.appendChild(kindChip(p, k)); continue; }
       box.appendChild(kindChip(p, k));
     }
+    const nopat = !pbox || !pbox.childElementCount;
+    for (const id of ['#kpatlabel', '#kpats']){ const el = $(id); if (el) el.hidden = nopat; }
     const none = !mbox || !mbox.childElementCount;
     for (const id of ['#kmodlabel', '#kmods', '#kmodnote']){
       const el = $(id);

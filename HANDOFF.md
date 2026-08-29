@@ -76,7 +76,21 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 29 Aug 2026, build 220
+## Where we are — 29 Aug 2026, build 221
+
+- **Build 221 (29 Aug 2026) — Structures, a Patterns row, half sizes, the
+  Clear tool, the picker first.** The built layer is labelled
+  **Structures**; under its Place chips a second row, **Patterns ·
+  aesthetics**, holds the pattern kind (`aesthetic: true` on the kind).
+  **Size ×** now runs 1–4 in halves (the slider counts tenths, `mult` is
+  rounded to 0.5; detail is used from 1.5×). **Clear** (`kinds.js`, in the
+  Modify row via `tool: true`) is an occluder that draws nothing with a
+  hard edge — feather/scatter born 0 — and is picky: `clears` is every
+  terrain kind (not prints, not roads, not the tools), so a print inside a
+  clearing stands untouched and roads run through; rect or oval, corners
+  drag as any area does. The **Asset** picker (was "Building") sits right
+  under the Place chips, above Shape, and scrolls into view when a print
+  kind is armed, so the asset is chosen before the plate is clicked.
 
 - **Build 220 (29 Aug 2026) — a print grows in whole multiples, and shows
   its detail when it has some.** A print's Adjust row now offers **Size ×**

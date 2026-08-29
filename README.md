@@ -1518,16 +1518,21 @@ pattern cut into 32-cell tiles. Files moved in by hand are left alone;
 the last run's are replaced. **`tools/assets.py import`** makes the folders the game's: every
 folder a set named for it in lower case, every PNG a glyph named for the
 file, written to `src/glyphs.js` — and each set is a **print kind in the
-palette** under Buildings: Houses, Landmarks, Buildings, Trees, Plants,
-Icons, Signs, Distractions, Patterns, Mountains, each drawn as a
+palette** under Structures: Houses, Landmarks, Buildings, Trees, Plants,
+Icons, Signs, Distractions, Mountains — and Patterns in their own
+*Patterns · aesthetics* row beneath — each drawn as a
 landmark is, one diamond a cell. Trees, plants, icons, signs and
 patterns do not block the walker; the rest do. Move a file between
 folders on the desktop, add one, run `import`, and the palette follows. A print grows only in **whole multiples** — its Adjust row has
-**Size ×** (1–4) in place of the width slider, each pixel covering that
+**Size ×** (1–4, in halves) in place of the width slider, each pixel covering that
 many cells each way, so it is never stretched or warped. A sprite drawn
 finer than the 32-cell grid (up to 64 cells) keeps that finer drawing as
 its **detail** (`Glyphs.detail`), and from Size × 2 the print is drawn
-from it — bigger shows more, not bigger pixels.
+from it — bigger shows more, not bigger pixels. The **Asset** picker sits under the
+Place chips, so the asset is chosen before the plate is clicked. Beside
+Demolish in Modify is **Clear**: a rect or oval (corners drag) with a hard
+edge that takes the terrain under it and nothing built — a print inside a
+clearing stands, and roads run through.
 
 ## The route, and playing it
 

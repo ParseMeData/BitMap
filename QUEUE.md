@@ -26,6 +26,14 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Bends assessed, islands dropped** — 2026-08-29. `bends()`:
+  turn < 80° and nearest original point > .4 tile from the vertex → a
+  curve (vertex pulled back d along both legs, `ctrl` of the middle leg =
+  the corner; `make` copies `d.ctrl`); else a corner. `joined()`: ends
+  within a tile put onto the run they meet, BFS from the door's run over
+  touches ≤ .6 tile, the rest not printed. Verified over http: 3 runs
+  kept of 9, 5 curves, 5 corners; the top bend one continuous curve.
+  BUILD 212.
 - [x] **Roads ruled, house chosen, compass after, mat scattered** —
   2026-08-29. Survey: main highway types only, width ≥ 2 cells, each run
   `simplify` (DP, .6 tile) then `rectify` to 22½° steps; a `square` name

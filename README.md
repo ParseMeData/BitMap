@@ -1777,7 +1777,16 @@ segment turned to the nearest of 0°, 22½°, 45°, 67½° and 90°, kept as
 long as its projection on that heading — so a road prints straight where
 the map has it straight, bends in those steps, and meets another square;
 the door's road, squared by the map's own turn, comes out exactly
-vertical or horizontal — every **body of
+vertical or horizontal. Every bend is then **assessed** against the road
+as the map has it: a real road that rounds the corner leaves its points
+well inside the ruled angle, so a turn under 80° whose nearest original
+point is more than .4 of a tile from the vertex becomes a **clean
+continuous curve** — the vertex pulled back along both legs and the
+middle leg bowed through where it was — while a sharper turn, or a road
+that passes through the corner, stays a corner. Ruled ends are put back
+on the runs they meet, and only what **touches the door's road**,
+through touches on the plate, is printed: a run joined to it only off
+the plate is an island and is not — every **body of
 water** near (lakes, dams, reservoirs as water, beaches as sand, rivers
 and streams as river and creek lines), a field of **grass** under it
 all, and a **boundary** laid by default, set so every edge of the plate lies

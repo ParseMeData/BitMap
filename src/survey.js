@@ -73,6 +73,75 @@ const Survey = (() => {
     }
     return out.length > 1 ? out : run;
   }
+  /* ── bend or curve ────────────────────────────────────────────────────
+     Every inner vertex of a ruled run is assessed against the road as
+     the map has it (`orig`, the run before it was simplified). A real
+     road that ROUNDS the corner leaves its points inside the ruled angle,
+     well off the vertex; one that turns there passes through it. So: the
+     turn under 80° and the nearest original point further than .4 tile
+     from the vertex → a curve — the vertex is pulled back along both legs
+     and the middle leg bowed through where the vertex was, so the road
+     arrives and leaves on the ruled headings and rounds between them.
+     Sharper than that, or a road that goes through the corner, stays a
+     corner: an intersection is square, and a bend that is a bend stays
+     one. Returns {pts, ctrl}. */
+  function bends(pts, orig){
+    const ts = G.terr.tsz, out = [pts[0]], ctrl = [null];
+    const near = v => { let d = Infinity; for (const o of orig) d = Math.min(d, Math.hypot(o[0] - v[0], o[1] - v[1])); return d; };
+    for (let i = 1; i < pts.length - 1; i++){
+      const p = out[out.length - 1], v = pts[i], n = pts[i + 1];
+      const a1 = Math.atan2(v[1] - p[1], v[0] - p[0]), a2 = Math.atan2(n[1] - v[1], n[0] - v[0]);
+      let turn = Math.abs(a2 - a1); if (turn > Math.PI) turn = 2 * Math.PI - turn;
+      const cut = near(v);
+      const curve = turn > Math.PI / 15 && turn < Math.PI * 80 / 180 && cut > ts * 0.4;
+      if (!curve){ out.push(v); ctrl.push(null); continue; }
+      const l1 = Math.hypot(v[0] - p[0], v[1] - p[1]), l2 = Math.hypot(n[0] - v[0], n[1] - v[1]);
+      const d = Math.min(l1 / 2, l2 / 2, Math.max(ts, Math.min(ts * 3, cut * 2.2)));
+      const q1 = [v[0] - Math.cos(a1) * d, v[1] - Math.sin(a1) * d], q2 = [v[0] + Math.cos(a2) * d, v[1] + Math.sin(a2) * d];
+      out.push(q1); ctrl.push(v);        // the leg q1 → q2 bows through the corner
+      out.push(q2); ctrl.push(null);
+    }
+    out.push(pts[pts.length - 1]);
+    return {pts: out, ctrl: ctrl.slice(0, out.length - 1)};
+  }
+  /* ── joined, or an island ─────────────────────────────────────────────
+     A way reaches the door through nodes it shares off the plate as
+     easily as on it, and a ruled run's end can drift a cell from the run
+     it met. So the runs are joined again here — an end within a tile of
+     another run is put on it — and only what touches the door's run,
+     through touches, is kept. An island is not printed. */
+  function joined(runs, door){
+    const ts = G.terr.tsz;
+    const onRun = (pt, r) => {                     // nearest point of run r to pt, and how far
+      let best = null, bd = Infinity;
+      for (let i = 0; i + 1 < r.pts.length; i++){
+        const a = r.pts[i], b = r.pts[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1e-9;
+        const t = Math.max(0, Math.min(1, ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / L));
+        const x = a[0] + dx * t, y = a[1] + dy * t, d = Math.hypot(pt[0] - x, pt[1] - y);
+        if (d < bd){ bd = d; best = [x, y]; }
+      }
+      return {at: best, d: bd};
+    };
+    /* ends onto the runs they meet */
+    runs.forEach((r, i) => {
+      for (const k of [0, r.pts.length - 1]){
+        let best = null, bd = ts;
+        runs.forEach((o, j) => { if (j === i) return; const h = onRun(r.pts[k], o); if (h.d < bd){ bd = h.d; best = h.at; } });
+        if (best) r.pts[k] = best;
+      }
+    });
+    const touch = (a, b) => {
+      for (const k of [0, a.pts.length - 1]) if (onRun(a.pts[k], b).d <= ts * 0.6) return true;
+      for (const k of [0, b.pts.length - 1]) if (onRun(b.pts[k], a).d <= ts * 0.6) return true;
+      return false;
+    };
+    let start = -1, sd = Infinity;
+    runs.forEach((r, i) => { const h = onRun(door, r); if (h.d < sd){ sd = h.d; start = i; } });
+    if (start < 0) return [];
+    const keep = new Set([start]), q = [start];
+    while (q.length){ const i = q.shift(); runs.forEach((o, j) => { if (!keep.has(j) && touch(runs[i], o)){ keep.add(j); q.push(j); } }); }
+    return runs.filter((r, i) => keep.has(i));
+  }
 
   /* ── the ground inside the plate ──────────────────────────────────── */
   function bbox(){
@@ -192,13 +261,19 @@ const Survey = (() => {
     let turned = 0;
     if (seg && doSquare) turned = square(seg);     // not when the map was turned by hand
     const W = pts => pts.map(n => Basemap.worldOf(n.lat, n.lon)).filter(Boolean);
+    const runs = [];
     for (const w of keep){
       const wd = Math.max(2, WIDTH[w.tags.highway] || 2);
       for (const run of clipRuns(W(w.geometry))){
         const sq = rectify(simplify(run, G.terr.tsz * 0.6));
-        if (sq.length > 1) out.push({kind: 'road', type: 'line', pts: sq, width: cell * wd, exact: true, variant: 'mixed'});
+        if (sq.length < 2) continue;
+        const b = bends(sq, run);
+        runs.push({pts: b.pts, ctrl: b.ctrl, wd});
       }
     }
+    const door = Basemap.worldOf(la, lo) || [G.W / 2, G.H / 2];
+    for (const r of joined(runs, door))
+      out.push({kind: 'road', type: 'line', pts: r.pts, ctrl: r.ctrl, width: cell * r.wd, exact: true, variant: 'mixed'});
     const isWater = w => w.tags && (w.tags.natural === 'water' || w.tags.water || w.tags.landuse === 'reservoir');
     const closed = w => w.geometry.length > 3 && w.geometry[0].lat === w.geometry[w.geometry.length - 1].lat && w.geometry[0].lon === w.geometry[w.geometry.length - 1].lon;
     for (const e of els){

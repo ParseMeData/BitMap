@@ -492,7 +492,7 @@ const Build = (() => {
                  r: snapR(d.r || cellSize()),
                  width: snapW(d.width || cellSize() * 2),
                  pts: d.pts ? d.pts.map(q => [sc(q[0]), sc(q[1])]) : [[0, 0]],
-                 ctrl: null,
+                 ctrl: Array.isArray(d.ctrl) ? d.ctrl.map(c => (c ? [c[0], c[1]] : null)) : null,
                  feather: d.feather !== undefined ? d.feather : k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
                  grain: 1, scale: 1,

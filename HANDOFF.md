@@ -543,6 +543,14 @@ build mode, and it pins every plate of the town at once so the group
 keeps its shape. `hq.region` is the projection and is set once from
 home's anchor; nothing recentres it.
 
+**A bend is judged against the map, not against itself.** `bends()` in
+survey.js decides curve or corner from the ORIGINAL run (before
+`simplify`) — how far the road as the map has it stays off the ruled
+vertex. Judging from the ruled run alone would call every bend a corner,
+because ruling makes corners. And `joined()` decides islands on the
+plate's own touches, not OSM's shared nodes: a way can reach the door
+through a node off the plate, which is a road to nowhere here.
+
 **Two `square`s once lived in survey.js.** The map turner
 (`square(seg)`) and the road rectifier were both declared `square`; the
 later declaration won and every road run was handed to the turner, which

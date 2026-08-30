@@ -1665,7 +1665,11 @@ const Kinds = (() => {
     {id: 'built',  label: 'Structures', z: 2}
   ];
 
-  const AREA = ['rect', 'ellipse', 'warp'];
+  /* 'warpbox' is not a fourth kind of shape: it is a second way to SEED a
+     warp (src/build.js `defaults`), four corners and four edge midpoints
+     on the box instead of eight points round the inscribed oval. It is
+     listed here so `retype` will accept it; what gets stored is 'warp'. */
+  const AREA = ['rect', 'ellipse', 'warp', 'warpbox'];
   const WOOD = ['mixed', 'conifer', 'broadleaf'];
   const LIST = [
     {id: 'grass',     label: 'Grass',     layer: 'ground', types: AREA,
@@ -2063,8 +2067,8 @@ const Kinds = (() => {
      is a ring of road and a moat is a ring of creek — and is dimmed for
      every other kind. */
   const SHAPES = [{id: 'rect', label: 'Rect'}, {id: 'ellipse', label: 'Oval'},
-                  {id: 'warp', label: 'Warp'}, {id: 'line', label: 'Line'},
-                  {id: 'ring', label: 'Ring'}];
+                  {id: 'warp', label: 'Warp oval'}, {id: 'warpbox', label: 'Warp box'},
+                  {id: 'line', label: 'Line'}, {id: 'ring', label: 'Ring'}];
 
   /* ── the region registry ───────────────────────────────────────────────
      The third scope, for src/region.js: our region drawn flat with north

@@ -76,7 +76,40 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 230
+## Where we are — 30 Aug 2026, build 231
+
+- **Build 231 (30 Aug 2026) — Warp box, beside Warp oval.** The shape
+  row is now Rect · Oval · **Warp oval** · **Warp box** · Line · Ring.
+
+  `rectBlob` grew from four points to **eight** — a corner and the
+  middle of each side — which is what Eden asked for: the midpoints are
+  what let a box be pulled into a cross, a wedge or an L without adding
+  points first. Both seeds go round the perimeter in order, because the
+  blob is read as a polygon (`geo.depth`) and a shuffled run would cross
+  itself.
+
+  **`warpbox` is a seed, not a type.** It is in `AREA` so `retype` will
+  accept it, and `defaults()` turns it into `type: 'warp'` with a box
+  blob — so every `type === 'warp'` test in build.js and kinds.js keeps
+  meaning what it meant, and a town saved with one loads into a build
+  that never heard of it. `blobSeed` (`'oval'`/`'box'`) is carried
+  through save and load purely so the palette lights the right chip.
+
+  Two things that needed fixing for the pair to work: `retype`'s
+  "already this shape" guard was `sel.type === type`, which made Warp
+  oval a no-op on any warp — a box could be made and never turned back;
+  it now asks the seed for the warps and the type for everything else.
+  And `make`'s repair path seeds `blobSeed: 'oval'` so a warp from
+  before this build lights Warp oval rather than nothing.
+
+  Verified at 231: a placed clearing is `demolish/warp(8pt, box)` with
+  Warp box lit; retyping box → oval → Rect → box round-trips and lights
+  correctly each time; dragging corner 0 out and edge-midpoint 5 in gave
+  a sharp spur and a deep notch with the cut following exactly; the
+  edited shape survives a reload with its seed and points; one Ctrl+Z
+  still removes a print and its clearing together; Patterns still gets
+  no clearing; a warp made the plain way still seeds 8 oval points.
+
 
 - **Build 230 (30 Aug 2026) — a clearing is a warp seeded on its four
   corners, and the founding's is one too.** Two asks, one change.

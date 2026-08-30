@@ -1596,11 +1596,26 @@ a modifier is something you aim rather than something you place; snapped
 to tiles a clearing four tiles across had five stops per axis, which is
 what made dragging one feel like it did nothing at all (2026-08-30).
 
-**The oval is its own option.** A warp made any other way — the Warp
-chip in the palette, or retyping a shape to it — is still seeded by
-`blobFrom`: eight points round the ellipse inscribed in the box. Two
-seeds, one machinery. `Found.generate` lays the first palace's clearing
-the same way a print's is laid, through `Build.rectBlob`.
+**Two warps in the shape row: Warp oval and Warp box.** They are one
+type and two *seeds*, not two kinds of shape — what is stored is always
+`warp`, so every `type === 'warp'` test in the codebase keeps meaning
+what it meant and a town saved with one loads into a build that never
+heard of it. `blobSeed` (`'oval'` or `'box'`) remembers which chip made
+it, so the row lights the right one, and clicking the other converts —
+the "already this shape" test asks the seed as well, or a box could
+never be turned back into an oval.
+
+- **Warp oval** — `blobFrom`: eight points round the ellipse inscribed
+  in the box. What a warp has always been.
+- **Warp box** — `rectBlob`: eight points on the box, one on each corner
+  and one in the **middle of each side**. The corners are where you
+  expect to grab them, and every side has its own handle to push in or
+  out, so a rectangle can be pulled into a cross, a wedge or an L
+  without adding points first. This is what a clearing is born as, and
+  what `Found.generate` lays under the first palace.
+
+Either way the middle of any leg is still a *new* point waiting to be
+born, so eight is a floor and not a ceiling.
 
 It is one gesture and **one undo step**, and from then on the two are
 ordinary shapes that select, drag, resize and delete on their own — so

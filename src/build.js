@@ -178,15 +178,23 @@ const Build = (() => {
      the box, which is what the Warp chip in the palette gives you and
      what a warp has always been.
 
-     `rectBlob` is the SHARP one: four points, one per corner, so the
-     shape starts as the rectangle it looks like and the corners are
-     right where you expect to grab them. It is what a clearing is born
-     as (Eden, 2026-08-30) — the box is the honest default under an
-     asset, and dragging a corner from it makes a sharp quadrilateral
-     rather than pulling on a curve. Same machinery either way: every
-     point is a grip, and the middle of any leg is a new point waiting to
-     be born, so a four-corner start is a floor and not a ceiling. */
-  const rectBlob = (w, h) => [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]];
+     `rectBlob` is the SHARP one: EIGHT points on the box — one on each
+     corner and one in the middle of each side (Eden, 2026-08-30) — so
+     the shape starts as the rectangle it looks like, the corners are
+     right where you expect to grab them, and every side has a handle of
+     its own to push in or out. Four corners alone was the first cut of
+     it; the midpoints are what let a box be pulled into a cross, a
+     wedge or an L without adding points first.
+
+     Both go round the perimeter in order, because the blob is read as a
+     polygon (`geo.depth`) and a shuffled run would cross itself. Same
+     machinery either way: every point is a grip, and the middle of any
+     leg is a NEW point waiting to be born, so eight is a floor and not
+     a ceiling. */
+  const rectBlob = (w, h) => {
+    const x = w / 2, y = h / 2;
+    return [[-x, -y], [0, -y], [x, -y], [x, 0], [x, y], [0, y], [-x, y], [-x, 0]];
+  };
   const blobFrom = (w, h) => {
     const out = [];
     for (let i = 0; i < 8; i++){
@@ -279,9 +287,29 @@ const Build = (() => {
     } else {
       s.x = snapC(C0[0]); s.y = snapC(C0[1]);
       if (!(s.w > 0 && s.h > 0)){ s.w = snapS(span); s.h = snapS(span * 0.78); }
-      /* coming to a warp, the oval you had becomes eight points on itself;
-         leaving one, the run is dropped and its extent is the new box */
-      s.blob = type === 'warp' ? blobFrom(s.w, s.h) : null;
+      /* ── two ways to come to a warp ───────────────────────────────────
+         'warp' is the OVAL: the ellipse inscribed in the box, as eight
+         points on itself. 'warpbox' is the BOX: the corners and the
+         middle of each side, so a rectangle can be pulled into deeper
+         angles without first turning into a curve.
+
+         'warpbox' is a seed and not a type — what is stored is 'warp',
+         so every `type === 'warp'` test in this file and in kinds.js
+         keeps meaning what it meant, and a town saved with one loads
+         into a build that never heard of it. `blobSeed` remembers which
+         chip made it, for the palette's own highlight and nothing else.
+         Leaving a warp, the run is dropped and its extent is the box. */
+      if (type === 'warpbox'){
+        s.type = 'warp';
+        s.blob = rectBlob(s.w, s.h);
+        s.blobSeed = 'box';
+      } else if (type === 'warp'){
+        s.blob = blobFrom(s.w, s.h);
+        s.blobSeed = 'oval';
+      } else {
+        s.blob = null;
+        s.blobSeed = null;
+      }
     }
     return s;
   }
@@ -516,6 +544,7 @@ const Build = (() => {
        not the one asked for, so the four corners sit exactly on the edges
        the shape reports */
     c.blob = rectBlob(c.w, c.h);
+    c.blobSeed = 'box';
     /* ── the clearing has to be OLDER than the print it sits under ───────
        A modifier weathers only the shapes with a LOWER id than its own —
        "a modifier weathers the shapes older than itself and leaves what
@@ -632,7 +661,7 @@ const Build = (() => {
                  variant: d.variant || firstVariant(k), tone: d.tone || 'stone',
                  blob: Array.isArray(d.blob) ? d.blob.map(q => [q[0], q[1]]) : null,
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
-      if (s.type === 'warp' && !s.blob) s.blob = blobFrom(s.w, s.h);
+      if (s.type === 'warp' && !s.blob){ s.blob = blobFrom(s.w, s.h); s.blobSeed = s.blobSeed || 'oval'; }
       /* a print is born the size of its glyph, laid as it is placed */
       if (k.glyphs) glyphSize(s, k);
       aimFall(s);
@@ -735,7 +764,16 @@ const Build = (() => {
   const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 
   function retype(type){
-    if (!sel || sel.type === type) return;
+    if (!sel) return;
+    /* ── "already this shape" has to ask the seed too ──────────────────
+       The two warp chips store the same type, so the plain `sel.type ===
+       type` test made Warp oval a no-op on a shape that was already a
+       warp — which is to say a box could be made and never turned back.
+       For the warps the question is which seed it is carrying; for
+       everything else it is still the type. */
+    const want = type === 'warpbox' ? 'box' : type === 'warp' ? 'oval' : null;
+    const have = sel.type === 'warp' ? (sel.blobSeed === 'box' ? 'box' : 'oval') : null;
+    if (want ? (have === want) : sel.type === type) return;
     if (!(Kinds.by[sel.kind].types || []).includes(type)) return;
     /* An oval has no corners and a line is not an area, so a quad cannot
        come along — and it must not lie in wait either, because coming back
@@ -2524,7 +2562,14 @@ const Build = (() => {
     syncRoute();
     const allowed = sel ? (Kinds.by[sel.kind].types || []) : [];
     document.querySelectorAll('#kshapes .kchip').forEach(c => {
-      c.classList.toggle('sel', !!sel && sel.type === c.dataset.shape);
+      /* the two warp chips are one type and two seeds, so the row asks
+         `blobSeed` which of them made this one */
+      const id = c.dataset.shape;
+      const lit = !!sel && (sel.type === 'warp'
+        ? (id === 'warpbox' ? sel.blobSeed === 'box'
+           : id === 'warp' ? sel.blobSeed !== 'box' : false)
+        : sel.type === id);
+      c.classList.toggle('sel', lit);
       c.classList.toggle('dim', !allowed.includes(c.dataset.shape));
     });
     /* say plainly what the thing you have selected can be made to do */
@@ -2598,6 +2643,7 @@ const Build = (() => {
         feather: s.feather, bright: s.bright, mask: s.mask,
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter, mult: s.mult || 1,
         fall: s.fall || 0, out: s.out || 0, quad: s.quad || null, blob: s.blob || null,
+        blobSeed: s.blobSeed || null,
         core: s.core === undefined ? 0.35 : s.core,
         aim: s.aim ? [s.aim[0], s.aim[1]] : null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
@@ -2687,6 +2733,7 @@ const Build = (() => {
           aim: (Array.isArray(s.aim) && s.aim.length === 2) ? [s.aim[0], s.aim[1]] : null,
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           blob: (Array.isArray(s.blob) && s.blob.length >= 3) ? s.blob.map(q => [q[0], q[1]]) : null,
+          blobSeed: s.blobSeed === 'box' ? 'box' : (s.blobSeed === 'oval' ? 'oval' : null),
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
@@ -2699,7 +2746,7 @@ const Build = (() => {
     /* a cut drawn before cuts were held to the cell grid is corrected on
        the way in, rather than waiting for someone to nudge it */
     G.shapes.forEach(alignFine);
-    for (const s of G.shapes) if (s.type === 'warp' && !s.blob) s.blob = blobFrom(s.w, s.h);
+    for (const s of G.shapes) if (s.type === 'warp' && !s.blob){ s.blob = blobFrom(s.w, s.h); s.blobSeed = s.blobSeed || 'oval'; }
     if (adopt()) save();
   }
 

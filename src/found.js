@@ -255,7 +255,7 @@ const Found = (() => {
             /* seeded from the size `Build.add` actually settled on, not the
                one asked for — it snaps — so the four corners sit exactly on
                the edges the shape reports. Same order as `clearUnder`. */
-            if (dem) dem.blob = Build.rectBlob(dem.w, dem.h);
+            if (dem){ dem.blob = Build.rectBlob(dem.w, dem.h); dem.blobSeed = 'box'; }
             Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
             Build.commit();
             if (typeof restampTerrain === 'function') restampTerrain();

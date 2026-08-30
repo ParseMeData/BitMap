@@ -1534,6 +1534,25 @@ Demolish in Modify is **Clear**: a rect or oval (corners drag) with a hard
 edge that takes the terrain under it and nothing built — a print inside a
 clearing stands, and roads run through.
 
+**A print and its clearing are two shapes** (2026-08-30). Until then a
+print cleared its ground from inside itself — the glyph's own `'2'`
+cells (a window, a doorway, the plinth) draw as dark cover, so the
+ground went exactly under the drawing and nowhere else, and there was
+nothing to take hold of: the clearing was locked to the asset and moved
+only when the asset moved. Placing one now lays **two** shapes, the way
+the first palace has always been laid (a clearing, then the house on
+it): the print, and a `Clear` under it at half again its footprint,
+centred on it. It is one gesture and **one undo step**, and from then on
+the two are ordinary shapes that select, drag, resize and delete on
+their own — so the ground you see through can be pushed out from under
+the asset, grown, or thrown away without touching the drawing. The
+print is what a click finds first; to grab the clearing, click its
+margin, and zoom in to do it — the grab tolerance is `10 / G.cam[2]`,
+so far out the print's own handle covers the margin. Patterns are
+exempt: a pattern is a texture meant to lie *on* the ground. It is a
+`Clear` and not a `Demolish` on purpose — the clearing eats terrain
+only, so an asset dropped on a crossing does not take the road with it.
+
 ## The route, and playing it
 
 A room's markers are its **loci**: numbered places, each holding a picture of

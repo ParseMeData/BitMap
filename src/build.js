@@ -350,6 +350,31 @@ const Build = (() => {
     born(s, k, type, wx, wy);
     aimFall(s);
     framePlate(s);
+    /* ── a print comes with its own clearing, as its own shape ──────────
+       Before 2026-08-30 a print cleared its ground from INSIDE itself:
+       the glyph's own '2' cells (a window, a doorway, the plinth) are
+       drawn as dark cover, so the ground vanished exactly under the
+       drawing and nowhere else, and there was nothing to take hold of —
+       the clearing was locked to the asset and moved only when the asset
+       moved.
+
+       It is now two shapes, the way the FIRST PALACE has always been two
+       (`Found.generate` lays a clearing and then the house on it): the
+       print, and a `clear` under it, each an ordinary shape that selects,
+       drags, resizes and deletes on its own. Placing one is still one
+       gesture and one undo step — both are in `G.shapes` before the
+       pointerup calls `hstep` — but from then on they are independent,
+       so the ground you see through can be pushed out from under the
+       asset, grown, or thrown away without touching the drawing.
+
+       `clear` and not `demolish` (which is what the first palace uses)
+       on purpose: the clearing is picky about what it eats — terrain
+       only, never a print, never a road — so an asset dropped on a
+       crossing does not take the road with it. A demolish would.
+
+       The glyph's own '2' cells are untouched: the first palace has both
+       too, and taking them out would change every print ever placed. */
+    if (k.glyphs && !k.aesthetic) clearUnder(s);
     G.shapes.push(s);
     sel = s;
     /* A modifier is not on the layer it is listed under — it is above them
@@ -408,6 +433,20 @@ const Build = (() => {
     const c = cellSize(), m = Math.max(1, Math.round((s.mult || 1) * 2) / 2);
     s.w = rows[0].length * c * m;
     s.h = rows.length * c * m;
+  }
+
+  /* ── the clearing a print stands on ────────────────────────────────────
+     Half again the print's own footprint, centred on it, hard-edged —
+     the size the first palace's has always been (`houseW * 1.5` in
+     `found.js`), so an asset placed by hand and the one the founding
+     lays read the same. `exact` because the position is the print's,
+     which is already snapped; pushed BEFORE the print, so it is under
+     it in the array and the print is what a click finds first. */
+  const MATE = 1.5;
+  function clearUnder(s){
+    if (!Kinds.by['clear']) return null;
+    return make({kind: 'clear', type: 'rect', exact: true,
+                 x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE});
   }
 
   /* ── and grows only in whole multiples of itself ───────────────────────

@@ -76,7 +76,34 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 223
+## Where we are — 30 Aug 2026, build 224
+
+- **Build 224 (30 Aug 2026) — a print and its clearing are two shapes.**
+  A print used to clear its ground from INSIDE itself: the glyph's own
+  `'2'` cells (a window, a doorway, the plinth) draw as dark cover, so
+  the ground went exactly under the drawing and nowhere else, and there
+  was nothing to take hold of — the clearing was locked to the asset.
+  Placing one now lays **two** shapes, the way `Found.generate` has
+  always laid the first palace (a clearing, then the house on it):
+  `create()` in `build.js` calls `clearUnder(s)` for any print that is
+  not `aesthetic`, which `make`s a `clear` at half again the print's
+  footprint, centred on it, pushed BEFORE the print so the print is what
+  a click finds first. One gesture, one undo step (both are in
+  `G.shapes` before the pointerup calls `hstep`) — and from then on they
+  select, drag, resize and delete on their own.
+
+  `clear` and not `demolish`: the clearing is picky — terrain only,
+  never a print, never a road — so an asset dropped on a crossing does
+  not take the road with it, which a demolish would. Patterns are
+  exempt (`aesthetic: true`): a pattern is a texture meant to lie ON the
+  ground. The glyph's `'2'` cells are untouched; the first palace has
+  both too. Verified on a throwaway: Houses → `clear` + `house` at the
+  same centre, one Ctrl+Z removes both, a click in the clearing's margin
+  at a working zoom selects the clearing and leaves the print (the grab
+  tolerance is `10 / G.cam[2]`, so zoomed far out the print's handle
+  covers the margin — zoom in to grab the clearing), Patterns → one
+  shape and no clearing.
+
 
 - **Build 223 (30 Aug 2026) — the compass in the lettering's layer, and
   `Shift+R`.** Build 222's screen was a checkerboard laid over the

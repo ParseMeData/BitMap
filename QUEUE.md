@@ -22,6 +22,68 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
+- [ ] **Nine numbered slots a room, and the view down to just them** —
+  asked 2026-08-30. Two halves of one change, both in `src/trace.js`.
+
+  **The grid becomes places, not decoration.** Today `build()` lays nine
+  coloured squares in the room the trace is up to and `overlay()` paints
+  them straight into the entity stream — nothing is numbered, nothing is
+  hit-tested, nothing is saved. Make each square a SLOT: numbered 1–9
+  reading left to right, top to bottom, and addressable across the palace
+  as `(room − 1) * 9 + i`, so a plan of five rooms is a sequence of 45 and
+  the count is a fact about the palace rather than however many markers
+  happen to be pinned. The number is drawn on the square the way a locus
+  number is drawn beside a marker (`Markers.text`, gold) — small, in the
+  square's own corner, ground on a light tone and bone on a dark one, the
+  rule `focus.js` already uses for its letters.
+
+  **A slot holds what a marker holds.** A marker dropped inside a room
+  snaps to the nearest empty slot instead of to the walk-tile grid, takes
+  that slot's number as its `n`, and `Markers.renumber()` derives the
+  order from slot address rather than from placement order — which is what
+  makes the sequence stable when a marker is moved. A slot with nothing in
+  it draws as its bare tone; a slot with a marker draws the marker over it.
+  Nine per room is the capacity: a tenth marker in a full room is refused
+  with a note, not silently stacked.
+
+  **The colours, in sequence, and they are the plate's own** (STYLE.md:
+  do not introduce a colour):
+
+      1 white   bone    #EDEAE3
+      2 green   park    #7BB86F
+      3 pink    flare   #FF5FA2
+      4 blue    creek   #3E7FBF
+      5 orange  stairs  #C39A5C
+      6 red     rug     #94383F
+      7 yellow  gold pulled a quarter toward bone — pale, reads yellow
+      8 black   dim     #5A5A66 — charcoal, no rim (Eden's call: the
+                plate's ground is #1B1B21, so a true black square would
+                be a hole in a near-black floor; dim shows unaided)
+      9 gold    gold    #F2C14E whole — the amber, and the same tone the
+                trace's end-ring already wears, so the last slot in a room
+                and the way out of it rhyme
+
+  7 and 9 are one token distinguished by weight, not two colours — the
+  device `focus.js` uses when it pulls a tone toward dim. 1–7 are the
+  current `TONES` order unchanged; only 8 and 9 move (aqua and dim out).
+
+  **The view goes down to the grid.** `V` already takes the plan to its
+  walls; take it the rest of the way — nothing inside the room but the
+  nine squares. The floor, the fittings and the fitting-rings are already
+  out or go out; the walls, windows, doors and stairs STAY, because a grid
+  with no room around it is a grid you cannot place yourself in. **The
+  line stays, dimmed** (Eden's call): drop the aqua dots to a low alpha so
+  the squares are the subject and the line is the thread between them —
+  it is still how `step()` knows the room is walked, and taking it out
+  would leave room-to-room advance with no trigger.
+
+  Verify on the rig against a snapshot: a palace of several rooms shows
+  1–9 in the first room in that colour order, the numbers legible on both
+  the pale and the dark tones, a marker dropped inside snaps to a slot and
+  keeps its number across a reload, a full room refuses the tenth, walking
+  the line still advances the room, and `Interior.leave()` brings the town
+  back whole. Bump BUILD.
+
 ## Done
 
 (ticked items move here with the date)

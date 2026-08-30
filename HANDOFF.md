@@ -76,7 +76,23 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 233
+## Where we are — 30 Aug 2026, build 233, tag **v8.2**
+
+- **v8.2 (30 Aug 2026, build 233).** Tagged after 45 commits on `work`
+  since v8.1, with `snapshots/v8.2.json` beside it and a frozen clone at
+  `~/Projects/Loci Bitmap V8.2`.
+
+  **How the snapshot was made, because it is not a capture of the live
+  profile.** Eden's own profile has not been written since 27 Aug (before
+  v8.1 was taken), so `snapshots/v8.1.json` still is that town — but
+  opening the live profile at build 233 would lay the two backdrops into
+  it, which is a change to Eden's data that tagging has no business
+  making. So v8.2.json is v8.1 restored into a throwaway at build 233 and
+  saved back: the same town, as this engine leaves it. Round-tripped into
+  a second clean profile before tagging — 41 shapes (2 of them the
+  `compass` and `title` backdrops), 1 marker, 5 interiors holding 200
+  shapes, 14 locus pictures, the traced picture, no errors.
+
 
 - **Build 233 (30 Aug 2026) — a road that ends on a palace asks to go
   in.** Walking off a dead end offered *open a plate*, which is right in
@@ -476,10 +492,10 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 `origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages
 serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
-the session waited for it. Tag **v8.1** (28 Aug) is the last tag, with
-`snapshots/v8.1.json` beside it and a frozen clone at `~/Projects/Loci
-Bitmap V8.1`; **42 commits since, untagged** (as of build 231,
-2026-08-30) — a tag and a frozen clone are overdue. `gh` is installed and
+the session waited for it. Tag **v8.2** (30 Aug, build 233) is the last
+tag, with `snapshots/v8.2.json` beside it and a frozen clone at
+`~/Projects/Loci Bitmap V8.2`; nothing since it. v8.1 (28 Aug) is the one
+before, 45 commits back. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and
 `VERSION` in sw.js together.

@@ -1643,6 +1643,43 @@ const Kinds = (() => {
   }
 
   /* a kind that is only a statement about other kinds draws nothing */
+  /* ── the backdrop ────────────────────────────────────────────────────
+     The mat that used to be drawn inline under the town's name and under
+     the compass (`Title.mat`), now a shape you can take hold of: the
+     plate's own colour laid over whatever is there, solid in the middle
+     and dithered away to nothing at the rim, so a name or a rose reads on
+     the plate and not through the trees.
+
+     Same recipe the inline one used, cell for cell — the rim lottery
+     (`roll > e * 0.85 + 0.05`), the rolled cover (`0.3 + 0.7 * roll`) and
+     the rolled size (`0.8 + 0.5 * roll`) — so a backdrop at its default
+     size and feather is the mat that was there before, unchanged.
+
+     THE MORE CONDENSED, THE DARKER (Eden, 2026-08-30). The same shadow
+     squeezed into less ground is a deeper shadow, so the cover is scaled
+     by the square root of how much the shape has shrunk since it was
+     born: `matRef` is its birth area in cells, and the ratio is taken
+     against the area it has now. Born at its own size the ratio is 1 and
+     the cover is exactly what it always was; squeeze it to a quarter of
+     the ground and it draws twice as dark. Bounded both ways so a shape
+     dragged to nothing does not become a black tile, and one stretched
+     across the plate does not vanish. */
+  const MAT_COVER = 0.85;
+  function backdrop(s, cell, buf){
+    const area = Math.max(1, (s.w * s.h) / (cell * cell));
+    const ref = s.matRef > 0 ? s.matRef : area;
+    const dens = clamp(Math.sqrt(ref / area), 0.55, 2.4);
+    const cover = clamp01(MAT_COVER * dens);
+    const per = 1 - Math.sqrt(1 - Math.min(cover, 0.98));
+    scan(s, cell, (x, y, u, v, d, fade) => {
+      const e = fade;
+      if (hash(u, v, s.seed + 7) > e * 0.85 + 0.05) return;
+      const a = per * e * (0.3 + 0.7 * hash(u, v, s.seed + 3));
+      const sz = 0.8 + 0.5 * hash(u, v, s.seed + 5);
+      buf.cell(x, y, C.plate, a, sz, 0, a, sz, 0, 0, hash(u, v, s.seed + 11));
+    });
+  }
+
   function nothing(){}
 
   /* ── the registry ────────────────────────────────────────────────────── */
@@ -1662,7 +1699,16 @@ const Kinds = (() => {
        the drawn buildings are two layers, because they are two ways of
        saying "built": one is ground cover and one is a thing on it */
     {id: 'terrain', label: 'Terrain',  z: 2},
-    {id: 'built',  label: 'Structures', z: 2}
+    {id: 'built',  label: 'Structures', z: 2},
+    /* ── the backdrop ──────────────────────────────────────────────────
+       Above everything, roads included, because that is where the mat
+       behind the town's name has always been drawn: it went into the
+       entity stream at title time, after every shape, so a name over a
+       road read on the plate's colour and not through the road. Now that
+       it is a shape of its own (2026-08-30) the only way to keep that is
+       a layer of its own, at the top. It is a row like any other, so the
+       eye beside it hides every backdrop at once. */
+    {id: 'mat',    label: 'Backdrop',  z: 4}
   ];
 
   /* 'warpbox' is not a fourth kind of shape: it is a second way to SEED a
@@ -1896,6 +1942,16 @@ const Kinds = (() => {
        inside the clearing stands on it untouched, and roads run through.
        Born hard — no feather, no scatter — because a clearing with a soft
        edge is a demolition, and that tool already exists. */
+    /* ── the backdrop ──────────────────────────────────────────────────
+       The mat behind the town's name and behind the compass, as a shape.
+       It is a tool: it draws the plate over the plate, which is to say it
+       darkens, and it is the only kind on its own layer. Born soft — the
+       fade is most of what it is — and with no scatter, because the rim
+       lottery inside `backdrop` is its scatter. */
+    {id: 'mat',      label: 'Backdrop', layer: 'mat',    types: AREA,
+     walk: 1, stamp: 9, gen: backdrop,  swatch: '#2A2A33', tool: true,
+     feather0: 8, jitter0: 0, scatter0: 0, fall0: 0, out0: 0,
+     pad0: 0, padFade0: 0, padBreak0: 0},
     {id: 'clear',    label: 'Clear',    layer: 'built',  types: AREA,
      walk: 1, stamp: 9, gen: nothing,   swatch: '#5FBFC4', tool: true,
      feather0: 0, jitter0: 0, scatter0: 0, fall0: 0, out0: 0,
@@ -1939,6 +1995,9 @@ const Kinds = (() => {
     {label: 'Mountains',  kind: 'mountain',  type: 'rect'},
     {label: 'Demolish',   kind: 'demolish',  type: 'rect'},
     {label: 'Clear',      kind: 'clear',     type: 'rect'},
+    /* an oval, because the two the game lays itself — behind the name and
+       behind the compass — are ovals, and a backdrop is a soft thing */
+    {label: 'Backdrop',   kind: 'mat',       type: 'ellipse'},
     /* an oval by default: a town thins out into the country in every
        direction at once, and a rect is the answer you reach for when it
        does not — one chip away on the Shape row */

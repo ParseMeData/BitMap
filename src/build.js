@@ -432,6 +432,7 @@ const Build = (() => {
 
        The glyph's own '2' cells are untouched: the first palace has both
        too, and taking them out would change every print ever placed. */
+    if (k.id === 'mat') s.matRef = matArea(s);
     if (k.glyphs && !k.aesthetic) clearUnder(s);
     G.shapes.push(s);
     sel = s;
@@ -533,6 +534,27 @@ const Build = (() => {
      `exact` because the position is the print's, which is already
      snapped; pushed BEFORE the print, so it is under it in the array and
      the print is what a click finds first. */
+  /* a backdrop's area in lattice cells — the unit `matRef` is kept in */
+  const matArea = s => Math.max(1, (s.w * s.h) / (cellSize() * cellSize()));
+
+  /* ── the backdrop the game lays for itself ─────────────────────────────
+     The town's name and the compass each stand on one, and each keeps the
+     one it was given: `tag` is 'title' or 'compass', so the pair can be
+     found again and never laid twice. Everything else about it is an
+     ordinary shape — it selects, drags, warps and deletes like any other,
+     which is the whole point of detaching it (Eden, 2026-08-30). */
+  function backdrop(x, y, w, h, tag){
+    if (!Kinds.by['mat']) return null;
+    if (tag && G.shapes.some(s => s.matTag === tag)) return null;
+    const s = make({kind: 'mat', type: 'ellipse', exact: true, x, y, w, h});
+    if (!s) return null;
+    s.matTag = tag || null;
+    s.matRef = matArea(s);
+    changed(s);
+    return s;
+  }
+  const backdropOf = tag => G.shapes.find(s => s.matTag === tag) || null;
+
   const MATE = 1.5;
   function clearUnder(s){
     if (!Kinds.by['demolish']) return null;
@@ -662,6 +684,9 @@ const Build = (() => {
                  blob: Array.isArray(d.blob) ? d.blob.map(q => [q[0], q[1]]) : null,
                  label: d.label || '', n: d.n || 0, room: d.room || 0};
       if (s.type === 'warp' && !s.blob){ s.blob = blobFrom(s.w, s.h); s.blobSeed = s.blobSeed || 'oval'; }
+      /* a backdrop remembers the ground it was born covering, because that
+         is what "condensed" is measured against (kinds.js `backdrop`) */
+      if (k.id === 'mat') s.matRef = d.matRef > 0 ? d.matRef : matArea(s);
       /* a print is born the size of its glyph, laid as it is placed */
       if (k.glyphs) glyphSize(s, k);
       aimFall(s);
@@ -2644,6 +2669,7 @@ const Build = (() => {
         grain: s.grain, scale: s.scale, jitter: s.jitter, scatter: s.scatter, mult: s.mult || 1,
         fall: s.fall || 0, out: s.out || 0, quad: s.quad || null, blob: s.blob || null,
         blobSeed: s.blobSeed || null,
+        matTag: s.matTag || null, matRef: s.matRef || 0,
         core: s.core === undefined ? 0.35 : s.core,
         aim: s.aim ? [s.aim[0], s.aim[1]] : null,
         pad: s.pad, padFade: s.padFade, padBreak: s.padBreak,
@@ -2734,6 +2760,8 @@ const Build = (() => {
           quad: (Array.isArray(s.quad) && s.quad.length === 4) ? s.quad.map(q => [q[0], q[1]]) : null,
           blob: (Array.isArray(s.blob) && s.blob.length >= 3) ? s.blob.map(q => [q[0], q[1]]) : null,
           blobSeed: s.blobSeed === 'box' ? 'box' : (s.blobSeed === 'oval' ? 'oval' : null),
+          matTag: (s.matTag === 'title' || s.matTag === 'compass') ? s.matTag : null,
+          matRef: isFinite(s.matRef) && s.matRef > 0 ? +s.matRef : 0,
           pad: s.pad === undefined ? (k.pad0 || 0) : s.pad,
           padFade: s.padFade === undefined ? (k.padFade0 || 0) : s.padFade,
           padBreak: s.padBreak === undefined ? (k.padBreak0 || 0) : s.padBreak,
@@ -2815,6 +2843,7 @@ const Build = (() => {
     syncUI();
   }
   return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode, rectBlob,
+          backdrop, backdropOf,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

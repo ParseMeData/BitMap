@@ -76,7 +76,57 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 231
+## Where we are — 30 Aug 2026, build 232
+
+- **Build 232 (30 Aug 2026) — the backdrop is a shape.** The mat behind
+  the town's name and behind the compass was drawn inline by `Title.mat`
+  every frame, locked to whatever it stood under. It is now a kind —
+  **`mat`, "Backdrop"** — on a **layer of its own** (`{id: 'mat', z: 4}`,
+  above roads, because that is where the inline one was drawn: after
+  every shape, so a name over a road read on the plate and not through
+  it). It selects, moves, warps and deletes like anything else, and the
+  eye beside its row hides every backdrop at once.
+
+  `kinds.js backdrop()` is the old recipe cell for cell — the rim
+  lottery (`roll > e * 0.85 + 0.05`), the rolled cover
+  (`0.3 + 0.7 * roll`) and the rolled size (`0.8 + 0.5 * roll`) — so a
+  backdrop at its born size is the mat that was there before. Verified
+  against a before/after screenshot of the whole plate: unchanged.
+
+  **The more condensed, the darker** (asked for): cover is scaled by
+  `sqrt(matRef / area)`, where `matRef` is the shape's birth area in
+  cells. Born, the ratio is 1 and the cover is exactly what it was;
+  squeezed to a quarter of the ground it draws twice as dark. Clamped
+  0.55–2.4 so neither extreme is a black tile or nothing at all.
+
+  The two the game lays for itself are tagged `matTag: 'title'` and
+  `'compass'` and sized to the oval `Title.mat` used to draw
+  (`rx = cols/2 * 1.4 + 8`, `ry = rows/2 * 2.1 + 8` cells). Both ASK
+  `Build.backdropOf(tag)` every frame rather than latching — `G.shapes`
+  is swapped whole when the plate changes, and a latch would leave every
+  plate after the first without one. The title's is laid on a
+  `setTimeout` because `title()` runs INSIDE the instance build and
+  making a shape runs `changed()`.
+
+  **INSIDE a palace the mat is still drawn inline.** A palace's shapes
+  are its own set, the heading there is a room's name, and one detached
+  backdrop per plate is what was wanted.
+
+  **A bug this introduced and how it was caught.** A home plate founds
+  itself unasked only while it is EMPTY, and `Found.check` refused any
+  plate with a shape on it — so the compass's backdrop, laid in the gap
+  between the page loading and the founding starting, stopped the town
+  being founded at all. Seen by pressing `Shift+R` and watching a blank
+  page sit there with one shape on it and `Found.state()` null. Fixed at
+  both ends: nothing is laid until the plate holds something that is not
+  itself a backdrop, and `Found.check` now ignores mats. Re-verified —
+  `Shift+R` reaches `framing` with 0 shapes.
+
+  (Unrelated but worth knowing: on a profile that has a `hq.basemap`
+  position, `Found.check` returns false on `lat || lon` before it ever
+  reaches the shape test, so a fresh profile does not auto-found. That
+  is pre-existing, not this.)
+
 
 - **Build 231 (30 Aug 2026) — Warp box, beside Warp oval.** The shape
   row is now Rect · Oval · **Warp oval** · **Warp box** · Line · Ring.

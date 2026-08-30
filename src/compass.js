@@ -209,6 +209,7 @@ const Compass = (() => {
     if (v) lay(heading());
     const tp = document.getElementById('tune');
     if (tp && !tp.hidden) block();
+    layMat();
   }
 
   /* ── on the plate ──────────────────────────────────────────────────────
@@ -249,7 +250,46 @@ const Compass = (() => {
      cell at every heading. It is then drawn by `Title.emit`, the call
      the town's name makes in `palace.js`: same origin, same pitch, same
      sheen, same diamond, same instance cap. One layer, one material. */
-  const MAT = 0.85, FEATHER = 18;
+  /* ── the mat, laid once as its own shape ───────────────────────────────
+     The oval `Title.mat` used to draw inline: `rx = cols/2 * 1.4 + 8` and
+     `ry = rows/2 * 2.1 + 8` cells round the rose's box, which is the size
+     it has always been. Laid from `tick`, never from `overlay`, because
+     making a shape runs `changed()` — a rebuild and a save — and the draw
+     path is the one place that must not.
+
+     It ASKS every tick rather than latching after the first go. A latch
+     was tried and is wrong: `G.shapes` is swapped whole when the plate
+     changes, so a compass that had laid its mat on one plate would never
+     lay one on the next. `backdropOf` is a scan of forty-odd shapes once
+     a frame, which is nothing, and it is the only state that cannot go
+     stale. `pending` is only there so a plate cannot be given two while
+     the first is still being made. */
+  let pending = false;
+  function layMat(){
+    if (pending || !ON_PLATE || !facePlate || !G.terr || !G.A) return;
+    if (typeof Build === 'undefined' || !Build.backdrop) return;
+    if (typeof Interior !== 'undefined' && Interior.inside()) return;
+    if (typeof Region !== 'undefined' && Region.on && Region.on()) return;
+    if (typeof Found !== 'undefined' && Found.state && Found.state()) return;
+    /* ── never onto an empty plate ─────────────────────────────────────
+       A backdrop with nothing behind it is not a backdrop, and worse: a
+       home plate founds itself unasked only while it is EMPTY
+       (`Found.check` refuses a plate with any shape on it), so a mat laid
+       in the gap between the page loading and the founding starting was a
+       mat that stopped the town ever being founded. Found 2026-08-30 by
+       pressing Shift+R and watching a blank page sit there with one shape
+       on it. So: nothing is laid until the plate has something that is
+       not itself a backdrop. */
+    if (!G.shapes.some(x => x.kind !== 'mat')) return;
+    if (Build.backdropOf('compass')) return;
+    pending = true;
+    const px = G.A.cell, [cx, cy] = where(), f = facePlate;
+    try {
+      Build.backdrop(cx, cy, (f.cols / 2 * 1.4 + 8) * 2 * px,
+                     (f.rows / 2 * 2.1 + 8) * 2 * px, 'compass');
+    } catch (e){}
+    pending = false;
+  }
   let facePlate = null, faceKey = null, asking = null;
   /* what the cut depends on — the heading and the four numbers that
      shape it. `overlay` compares this every frame and asks for a new one
@@ -285,9 +325,10 @@ const Compass = (() => {
     const x0 = cx - iw * px / 2, y0 = cy - ih * px / 2;
     /* the mat first and dropped first, as a name's is: a rose without its
        mat is still a rose, and the cap is shared with the whole town */
-    const mc = typeof Title.matCost === 'function' ? Title.matCost(f.cols, f.rows) : 0;
-    if (MAT > 0 && m + mc + Title.cost(f) <= cap)
-      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, MAT, cap, FEATHER);
+    /* the mat is no longer drawn here: since 2026-08-30 it is a shape of
+       its own on the Backdrop layer, laid once by `layMat` below and moved,
+       warped and deleted like anything else. What used to be drawn inline
+       under the rose every frame is now something you can take hold of. */
     if (m + Title.cost(f) > cap) return m;
     const t = {weight: tuned('weight'), tone: tuned('tone'), shade: tuned('shade')};
     return Title.emit(a, m, f, x0, y0, px, BONE, 1, cap, 0, 0, t);

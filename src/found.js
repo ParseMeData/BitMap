@@ -301,7 +301,10 @@ const Found = (() => {
      then the frame — printing waits for you */
   function check(){
     if (typeof Atlas === 'undefined' || Atlas.current() !== 'home') return false;
-    if (G.markers.length || G.shapes.length) return false;
+    /* a backdrop does not count as a town: it is chrome the plate lays for
+       itself, and a plate that has only that is still an empty plate
+       (2026-08-30 — otherwise an auto-laid mat stops the founding dead) */
+    if (G.markers.length || G.shapes.some(s => s.kind !== 'mat')) return false;
     const [lat, lon] = Basemap.at();
     if (lat || lon) return false;
     pending = null; pendingMade = false; turnedByHand = false; q = DEFAULT; state = 'ask';

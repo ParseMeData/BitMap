@@ -401,7 +401,8 @@ serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
 the session waited for it. Tag **v8.1** (28 Aug) is the last tag, with
 `snapshots/v8.1.json` beside it and a frozen clone at `~/Projects/Loci
-Bitmap V8.1`; seventeen commits since, untagged. `gh` is installed and
+Bitmap V8.1`; **42 commits since, untagged** (as of build 231,
+2026-08-30) — a tag and a frozen clone are overdue. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and
 `VERSION` in sw.js together.
@@ -1297,6 +1298,36 @@ thing that was measured, and the mistake that was made on the way.
 ---
 
 ## Open threads
+
+- **The plate is narrower than the window, and only the RIGHT side has
+  slack.** Measured 2026-08-30 on the rig: the plate is 755 x 720 world
+  units (aspect 1.05) in a 1600 x 944 window (1.70), so about 610 px of
+  the screen is empty — roughly 305 px either side, because the fit
+  centres it. The cause is `PLATE_EXT_COLS = 64` in game.js: the plate is
+  the sheet (554 wide) plus 201 units of plain ground **on the right
+  only**, the sheet sitting at x = 0. That asymmetry is also why
+  `Survey.boundary()` is centred at `G.W * 0.55` rather than the middle.
+
+  Eden asked to "extend the left and right cut off for the screen as
+  boundary edge". Extending LEFT means moving the sheet right, which
+  shifts every world coordinate, so it needs a migration of `hq.shapes`
+  (x, pts, ctrl), `hq.markers`, `hq.basemap*`, `hq.rooms.*`, `hq.marks.*`
+  and `hq.shapes.region` — on Eden's live Myrtleford. And filling a 16:9
+  window wants ~120 extra columns PER SIDE, taking the plate from 755 to
+  ~1300 wide: about **73% more lattice cells** to stamp and draw every
+  frame, unmeasured. Both the width and whether to migrate are Eden's
+  call; nothing has been changed. The cheap half — extending only
+  rightward — fills the screen but leaves the town off-centre inside a
+  wider plate, with a symmetric boundary's left fade cutting through it.
+
+- **Seven `buildings` glyphs are solid blocks, and that is the ART.**
+  a21, a22, a23, a25, a28, a29, a30 come out as filled rectangles of lit
+  cells. They were nearly "repaired" as inverted sprites on 2026-08-30;
+  cropping the source cells out of `assets/buildings-a.png` and looking
+  at them showed the artwork itself is solid-filled — a21 and a22 are
+  white blocks with a thin dark roof line. The slicer has them right.
+  **Do not invert them.** If they are unwanted, the answer is new art or
+  dropping them from the set, not a transform.
 
 - **Eden's live town has no bindings.** Letters on plates, items on
   markers, the quest — all built and verified on the rig, none set in the

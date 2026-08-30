@@ -436,17 +436,32 @@ const Build = (() => {
   }
 
   /* ── the clearing a print stands on ────────────────────────────────────
-     Half again the print's own footprint, centred on it, hard-edged —
-     the size the first palace's has always been (`houseW * 1.5` in
-     `found.js`), so an asset placed by hand and the one the founding
-     lays read the same. `exact` because the position is the print's,
-     which is already snapped; pushed BEFORE the print, so it is under
-     it in the array and the print is what a click finds first. */
+     THE FIRST PALACE'S CLEARING, EXACTLY — same kind, same five numbers
+     (`Found.generate` in found.js): a `demolish` at half again the
+     print's own footprint, `fall: 0, out: 1, feather: 3, scatter: 0.7,
+     jitter: 0.4`. Those last three are the whole point of it: the edge
+     is feathered three cells and then broken up by scatter and jitter,
+     which is the soft sketchy rim the founding's own clearing has. A
+     `clear` was used first (2026-08-30, earlier the same day) and its
+     edge is dead straight by design — "born hard, because a clearing
+     with a soft edge is a demolition, and that tool already exists"
+     (kinds.js) — which read as a cut rectangle under every asset. It is
+     a demolition that was wanted, so it is a demolition.
+
+     The one thing to know about the swap: a demolish is not picky the
+     way a clear is, so a clearing does bite the roads and the other
+     built things inside it, not only the terrain. That is what the
+     founding has always done under the first palace.
+
+     `exact` because the position is the print's, which is already
+     snapped; pushed BEFORE the print, so it is under it in the array and
+     the print is what a click finds first. */
   const MATE = 1.5;
   function clearUnder(s){
-    if (!Kinds.by['clear']) return null;
-    return make({kind: 'clear', type: 'rect', exact: true,
-                 x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE});
+    if (!Kinds.by['demolish']) return null;
+    return make({kind: 'demolish', type: 'rect', exact: true,
+                 x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
+                 fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
   }
 
   /* ── and grows only in whole multiples of itself ───────────────────────

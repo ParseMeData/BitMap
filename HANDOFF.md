@@ -76,7 +76,39 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 224
+## Where we are — 30 Aug 2026, build 225
+
+- **Build 225 (30 Aug 2026) — the print goes transparent, and its
+  clearing is the founding's own.** Two corrections to build 224, both
+  Eden's, both about the same thing: the asset and the ground under it
+  are meant to be two separate things and were still half one.
+
+  *The print is transparent.* `landmark()` in `kinds.js` stamped a `'2'`
+  cell — the glyph's own ground: a window, a doorway, the plinth the
+  slicer grows around every silhouette — as an opaque, oversized square
+  of `C.plate`, knitted into cover. That was a clearing carried INSIDE
+  the print, locked to the drawing and shaped exactly like it, which is
+  precisely what build 224's separate clearing was meant to replace.
+  `'2'` now draws nothing (`if (!on) return;`) and the terrain shows
+  through. **A print placed before 225 has no clearing under it and will
+  show grass through its windows** until one is put there by hand; the
+  restored v8.1 town is almost all on already-dark ground, so it reads
+  fine there, but that is luck and not a rule.
+
+  *The clearing is a `demolish`, not a `clear`.* `clearUnder` now makes
+  exactly what `Found.generate` makes under the first palace — same
+  kind, same five numbers: `fall: 0, out: 1, feather: 3, scatter: 0.7,
+  jitter: 0.4` — because the feather-plus-scatter-plus-jitter rim is the
+  soft sketchy edge that was wanted, and `clear` is born hard on purpose
+  ("a clearing with a soft edge is a demolition, and that tool already
+  exists"). The trade, said out loud: a demolish is not picky, so a
+  clearing bites the roads and other built things inside it. That is
+  what the founding has always done, and it is what was asked for.
+
+  `tools/glyphs.py`'s two descriptions of `'2'` and the generated header
+  in `src/glyphs.js` were corrected with it, so the next re-slice does
+  not put the old claim back.
+
 
 - **Build 224 (30 Aug 2026) — a print and its clearing are two shapes.**
   A print used to clear its ground from INSIDE itself: the glyph's own

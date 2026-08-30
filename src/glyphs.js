@@ -10,9 +10,10 @@
    a window, a doorway, and the one-square plinth every glyph stands on —
    and '0' is the town around it.
 
-   Every '1' becomes one diamond at stamp time (src/kinds.js) and every '2'
-   a square of dark cover, which is what keeps a landmark the same material
-   as the ground under it and stops that ground showing through it.
+   Every '1' becomes one diamond at stamp time (src/kinds.js); every '2'
+   draws NOTHING, so the terrain shows through it (2026-08-30). A print is
+   the drawing and nothing else — the ground it stands clear of is its own
+   shape, laid with it when it is placed (`clearUnder` in src/build.js).
 
    `sets` says which kind offers which glyphs; a glyph in no set is the
    landmark's. */

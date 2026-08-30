@@ -210,9 +210,12 @@ def body(rows, pad=1):
 
     Then the whole silhouette is grown by `pad` — one ring of '2' around
     every lit or interior square, and the glyph grows by that much on every
-    side — so a building stands on a plinth of its own ground rather than
-    having grass lap its walls. At stamp time '2' is drawn as dark cover:
-    the sheet's black, kept, where the sheet's black was the building's."""
+    side. At stamp time '2' DRAWS NOTHING (src/kinds.js, 2026-08-30): a
+    print is the drawing and nothing else, and the ground it stands clear
+    of is a separate shape placed with it. It used to be drawn as dark
+    cover — the sheet's black, kept, where the sheet's black was the
+    building's — which is to say every print carried its own clearing
+    inside itself, locked to the drawing."""
     H, W = len(rows), len(rows[0])
     g = [[ch for ch in r] for r in rows]
     # flood the exterior from a ring outside the box
@@ -383,9 +386,10 @@ HEADER = """'use strict';
    a window, a doorway, and the one-square plinth every glyph stands on —
    and '0' is the town around it.
 
-   Every '1' becomes one diamond at stamp time (src/kinds.js) and every '2'
-   a square of dark cover, which is what keeps a landmark the same material
-   as the ground under it and stops that ground showing through it.
+   Every '1' becomes one diamond at stamp time (src/kinds.js); every '2'
+   draws NOTHING, so the terrain shows through it (2026-08-30). A print is
+   the drawing and nothing else — the ground it stands clear of is its own
+   shape, laid with it when it is placed (`clearUnder` in src/build.js).
 
    `sets` says which kind offers which glyphs; a glyph in no set is the
    landmark's. */

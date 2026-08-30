@@ -1205,8 +1205,9 @@ const Kinds = (() => {
     const N = rows.length, M = rows[0].length;
     const lit = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '1';
     /* '2' is the building's own ground: a window, a doorway, the plinth the
-       slicer grows around every silhouette. Drawn as dark cover so the grass
-       does not show through the building, and never as a lit square. */
+       slicer grows around every silhouette. It DRAWS NOTHING since
+       2026-08-30 — see the `if (!on)` below — and is kept only so those
+       cells are never mistaken for lit ones. */
     const own = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '2';
     /* ── the glyph keeps its proportions ─────────────────────────────────
        A glyph is stored at whatever size it was drawn — twelve by fourteen,
@@ -1242,16 +1243,22 @@ const Kinds = (() => {
           if (lit(gx, gy)){ on = true; break; }
           if (own(gx, gy)) ground = true;
         }
-      if (!on){
-        if (!ground) return;
-        /* the building's own ground, in the plate's own colour: the
-           detail inside a building reads as transparent, and only the grass
-           that would have shown through it is gone. Opaque, unshaded, and
-           oversized so the squares knit into cover with nothing between —
-           a grey here read as a plinth, and a plinth was not wanted. */
-        buf.cell(x, y, C.plate, fade, 1.18, 0, fade, 1.14, 0, 0, hash(u, v, s.seed + 85));
-        return;
-      }
+      /* ── a print is transparent ────────────────────────────────────────
+         Until 2026-08-30 a '2' cell was stamped as a square of the
+         plate's own colour — opaque, unshaded, oversized so the squares
+         knitted into cover — which is to say every print carried its own
+         clearing INSIDE itself, locked to the drawing and shaped exactly
+         like it. Now that a print is placed with a clearing of its own as
+         a separate shape (`clearUnder` in build.js), that inner cover is
+         the thing stopping the two from being told apart: the asset is
+         the drawing and nothing else, and what you see through it is the
+         clearing under it, which you can move, grow or throw away.
+
+         So '2' draws nothing and the terrain shows through it. A print
+         placed before this build has no clearing under it and will show
+         grass through its windows until one is put there — Clear, in
+         Modify, is that shape. (Eden, 2026-08-30.) */
+      if (!on) return;
       /* how much of the building's own outline this cell sits on. Taken
          from the block's rim rather than from one square, so an edge
          survives being resampled down alongside the thing it edges. */

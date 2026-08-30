@@ -1542,6 +1542,17 @@ plate's own colour, so the ground went exactly under the drawing and
 nowhere else, and there was nothing to take hold of. The clearing was
 locked to the asset and shaped exactly like it.
 
+**There is no `'2'` any more.** A glyph is exactly the coloured pixels
+of the art: `'1'` where the art is coloured, `'0'` everywhere else, and
+the box trimmed to it. Every `'2'` was a cell with no coloured pixel in
+it, and keeping them cost twice — in the plate they were opaque cover,
+and on the desktop `assets.py export` wrote each as a solid ground-grey
+pixel, so an exported asset PNG came out with an opaque dark background
+(53 of the 327 files). They are gone from the data, from `glyphs.py`
+(which no longer grows a plinth ring) and from the renderer. No art was
+lost doing it: all 327 glyphs, all 50 detail drawings and all 45,565 lit
+cells are unchanged — only the padding went.
+
 Now `'2'` **draws nothing** and the terrain shows through a print, and
 placing one lays **two** shapes, the way the first palace has always
 been laid (a clearing, then the house on it): the print, and under it a

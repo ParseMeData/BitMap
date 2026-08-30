@@ -76,7 +76,47 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 226
+## Where we are — 30 Aug 2026, build 227
+
+- **Build 227 (30 Aug 2026) — there is no `'2'`: an asset is its coloured
+  pixels and nothing else.** Eden: "many of the assets are not completely
+  transparent — remove any area that doesn't have a pixel coloured."
+  Chased it to the right place, and it was not where I first looked.
+
+  *Not* a slicing bug. Seven `buildings` glyphs (a21–a30) read as solid
+  blocks and I took them for inverted sprites; cropping the source cells
+  out of `assets/buildings-a.png` and looking at them showed the artwork
+  itself is solid-filled — a21 and a22 are white blocks with a thin dark
+  roof line. The slicer had them right. **Do not "repair" them.**
+
+  The real one: every `'2'` cell — the drawing's own inside plus the
+  one-cell plinth ring `body()` grew round every silhouette — is a cell
+  with no coloured pixel, and `assets.py export` wrote each as a SOLID
+  `GROUND (27,27,33)` pixel. So every exported asset PNG carried an
+  opaque dark background: 53 of the 327 files, 64,832 opaque pixels.
+  In-game they had already stopped drawing (225), so this was invisible
+  in the plate and glaring in a file browser.
+
+  `'2'` is now gone from the data, the tools and the renderer: purged
+  from `src/glyphs.js` (273 of 327 glyphs shrank by exactly the plinth
+  ring; **no art lost — all 327 glyphs, all 50 detail entries and all
+  45,565 lit cells are byte-identical**), `glyphs.py body()` no longer
+  writes it (`pad` defaults to 0 and grows `'1'` if ever asked), a new
+  `glyphs.py trim()` cuts the box to the drawing, `assets.py` export
+  writes bone-on-transparency and import reads GROUND as nothing so old
+  PNGs still round-trip, and `landmark()` lost its dead `own`/`ground`
+  branch. Verified: 0 opaque ground pixels across all 327 PNGs.
+
+  **Two pre-existing bugs found in `assets.py` on the way:**
+  `export()` still sorted on "is it in the houses set?" and put all 291
+  other glyphs in `Buildings/` — it predated the per-set folders and
+  would have wrecked the desktop library on any run. It writes by set
+  now, the same rule `import` reads back by. And `import` rebuilt the
+  `detail` table from the folders, which hold base-size PNGs only, so it
+  silently emptied all 50 detail entries (build 220's Size ×2 drawings).
+  It now carries the existing table forward. **export → import is a
+  clean round trip: sets, detail and every glyph identical.**
+
 
 - **Build 226 (30 Aug 2026) — the print sits on top of its clearing.**
   Build 225's clearing was eating the print it was under ("the asset now

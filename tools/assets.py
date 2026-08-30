@@ -19,12 +19,12 @@ hand (Eden, 2026-08-29):
 Assets (not _sheets) becomes a set named for it in lower case — houses,
 buildings, trees, plants, icons, signs, distractions, patterns,
 mountains, landmarks — and each PNG in it a glyph named for the file,
-read at eight pixels a cell: bone is lit, the ground grey is the
-sprite's own inside, anything else nothing. A sprite with no inside
-marked (a new one, not from `export`) has its inside found the way
-glyphs.py finds it — flood-filled from outside, the unreached dark
-written '2', and a ring of it grown round the whole. `src/kinds.js`
-offers each set as a print kind in the palette.
+read at eight pixels a cell: bone is lit and EVERYTHING ELSE IS NOTHING
+— transparent, and the plate's own ground grey too, so a PNG exported
+before 2026-08-30 (which carried the sprite's inside as solid GROUND
+pixels) reads back as the drawing alone and not as a dark slab. The box
+is then trimmed to the drawing. `src/kinds.js` offers each set as a
+print kind in the palette.
 
 `slice` reads every image in the folders beside Loci Assets on the desktop
 (trees, plants, houses, signs, icons, distractions, patterns — whatever is
@@ -35,9 +35,11 @@ sprites, and writes each as a PNG at the same eight-pixels-a-cell scale
 into a folder of the same name under Loci Assets. A sprite bigger than
 the glyph grid (32 cells) is cut into 32-cell pieces, numbered.
 
-Each PNG is the glyph at eight screen pixels per cell — a lit cell in bone,
-a '2' cell (the building's own ground: a window, a doorway) in the plate's
-ground colour, everything else transparent — so a file browser shows it.
+Each PNG is the glyph at eight screen pixels per cell — a lit cell in
+bone and every other pixel FULLY TRANSPARENT (2026-08-30) — so a file
+browser shows the drawing and nothing behind it. The building's own
+inside (a window, a doorway) used to be written in the plate's ground
+colour, which made most of an icon or a pattern an opaque dark slab.
 What is in `sets.houses` goes to Houses; every other glyph to Buildings.
 The two source sheets are copied to _sheets/ untouched. Nothing here reads
 the folders back yet: the game still ships src/glyphs.js, cut from the
@@ -67,13 +69,20 @@ def table():
     return json.loads(s[i:j])
 
 def png(rows):
+    """One glyph out as a PNG: bone where the art is coloured, and NOTHING
+    anywhere else — every other pixel is fully transparent (2026-08-30).
+
+    A '2' cell used to be written here as a solid GROUND pixel, so an
+    exported asset came out with an opaque dark background — most of one
+    for the icon, pattern and plant sets, which were about two thirds '2'.
+    There is no '2' any more (see tools/glyphs.py's `body`), and a stray
+    one in an old file is treated as what it always was: not the drawing."""
     h = len(rows); w = max(len(r) for r in rows)
     im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     px = im.load()
     for y, r in enumerate(rows):
         for x, ch in enumerate(r):
             if ch == '1': px[x, y] = BONE
-            elif ch == '2': px[x, y] = GROUND
     return im.resize((w * SCALE, h * SCALE), Image.NEAREST)
 
 # ── slicing the desktop's pictures ────────────────────────────────────
@@ -265,18 +274,22 @@ def import_all():
             im = Image.open(f).convert('RGBA'); W, H = im.size
             k = SCALE if (W % SCALE == 0 and H % SCALE == 0) else max(1, round(W / 32))
             nx, ny = W // k, H // k
-            px = im.load(); rows = []; marked = False
+            px = im.load(); rows = []
             for j in range(ny):
                 r = ''
                 for i in range(nx):
                     cr, cg, cb, ca = px[int((i + 0.5) * k), int((j + 0.5) * k)]
+                    # transparent is nothing; the plate's own ground colour is
+                    # nothing too, so a PNG exported before 2026-08-30 — which
+                    # carried its '2' cells as solid GROUND pixels — reads back
+                    # as the drawing alone rather than as a dark slab
                     if ca < 64: r += '0'
-                    elif abs(cr - GROUND[0]) + abs(cg - GROUND[1]) + abs(cb - GROUND[2]) < 60: r += '2'; marked = True
+                    elif abs(cr - GROUND[0]) + abs(cg - GROUND[1]) + abs(cb - GROUND[2]) < 60: r += '0'
                     else: r += '1'
                 rows.append(r)
             if not any('1' in r for r in rows): continue
             if nx > CAP2 or ny > CAP2: print(f'  skip {d.name}/{f.name}: {nx}x{ny} is over even the detail grid'); continue
-            if not marked: rows = GL.body(rows)
+            rows = GL.trim(rows)
             name = f.stem
             if name in glyphs: name = d.name.lower() + '-' + name
             # finer than the grid: the detail is the drawing itself (to 64),
@@ -286,6 +299,17 @@ def import_all():
                 rows = down(rows, CAP)
             glyphs[name] = rows; names.append(name)
         if names: sets[d.name.lower()] = names
+    # ── the detail table is kept, not rebuilt ──────────────────────────
+    # `export` writes ONE PNG per glyph, at the base (32-cell) size, so a
+    # folder simply does not carry the finer 64-cell drawings that build
+    # 220 reads from at Size x2. Rebuilding `detail` from the folders
+    # therefore emptied it — 50 glyphs lost their detail on any `import`,
+    # silently. So the table in the file is carried forward for every
+    # glyph this run did not itself produce a finer drawing for
+    # (2026-08-30).
+    keep = table().get('detail', {})
+    for n, rows in keep.items():
+        if n in glyphs and n not in detail: detail[n] = rows
     # written here rather than by glyphs.py's write(), for the detail table
     import json
     names = sorted(glyphs)
@@ -298,29 +322,44 @@ def import_all():
     print(f'wrote src/glyphs.js: {len(glyphs)} glyphs in {len(sets)} sets, {len(detail)} with detail — ' + ', '.join(f'{k} {len(v)}' for k, v in sets.items()))
 
 def export():
+    """glyphs.js out to the folders — BY SET (fixed 2026-08-30).
+
+    This used to sort on one question, "is it in the houses set?", and
+    put every other glyph in Buildings — which was right on the day the
+    folders were made and there were two of them, and wrong from the day
+    `import` started reading a folder per set. Run as it stood it emptied
+    291 glyphs into Buildings and left the other nine folders holding
+    whatever was in them. The sets are the folders now, which is the same
+    rule `import` reads them back by, so export → import is a round trip."""
     D = table()
-    for f in FOLDERS: (OUT / f).mkdir(parents=True, exist_ok=True)
-    houses = set(D.get('sets', {}).get('houses', []))
-    n = {'Houses': 0, 'Buildings': 0}
+    sets = D.get('sets', {})
+    # set name -> folder name, and a glyph in no set is the landmark's
+    folder_of = {}
+    for sname, names in sets.items():
+        for g in names: folder_of[g] = sname.capitalize()
+    folders = sorted({*folder_of.values(), 'Landmarks', '_sheets'})
+    for f in folders: (OUT / f).mkdir(parents=True, exist_ok=True)
+    n = {}
     for name, rows in D['glyphs'].items():
-        folder = 'Houses' if name in houses else 'Buildings'
+        folder = folder_of.get(name, 'Landmarks')
         png(rows).save(OUT / folder / f'{name}.png')
-        n[folder] += 1
+        n[folder] = n.get(folder, 0) + 1
     for sheet in ['buildings-a.png', 'buildings-b.png']:
         src = ROOT / 'assets' / sheet
         if src.exists(): shutil.copy2(src, OUT / '_sheets' / sheet)
     (OUT / 'README.txt').write_text(
         "Loci Assets — the printed things the game can put on a plate.\n\n"
-        "One PNG per glyph, at 8 screen pixels per cell: bone is a lit cell, the dark\n"
-        "grey is the building's own ground (a window, a doorway), transparent is\n"
-        "nothing. Sort them by moving files between the folders; add new ones as\n"
-        "PNGs on the same scale (any size up to 32x32 cells).\n\n"
-        "Houses/     Buildings/     Trees/     Mountains/     Landmarks/     Patterns/\n\n"
-        "_sheets/ holds the two source sheets the game is cut from today\n"
-        "(tools/glyphs.py). The game does not yet read these folders back —\n"
-        "that is the next step; until then the sheets are what ships.\n"
+        "One PNG per glyph, at 8 screen pixels per cell: bone is a lit cell and\n"
+        "EVERY OTHER PIXEL IS TRANSPARENT. Nothing is drawn that is not a coloured\n"
+        "pixel of the art (2026-08-30) — the ground a print stands clear of is a\n"
+        "separate shape the game lays under it, not part of the asset.\n\n"
+        "One folder per set, and the folder is what the set IS: move a file between\n"
+        "folders and `assets.py import` moves the glyph between print kinds. Add new\n"
+        "ones as PNGs on the same scale (any size up to 32x32 cells).\n\n"
+        "_sheets/ holds the two source sheets the older glyphs were cut from\n"
+        "(tools/glyphs.py).\n"
         "Written by tools/assets.py in ~/Projects/memory-quest-le.\n")
-    print(f'wrote {OUT}: {n["Houses"]} houses, {n["Buildings"]} buildings, sheets copied')
+    print(f'wrote {OUT}: ' + ', '.join(f'{k} {v}' for k, v in sorted(n.items())) + ', sheets copied')
 
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'export'

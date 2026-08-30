@@ -197,25 +197,47 @@ def sample(art, ax0, ay0, ax1, ay1, cap):
     return out
 
 
-def body(rows, pad=1):
-    """Inside from outside, and a margin of inside around it.
+def trim(rows):
+    """The box cut down to the drawing: every all-'0' row and column off
+    the outside. A glyph is its coloured pixels and the smallest box that
+    holds them, so a print's footprint is the drawing's own size and the
+    clearing laid under it is sized from something honest (2026-08-30)."""
+    r = [row for row in rows]
+    while r and set(r[0]) == {'0'}: r.pop(0)
+    while r and set(r[-1]) == {'0'}: r.pop()
+    if not r: return rows
+    L = 0
+    while L < len(r[0]) and all(row[L] == '0' for row in r): L += 1
+    R = len(r[0])
+    while R > L and all(row[R - 1] == '0' for row in r): R -= 1
+    r = [row[L:R] for row in r]
+    return r if (r and r[0]) else rows
 
-    A sprite is white on a dark ground, and the dark pixels come in two
-    kinds that the sheet does not distinguish: the sky around the building,
-    and the windows, doors and hatching INSIDE it. Both were '0', so both
-    drew nothing, and the grass showed through every window. The difference
-    is reachability: sky touches the edge of the sprite's box and a window
-    does not. So the box is flood-filled from outside, and whatever dark is
-    left unreached is the building's own ground, written as '2'.
 
-    Then the whole silhouette is grown by `pad` — one ring of '2' around
-    every lit or interior square, and the glyph grows by that much on every
-    side. At stamp time '2' DRAWS NOTHING (src/kinds.js, 2026-08-30): a
-    print is the drawing and nothing else, and the ground it stands clear
-    of is a separate shape placed with it. It used to be drawn as dark
-    cover — the sheet's black, kept, where the sheet's black was the
-    building's — which is to say every print carried its own clearing
-    inside itself, locked to the drawing."""
+def body(rows, pad=0):
+    """The drawing, and nothing that is not the drawing.
+
+    A sprite is white on a dark ground. This used to sort the dark pixels
+    into two kinds — the sky around the building, which touches the edge
+    of the box, and the windows, doors and hatching INSIDE it, which do
+    not — and write the unreached ones as '2', the building's own ground,
+    then grow a `pad` ring of '2' round the whole silhouette as a plinth.
+
+    NOTHING IS WRITTEN AS '2' ANY MORE (2026-08-30). Every '2' cell was a
+    cell with no coloured pixel in it, and two things followed from
+    keeping them. In the game they were stamped as opaque cover, so each
+    print carried its own clearing inside itself, locked to the drawing —
+    which is what the separate clearing under a print now does properly
+    (`clearUnder` in src/build.js). And on the desktop, `assets.py export`
+    wrote them as solid GROUND pixels, so an exported asset PNG came out
+    with an opaque dark background — most of one, for the icon, pattern
+    and plant sets, which were about two-thirds '2'.
+
+    So a glyph is now exactly its lit pixels: '1' where the art is
+    coloured and '0' everywhere else, and the box is trimmed to it. `pad`
+    is kept, defaulting to none, because a plinth is a thing a sheet
+    might one day want back — but it grows '1' now, not '2', because a
+    ring that draws nothing is a ring that is not there."""
     H, W = len(rows), len(rows[0])
     g = [[ch for ch in r] for r in rows]
     # flood the exterior from a ring outside the box
@@ -231,10 +253,10 @@ def body(rows, pad=1):
             u, v = x + dx, y + dy
             if 0 <= u < W and 0 <= v < H and not seen[v][u] and g[v][u] == '0':
                 stack.append((u, v))
-    for y in range(H):
-        for x in range(W):
-            if g[y][x] == '0' and not seen[y][x]: g[y][x] = '2'
-    # pad: grow by `pad` rings of '2', widening the box to hold them
+    # what the flood did not reach is the drawing's own inside — and it is
+    # left as '0', which is to say transparent, because it holds no
+    # coloured pixel (2026-08-30; it used to become '2')
+    # pad: grow by `pad` rings, widening the box to hold them
     for _ in range(pad):
         H2, W2 = H + 2, W + 2
         n = [['0'] * W2 for _ in range(H2)]
@@ -246,9 +268,9 @@ def body(rows, pad=1):
                 for dx in (-1, 0, 1):
                     for dy in (-1, 0, 1):
                         u, v = x + dx, y + dy
-                        if 0 <= u < W2 and 0 <= v < H2 and n[v][u] in '12':
-                            n[y][x] = '2'; break
-                    if n[y][x] == '2': break
+                        if 0 <= u < W2 and 0 <= v < H2 and n[v][u] == '1':
+                            n[y][x] = '1'; break
+                    if n[y][x] == '1': break
         g, H, W = n, H2, W2
     return [''.join(r) for r in g]
 
@@ -382,14 +404,16 @@ HEADER = """'use strict';
    %d glyphs, each a grid of at most %d×%d written out as strings, for the
    same reason src/type.js writes its letterforms out rather than packing
    them — this is the art, and art you cannot read in the source is art
-   nobody will fix. '1' is a lit square, '2' is the building's own ground —
-   a window, a doorway, and the one-square plinth every glyph stands on —
-   and '0' is the town around it.
+   nobody will fix. '1' is a lit square and '0' is everything else, and
+   the box is trimmed to the drawing.
 
-   Every '1' becomes one diamond at stamp time (src/kinds.js); every '2'
-   draws NOTHING, so the terrain shows through it (2026-08-30). A print is
-   the drawing and nothing else — the ground it stands clear of is its own
-   shape, laid with it when it is placed (`clearUnder` in src/build.js).
+   THERE IS NO '2'. A glyph is exactly the coloured pixels of the art and
+   nothing besides (2026-08-30). '2' used to mark the drawing's own inside
+   — a window, a doorway, the plinth grown round every silhouette — and
+   was stamped as opaque cover, which gave every print a clearing locked
+   inside itself and gave every exported PNG an opaque background. The
+   ground a print stands clear of is now its own shape, laid with it when
+   it is placed (`clearUnder` in src/build.js).
 
    `sets` says which kind offers which glyphs; a glyph in no set is the
    landmark's. */

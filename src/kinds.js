@@ -1204,11 +1204,13 @@ const Kinds = (() => {
     if (!rows || !rows.length) return;
     const N = rows.length, M = rows[0].length;
     const lit = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '1';
-    /* '2' is the building's own ground: a window, a doorway, the plinth the
-       slicer grows around every silhouette. It DRAWS NOTHING since
-       2026-08-30 — see the `if (!on)` below — and is kept only so those
-       cells are never mistaken for lit ones. */
-    const own = (gx, gy) => gx >= 0 && gy >= 0 && gx < M && gy < N && rows[gy][gx] === '2';
+    /* There is no '2' in a glyph any more (2026-08-30, tools/glyphs.py):
+       a glyph is its lit squares and nothing else, and the box is trimmed
+       to them. What used to be '2' — the drawing's own inside, and the
+       plinth ring the slicer grew round every silhouette — was stamped
+       here as opaque cover, which is to say every print carried its own
+       clearing locked inside itself. The clearing is a shape of its own
+       now (`clearUnder` in build.js). */
     /* ── the glyph keeps its proportions ─────────────────────────────────
        A glyph is stored at whatever size it was drawn — twelve by fourteen,
        nine by twenty — so mapping it straight onto the shape's box would
@@ -1237,27 +1239,18 @@ const Kinds = (() => {
          cell genuinely spans more than a pixel. */
       const gx1 = stepx <= 1 ? gx0 : Math.floor(fx + stepx - 1e-9);
       const gy1 = stepy <= 1 ? gy0 : Math.floor(fy + stepy - 1e-9);
-      let on = false, open = 0, ground = false;
+      let on = false, open = 0;
       for (let gy = gy0; gy <= gy1 && !on; gy++)
-        for (let gx = gx0; gx <= gx1; gx++){
+        for (let gx = gx0; gx <= gx1; gx++)
           if (lit(gx, gy)){ on = true; break; }
-          if (own(gx, gy)) ground = true;
-        }
-      /* ── a print is transparent ────────────────────────────────────────
-         Until 2026-08-30 a '2' cell was stamped as a square of the
-         plate's own colour — opaque, unshaded, oversized so the squares
-         knitted into cover — which is to say every print carried its own
-         clearing INSIDE itself, locked to the drawing and shaped exactly
-         like it. Now that a print is placed with a clearing of its own as
-         a separate shape (`clearUnder` in build.js), that inner cover is
-         the thing stopping the two from being told apart: the asset is
-         the drawing and nothing else, and what you see through it is the
-         clearing under it, which you can move, grow or throw away.
-
-         So '2' draws nothing and the terrain shows through it. A print
-         placed before this build has no clearing under it and will show
-         grass through its windows until one is put there — Clear, in
-         Modify, is that shape. (Eden, 2026-08-30.) */
+      /* ── a print is the drawing and nothing else ───────────────────────
+         Anything that is not a lit square draws nothing, so the terrain
+         shows through a window, a doorway and the space round the
+         silhouette alike. What you see through a print is the clearing
+         laid under it when it was placed, which is a shape you can move,
+         grow or throw away. A print placed before 2026-08-30 has no such
+         clearing and will show grass through its windows until one is put
+         there — Clear, in Modify, is that shape. (Eden, 2026-08-30.) */
       if (!on) return;
       /* how much of the building's own outline this cell sits on. Taken
          from the block's rim rather than from one square, so an edge

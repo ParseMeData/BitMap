@@ -7,7 +7,14 @@
    They are drawn as real glyphs, which the diamond shader cannot make on
    its own — so the set is baked once into a canvas sheet, uploaded as the
    one texture in the program, and each marker is an instance carrying the
-   cell of that sheet to cut from (see mode 3 in render.js). */
+   cell of that sheet to cut from (see mode 3 in render.js).
+
+   Inside a palace a marker is not pinned anywhere it likes: it lands in one
+   of the room's eight SLOTS and wears that slot's number (src/trace.js).
+   `m.slot` is the whole of what it keeps — an absolute address in the
+   building, `(room − 1) * 8 + i` — and 0 means a marker with no slot, which
+   is every marker out on the town and every locus placed before the slots
+   existed. */
 
 const Markers = (() => {
   const WANT = ['☇', '❍', '▲', '〄', '⎋', '⚆', '☾',
@@ -101,9 +108,23 @@ const Markers = (() => {
       return null;
     }
     /* a place costs blocks (src/stock.js) */
+    /* Inside a palace a marker goes in a SLOT: a room carries eight of them
+       round its edge and holds eight loci, no more (src/trace.js). Asked
+       before the blocks are paid, because a place you cannot have is not a
+       place you should be charged for. */
+    let slot = 0;
+    if (typeof Interior !== 'undefined' && Interior.inside() && typeof Trace !== 'undefined'){
+      const s = Trace.drop(x, y);
+      if (s && s.full){
+        if (typeof hqNote === 'function') hqNote('eight places is a room — this one is full', false);
+        return null;
+      }
+      if (s){ slot = s.n; x = s.x; y = s.y; }
+    }
     if (typeof Stock !== 'undefined' && !Stock.pay('marker')) return null;
-    const m = {id: nextId++, uid: mint(), name: '', gi: armed, x: snap(x), y: snap(y),
-               size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
+    const m = {id: nextId++, uid: mint(), name: '', gi: armed,
+               x: slot ? x : snap(x), y: slot ? y : snap(y), slot: slot,
+               size: grid() * 0.8, tint: 0, n: slot || G.markers.length + 1};
     G.markers.push(m);
     sel = m;
     renumber();
@@ -117,7 +138,7 @@ const Markers = (() => {
   function plant(x, y, name){
     if (!glyphs.length) return null;
     const m = {id: nextId++, uid: mint(), name: String(name || '').slice(0, 40), gi: 0, x: snap(x), y: snap(y),
-               size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
+               size: grid() * 0.8, tint: 0, slot: 0, n: G.markers.length + 1};
     G.markers.push(m);
     renumber();
     save();
@@ -129,17 +150,51 @@ const Markers = (() => {
 
   /* ── order ──────────────────────────────────────────────────────────────
      A memory palace *is* its order: the loci have to be walked in the same
-     sequence every time or the method does not work. So the number is a
-     first-class property you set by hand, not something inferred from where
-     a marker happens to sit on the plan. It is kept dense and 1-based —
-     delete the third of five and you have four, not a gap at three. */
+     sequence every time or the method does not work.
+
+     Inside a palace the number is the SLOT — the place in the building, not
+     a position in a list — so it is not inferred from where a marker sits
+     and it is not kept dense: take the third of eight out of its room and
+     the other seven keep the numbers they had, because the room did not
+     change shape. Out on the town, where there are no slots, it stays what it always
+     was: dense, 1-based, and yours to reorder by hand. */
   const ordered = () => (G.markers || []).slice().sort(
     (a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
   function renumber(){
-    ordered().forEach((m, i) => { m.n = i + 1; });
+    /* Anything without a slot — every marker on the town, and a locus placed
+       inside a palace before the slots existed — is numbered densely AFTER
+       the last slot the plan has, so a free marker can never wear a number
+       a slot already owns. Nothing migrates the old ones; a locus takes a
+       slot the moment it is next dragged, and not before. */
+    let base = 0;
+    for (const m of G.markers || []) if (m.slot > base) base = m.slot;
+    /* the plan has to actually be mounted before it can be asked how long
+       it is: entering a palace mounts the markers BEFORE the shapes, so
+       `Interior.inside()` is true a moment before `G.shapes` is the plan */
+    if (typeof Interior !== 'undefined' && Interior.inside() && typeof Trace !== 'undefined' &&
+        typeof Kinds !== 'undefined' && Kinds.scope() === 'floor')
+      base = Math.max(base, Trace.count());
+    const list = ordered();
+    let k = 0;
+    for (const m of list) if (m.slot) m.n = m.slot;
+    for (const m of list) if (!m.slot) m.n = base + (++k);
   }
   /* move one marker `d` places along the run, and close the hole behind it */
   function reorder(m, d){
+    /* in a palace the order is the geography, so moving a locus up the list
+       MOVES IT — to the slot before this one, the next room's last if it is
+       at the head of its own, and whatever was standing there takes the slot
+       it came from. That is what makes the sequence walkable. */
+    if (m.slot && typeof Trace !== 'undefined'){
+      const to = Trace.slotN(m.slot + d), from = Trace.slotN(m.slot);
+      if (!to || !from) return false;
+      const held = (G.markers || []).find(x => x !== m && x.slot === to.n);
+      if (held){ held.slot = from.n; held.x = from.x; held.y = from.y; }
+      m.slot = to.n; m.x = to.x; m.y = to.y;
+      renumber();
+      save();
+      return true;
+    }
     const list = ordered();
     const i = list.indexOf(m);
     const j = i + d;
@@ -167,7 +222,19 @@ const Markers = (() => {
     }
     return null;
   }
-  function moveTo(m, x, y){ m.x = snap(x); m.y = snap(y); save(); }
+  function moveTo(m, x, y){
+    if (typeof Interior !== 'undefined' && Interior.inside() && typeof Trace !== 'undefined'){
+      const s = Trace.drop(x, y, m);
+      /* a full room will not take it: the marker simply stops at the wall,
+         which says so better than a note repeated every frame of the drag */
+      if (s && s.full) return;
+      if (s){ m.slot = s.n; m.x = s.x; m.y = s.y; renumber(); save(); return; }
+      /* dragged clear of every room it is out of the sequence, and is
+         numbered after the slots until it is dropped back into one */
+      if (m.slot){ m.slot = 0; renumber(); }
+    }
+    m.x = snap(x); m.y = snap(y); save();
+  }
   function remove(m){
     const i = G.markers.indexOf(m);
     if (i < 0) return;
@@ -203,8 +270,11 @@ const Markers = (() => {
       if (filled(k.uid))
         m = put(a, m, k.x, k.y, c[0], c[1], c[2], 0.5, r * 1.28, 1, 0, 0, 1);
       /* and its number, standing off the corner where it cannot cover the
-         glyph — the order is the thing you are actually authoring */
-      if (k.n) m = number(a, m, k.n, k.x + r * 0.95, k.y - r * 0.95, r * 0.62, c);
+         glyph — the order is the thing you are actually authoring. While the
+         grid is up a locus in a slot would say its number twice, and the
+         square is the one that owns it, so the marker gives way. */
+      const said = k.slot && typeof Trace !== 'undefined' && Trace.on();
+      if (k.n && !said) m = number(a, m, k.n, k.x + r * 0.95, k.y - r * 0.95, r * 0.62, c);
       if (k === sel)
         m = put(a, m, k.x, k.y, 1, 0.37, 0.64, 0.9, r * 1.5, 1, 0, 0, 1);
       /* the quest's target wears gold: this is the door you are going to */
@@ -266,7 +336,8 @@ const Markers = (() => {
   function save(){
     try {
       Store.set(KEY, JSON.stringify(G.markers.map(m =>
-        ({uid: m.uid, name: m.name || '', n: m.n || 0, gi: m.gi, x: m.x, y: m.y,
+        ({uid: m.uid, name: m.name || '', n: m.n || 0, slot: m.slot || 0,
+          gi: m.gi, x: m.x, y: m.y,
           size: m.size, tint: m.tint, item: m.item || null}))));
       if (typeof hqStoreOK === 'function') hqStoreOK('the markers');
     } catch (e){ if (typeof hqStoreFail === 'function') hqStoreFail('the markers', e); }
@@ -282,7 +353,7 @@ const Markers = (() => {
            Mint one and write it straight back, so the plan built inside a
            marker today is still that marker's tomorrow. */
         if (!m.uid){ m = Object.assign({}, m, {uid: mint()}); minted = true; }
-        return Object.assign({id: nextId++, name: '', n: 0}, m);
+        return Object.assign({id: nextId++, name: '', n: 0, slot: 0}, m);
       });
     /* markers saved before the order existed all carry 0; numbering them
        gives the sequence they were placed in, which is the best guess there

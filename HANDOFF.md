@@ -76,7 +76,101 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 234 (tag **v8.2** at 233)
+## Where we are — 30 Aug 2026, build 238 (tag **v8.2** at 233)
+
+- **Build 238 (30 Aug 2026) — a room is eight places, and the minimal
+  view is those places.** Eden asked for the 3×3 grid to become somewhere
+  you put things: *"toggles each room into a 3x3 grid with 9 tiles which
+  we number and place information inside of"*, then, on seeing the nine,
+  *"maybe instead we just do 1 - 8 so no middle square"*. Both halves are
+  in `src/trace.js` and `src/markers.js`.
+
+  **The squares became slots.** They were nine painted cells in the room
+  the trace happened to be up to, numbered nowhere, hit-tested nowhere,
+  saved nowhere. Now `gridFor(box)` builds the grid for ANY room and
+  `slots()` numbers them on across the palace — room r's slot i is
+  `(r − 1) * 8 + i` — so an 11-room palace is a sequence of 88 and its
+  length is a fact about the building rather than a count of whatever is
+  pinned in it. `slotN(n)` turns the number back into a place, which is
+  what makes the sequence walkable, and `drop(x, y, self)` answers where
+  a marker dropped at a point belongs.
+
+  **The middle square is not a place** (Eden's second message). The grid
+  keeps its 3×3 shape and the centre is skipped, so the eight run round
+  the edge of the room — `1 2 3 / 4 · 5 / 6 7 8`. That is the order you
+  walk a room in anyway, and it leaves the middle of the floor clear,
+  which is where the walker stands and where the line runs: a place there
+  would be one you have to stand on top of to look at. Gold, which had
+  been the ninth, goes back to being only the tone the end of the line
+  wears.
+
+  **The eight tones, and no new colour** (STYLE.md). 1 white `bone`,
+  2 green `park`, 3 pink `flare`, 4 blue `creek`, 5 orange `stairs`,
+  6 red `rug`, 7 yellow, 8 black. Two of those needed deciding:
+
+  - **7 is gold pulled HALF WAY toward bone.** The palette holds one
+    amber, so yellow has to be that amber at a lighter weight — the
+    device `focus.js` uses when it pulls a tone toward dim. Built first
+    at a quarter, and a screenshot showed 7 and the then-9 as the same
+    square twice; at a half it reads as a pale yellow beside the amber.
+  - **8 is `dim` #5A5A66, not black** — Eden's call, asked before
+    building. The ground is `#1B1B21`, so a true black square is a hole
+    in a near-black floor. Charcoal shows unaided and wants no rim.
+
+  A slot's number is drawn in the square's own corner (`0.32`, `0.30` of
+  its side), in ground on a light tone and bone on a dark one — the rule
+  `focus.js` uses for the letters on its diamonds — and out of the same
+  sheet everything else draws text from.
+
+  **A marker lands in a slot.** `Markers.place` asks `Trace.drop` when
+  `Interior.inside()`, snaps to the nearest free slot **in the room it
+  was dropped in** (a locus never jumps a wall to find room elsewhere),
+  and takes that slot's number as `n`. `m.slot` is the whole of what it
+  keeps — an absolute address; `0` is every marker on the town. The
+  capacity is real: the ninth is refused, **and refused before
+  `Stock.pay` is called**, because a place you cannot have is not a place
+  you should be charged for.
+
+  `moveTo` re-snaps on a drag; a drag onto a held slot is refused
+  silently and the marker stops at the wall, which says so better than a
+  note repeated every frame; a drag clear of every room clears the slot.
+  `renumber` gives a slotted marker its slot number and numbers everything
+  without one AFTER the last slot the plan has, so a free marker can never
+  wear a number a slot owns — and it reads that base off `Trace.count()`
+  only when `Kinds.scope() === 'floor'`, because entering a palace mounts
+  the markers *before* the shapes and `Interior.inside()` is true a moment
+  early. `reorder` MOVES a locus rather than renumbering it: to the slot
+  before this one, the previous room's last if it is at the head of its
+  own, and whatever was standing there takes the slot it came from.
+
+  **`reseat()`** puts a locus back on its slot after the room is resized —
+  the slot is the place, so if the place moves the locus moves with it.
+  Run from `overlay()`, so it heals at the moment you would notice, and it
+  writes only when something actually moved.
+
+  **The view.** Walls, windows, doors and stairs stay (Eden's call: a grid
+  with no room around it is one you cannot place yourself in); floor and
+  fittings were already out. The line stays but drops from `0.85` to
+  `0.28` — it is the thread between the slots, not the subject — and the
+  rings on the fittings are gone, which were the clutter this view exists
+  to be rid of; the two ends of the line keep theirs. Every room's eight
+  are drawn, the traced room at `0.92` and the rest at `0.3`, so which
+  room the trace has reached is said by weight rather than by drawing only
+  one of them. And **a locus in a slot no longer draws its own number
+  while the grid is up** — the square owns it, and both at once was the
+  same number twice, the marker's the louder.
+
+  Verified on a throwaway at 9223 with v8.2 restored, inside ⤊Barwidgee
+  (11 rooms, 88 slots): the eight lay out as a ring with the centre empty
+  and room 2's first slot numbered 9; eight markers fill room 1 as slots
+  1–8 and the ninth is refused with the blocks untouched; a drag onto a
+  held slot refuses, into a free one re-snaps and renumbers (room 3's
+  first is 17), out of every room clears the slot and numbers it 89;
+  `reorder` crosses from slot 8 into room 2's 9 and back, and a swap keeps
+  one marker to a slot; growing and moving room 1 carried all eight loci
+  with it; the slots survive a reload on their squares; `Interior.leave()`
+  brings the town back whole (39 shapes, 1 marker, slot 0). No errors
+  throughout.
 
 - **Build 234 (30 Aug 2026) — the backdrop behind the name and the
   compass is gone.** Eden: "no longer needed." Builds 232 and 233 laid

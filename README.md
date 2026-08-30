@@ -1577,20 +1577,26 @@ demolish first; `create` cannot, because it takes the print's id before
 the print's size — which is what the clearing is made from — is known,
 so `clearUnder` exchanges the two ids.
 
-**The clearing can be pulled out of square.** Select it and drag a
-corner and it stops being a rectangle: a demolish is the one thing on
-the plate with free corners (`freeCorner`), because it is not a thing,
-it is a statement about the ground under it, and the ground it eats into
-does not run along the axes. An edge grip moves the two corners of its
-edge, so a side still moves as a side. Corners snap to the **lattice
-cell** — one diamond — not the walk tile: a modifier is something you
-aim rather than something you place, and a clearing four tiles across
-snapped to tiles has five stops per axis, which is what made dragging
-one feel like it did nothing at all (fixed 2026-08-30). Note that the
-quad is an outline, not a cut-out: outside it but inside the shape's
-rectangle is the *wedge*, where the ground is spent out rather than
-spared. For a clearing that stops dead at its own outline, retype it to
-**Warp** — every point is then a grip and midpoints add new ones.
+**The clearing is a Warp, and you mould it.** It is born as eight
+points on the ellipse inscribed in its box — so it keeps the width and
+height a rectangle would have had, and only its corners come in — and
+from there **every point is a grip**, with the middle of any leg a new
+point waiting to be born. Drag one and the cut follows exactly: a warp
+is bounded by its blob and nothing else, so the ground stops where the
+shape does.
+
+A rect was tried first and is the wrong handle for this. Its free
+corners (`freeCorner`, the one thing on the plate that has them) only
+move the *outline*: outside the quad but inside the rectangle is the
+**wedge**, where the ground is spent out rather than spared, so with
+`out: 1` the whole rectangle clears whatever the corners say. Points
+snap to the **lattice cell** — one diamond — not the walk tile, because
+a modifier is something you aim rather than something you place; snapped
+to tiles a clearing four tiles across had five stops per axis, which is
+what made dragging one feel like it did nothing at all (2026-08-30).
+
+The founding's own clearing under the first palace stays a rect: it is
+laid once, at Generate, and that is the look it has always had.
 
 It is one gesture and **one undo step**, and from then on the two are
 ordinary shapes that select, drag, resize and delete on their own — so

@@ -452,17 +452,37 @@ const Build = (() => {
   }
 
   /* ── the clearing a print stands on ────────────────────────────────────
-     THE FIRST PALACE'S CLEARING, EXACTLY — same kind, same five numbers
-     (`Found.generate` in found.js): a `demolish` at half again the
-     print's own footprint, `fall: 0, out: 1, feather: 3, scatter: 0.7,
-     jitter: 0.4`. Those last three are the whole point of it: the edge
-     is feathered three cells and then broken up by scatter and jitter,
+     The first palace's clearing, in its free-form shape — same kind and
+     the same five numbers `Found.generate` uses (`fall: 0, out: 1,
+     feather: 3, scatter: 0.7, jitter: 0.4`), at half again the print's
+     own footprint. Those middle three are the point of it: the edge is
+     feathered three cells and then broken up by scatter and jitter,
      which is the soft sketchy rim the founding's own clearing has. A
      `clear` was used first (2026-08-30, earlier the same day) and its
      edge is dead straight by design — "born hard, because a clearing
      with a soft edge is a demolition, and that tool already exists"
      (kinds.js) — which read as a cut rectangle under every asset. It is
      a demolition that was wanted, so it is a demolition.
+
+     BORN A WARP, not a rect (Eden, 2026-08-30). A rect's free corners
+     only move the outline: outside the quad but inside the rectangle is
+     the wedge, where the ground is spent out rather than spared, so with
+     `out: 1` the whole rectangle clears whatever the corners say. A warp
+     is bounded by its blob and nothing else — `geo.depth` reads the
+     polygon, so the cut stops exactly where the shape does. It is also
+     simply the better handle: every point is a grip, and dragging the
+     middle of any leg puts a new point there, so the clearing can be
+     pushed into whatever shape the ground wants rather than four
+     corners' worth.
+
+     `make` seeds the blob with `blobFrom(w, h)` — eight points on the
+     ellipse inscribed in the box — so the clearing keeps the width and
+     height the rect had (a point sits at ±w/2 and ±h/2 on the axes) and
+     only its corners come in. At 1.5× the print it still clears the
+     print's own corners with room to spare, so what changes is the
+     shape's shoulders, not its reach. The founding's own clearing in
+     `found.js` is left a rect: it is laid once, at Generate, and it is
+     the look that was signed off.
 
      The one thing to know about the swap: a demolish is not picky the
      way a clear is, so a clearing does bite the roads and the other
@@ -475,7 +495,7 @@ const Build = (() => {
   const MATE = 1.5;
   function clearUnder(s){
     if (!Kinds.by['demolish']) return null;
-    const c = make({kind: 'demolish', type: 'rect', exact: true,
+    const c = make({kind: 'demolish', type: 'warp', exact: true,
                     x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
                     fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
     if (!c) return null;

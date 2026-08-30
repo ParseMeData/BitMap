@@ -76,7 +76,31 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 228
+## Where we are — 30 Aug 2026, build 229
+
+- **Build 229 (30 Aug 2026) — a new clearing is born a WARP.** Asked for
+  directly, after 228 laid out the choice. `clearUnder` now makes
+  `type: 'warp'` instead of `'rect'`; `make` seeds the blob with
+  `blobFrom(w, h)` — eight points on the ellipse inscribed in the box —
+  so the clearing keeps the width and height the rect had (a point sits
+  at ±w/2 and ±h/2 on the axes) and only its shoulders come in. At 1.5×
+  the print it still covers the print's own corners with room to spare.
+
+  Why it is the better handle: a rect's free corners only move the
+  outline, because outside the quad but inside the rectangle is the
+  wedge, where the ground is spent out rather than spared — with
+  `out: 1` the whole rectangle clears whatever the corners say. A warp is
+  bounded by its blob and nothing else (`geo.depth` reads the polygon),
+  so the cut stops exactly where the shape does; and every point is a
+  grip, with leg midpoints adding new ones. Verified: dragging one point
+  pulled the clearing into a teardrop and the cut followed it, soft rim
+  and all.
+
+  `Found.generate`'s clearing under the first palace is deliberately
+  left a rect — laid once at Generate, and the look already signed off.
+  Regression-checked: Trees gives `demolish/warp` + `flora/rect`, one
+  Ctrl+Z removes both, Patterns still gets no clearing, no errors.
+
 
 - **Build 228 (30 Aug 2026) — a modifier is a thing you AIM, so it snaps
   to the cell.** Eden on the clearing under an asset: "seems to have the

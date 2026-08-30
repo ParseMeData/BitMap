@@ -82,8 +82,24 @@ const Build = (() => {
      drawing, and a cut is only clean if it can be put on one. The wall it
      has to land on is two cells thick, so a tile is four times too coarse to
      trim with: every correction overshoots or undershoots and there is no
-     setting in between. */
-  const fine = s => !!(s && ((Kinds.by[s.kind] || {}).clears || s.kind === 'door'));
+     setting in between.
+
+     A MODIFIER is a thing you aim, and it was missing from this test
+     (Eden, 2026-08-30: the clearing under an asset "seems to have the
+     option to manipulate the shape ... but it's not affecting the actual
+     clear layer"). The test caught the Clear tool and the door because
+     both declare `clears`; a demolish declares nothing of the sort, so
+     its corners snapped to whole WALK TILES. The clearing laid under a
+     print is about four and a half tiles across, which left its corners
+     five stops to choose from on each axis — so a drag of anything less
+     than a whole tile moved the grip, showed the quad, and changed the
+     cut not at all. A demolish is not a thing you place, it is a
+     statement about the ground under it, and it has to be able to land
+     on one diamond like every other cut. */
+  const fine = s => {
+    const k = s && Kinds.by[s.kind];
+    return !!(k && (k.clears || k.modifies)) || (!!s && s.kind === 'door');
+  };
   const quant = s => (fine(s) ? cellSize() : grid());
   const snapQ = (v, q) => Math.round(v / q) * q;
   const snapQS = (v, q) => Math.max(q, Math.round(v / q) * q);

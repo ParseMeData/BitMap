@@ -1577,6 +1577,21 @@ demolish first; `create` cannot, because it takes the print's id before
 the print's size — which is what the clearing is made from — is known,
 so `clearUnder` exchanges the two ids.
 
+**The clearing can be pulled out of square.** Select it and drag a
+corner and it stops being a rectangle: a demolish is the one thing on
+the plate with free corners (`freeCorner`), because it is not a thing,
+it is a statement about the ground under it, and the ground it eats into
+does not run along the axes. An edge grip moves the two corners of its
+edge, so a side still moves as a side. Corners snap to the **lattice
+cell** — one diamond — not the walk tile: a modifier is something you
+aim rather than something you place, and a clearing four tiles across
+snapped to tiles has five stops per axis, which is what made dragging
+one feel like it did nothing at all (fixed 2026-08-30). Note that the
+quad is an outline, not a cut-out: outside it but inside the shape's
+rectangle is the *wedge*, where the ground is spent out rather than
+spared. For a clearing that stops dead at its own outline, retype it to
+**Warp** — every point is then a grip and midpoints add new ones.
+
 It is one gesture and **one undo step**, and from then on the two are
 ordinary shapes that select, drag, resize and delete on their own — so
 the ground you see through can be pushed out from under the asset,

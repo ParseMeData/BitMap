@@ -76,7 +76,41 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 227
+## Where we are — 30 Aug 2026, build 228
+
+- **Build 228 (30 Aug 2026) — a modifier is a thing you AIM, so it snaps
+  to the cell.** Eden on the clearing under an asset: "seems to have the
+  option to manipulate the shape by dragging the edges ... i can see the
+  select move but it's not affecting the actual clear layer."
+
+  Everything about free corners was already right and none of it was the
+  problem: `freeCorner` allows them on a demolish rect, `ensureQuad`
+  builds the quad, the drag writes it, `changed()` invalidates the
+  weathered buffers by footprint, and `bitten()` has a whole `m.quad`
+  branch. The quantum was the problem. `fine()` — which decides whether a
+  shape moves in walk tiles or in lattice cells — tested for `clears` or
+  `door`, which catches the Clear tool and a doorway and MISSES every
+  modifier. So a demolish snapped to whole walk tiles: the clearing laid
+  under a print is ~4.5 tiles across, leaving its corners five stops per
+  axis, and any drag under a tile moved the grip, drew the quad and
+  changed the cut not at all. `fine()` now takes `k.modifies` too.
+  Verified: a sub-tile nudge of a corner now visibly nicks the clearing.
+
+  **Two things to know before touching this again.** A demolish's quad
+  does not carve a hole — outside the quad but inside the rect is the
+  *wedge*, where ground is "spent out" (`lost` ramps to 1) rather than
+  spared, so with `out: 1` the whole rect clears either way and only the
+  quad's own edge reads. If a clearing that truly stops at its outline is
+  ever wanted, the shape to reach for is **`warp`** — a demolish accepts
+  it (`types: AREA`), every blob point is a grip, leg midpoints add new
+  ones, and `geo.depth` then bounds the cut exactly. Tested and it works;
+  not made the default, because the rect is the look Eden signed off.
+
+  And when driving this over CDP: a synthetic `pointerdown` makes
+  `canvas.setPointerCapture(e.pointerId)` throw `NotFoundError`, which
+  surfaces as `Script error. @ :0` in the banner, once per pointerdown.
+  It is the harness, not the game.
+
 
 - **Build 227 (30 Aug 2026) — there is no `'2'`: an asset is its coloured
   pixels and nothing else.** Eden: "many of the assets are not completely

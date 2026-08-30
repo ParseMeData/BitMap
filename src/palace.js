@@ -482,39 +482,6 @@ const Palace = (() => {
     return m;
   }
 
-  /* ── the name's backdrop, laid once and never from the draw ────────────
-     `title` runs inside the instance build, and making a shape runs
-     `changed()` — a rebuild, a restamp and a save — which must not happen
-     part-way through building the frame's instances. So the size is worked
-     out here and the shape is laid on the next macrotask, outside it.
-
-     The oval is the one `Title.mat` used to draw: `rx = cols/2 * 1.4 + 8`
-     and `ry = rows/2 * 2.1 + 8` cells round the name's box.
-
-     It ASKS `backdropOf` every draw rather than latching after the first
-     go: `G.shapes` is swapped whole when the plate changes, so a latch
-     would leave every plate after the first without a backdrop. The scan
-     is forty-odd shapes once a frame. `matPending` is only there so the
-     same plate cannot be given two while the first is still being made. */
-  let matPending = false;
-  function layTitleMat(f, at){
-    if (matPending) return;
-    /* not onto an empty plate — see the same guard in compass.js: a home
-       plate founds itself only while it has no shapes on it */
-    if (!G.shapes.some(x => x.kind !== 'mat')) return;
-    if (Build.backdropOf('title')) return;
-    const px = at.px;
-    const w = (f.cols / 2 * 1.4 + 8) * 2 * px, h = (f.rows / 2 * 2.1 + 8) * 2 * px;
-    const x = at.x, y = at.y;
-    matPending = true;
-    setTimeout(() => {
-      matPending = false;
-      try {
-        if (typeof Interior !== 'undefined' && Interior.inside()) return;
-        if (!Build.backdropOf('title')) Build.backdrop(x, y, w, h, 'title');
-      } catch (e){}
-    }, 0);
-  }
   /* The palace's name inside one, the town's name outside — the same word in
      the same type in the same place, because they are the same thing at two
      scales: what is this that I am looking at. */
@@ -542,22 +509,20 @@ const Palace = (() => {
       const mc = cover > 0 ? Title.matCost(f.cols, f.rows) : 0;
       if (m + Title.cost(f) + Type.borderCost(bd, iw, ih) > cap) bd = 'none';
       if (m + Title.cost(f) > cap) return m;
-      /* ── the mat, out on the town, is a shape ──────────────────────────
-         Since 2026-08-30 the backdrop behind the town's name is laid once
-         as a shape on the Backdrop layer (`Build.backdrop`, tagged
-         'title') and drawn by the ordinary stamping like anything else —
-         so it can be moved, warped and deleted apart from the name it
-         stands behind. The size it is laid at is the oval this used to
-         draw, so the plate looks the same the moment it appears.
+      /* ── no mat out on the town ────────────────────────────────────────
+         The town's name stood on one until 2026-08-30 — first drawn
+         inline here, then briefly as a shape on the Backdrop layer — and
+         then Eden took it away: the name reads on the plate as it is, and
+         a backdrop nobody wanted is a backdrop in the way. Nothing is
+         drawn behind it now, and if one is ever wanted again it is a
+         Backdrop placed by hand from the Modify row.
 
-         INSIDE a palace it is still drawn inline. A palace's shapes are
-         its own set (`hq.rooms.<uid>`), the heading there is a room's
-         name rather than the town's, and one detached backdrop per plate
-         is the thing that was asked for — so the interior keeps the old
-         behaviour rather than growing a shape nobody asked for. */
+         INSIDE a palace the mat stays. It was never part of any of this:
+         a palace's shapes are its own set, the heading there is a room's
+         name, and it has always had one. `Size`/`Mat`/`Feather` in the
+         title's tune still drive it there. */
       const outside = !(typeof Interior !== 'undefined' && Interior.inside());
-      if (cover > 0 && outside && typeof Build !== 'undefined' && Build.backdrop) layTitleMat(f, at);
-      else if (cover > 0 && m + mc + Title.cost(f) <= cap)
+      if (cover > 0 && !outside && m + mc + Title.cost(f) <= cap)
         m = Title.mat(a, m, f.cols, f.rows, x0, y0, at.px, cover, cap, fe);
       const ink = Type.lift(bone, bright), al = Type.liftA(at.alpha, bright);
       const sd = Type.seed(at.name.toUpperCase());

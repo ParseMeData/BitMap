@@ -76,7 +76,33 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 233, tag **v8.2**
+## Where we are — 30 Aug 2026, build 234 (tag **v8.2** at 233)
+
+- **Build 234 (30 Aug 2026) — the backdrop behind the name and the
+  compass is gone.** Eden: "no longer needed." Builds 232 and 233 laid
+  one automatically behind each; `layMat` in compass.js and `layTitleMat`
+  in palace.js are out, and so are `Build.backdrop`/`backdropOf`, which
+  existed only for them. The town's name now draws with nothing behind
+  it at all — not the shape, and not the inline mat it had before 232.
+
+  **What stays.** The `mat` kind, the Backdrop layer and the Modify-row
+  chip: a backdrop is still a thing you can place, mould and condense by
+  hand, and the more-condensed-the-darker rule is untouched. And INSIDE a
+  palace the heading keeps its inline mat — that was never part of this;
+  a palace's shapes are its own set and its heading has always had one.
+
+  **The ones already in towns are dropped as the town loads**, in
+  `Build.load`, rather than migrated out by the store's ladder. That is
+  deliberate: `snapshot.py restore` writes the raw keys straight past the
+  ladder, and `snapshots/v8.2.json` — the file beside the tag — has both
+  in it, so a ladder step would be defeated by the first restore. Only
+  the TAGGED pair goes; a Backdrop placed by hand carries no `matTag`.
+
+  Verified: restoring v8.2.json (41 shapes, 2 tagged mats) at build 234
+  gives 39 shapes and 0 mats, and they do not return after a commit and
+  reload; a Backdrop placed by hand is 1 mat that survives a reload; the
+  title and compass draw clean; no errors.
+
 
 - **v8.2 (30 Aug 2026, build 233).** Tagged after 45 commits on `work`
   since v8.1, with `snapshots/v8.2.json` beside it and a frozen clone at
@@ -494,8 +520,8 @@ serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
 the session waited for it. Tag **v8.2** (30 Aug, build 233) is the last
 tag, with `snapshots/v8.2.json` beside it and a frozen clone at
-`~/Projects/Loci Bitmap V8.2`; nothing since it. v8.1 (28 Aug) is the one
-before, 45 commits back. `gh` is installed and
+`~/Projects/Loci Bitmap V8.2`; one commit since (build 234, below).
+v8.1 (28 Aug) is the one before, 45 commits back. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and
 `VERSION` in sw.js together.

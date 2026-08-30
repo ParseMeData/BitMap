@@ -537,24 +537,6 @@ const Build = (() => {
   /* a backdrop's area in lattice cells — the unit `matRef` is kept in */
   const matArea = s => Math.max(1, (s.w * s.h) / (cellSize() * cellSize()));
 
-  /* ── the backdrop the game lays for itself ─────────────────────────────
-     The town's name and the compass each stand on one, and each keeps the
-     one it was given: `tag` is 'title' or 'compass', so the pair can be
-     found again and never laid twice. Everything else about it is an
-     ordinary shape — it selects, drags, warps and deletes like any other,
-     which is the whole point of detaching it (Eden, 2026-08-30). */
-  function backdrop(x, y, w, h, tag){
-    if (!Kinds.by['mat']) return null;
-    if (tag && G.shapes.some(s => s.matTag === tag)) return null;
-    const s = make({kind: 'mat', type: 'ellipse', exact: true, x, y, w, h});
-    if (!s) return null;
-    s.matTag = tag || null;
-    s.matRef = matArea(s);
-    changed(s);
-    return s;
-  }
-  const backdropOf = tag => G.shapes.find(s => s.matTag === tag) || null;
-
   const MATE = 1.5;
   function clearUnder(s){
     if (!Kinds.by['demolish']) return null;
@@ -2734,6 +2716,19 @@ const Build = (() => {
     try { raw = JSON.parse(Store.get(KEY) || '[]'); } catch (e){}
     G.shapes = (Array.isArray(raw) ? raw : [])
       .filter(s => s && Kinds.by[s.kind])
+      /* ── the backdrops the game used to lay for itself ─────────────────
+         For builds 232 and 233 the mat behind the town's name and behind
+         the compass were shapes, laid automatically and tagged `matTag`
+         'title' and 'compass'. Eden took them away on 2026-08-30, and
+         they are dropped on the way in rather than migrated out, because
+         a snapshot restore writes the raw keys straight past the store's
+         ladder — `snapshots/v8.2.json` has both in it, and a town restored
+         from any file of that vintage would otherwise get them back with
+         nothing left to take them away again.
+
+         Only the TAGGED pair goes. A Backdrop placed by hand carries no
+         `matTag`: it is somebody's drawing and it stays. */
+      .filter(s => !(s.kind === 'mat' && s.matTag))
       .map(s => {
         const t = s.type === 'stroke' ? 'line' : s.type;    // an older save
         const k = Kinds.by[s.kind];
@@ -2843,7 +2838,6 @@ const Build = (() => {
     syncUI();
   }
   return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode, rectBlob,
-          backdrop, backdropOf,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

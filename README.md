@@ -2120,10 +2120,12 @@ shift-drag, so the spike points where north is on the plate; on the
 region it reads north-up. It is never turned by hand — but it can be
 **moved**: take the rose and put it where you like, and it stays there
 (`at` in `hq.compass`), as the town's name can be dragged and stays
-(`hq.title.off`). Both stand on a **Backdrop**, and since 2026-08-30 that
-is a shape of its own rather than something drawn under them: see *The
-backdrop* below. The drawing is `assets/compass.png`; `tools/compass.py`
-cuts the rose out of it.
+(`hq.title.off`). Neither stands on anything: the mat that used to be
+drawn behind them was taken away on 2026-08-30 — the rose is cut in the
+lettering's own screen and reads on the plate as it is. A **Backdrop**
+can still be put behind either by hand; see *The backdrop* below. The
+drawing is `assets/compass.png`; `tools/compass.py` cuts the rose out of
+it.
 
 **It is cut in the lettering's own layer** (2026-08-30). Until then the
 rose went through `Title.picture` — the photographic read, through
@@ -2161,37 +2163,37 @@ reading; `ON_PLATE` in `src/compass.js` is the switch.
 
 ### The backdrop
 
-The mat behind the town's name and behind the compass — the plate's own
-colour laid over whatever is there, solid in the middle and dithered
-away to nothing at the rim, so a name or a rose reads on the plate and
-not through the trees. Until 2026-08-30 it was drawn inline every frame,
-locked to whatever it stood under. It is now a **kind**, `mat`, offered
-as **Backdrop** in the Modify row, on a **layer of its own** at the top
-of the stack — above roads, which is where the inline one was drawn, so
-a name over a road still reads on the plate. The eye beside the
-*Backdrop* row hides every one of them at once.
+The plate's own colour laid over whatever is there, solid in the middle
+and dithered away to nothing at the rim — so anything standing on one
+reads on the plate and not through the trees. It is a **kind**, `mat`,
+offered as **Backdrop** in the Modify row, on a **layer of its own** at
+the top of the stack, above roads. The eye beside the *Backdrop* row
+hides every one of them at once.
 
-Being a shape, it **moves, warps and deletes** like anything else: drag
-it out from under the name, retype it to Warp box and pull a corner,
-throw it away. The two the game lays for itself are tagged internally
-(`matTag` `'title'` and `'compass'`) so it never lays a second one, and
-they are born at exactly the oval the inline mat used to draw — the
-plate looks the same the moment they appear.
+Being a shape, it **moves, warps and deletes** like anything else: place
+one, retype it to Warp box and pull a corner, throw it away.
 
 **The more condensed, the darker.** The same shadow squeezed into less
 ground is a deeper shadow, so the cover is scaled by the square root of
 how much the shape has shrunk since it was born (`matRef` is its birth
 area in cells). At its own size the cover is what it always was; at a
-quarter of the ground it draws twice as dark. Bounded both ways so a
-backdrop dragged to nothing is not a black tile and one stretched across
-the plate does not vanish.
+quarter of the ground it draws twice as dark. Bounded both ways so one
+dragged to nothing is not a black tile and one stretched across the
+plate does not vanish.
 
-Two things it will not do. Nothing is laid onto an **empty plate** — a
-home plate founds itself only while it has no shapes on it, and a
-backdrop laid in that gap stopped the founding dead (`Found.check` now
-ignores mats too). And **inside a palace the mat is still drawn inline**:
-a palace's shapes are its own set, the heading there is a room's name,
-and one detached backdrop per plate is what the plate wanted.
+**Nothing lays one for you.** For builds 232 and 233 the game put a
+backdrop behind the town's name and behind the compass automatically,
+tagged `matTag` `'title'` and `'compass'`; that was taken out on
+2026-08-30. Any still sitting in a saved town are dropped as it loads —
+not migrated out, because a snapshot restore writes the raw keys straight
+past the store's ladder and `snapshots/v8.2.json` has both in it. Only
+the tagged pair goes; a Backdrop placed by hand carries no `matTag` and
+is somebody's drawing, so it stays.
+
+**Inside a palace the heading still has an inline mat.** That was never
+part of any of this — a palace's shapes are its own set, and its heading
+has always had one; `Mat` and `Feather` in the title's tune still drive
+it there.
 
 ### The journal
 

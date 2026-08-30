@@ -173,6 +173,20 @@ const Build = (() => {
      Born as eight on the oval the shape was, in its own frame; `w`/`h`
      are kept as the run's own extent, the way they shadow a quad, because
      the size slider, the cell scan and every bbox test read them. */
+  /* ── two ways to seed a warp ───────────────────────────────────────────
+     `blobFrom` is the OVAL: eight points round the ellipse inscribed in
+     the box, which is what the Warp chip in the palette gives you and
+     what a warp has always been.
+
+     `rectBlob` is the SHARP one: four points, one per corner, so the
+     shape starts as the rectangle it looks like and the corners are
+     right where you expect to grab them. It is what a clearing is born
+     as (Eden, 2026-08-30) — the box is the honest default under an
+     asset, and dragging a corner from it makes a sharp quadrilateral
+     rather than pulling on a curve. Same machinery either way: every
+     point is a grip, and the middle of any leg is a new point waiting to
+     be born, so a four-corner start is a floor and not a ceiling. */
+  const rectBlob = (w, h) => [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]];
   const blobFrom = (w, h) => {
     const out = [];
     for (let i = 0; i < 8; i++){
@@ -464,25 +478,24 @@ const Build = (() => {
      (kinds.js) — which read as a cut rectangle under every asset. It is
      a demolition that was wanted, so it is a demolition.
 
-     BORN A WARP, not a rect (Eden, 2026-08-30). A rect's free corners
-     only move the outline: outside the quad but inside the rectangle is
-     the wedge, where the ground is spent out rather than spared, so with
-     `out: 1` the whole rectangle clears whatever the corners say. A warp
-     is bounded by its blob and nothing else — `geo.depth` reads the
-     polygon, so the cut stops exactly where the shape does. It is also
-     simply the better handle: every point is a grip, and dragging the
-     middle of any leg puts a new point there, so the clearing can be
-     pushed into whatever shape the ground wants rather than four
-     corners' worth.
+     BORN A WARP, and born RECTANGULAR (Eden, 2026-08-30). A rect shape's
+     free corners only move the outline: outside the quad but inside the
+     rectangle is the wedge, where the ground is spent out rather than
+     spared, so with `out: 1` the whole rectangle clears whatever the
+     corners say. A warp is bounded by its blob and nothing else —
+     `geo.depth` reads the polygon — so the cut stops exactly where the
+     shape does, and every point is a grip with leg midpoints adding new
+     ones.
 
-     `make` seeds the blob with `blobFrom(w, h)` — eight points on the
-     ellipse inscribed in the box — so the clearing keeps the width and
-     height the rect had (a point sits at ±w/2 and ±h/2 on the axes) and
-     only its corners come in. At 1.5× the print it still clears the
-     print's own corners with room to spare, so what changes is the
-     shape's shoulders, not its reach. The founding's own clearing in
-     `found.js` is left a rect: it is laid once, at Generate, and it is
-     the look that was signed off.
+     But it is seeded with `rectBlob`, four points on the corners, not
+     the oval `blobFrom` the Warp chip gives: the box is the honest
+     default under an asset, it covers the print's own corners, and
+     dragging one corner out of it makes a sharp quadrilateral. So the
+     clearing looks like the rectangle it always was and warps like a
+     warp. The oval stays where it was, one chip away.
+
+     `Found.generate` lays the first palace's clearing the same way,
+     through `Build.rectBlob`.
 
      The one thing to know about the swap: a demolish is not picky the
      way a clear is, so a clearing does bite the roads and the other
@@ -499,6 +512,10 @@ const Build = (() => {
                     x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
                     fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
     if (!c) return null;
+    /* the box, sharply — seeded from the size `make` actually settled on,
+       not the one asked for, so the four corners sit exactly on the edges
+       the shape reports */
+    c.blob = rectBlob(c.w, c.h);
     /* ── the clearing has to be OLDER than the print it sits under ───────
        A modifier weathers only the shapes with a LOWER id than its own —
        "a modifier weathers the shapes older than itself and leaves what
@@ -2750,7 +2767,7 @@ const Build = (() => {
     document.body.classList.toggle('rooms', mode === 'rooms');
     syncUI();
   }
-  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode,
+  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode, rectBlob,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

@@ -1577,26 +1577,30 @@ demolish first; `create` cannot, because it takes the print's id before
 the print's size — which is what the clearing is made from — is known,
 so `clearUnder` exchanges the two ids.
 
-**The clearing is a Warp, and you mould it.** It is born as eight
-points on the ellipse inscribed in its box — so it keeps the width and
-height a rectangle would have had, and only its corners come in — and
-from there **every point is a grip**, with the middle of any leg a new
-point waiting to be born. Drag one and the cut follows exactly: a warp
+**The clearing is a Warp born as a rectangle, and you mould it.** Four
+points, one on each corner (`Build.rectBlob`) — so it is the box it
+looks like, covering the print's own corners — and from there **every
+point is a grip**, with the middle of any leg a new point waiting to be
+born. Drag a corner and you get a sharp quadrilateral; keep going and
+you get whatever shape the ground wants. The cut follows exactly: a warp
 is bounded by its blob and nothing else, so the ground stops where the
 shape does.
 
-A rect was tried first and is the wrong handle for this. Its free
-corners (`freeCorner`, the one thing on the plate that has them) only
-move the *outline*: outside the quad but inside the rectangle is the
-**wedge**, where the ground is spent out rather than spared, so with
+A rect *shape* was tried first and is the wrong handle for this. Its
+free corners (`freeCorner`, the one thing on the plate that has them)
+only move the *outline*: outside the quad but inside the rectangle is
+the **wedge**, where the ground is spent out rather than spared, so with
 `out: 1` the whole rectangle clears whatever the corners say. Points
 snap to the **lattice cell** — one diamond — not the walk tile, because
 a modifier is something you aim rather than something you place; snapped
 to tiles a clearing four tiles across had five stops per axis, which is
 what made dragging one feel like it did nothing at all (2026-08-30).
 
-The founding's own clearing under the first palace stays a rect: it is
-laid once, at Generate, and that is the look it has always had.
+**The oval is its own option.** A warp made any other way — the Warp
+chip in the palette, or retyping a shape to it — is still seeded by
+`blobFrom`: eight points round the ellipse inscribed in the box. Two
+seeds, one machinery. `Found.generate` lays the first palace's clearing
+the same way a print's is laid, through `Build.rectBlob`.
 
 It is one gesture and **one undo step**, and from then on the two are
 ordinary shapes that select, drag, resize and delete on their own — so

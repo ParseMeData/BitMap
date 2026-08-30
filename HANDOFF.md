@@ -76,7 +76,38 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 229
+## Where we are — 30 Aug 2026, build 230
+
+- **Build 230 (30 Aug 2026) — a clearing is a warp seeded on its four
+  corners, and the founding's is one too.** Two asks, one change.
+
+  `blobFrom` (eight points round the inscribed ellipse) is now one of
+  **two** seeds. The new `rectBlob` is four points, one per corner, and
+  it is what a clearing is born with: the box is the honest default
+  under an asset, it covers the print's own corners, and dragging a
+  corner out of it makes a SHARP quadrilateral rather than pulling on a
+  curve. The oval keeps its own door — a warp made any other way (the
+  Warp chip, a retype) still gets `blobFrom`, verified: the chip path
+  returns 8 points, `rectBlob` 4.
+
+  It stays a *warp* and not a rect shape because only a warp's boundary
+  is the cut: a rect's free corners move the outline while the wedge
+  clears the rest of the rectangle anyway (see build 229).
+
+  `Found.generate` now lays the first palace's clearing through the same
+  `Build.rectBlob` — same kind, same five numbers, same shape — so the
+  founding's clearing and a hand-placed one are finally one thing. Both
+  seed the blob AFTER `make`/`Build.add` has settled the size, because
+  `ss` snaps it: seeding from the size asked for left the blob 3 units
+  narrower than the shape reported.
+
+  Regression-checked at 230: Buildings gives `demolish/warp(4pt)` +
+  `building/rect`, one Ctrl+Z removes both, Patterns still gets no
+  clearing, the Warp chip still seeds 8 points, no errors. The founding
+  path was exercised by making the exact call `found.js` makes (a real
+  Generate needs the Overpass survey, which a headless `file://` page
+  cannot reach).
+
 
 - **Build 229 (30 Aug 2026) — a new clearing is born a WARP.** Asked for
   directly, after 228 laid out the choice. `clearUnder` now makes

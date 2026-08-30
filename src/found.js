@@ -239,13 +239,23 @@ const Found = (() => {
             const pick = kinds[houseAt % kinds.length];
             const rows = Glyphs.rows(pick); houseW = rows && rows[0] ? rows[0].length * G.A.cell : 0;
             at = Survey.aside(at, houseW);
-            /* a ring of demolished ground under the house, so the palace
-               stands clear of the terrain and reads at a glance */
             /* the ground under the building taken right out — no terrain
                behind the shape, only the plate — with a dithered edge a
-               little past its footprint (Eden, 2026-08-29) */
-            Build.add({kind: 'demolish', type: 'rect', x: at[0], y: at[1], w: houseW * 1.5, h: houseW * 1.5,
-                       fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4, exact: true});
+               little past its footprint (Eden, 2026-08-29).
+
+               A WARP seeded on its four corners since 2026-08-30, exactly
+               as `clearUnder` lays the clearing under any print: it looks
+               like the rectangle it always was, and it can be pulled out
+               of square afterwards, corner by corner, with the cut
+               following the outline instead of the box. The five numbers
+               are unchanged, so the rim is the same soft sketchy one. */
+            const cw = houseW * 1.5;
+            const dem = Build.add({kind: 'demolish', type: 'warp', x: at[0], y: at[1], w: cw, h: cw,
+                                   fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4, exact: true});
+            /* seeded from the size `Build.add` actually settled on, not the
+               one asked for — it snaps — so the four corners sit exactly on
+               the edges the shape reports. Same order as `clearUnder`. */
+            if (dem) dem.blob = Build.rectBlob(dem.w, dem.h);
             Build.add({kind: 'house', type: 'rect', x: at[0], y: at[1], variant: pick, exact: true});
             Build.commit();
             if (typeof restampTerrain === 'function') restampTerrain();

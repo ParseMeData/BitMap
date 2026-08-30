@@ -1,7 +1,7 @@
 # Handoff
 
 Written 24 Aug 2026 at tag **v5.0**; the log at the head brought up to
-29 Aug 2026, build 210, past tag **v8.1**. Read `README.md` for how any
+30 Aug 2026, build 223, past tag **v8.1**. Read `README.md` for how any
 single thing works, and `STYLE.md` before changing anything you can see;
 this is the shape of the whole and the things that are not obvious from
 the code. **A fresh session starts at *Where we are*, then *Working on
@@ -76,7 +76,37 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 29 Aug 2026, build 222
+## Where we are — 30 Aug 2026, build 223
+
+- **Build 223 (30 Aug 2026) — the compass in the lettering's layer, and
+  `Shift+R`.** Build 222's screen was a checkerboard laid over the
+  PHOTOGRAPHIC read (`Title.picture` → `Lattice.analyse`/`compose`),
+  with the cells then turned to the heading one at a time, and Eden
+  named both faults: *the angle is off* — a cell turned by `cos/sin`
+  lands between the plate's own cells, so at any heading off the square
+  the rose sat off the grain — and *the diamonds are not spaced out with
+  halftone gaps* — a checker drops every second cell on a fixed parity,
+  which is a texture, not a screen.
+
+  The screening half of `Title.build` came out as **`Title.screen`** (one
+  copy, shared), and **`Title.stencil`** feeds it a picture instead of a
+  word: the heading turns the DRAWING before it is screened, the box
+  grown to the turned diagonal so no spike is clipped, the art's own
+  width held at `Size` cells so the rose does not breathe as the map
+  turns. `Compass.overlay` then draws it with **`Title.emit`** — the call
+  the town's name makes in `palace.js` — same origin, pitch, sheen,
+  diamond and cap, mat dropped first. Verified on a throwaway at 0/30/
+  45/90/125/235°: every cell on the integer lattice, cell count steady
+  within ~5%. The Compass tune block is now the lettering's numbers at
+  the lettering's defaults (Size, Weight, Screen, Tone, Sheen, Ink, and
+  Detail for the hidden chrome canvas); a tune saved before this build
+  carried `scatter`/`szv` and is dropped whole on load, `at` kept.
+
+  **`Shift+R`** is *Reset — blank page* from the keyboard. The ask and
+  the wipe moved into **`Snap.reset`** (`src/snapshot.js`), which the
+  tune-panel chip now calls too, so the two cannot drift apart. Bare `R`
+  is untouched (a new round) — the shift is deliberate: this one has no
+  undo but an export, and bare `R` is a key you press without looking.
 
 - **Build 222 (29 Aug 2026) — the compass in the prints' screen.** The rose
   on the plate was stamped solid (every cell one full diamond) and read as

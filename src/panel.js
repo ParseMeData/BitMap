@@ -140,15 +140,14 @@ function buildPanel(){
     body.appendChild(tr);
     /* and back to a blank page: every hq. key and both picture stores
        gone, then a reload, which founds an empty home again (Eden,
-       2026-08-29). It asks, because there is no undo but an export. */
+       2026-08-29). It asks, because there is no undo but an export. The
+       ask and the wipe are `Snap.reset` since 2026-08-30, so this chip
+       and `Shift+R` are one thing and cannot drift apart. */
     const rr = document.createElement('div');
     rr.className = 'chips two';
     const rc = document.createElement('div');
-    rc.className = 'chip'; rc.textContent = 'Reset — blank page';
-    rc.onclick = () => {
-      if (!window.confirm('Reset the map to a blank page?\n\nEverything on every plate goes — the town, the palaces, the pictures. Export first if you want it kept.')) return;
-      Snap.load({version: 3, localStorage: {}, picture: null, loci: {}}, false);
-    };
+    rc.className = 'chip'; rc.textContent = 'Reset — blank page  (Shift+R)';
+    rc.onclick = () => Snap.reset();
     rr.appendChild(rc);
     body.appendChild(rr);
   }

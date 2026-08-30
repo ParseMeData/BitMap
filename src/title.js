@@ -244,6 +244,26 @@ const Title = (() => {
     const gray = new Float32Array(W * H);
     for (let i = 0, p = 0; i < gray.length; i++, p += 4)
       gray[i] = .299 * d[p] + .587 * d[p + 1] + .114 * d[p + 2];
+    return screen(gray, W, H, cols, rows, R, DITH);
+  }
+
+  /* ── the screen ────────────────────────────────────────────────────────
+     The half of a face that is not the drawing, lifted out of `build` on
+     2026-08-30 so there is exactly ONE of it: a gray plane read back a
+     cell at a time, normalised to what is actually in it, and cut by a
+     Bayer threshold into diamonds that each carry their own size and
+     light. The gaps are the point — a cell under the threshold is not a
+     dim diamond, it is NO diamond, and that is what makes a title read
+     as halftone rather than as a silhouette.
+
+     The name goes through it, and so does the compass rose (`stencil`),
+     which is the whole reason it is a function: two things drawn in the
+     same layer have to be screened by the same code, or one of them
+     ends up a cut-out beside the other.
+
+     `gray` is the ink plane, dark-is-ink, `SS` raster pixels to a cell
+     with one cell of margin all round (so `W = (cols + 2) * SS`). */
+  function screen(gray, W, H, cols, rows, R, DITH){
     briCon(gray, R.bri, R.con);
     if (R.sharp > 0) sharpen(gray, W, H, R.sharp * .5);
 
@@ -282,6 +302,91 @@ const Title = (() => {
       cells.push({x: cx - 1, y: cy - 1, al: .5 + v * .42, sz: .4 + v * 1.1});
     }
     return {cols, rows, cells};
+  }
+
+  /* ── a stencil ─────────────────────────────────────────────────────────
+     A PICTURE through the type's own screen, so a drawing can stand on
+     the plate in the same material as a name (Eden, 2026-08-30, for the
+     compass rose — see `Compass.overlay`).
+
+     It is not `picture()`. That one goes through `Lattice.analyse` and
+     `compose`, which is the photographic read: a dense field with a cell
+     for every cell, colour and jitter and hollow faces and no gaps. It
+     is right for a card's photograph and wrong for a piece of line art
+     standing beside lettering, which was the whole complaint — the rose
+     came out a solid silhouette while the title beside it was open
+     halftone.
+
+     The art is white-on-transparent (`tools/compass.py` keys the sheet's
+     white out and colorises what is left), so the ink plane is simply
+     the ALPHA: opaque is ink, clear is page. Nothing is keyed on colour.
+
+     `deg` turns the drawing AT RASTER TIME rather than turning the cells
+     afterwards. That is the other half of the complaint: a rotated cell
+     lands between the plate's own cells, and a field of diamonds off the
+     grain reads as a smear at any angle that is not a multiple of 90°.
+     Rotate the picture and screen it square and every diamond sits on a
+     lattice cell, however the map is turned. The box is grown to the
+     rotated diagonal so no spike is ever clipped as it comes round. */
+  const stencils = new Map();                  // url + cols + deg + tune → Promise<face>
+  const images = new Map();                    // url → Promise<Image>
+  const image = url => {
+    let p = images.get(url);
+    if (p) return p;
+    p = new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = () => rej(new Error('the stencil would not load'));
+      im.src = url;
+    });
+    images.set(url, p);
+    return p;
+  };
+  function stencil(url, cols, t){
+    t = t || {};
+    const R = Object.assign({}, RECIPE, t.recipe || {});
+    const DITH = tuned(t, 'dither');
+    /* a whole degree is finer than the plate can show at this size, and
+       it keeps the map's drag from building a face a frame */
+    const deg = Math.round(((+t.deg || 0) % 360 + 360) % 360);
+    cols = clamp(Math.round(cols || 40), 8, MAXC);
+    const key = url + '\n' + cols + '\n' + deg + '\n' + DITH + '\n' + JSON.stringify(R);
+    let p = stencils.get(key);
+    if (p) return p;
+    p = image(url).then(im => {
+      const iw = im.naturalWidth || 1, ih = im.naturalHeight || 1;
+      /* `cols` is the ART'S OWN width in cells and stays that at every
+         heading: the BOX grows to the turned diagonal instead, so the
+         drawing keeps one size as the map turns. Fitting the diagonal
+         into a fixed box was tried first and is wrong — it shrinks the
+         rose by up to √2 on the way round, which reads as the compass
+         breathing every time the map is dragged (Eden, 2026-08-30). */
+      const th = deg * Math.PI / 180, ca = Math.abs(Math.cos(th)), sa = Math.abs(Math.sin(th));
+      const bw = iw * ca + ih * sa, bh = iw * sa + ih * ca;
+      const bc = clamp(Math.round(cols * bw / iw), 1, MAXC);
+      const rows = Math.max(1, Math.round(cols * bh / iw));
+      const W = (bc + 2) * SS, H = (rows + 2) * SS;
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d', {willReadFrequently: true});
+      if (!x) throw new Error('no 2d context for a stencil');
+      /* one scale, set by the art's width, and centred in the grown box */
+      const k = Math.min(cols * SS / iw, (W - 2 * SS) / bw, (H - 2 * SS) / bh);
+      x.save();
+      x.translate(W / 2, H / 2);
+      x.rotate(th);
+      x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+      x.drawImage(im, -iw * k / 2, -ih * k / 2, iw * k, ih * k);
+      x.restore();
+      /* ink IS alpha: 255 where the drawing is, 0 where the page is */
+      const d = x.getImageData(0, 0, W, H).data;
+      const gray = new Float32Array(W * H);
+      for (let i = 0, q = 3; i < gray.length; i++, q += 4) gray[i] = 255 - d[q];
+      return screen(gray, W, H, bc, rows, R, DITH);
+    });
+    if (stencils.size > 96) stencils.clear();
+    stencils.set(key, p);
+    return p;
   }
   /* the face for a name in a family, or null while the family is loading
      or once it has failed — the caller draws the 5×7 type for null, so a
@@ -595,7 +700,7 @@ const Title = (() => {
     }
   }
 
-  return {load, state, face, emit, cost, svg, mat, matCost, picture, paint,
+  return {load, state, face, emit, cost, svg, mat, matCost, picture, paint, stencil,
           pictune: PICTUNE, ptuned,
           fonts: FONTS.slice(), DEFAULT: FONTS[0],
           tune: TUNE, tuned, recipe: Object.assign({}, RECIPE)};

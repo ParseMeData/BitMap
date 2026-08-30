@@ -533,8 +533,19 @@ addEventListener('keydown', e => {
        to the platformer as its deck */
     case 'KeyP': if (!Loci.opened()) Loci.play(); break;
     /* R deals a new round, except while you are looking at a locus, where
-       the only thing worth replacing is the picture */
+       the only thing worth replacing is the picture.
+
+       SHIFT+R is the other R: the whole town out and a blank page back
+       (`Snap.reset`, the same ask as the chip under *Town* in the tune
+       panel). It is on the shift and not on the bare key because the
+       bare key is the one you press without looking — a round is dealt
+       a hundred times a session — and the thing behind this one has no
+       undo but an export (Eden, 2026-08-30). */
     case 'KeyR':
+      if (e.shiftKey){
+        if (typeof Snap !== 'undefined') Snap.reset();
+        break;
+      }
       if (Loci.opened()) Loci.pick(Loci.at());
       else { spawn(); scatterSparks(); }
       break;

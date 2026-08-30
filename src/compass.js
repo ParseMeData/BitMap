@@ -8,10 +8,14 @@
    up and it reads 0. It is never turned by hand: since 2026-08-28 there
    is no drag and no double-click, and `hq.compass` keeps only the tune.
 
-   One cut out of the drawing (`tools/compass.py`), through the same tone
-   pass as a card's picture and painted as diamonds in bone with the
-   titles' sheen down it — so the compass is made of what the plate is
-   made of, at the plate's pitch, and never a picture laid on it. */
+   One cut out of the drawing (`tools/compass.py`), through the SAME
+   SCREEN THE LETTERING GOES THROUGH (`Title.stencil` → `Title.screen`)
+   and drawn by the call the town's name makes (`Title.emit`), in bone
+   with the titles' sheen down it — so the compass is made of what the
+   plate is made of, at the plate's pitch and on the plate's grain, and
+   never a picture laid on it. The heading turns the drawing before it
+   is screened, never the cells after; see *the rose, cut in the title's
+   own layer* below for why that is the whole difference. */
 
 const Compass = (() => {
   const KEY = 'hq.compass';                    // {tune}
@@ -36,11 +40,21 @@ const Compass = (() => {
      own rows: the pitch, the diamond's weight (which is the gap), and the
      lattice's scatter and size variance. Kept with the heading. */
   const TUNE = {
-    pitch:   {lo: 1.5, hi: 4,   dflt: 2.2, label: 'Detail',  fmt: v => v.toFixed(1) + ' px'},
-    weight:  {lo: 0.4, hi: 1.4, dflt: 0.8, label: 'Weight',  fmt: v => v.toFixed(2) + '\u00d7'},
-    scatter: {lo: 0,   hi: 2,   dflt: 0,   label: 'Scatter', fmt: v => v ? v.toFixed(1) + '\u00d7' : 'none'},
-    szv:     {lo: 0,   hi: 2,   dflt: 0.5, label: 'Jitter',  fmt: v => v.toFixed(1) + '\u00d7'},
-    bri:     {lo: -0.4, hi: 0.4, dflt: -0.12, label: 'Tone', fmt: v => (v > 0 ? '+' : '') + Math.round(v * 100)}
+    /* the rose on the plate, in the title's own numbers — `size` is the
+       title's Size (how many cells the drawing is read at, the pitch
+       being the plate's own cell and never moving), and `dither`,
+       `tone`, `weight` and `shade` are the four the lettering already
+       has, at the lettering's defaults, so a compass at rest is cut the
+       way a name at rest is cut (Eden, 2026-08-30) */
+    size:    {lo: 16,  hi: 72,  dflt: 40,  step: 100, label: 'Size',   fmt: v => Math.round(v) + ' cells'},
+    weight:  {lo: 0.5, hi: 2.0, dflt: 1,   label: 'Weight', fmt: v => v.toFixed(2) + '\u00d7'},
+    dither:  {lo: 0,   hi: 1,   dflt: 1,   label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'},
+    tone:    {lo: 0,   hi: 1,   dflt: 0,   label: 'Tone',   fmt: v => v ? v.toFixed(2) : 'even'},
+    shade:   {lo: 0,   hi: 0.7, dflt: 0.25, label: 'Sheen', fmt: v => v.toFixed(2)},
+    bri:     {lo: -0.4, hi: 0.4, dflt: -0.12, label: 'Ink', fmt: v => (v > 0 ? '+' : '') + Math.round(v * 100)},
+    /* the chrome canvas's own read: kept because the shadow is drawn at
+       it, and the chrome is what a future off-plate compass would use */
+    pitch:   {lo: 1.5, hi: 4,   dflt: 2.2, step: 10, label: 'Detail', fmt: v => v.toFixed(1) + ' px'}
   };
   let tune = {};
   const tuned = k => { const v = isFinite(tune[k]) ? +tune[k] : TUNE[k].dflt; return Math.min(TUNE[k].hi, Math.max(TUNE[k].lo, v)); };
@@ -50,7 +64,15 @@ const Compass = (() => {
     try {
       const v = JSON.parse(Store.get(KEY) || 'null');
       if (v && typeof v === 'object'){
-        if (v.tune && typeof v.tune === 'object') tune = Object.assign({}, v.tune);
+        /* a tune saved BEFORE 2026-08-30 is a tune for the other read —
+           `scatter` and `szv` were the lattice's, and `weight` was on a
+           0.4–1.4 scale against a different diamond. Its numbers mean
+           nothing to the title's screen, and carried over they show up
+           as a rose drawn far too thin. So an old shape is dropped
+           whole and the new defaults stand; `at` is kept, because where
+           you put it is still where you put it. */
+        const old = v.tune && (('szv' in v.tune) || ('scatter' in v.tune));
+        if (v.tune && typeof v.tune === 'object' && !old) tune = Object.assign({}, v.tune);
         if (Array.isArray(v.at) && isFinite(v.at[0]) && isFinite(v.at[1])) at = [+v.at[0], +v.at[1]];
       }
     } catch (e){}
@@ -97,7 +119,7 @@ const Compass = (() => {
     const pitch = tuned('pitch');
     const all = ['rose'].map(k =>
       Title.picture(url(k), Math.round(SIZE[k][0] / pitch),
-                    {ink: 0, edge: 0, con: 1, bri: tuned('bri'), scatter: tuned('scatter'), szv: tuned('szv')})
+                    {ink: 0, edge: 0, con: 1, bri: tuned('bri')})
         .then(f => { faces[k] = f; }));
     Promise.all(all).then(() => { painted = null; paint(); }).catch(() => {});
   }
@@ -146,13 +168,17 @@ const Compass = (() => {
       const row = document.createElement('div');
       row.className = 'prow'; row.dataset.key = k;
       row.innerHTML = '<label>' + r.label + '</label><input type="range" min="' + Math.round(r.lo * 100) +
-        '" max="' + Math.round(r.hi * 100) + '" step="' + (k === 'pitch' ? 10 : 5) + '"><span class="pv"></span>';
+        '" max="' + Math.round(r.hi * 100) + '" step="' + (r.step || 5) + '"><span class="pv"></span>';
       const inp = row.querySelector('input'), out = row.querySelector('.pv');
       const sync = () => { inp.value = Math.round(tuned(k) * 100); out.textContent = r.fmt(tuned(k)); };
       sync();
       inp.addEventListener('input', () => {
         tune[k] = +inp.value / 100; sync();
-        if (k === 'weight'){ painted = null; paint(); } else read();
+        /* the rose on the plate needs no poking: `overlay` reads its own
+           key every frame and asks for a new cut when one of these moves.
+           These two are the chrome canvas's, which does not. */
+        if (k === 'weight'){ painted = null; paint(); }
+        else if (k === 'pitch' || k === 'bri') read();
       });
       inp.addEventListener('change', store);
       el.append(row);
@@ -188,64 +214,83 @@ const Compass = (() => {
   /* ── on the plate ──────────────────────────────────────────────────────
      Since 2026-08-28 the compass is drawn ON THE PLATE, like the town's
      name: the rose's cells go into the entity stream at the plate's
-     top-left corner, turned to the heading, over a mat of the ground's
-     diamonds — so it is part of the map, at the map's pitch, and the
-     chrome canvas above is kept only for the tune panel's reading. */
+     top-left corner, over a mat of the ground's diamonds — so it is part
+     of the map, at the map's pitch, and the chrome canvas above is kept
+     only for the tune panel's reading. */
   const ON_PLATE = true;
   const AT = 6;                      // tiles in from the plate's top-left corner, both ways, until moved
   /* where it stands, moved by hand and kept: `at` in hq.compass, world
      units; nothing when it has never been moved */
   let at = null, drag = null;
   const where = () => (at ? at : [G.terr.tsz * AT, G.terr.tsz * AT]);
-  const COLS_ON = 40;                // the rose read at this many cells across, and drawn one plate cell per cell
-  let facePlate = null;
-  function readPlate(){
-    if (typeof Title === 'undefined' || !Title.picture) return;
-    Title.picture(url('rose'), COLS_ON, {ink: 0, edge: 0, con: 1, bri: tuned('bri'), scatter: tuned('scatter'), szv: tuned('szv')})
-      .then(f => { facePlate = f; }).catch(() => {});
+  /* ── the rose, cut in the title's own layer ────────────────────────────
+     Until 2026-08-30 this was `Title.picture` — the PHOTOGRAPHIC read,
+     through `Lattice.analyse`/`compose`: a dense field with a cell for
+     every cell, no gaps anywhere — with a checkerboard laid over it by
+     hand (build 222) to fake a screen, and the cells then TURNED to the
+     heading one by one. It read wrong twice over, and Eden named both:
+
+       *the angle is off* — a cell turned by `cos/sin` lands BETWEEN the
+       plate's own cells. At 0° or 90° that is invisible; at anything
+       else the whole rose sits off the grain and smears, because every
+       other diamond on the plate is on the lattice and this one is not.
+
+       *the diamonds are not spaced out with halftone gaps* — a checker
+       drops every second cell on a fixed parity, which is a texture,
+       not a screen. The title beside it is cut by the Bayer threshold
+       in `Title.screen`, where a cell is dropped because the INK there
+       is thin: the gaps open in the pale places and close in the dark
+       ones, and that is what reads as halftone.
+
+     So: `Title.stencil` is the lettering's own screen with a picture fed
+     to it instead of a word, and the heading is turned into the PICTURE
+     before it is screened — the box grown to the rotated diagonal so no
+     spike is clipped — which leaves every diamond square on a lattice
+     cell at every heading. It is then drawn by `Title.emit`, the call
+     the town's name makes in `palace.js`: same origin, same pitch, same
+     sheen, same diamond, same instance cap. One layer, one material. */
+  const MAT = 0.85, FEATHER = 18;
+  let facePlate = null, faceKey = null, asking = null;
+  /* what the cut depends on — the heading and the four numbers that
+     shape it. `overlay` compares this every frame and asks for a new one
+     when it moves, so a slider or a turn of the map needs no callback. */
+  const plateKey = deg => deg + '|' + Math.round(tuned('size')) + '|' +
+                          tuned('dither').toFixed(2) + '|' + tuned('bri').toFixed(3);
+  function wantPlate(deg){
+    const k = plateKey(deg);
+    if (faceKey === k || asking === k) return;
+    asking = k;
+    Title.stencil(url('rose'), Math.round(tuned('size')),
+                  {deg, dither: tuned('dither'), bri: tuned('bri')})
+      .then(f => { if (asking === k){ facePlate = f; faceKey = k; asking = null; } })
+      .catch(() => { if (asking === k) asking = null; });
   }
   function overlay(a, m, cap){
     if (!ON_PLATE || !G.terr || !G.A) return m;
-    if (!facePlate){ if (!overlay.asked){ overlay.asked = true; readPlate(); } return m; }
+    if (typeof Title === 'undefined' || !Title.stencil || !Title.emit) return m;
     if (typeof Interior !== 'undefined' && Interior.inside()) return m;
     /* not while a plate is being founded: the compass is part of the town,
        and there is no town until Generate (Eden, 2026-08-29) */
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return m;
-    /* one plate cell per cell of the picture: the rose is the same
-       resolution as the map it stands on */
-    const f = facePlate, ts = G.terr.tsz, px = G.A.cell;
-    const [cx, cy] = where();
-    const x0 = cx - f.cols * px / 2, y0 = cy - f.rows * px / 2;
-    if (typeof Title !== 'undefined' && Title.mat)
-      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, 0.85, cap, 18);
-    const th = heading() * Math.PI / 180, cs = Math.cos(th), sn = Math.sin(th);
-    const hs = px * 0.75 * tuned('weight');
-    /* ── the same screen the prints are drawn in ─────────────────────────
-       A rose stamped solid is a silhouette, and a silhouette is the one
-       thing on the plate that reads as a cut-out (Eden, 2026-08-29: the
-       compass was missing the checkered diamond format). So it is
-       halftoned the way a landmark's body is in kinds.js: the rim — any
-       cell with an empty neighbour — stays solid so the rose keeps a
-       drawn edge, and inside it a checker sets the pitch, the off cells
-       drawn small and dim, the on cells a touch under full. */
-    if (!f.at){
-      f.at = new Set();
-      for (const c of f.cells) f.at.add(c.x + ',' + c.y);
-    }
-    const has = (x, y) => f.at.has(x + ',' + y);
-    for (const c of f.cells){
-      if (cap !== undefined && m > cap - 1) return m;
-      const lx = (c.x + 0.5) * px - f.cols * px / 2, ly = (c.y + 0.5) * px - f.rows * px / 2;
-      const k = (c.y + 1) / (f.rows + 1);
-      const col = mix(BONE, DIM, GREY * k);
-      const rim = !has(c.x - 1, c.y) || !has(c.x + 1, c.y) || !has(c.x, c.y - 1) || !has(c.x, c.y + 1);
-      const screen = (c.x + c.y) & 1;
-      const sz = rim ? 1.0 : screen ? 0.58 : 0.88;
-      const al = rim ? 0.9 : screen ? 0.6 : 0.78;
-      m = put(a, m, cx + lx * cs - ly * sn, cy + lx * sn + ly * cs,
-              col[0], col[1], col[2], al * c.al, hs * sz * (c.sz || 1), 0, 0, 0, 1);
-    }
-    return m;
+    /* a whole degree is finer than the plate can show at this size, and it
+       keeps a shift-drag of the map from cutting a rose a frame */
+    const deg = Math.round(((heading() % 360) + 360) % 360);
+    wantPlate(deg);
+    const f = facePlate;
+    if (!f || !f.cells.length) return m;
+    /* the title's own placement: the face's ink is (cols − 1) × (rows − 1)
+       cells across from centre to centre, and the pitch is the plate's */
+    const px = G.A.cell, [cx, cy] = where();
+    const iw = f.cols - 1, ih = f.rows - 1;
+    const x0 = cx - iw * px / 2, y0 = cy - ih * px / 2;
+    /* the mat first and dropped first, as a name's is: a rose without its
+       mat is still a rose, and the cap is shared with the whole town */
+    const mc = typeof Title.matCost === 'function' ? Title.matCost(f.cols, f.rows) : 0;
+    if (MAT > 0 && m + mc + Title.cost(f) <= cap)
+      m = Title.mat(a, m, f.cols, f.rows, x0, y0, px, MAT, cap, FEATHER);
+    if (m + Title.cost(f) > cap) return m;
+    const t = {weight: tuned('weight'), tone: tuned('tone'), shade: tuned('shade')};
+    return Title.emit(a, m, f, x0, y0, px, BONE, 1, cap, 0, 0, t);
   }
 
   /* ── moved by hand ────────────────────────────────────────────────────

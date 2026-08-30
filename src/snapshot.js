@@ -125,5 +125,23 @@ const Snap = (() => {
     inp.click();
   }
 
-  return {dump, load, counts, exportTown, importTown};
+  /* ── back to a blank page ──────────────────────────────────────────────
+     Every `hq.` key and both picture stores out, then the reload that
+     founds an empty home again, unasked, on `Found.DEFAULT`. It is a
+     `load` of nothing, which is why it is here and not in the panel: the
+     removing and the refilling are already written once.
+
+     It asks, because the only undo is an export — and it asks the SAME
+     question wherever it is reached from, the chip under *Town* in the
+     tune panel and `Shift+R` alike (Eden, 2026-08-30). */
+  const BLANK = () => ({version: 3, localStorage: {}, picture: null, loci: {}});
+  const ASK = 'Reset the map to a blank page?\n\nEverything on every plate goes — ' +
+              'the town, the palaces, the pictures. Export first if you want it kept.';
+  function reset(){
+    if (!window.confirm(ASK)) return false;
+    load(BLANK(), false);
+    return true;
+  }
+
+  return {dump, load, counts, exportTown, importTown, reset};
 })();

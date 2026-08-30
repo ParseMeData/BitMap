@@ -859,6 +859,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Enter</td><td>open the marker you are standing by &nbsp;·&nbsp; a room, or a locus</td></tr>
     <tr><td>P</td><td>play the route in the platformer</td></tr>
     <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
+    <tr><td>Shift+R</td><td>reset to a blank page &nbsp;·&nbsp; the whole town goes; it asks first</td></tr>
     <tr><td>F / F11</td><td>fullscreen</td></tr>
     <tr><td>Esc</td><td>back &nbsp;·&nbsp; the locus, then the room list, then the interior</td></tr>
   </table>
@@ -1012,7 +1013,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 222, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 223, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

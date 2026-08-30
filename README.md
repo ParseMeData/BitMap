@@ -1645,7 +1645,12 @@ switch away.
 `hq.` key and both picture stores out and reloads: the town, every
 plate, every palace and picture, gone, and an empty home founds itself
 again on the default address. It asks first; an export is the only
-undo.
+undo. **`Shift+R`** is the same thing from the keyboard — the ask and
+the wipe are both `Snap.reset` (`src/snapshot.js`) since 2026-08-30, so
+the chip and the key cannot drift apart. It is on the shift and not on
+the bare key because bare `R` deals a new round, which is a key you
+press without looking a hundred times a session, and the thing behind
+this one has no undo.
 
 ## On the web
 
@@ -2010,13 +2015,41 @@ region it reads north-up. It is never turned by hand — but it can be
 (`hq.title.off`). Both stand on a mat of the ground's own diamonds, one a cell like
 everything else — solid under the mark, dithered away past it — so wherever you put them
 over terrain they read on the plate's colour and not through the trees. The drawing is
-`assets/compass.png`; `tools/compass.py` cuts the rose out of it and it
-goes through the same tone pass as a card's picture. It is tuned where
-the plate is: press `T` and under the plate's rows is a **Compass**
-block — Detail (the pitch), Weight (the diamond's size, which is the
-gap), Scatter and Jitter, Tone — kept in `hq.compass`. The chrome
-canvas it used to stand on is kept, hidden, for that block's reading;
-`ON_PLATE` in `src/compass.js` is the switch.
+`assets/compass.png`; `tools/compass.py` cuts the rose out of it.
+
+**It is cut in the lettering's own layer** (2026-08-30). Until then the
+rose went through `Title.picture` — the photographic read, through
+`Lattice.analyse`/`compose`, which returns a dense field with a cell for
+every cell and no gaps anywhere — with a checkerboard laid over it by
+hand to fake a screen, and the cells then turned to the heading one at a
+time. That read wrong in two ways at once. A cell turned by `cos/sin`
+lands *between* the plate's own cells, so at any heading off the square
+the whole rose sat off the grain and smeared. And a checker drops every
+second cell on a fixed parity, which is a texture, not a screen: the
+title beside it is cut by the Bayer threshold in `Title.screen`, where a
+cell is dropped because the ink *there* is thin, so the gaps open in the
+pale places and close in the dark ones.
+
+Now the rose goes through `Title.stencil` — the same screen the lettering
+goes through, `Title.screen`, with a picture fed to it instead of a word
+— and the heading turns the *drawing*, before it is screened, with the
+box grown to the turned diagonal so no spike is clipped and the art's own
+width held at `Size` cells so the rose does not breathe as the map turns.
+It is then drawn by `Title.emit`, the call the town's name makes in
+`palace.js`: same origin, same pitch, same sheen, same diamond, same
+instance cap, the mat dropped first when the cap is short. One layer, one
+material — a compass and a title beside each other are now the same stuff.
+
+It is tuned where the plate is: press `T` and under the plate's rows is a
+**Compass** block — Size (cells across the drawing), Weight, Screen (the
+dither), Tone, Sheen, Ink, and Detail for the hidden chrome canvas —
+kept in `hq.compass`. Its defaults are the lettering's own, so a compass
+at rest is cut the way a name at rest is cut. A tune saved before
+2026-08-30 carried `scatter`/`szv`, which meant something to the other
+read and nothing to this one; such a tune is dropped whole on load and
+the new defaults stand, while `at` — where you put it — is kept. The
+chrome canvas it used to stand on is kept, hidden, for that block's
+reading; `ON_PLATE` in `src/compass.js` is the switch.
 
 ### The journal
 

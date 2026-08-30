@@ -76,7 +76,34 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 232
+## Where we are — 30 Aug 2026, build 233
+
+- **Build 233 (30 Aug 2026) — a road that ends on a palace asks to go
+  in.** Walking off a dead end offered *open a plate*, which is right in
+  a field and wrong on a doorstep: a road laid up to a palace ends there
+  on purpose. `Atlas.end` now asks `doorAt()` first — which is
+  `Interior.target()`, the same reach the `Enter` key uses, so the two
+  agree by construction — and retexts the one `#edge` box for whichever
+  question it is asking: *The door · the road ends at <name>, and that is
+  a way in · go inside*, against *The end of the road · … · open a
+  plate*. `yes()` calls `Interior.enter(mk)` and **falls through to the
+  plate question if it will not open**, so the keypress is never dead.
+
+  The wording is set per ask rather than at creation, because the box is
+  built once and reused; verified both ways round in one session, so the
+  retext is not one-directional. `mk.name` is what Interior's own `label`
+  would show, so the two prompts read the same.
+
+  Verified: standing on ⤊Barwidgee, `Atlas.end` gives the door prompt and
+  `Enter` goes inside (scope `floor`, the palace plan loaded); standing
+  in a field it gives the plate prompt unchanged; `Interior.leave()`
+  brings the town back whole (41 shapes, 2 mats, 1 marker).
+
+  **Harness note:** a synthetic `Escape` does not leave an interior — but
+  it does not on the ordinary `Enter`-key path either, so it is the
+  synthetic event routing and not this change. `Interior.leave()` is the
+  way out when driving over CDP.
+
 
 - **Build 232 (30 Aug 2026) — the backdrop is a shape.** The mat behind
   the town's name and behind the compass was drawn inline by `Title.mat`

@@ -159,14 +159,48 @@ const Atlas = (() => {
      walk grid is, so this only ever hears about real ends. */
   const NAME = {n: 'north', s: 'south', e: 'east', w: 'west'};
   let asking = null;
+  /* ── a road that ends ON a palace ──────────────────────────────────────
+     A dead end usually means the plate next door: the map never pans, so
+     walking off the end of a road is how you reach the town beside this
+     one. But a road laid up to a palace ends there ON PURPOSE, and being
+     asked to found a new town on the doorstep of one you already have is
+     the wrong question — the answer wanted there is "go in".
+     (Eden, 2026-08-30.)
+
+     Asked of `Interior.target` rather than of the markers directly, so
+     "on the palace" means exactly what it means everywhere else on the
+     plate: within Interior's own REACH of the walker, the same test the
+     `Enter` key uses. A marker with no `uid` is not a door. */
+  const doorAt = () => {
+    if (typeof Interior === 'undefined' || !Interior.target) return null;
+    let mk = null;
+    try { mk = Interior.target(); } catch (e){ return null; }
+    return mk && mk.uid ? mk : null;
+  };
   function end(dir, at){
     const cur = A.areas[A.current];
     const l = linkAt(cur, at, dir) || linkAt(cur, at, null);
     if (l) return go(l.to, l.land);
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
-    asking = {dir, at};
+    const mk = doorAt();
+    asking = {dir, at, mk};
     const el = prompt();
-    el.querySelector('b').textContent = NAME[dir];
+    const head = el.querySelector('.plabel'), line = el.querySelector('.eline');
+    const note = el.querySelector('.knote'), ok = el.querySelector('#edgeyes');
+    if (mk){
+      const nm = String(mk.name || '').trim();
+      head.textContent = 'The door';
+      line.textContent = nm ? 'the road ends at ' + nm + ', and that is a way in'
+                            : 'the road ends at a palace, and that is a way in';
+      ok.textContent = 'go inside';
+      note.innerHTML = 'enter goes in &middot; esc stays';
+    } else {
+      head.textContent = 'The end of the road';
+      line.innerHTML = 'the road ends here heading <b></b>, and leads nowhere yet';
+      line.querySelector('b').textContent = NAME[dir];
+      ok.textContent = 'open a plate';
+      note.innerHTML = 'enter opens &middot; esc stays';
+    }
     el.hidden = false;
     return true;
   }
@@ -176,8 +210,10 @@ const Atlas = (() => {
     el = document.createElement('div');
     el.id = 'edge';
     el.className = 'glass';
+    /* the wording is set per ask (`end`), because this one box answers two
+       different questions — the plate next door, and the door right here */
     el.innerHTML = '<div class="plabel">The end of the road</div>' +
-      '<div>the road ends here heading <b></b>, and leads nowhere yet</div>' +
+      '<div class="eline">the road ends here heading <b></b>, and leads nowhere yet</div>' +
       '<div class="erow"><button id="edgeyes">open a plate</button><button id="edgeno">stay</button></div>' +
       '<div class="knote">enter opens &middot; esc stays</div>';
     document.body.appendChild(el);
@@ -189,6 +225,11 @@ const Atlas = (() => {
      and the plate is made when the address is found */
   function yes(){
     if (!asking) return; const q = asking; asking = null; prompt().hidden = true;
+    /* the door first: a road that ended on a palace was asked about the
+       palace, so yes means go in. If it will not open — a marker whose
+       interior has gone — fall through to the plate question rather than
+       leave the keypress doing nothing at all. */
+    if (q.mk && typeof Interior !== 'undefined' && Interior.enter(q.mk)) return;
     if (typeof Found !== 'undefined') Found.ask(q, 'the road ends here heading ' + NAME[q.dir] + ' — where does it lead?');
     else add(q.dir, q.at);
   }

@@ -1975,7 +1975,19 @@ takes an extension, opened from the end of a road, and the region plate
 shows the town as one diamond per plate it has grown. Walk
 to the end of any road and press on: if that end leads somewhere you
 arrive there; if it does not, a prompt asks whether to open a plate for
-it (`Enter` opens, `Esc` stays). A new plate is drawn as though it lay the
+it (`Enter` opens, `Esc` stays).
+
+**Unless the road ends on a palace.** A road laid up to a palace ends
+there on purpose, and being asked to found a new town on the doorstep of
+one you already have is the wrong question — so the same box asks the
+right one instead: *the road ends at <name>, and that is a way in* ·
+**go inside**. `Enter` goes in, `Esc` stays, exactly as before. "On the
+palace" is `Interior.target()` — the same reach the `Enter` key uses
+anywhere else on the plate — so the two agree by construction. If the
+palace will not open, the question falls through to the plate one rather
+than leaving the keypress doing nothing (2026-08-30).
+
+A new plate is drawn as though it lay the
 way the road was heading — you arrive on its opposite edge in the same
 column, on a stub of your road running in, so you are standing on ground
 and the road visibly continues. Every dead end is its own doorway: a town

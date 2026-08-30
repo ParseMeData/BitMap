@@ -76,7 +76,38 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 225
+## Where we are — 30 Aug 2026, build 226
+
+- **Build 226 (30 Aug 2026) — the print sits on top of its clearing.**
+  Build 225's clearing was eating the print it was under ("the asset now
+  sits behind" — Eden). The rule is in the rebuild's mod loop: a
+  modifier weathers the shapes with a LOWER id than its own, and leaves
+  what was laid over it afterwards standing — which is how the
+  founding's patch stopped eating its own house on 2026-08-29.
+  `Found.generate` gets it right by adding the demolish FIRST, so the
+  house takes the higher id. `create()` cannot: it takes the print's id
+  at the top, before the print's size is known, and the size is what the
+  clearing is made from — so the clearing was made second, took the
+  higher id, and weathered the print. `clearUnder` now exchanges the two
+  ids, which restores the founding's order and keeps both unique (they
+  are only ever swapped with each other). Array order was already right.
+  Verified: one of each print kind dropped on grass gives
+  `demolish#40/house#41, demolish#42/building#43, …` — clearing always
+  the lower — and every print draws whole.
+
+- **Open: seven building glyphs are solid blocks.** Audited all 327
+  glyphs for fully-lit rows (the signature of a sprite whose background
+  was read as lit). Every set is clean — patterns, plants, icons, signs,
+  distractions, houses, trees, mountains, landmarks — except
+  **`buildings`, where a21, a22, a23, a25, a28, a29 and a30** (all from
+  the tail of `assets/buildings-a.png`) come out as a filled rectangle
+  of lit cells with the drawing traced in `'2'` INSIDE it. They look
+  inverted: `1 → 0, 2 → 1` turns a30 into coherent banded architecture.
+  Not applied — it is a guess about Eden's artwork, and on a22 the
+  literal reading of "remove what is not a coloured pixel" would leave
+  an invisible glyph. Awaiting Eden's call: invert the seven, drop them
+  from the set, or re-slice that region of the sheet.
+
 
 - **Build 225 (30 Aug 2026) — the print goes transparent, and its
   clearing is the founding's own.** Two corrections to build 224, both

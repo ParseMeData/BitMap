@@ -1557,6 +1557,15 @@ trade is that a demolish is not picky the way a clear is: it bites the
 roads and other built things inside it, not only the terrain — which is
 what the founding has always done under the first palace.
 
+The clearing is made with a **lower id than the print**, and that is
+load-bearing rather than tidy: a modifier weathers the shapes older than
+itself and leaves what is laid over it afterwards standing, so a
+clearing younger than its print eats it and the asset comes out sitting
+behind its own ground. The founding gets this free by adding the
+demolish first; `create` cannot, because it takes the print's id before
+the print's size — which is what the clearing is made from — is known,
+so `clearUnder` exchanges the two ids.
+
 It is one gesture and **one undo step**, and from then on the two are
 ordinary shapes that select, drag, resize and delete on their own — so
 the ground you see through can be pushed out from under the asset,

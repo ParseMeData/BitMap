@@ -459,9 +459,28 @@ const Build = (() => {
   const MATE = 1.5;
   function clearUnder(s){
     if (!Kinds.by['demolish']) return null;
-    return make({kind: 'demolish', type: 'rect', exact: true,
-                 x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
-                 fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
+    const c = make({kind: 'demolish', type: 'rect', exact: true,
+                    x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
+                    fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
+    if (!c) return null;
+    /* ── the clearing has to be OLDER than the print it sits under ───────
+       A modifier weathers only the shapes with a LOWER id than its own —
+       "a modifier weathers the shapes older than itself and leaves what
+       is laid over it afterwards standing", the `x.id > s.id` test in the
+       rebuild's mod loop, which is exactly how the founding's patch
+       stopped eating its own house on 2026-08-29.
+
+       `create` takes the print's id at the top, before the print's SIZE
+       is known — and the size is what this clearing is made from, so it
+       is made second and lands with the higher id, which makes the print
+       older than its own clearing and puts the asset BEHIND it. Trading
+       the two ids restores the founding's order — the clearing first, the
+       print laid on top of it and left standing — and both stay unique
+       because they are only ever swapped with each other. The array order
+       is already right: `make` pushed the clearing before `create` pushes
+       the print. (Eden, 2026-08-30: "the asset now sits behind".) */
+    const pid = s.id; s.id = c.id; c.id = pid;
+    return c;
   }
 
   /* ── and grows only in whole multiples of itself ───────────────────────

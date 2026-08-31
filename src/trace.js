@@ -443,6 +443,28 @@ const Trace = (() => {
     hstep();
   }
 
+  /* ── grooming what the plan no longer carries ───────────────────────────
+     A room deleted from the plan leaves its turn, its cuts, its trades and
+     its writing behind in the key. They are dropped on the way out — but
+     only when the plan still HAS rooms: an empty plan is a plan mid-retype
+     as often as a plan abandoned, and grooming against it would take the
+     writing with it. A pair referencing a vanished room never acts again
+     (slotId finds nothing), so removing it changes nothing the chain does. */
+  function groom(){
+    if (!cfgUid) return;
+    const rs = rooms();
+    if (!rs.length) return;
+    const ids = {};
+    for (const r of rs) ids[r.room] = 1;
+    let dirty = false;
+    for (const o of [turn, gone]) for (const k in o)
+      if (!ids[k]){ delete o[k]; dirty = true; }
+    for (const k in data) if (!ids[Math.floor(k / PER)]){ delete data[k]; dirty = true; }
+    const keep = swaps.filter(pr => ids[Math.floor(pr[0] / PER)] && ids[Math.floor(pr[1] / PER)]);
+    if (keep.length !== swaps.length){ swaps = keep; dirty = true; }
+    if (dirty){ forget(); save(); }
+  }
+
   /* ── compacting the chain ───────────────────────────────────────────────
      Trades append forever, and a session of dragging can leave a chain far
      longer than the permutation it spells. On the way out of the palace it
@@ -801,7 +823,7 @@ const Trace = (() => {
      because the next palace's turns and cuts are not this one's — and a
      marker asks for its number the moment its plan is mounted. */
   function off(){
-    compact();
+    groom(); compact();
     closeEdit();
     on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
     forget();

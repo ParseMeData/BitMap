@@ -281,7 +281,8 @@ def sweep(port=PORT, yes=False):
     for k in o['pictures']:
         size = p.js(f'(async () => {{ const d = await new Promise(r => {{ const q = indexedDB.open("hq.loci", 1); q.onsuccess = () => r(q.result); }});'
                     f' return await new Promise(r => {{ const t = d.transaction("img").objectStore("img").get({json.dumps(k)}); t.onsuccess = () => r((t.result || "").length); }}); }})()')
-        print(f'  picture {k}  {int(size or 0) // 1024} KB, no locus holds it')
+        what = 'its palace is gone' if k.startswith('locus:place:') else 'no locus holds it'
+        print(f'  picture {k}  {int(size or 0) // 1024} KB, {what}')
     for mid in o['missions']:
         m = next((m for m in json.loads(p.js('localStorage.getItem("hq.missions")') or '[]') if m['id'] == mid), {})
         print(f'  mission {mid}  "{m.get("title", "")}"  names a palace that is gone')
@@ -292,7 +293,7 @@ def sweep(port=PORT, yes=False):
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     save(str(SNAPS / f'.pre-sweep-{stamp}.json'), page=p, strip=False)
     for uid in o['palaces']:
-        for pre in ('hq.rooms.', 'hq.order.', 'hq.marks.'):
+        for pre in ('hq.rooms.', 'hq.order.', 'hq.marks.', 'hq.trace.'):
             p.js(f'localStorage.removeItem({json.dumps(pre + uid)})')
     if o['pictures']:
         p.js(f'({DEL_LOCI})({json.dumps(o["pictures"])})')

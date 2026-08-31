@@ -27,10 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **The sweep learns the new keys.** `tools/snapshot.py sweep` predates
-  build 240: teach it place pictures (`locus:place:<palace>:<id>`) and
-  `hq.trace.<uid>` for markers that no longer exist, and place data for
-  rooms that are gone. Report, remove only on the word, as it already does.
 - [ ] **Audits, alongside:** whether syncUI rebuilds list DOM wholesale
   during drags (patch rows if so); touch on actual glass is noted for Eden
   — drag-to-swap, the place panel and the build grips are the three to try.
@@ -38,6 +34,15 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **The sweep learns the new keys** — 2026-08-31. The index knows
+  `hq.trace.<uid>` (watched, carried on the palace record, swept with the
+  other three prefixes) and place pictures — which it had been miscounting
+  as orphans since build 240: `place:<palace>:<id>` is an orphan only when
+  its palace has no marker. And the residue a deleted room leaves in the
+  trace key (turn, cuts, trades, writing) is groomed on the way out of the
+  palace — never against an empty plan, which is mid-retype as often as
+  abandoned. BUILD 248.
 
 - [x] **sw.js VERSION derives from BUILD** — 2026-08-31. The page registers
   `sw.js?b=BUILD`; the worker reads its version off its own URL, so it can

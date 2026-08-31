@@ -17,10 +17,11 @@
    anything. If it and the keys ever disagree, the keys are right.
 
      plates    id  → {name, markers: [uid]}
-     palaces   uid → {plate, name, n, plan, order, loci: [uid]}
+     palaces   uid → {plate, name, n, plan, order, trace, loci: [uid]}
      loci      uid → {palace, n, name, picture}
-     pictures  row → {kind: 'locus'|'card'|'alt', owner}   (store rows:
-               locus:<uid>, card:<sys>:<label>:<slot>[:alt:<n>])
+     pictures  row → {kind: 'locus'|'place'|'card'|'alt', owner}
+               (store rows: locus:<uid>, locus:place:<palace>:<id>,
+               card:<sys>:<label>:<slot>[:alt:<n>])
      missions  id  → {palace}
      orphans   what nothing points at: palaces with no marker on any
                plate, loci under such a palace, pictures no locus holds,
@@ -47,7 +48,7 @@ const Index = (() => {
         if (!m || !m.uid) continue;
         plates[id].markers.push(m.uid);
         palaces[m.uid] = {plate: id, name: (m.name || '').trim(), n: m.n || 0,
-                          plan: false, order: false, loci: []};
+                          plan: false, order: false, trace: false, loci: []};
       }
     }
     /* the keys named by a uid: a plan, a typed room list, a set of loci.
@@ -60,13 +61,14 @@ const Index = (() => {
         if (!uid) continue;
         if (!palaces[uid]){
           if (!seen.has(uid)){ seen.add(uid); orphans.palaces.push(uid); }
-          palaces[uid] = {plate: null, name: '', n: 0, plan: false, order: false, loci: []};
+          palaces[uid] = {plate: null, name: '', n: 0, plan: false, order: false, trace: false, loci: []};
         }
         mark(palaces[uid], k);
       }
     };
     under('hq.rooms.', (p, k) => { p.plan = Store.has(k); });
     under('hq.order.', (p, k) => { p.order = Store.has(k); });
+    under('hq.trace.', (p, k) => { p.trace = Store.has(k); });
     under('hq.marks.', (p, k) => {
       const uid = k.slice('hq.marks.'.length);
       for (const l of Store.json(k, [])){
@@ -85,8 +87,19 @@ const Index = (() => {
         pictures[k] = {kind: k.indexOf(':alt:') > 0 ? 'alt' : 'card', owner: 'bag'};
       } else {
         const uid = k.indexOf('locus:') === 0 ? k.slice(6) : k;
-        pictures[k] = {kind: 'locus', owner: loci[uid] ? loci[uid].palace : null};
-        if (loci[uid]) loci[uid].picture = true; else orphans.pictures.push(k);
+        if (uid.indexOf('place:') === 0){
+          /* a place's own picture (src/trace.js): place:<palace>:<id>,
+             owned by the palace whose grid it is written on — an orphan
+             only when that palace has no marker on any plate. Before this
+             clause every place picture was miscounted as an orphan. */
+          const pal = uid.slice(6, uid.lastIndexOf(':'));
+          const live = palaces[pal] && palaces[pal].plate;
+          pictures[k] = {kind: 'place', owner: live ? pal : null};
+          if (!live) orphans.pictures.push(k);
+        } else {
+          pictures[k] = {kind: 'locus', owner: loci[uid] ? loci[uid].palace : null};
+          if (loci[uid]) loci[uid].picture = true; else orphans.pictures.push(k);
+        }
       }
     }
     for (const m of Store.json('hq.missions', [])){
@@ -107,7 +120,7 @@ const Index = (() => {
   }
   function init(){
     build();
-    for (const p of ['hq.markers', 'hq.rooms.', 'hq.order.', 'hq.marks.', 'hq.missions', 'hq.atlas'])
+    for (const p of ['hq.markers', 'hq.rooms.', 'hq.order.', 'hq.marks.', 'hq.trace.', 'hq.missions', 'hq.atlas'])
       Store.watch(p, touched);
   }
   const get = () => I || build();

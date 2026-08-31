@@ -70,6 +70,13 @@ const Interior = (() => {
        and what the palace remembers about it have to be there to be asked */
     if (typeof Trace !== 'undefined') Trace.mount(mk.uid);
     Markers.mount(MKEY(mk.uid));
+    /* the scope is whole only now — shapes, trace and markers all pointing
+       into this palace — so this is the moment its undo entry must be
+       stamped. Build.mount above already asked History about a half-mounted
+       scope (this plan's shapes, the town's markers); left alone, the true
+       entry would only be born at the first quiet-period tap, and a gesture
+       made before one fired would have no "before" to go back to. */
+    if (typeof History !== 'undefined' && typeof History.sync === 'function') History.sync();
     /* a floor plan is never drawn over the printed map, whatever the plate
        is set to outside — and the flag is not written back, so coming out
        finds the town exactly as it was left */

@@ -27,10 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **Grid edits join the undo stack.** Turns, cuts, trades and the typed
-  fields bypass history — one stray drag has no ctrl-z. Add the trace key
-  to the palace scope's snapshot ({s, m, t}), restore it in apply() before
-  the markers remount, and have trace edits call History.step/tap.
 - [ ] **The swap chain compacts.** Trades append forever; on leaving a
   palace, flatten the chain to the fewest pairs that give the same
   numbering — but only when no pair is suspended (referencing a taken-out
@@ -51,6 +47,18 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **Grid edits join the undo stack** — 2026-08-31. A palace scope's
+  snapshot is `{s, m, t}` — the trace key beside the shapes and markers —
+  restored in apply() with the same all-or-nothing rollback, the trace
+  remounted before the markers so the numbers are read off restored
+  places. Turns, cuts and trades call History.step; typing taps, so a
+  burst is one step. Ctrl-Z now also answers in the minimal view, and the
+  open panel re-says the restored truth. Found on the way (pre-existing):
+  Interior.enter stamped History's entry while the scope was half mounted
+  — this plan's shapes with the town's markers — so a gesture before the
+  first quiet-period tap had no "before"; the entry is now stamped after
+  Markers.mount, when the scope is whole. BUILD 245.
 
 - [x] **A drag released off the grid no longer trades** — 2026-08-31. The
   trade is judged by a hit-test where the button came up, not by the last

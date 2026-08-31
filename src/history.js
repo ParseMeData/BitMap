@@ -51,8 +51,13 @@ const History = (() => {
   const read = k => { try { return Store.get(k) || ''; } catch (e){ return ''; } };
   const ready = () => typeof Build !== 'undefined' && typeof Markers !== 'undefined' &&
                       typeof Build.key === 'function' && typeof Markers.key === 'function';
-  const shot = e => ({s: read(e.skey), m: read(e.mkey)});
-  const same = (a, b) => !!a && !!b && a.s === b.s && a.m === b.m;
+  /* a palace scope carries a third key: the trace — the room's turns and
+     cuts, the trades and the writing on the places (src/trace.js). It moves
+     with the plan and the markers or an undo puts numbers back without the
+     places that carried them. The town has no trace, and its shots say t:''. */
+  const tkeyOf = skey => skey.indexOf('hq.rooms.') === 0 ? 'hq.trace.' + skey.slice(9) : '';
+  const shot = e => ({s: read(e.skey), m: read(e.mkey), t: e.tkey ? read(e.tkey) : ''});
+  const same = (a, b) => !!a && !!b && a.s === b.s && a.m === b.m && (a.t || '') === (b.t || '');
   const idOf = (skey, mkey) => skey + ' ' + mkey;
 
   /* ── one stack per mounted scope, named by where it would write ────────
@@ -78,7 +83,8 @@ const History = (() => {
       entries.delete(id); entries.set(id, e);      // touch: most recent last
       return e;
     }
-    e = {id: id, skey: skey, mkey: mkey, stack: [], cur: null, mark: null, armed: false};
+    e = {id: id, skey: skey, mkey: mkey, tkey: tkeyOf(skey),
+         stack: [], cur: null, mark: null, armed: false};
     /* First sight of a scope is a restore point in its own right: you have
        just walked into this palace and have not touched it yet, which is
        exactly the moment Revert is for. */
@@ -171,21 +177,29 @@ const History = (() => {
        finally, because a throw out of mount/reload below would otherwise
        leave busy set and every later tap and step a silent no-op. */
     try {
-      const back = Store.get(e.skey);
+      const backS = Store.get(e.skey), backM = Store.get(e.mkey);
       try {
         put(e.skey, s.s);
         try {
           put(e.mkey, s.m);
+          if (e.tkey) put(e.tkey, s.t);
           if (typeof hqStoreOK === 'function'){ hqStoreOK(what); hqStoreOK('the markers'); }
         } catch (err){
           ok = false;
-          put(e.skey, back);                       // roll the first write back
+          put(e.skey, backS);                      // roll the landed writes back
+          put(e.mkey, backM);
           if (typeof hqStoreFail === 'function') hqStoreFail('the markers', err);
         }
       } catch (err){ ok = false; if (typeof hqStoreFail === 'function') hqStoreFail(what, err); }
       /* Storage refused, so nothing is loaded: what is on screen is still
          what storage holds, which is the only state that is true. */
-      if (ok){ Markers.mount(e.mkey); Build.reload(); }
+      if (ok){
+        /* the trace before the markers: mounting the markers is what reads
+           the numbers back off the places, so the places must already say
+           the restored numbers when it happens */
+        if (e.tkey && typeof Trace !== 'undefined' && Trace.remount) Trace.remount();
+        Markers.mount(e.mkey); Build.reload();
+      }
     } finally { busy = false; }
     return ok;
   }

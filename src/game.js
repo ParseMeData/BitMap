@@ -563,15 +563,17 @@ addEventListener('keydown', e => {
       if (Loci.opened()) Loci.pick(Loci.at());
       else { spawn(); scatterSparks(); }
       break;
-    /* Ctrl-Z walks build mode back one gesture. It is asked for by one of
+    /* Ctrl-Z walks the last gesture back. It is asked for by one of
        History's own methods rather than by `typeof History`, because the
-       browser has a History of its own and that name is never undefined —
-       and it does nothing outside build mode, where there is nothing you
-       could have just done to the drawing. */
+       browser has a History of its own and that name is never undefined.
+       Build mode and the minimal view are the two places a gesture can
+       have changed anything — the grid's turns, cuts, trades and writing
+       step the same stack (src/trace.js) — and everywhere else it does
+       nothing, because there is nothing you could have just done. */
     case 'KeyZ':
       if (!(e.ctrlKey || e.metaKey)) break;
       if (typeof History === 'undefined' || typeof History.undo !== 'function') break;
-      if (!Build.active()) break;
+      if (!Build.active() && !(typeof Trace !== 'undefined' && Trace.on())) break;
       e.preventDefault();
       History.undo();
       break;

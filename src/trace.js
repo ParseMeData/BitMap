@@ -200,6 +200,30 @@ const Trace = (() => {
     if (!cfgUid) return;
     Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone, swaps, data}), 'the trace');
   }
+  /* an undo has just rewritten this palace's key under us: read it back.
+     Only the config — the markers are History's next move (apply() mounts
+     them after this), so touching them here would commit the state being
+     undone right back over the restore. The panel follows the place it is
+     open on; the overlay's own reseat heals the rest on the next frame. */
+  function remount(){
+    if (!cfgUid) return;
+    const u = cfgUid;
+    cfgUid = '';
+    cfg(u);
+    forget(); plan = null;
+    /* the panel says the restored truth, text fields included — the undo
+       was pressed with focus on the game, so there is no typing to fight */
+    if (edit && ui){
+      const d = datum(edit.id) || {};
+      ui.name.value = d.name || ''; ui.desc.value = d.desc || '';
+      ui.note.value = d.note || ''; ui.ref.value = d.ref || '';
+      fill();
+    }
+  }
+  /* a grid edit is a gesture like a wall dragged: it steps the undo stack.
+     The names build.js uses for the same two calls. */
+  const hstep = () => { if (typeof History !== 'undefined' && typeof History.step === 'function') History.step(); };
+  const htap = () => { if (typeof History !== 'undefined' && typeof History.tap === 'function') History.tap(); };
   const turnOf = id => ((turn[id] | 0) % PER + PER) % PER;
   const goneOf = id => (Array.isArray(gone[id]) ? gone[id] : []);
   const isGone = (id, sq) => goneOf(id).indexOf(sq) >= 0;
@@ -360,7 +384,7 @@ const Trace = (() => {
     turn[r.room] = ((turnOf(r.room) + (d < 0 ? -1 : 1)) % PER + PER) % PER;
     forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
-    plan = null;
+    plan = null; hstep();
     note((r.label || 'the room') + ' turned · ' + (turnOf(r.room) + 1) + ' of ' + PER);
     return true;
   }
@@ -378,6 +402,7 @@ const Trace = (() => {
       gone[q.rid] = list;
       forget(); save(); reseat();
       if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+      hstep();
       note('a place back · ' + count() + ' in the palace');
       return true;
     }
@@ -386,6 +411,7 @@ const Trace = (() => {
     gone[q.rid] = list;
     forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    hstep();
     note('place ' + q.n + ' out · ' + count() + ' in the palace');
     return true;
   }
@@ -414,6 +440,7 @@ const Trace = (() => {
     else swaps.push([aId, bId]);
     forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    hstep();
   }
 
   /* ── the editor ─────────────────────────────────────────────────────────
@@ -430,7 +457,10 @@ const Trace = (() => {
     const d = data[id] || (data[id] = {});
     if (v) d[field] = v; else delete d[field];
     if (!Object.keys(d).length) delete data[id];
-    clearTimeout(saveT); saveT = setTimeout(save, 400);
+    /* saved a beat after the last keystroke, and the save is a tap — the
+       quiet-period sample build.js uses for drags, so a burst of typing is
+       one undo step, not forty */
+    clearTimeout(saveT); saveT = setTimeout(() => { save(); htap(); }, 400);
   }
   const pkey = id => 'place:' + cfgUid + ':' + id;
 
@@ -749,7 +779,7 @@ const Trace = (() => {
           slots, places, slotN, slotId, numberOf, count, drop,
           /* the panel: game.js walks Esc through it, loci.js says when a
              picture has landed */
-          editing: () => !!edit, closeEdit, picture,
+          editing: () => !!edit, closeEdit, picture, remount,
           /* the numbers are asked for by markers.js while the view is down,
              so the palace's turns and cuts have to be readable then too */
           mount: u => cfg(u), per: () => PER,

@@ -27,10 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **sw.js VERSION derives from BUILD.** It had lagged seven builds
-  behind. Register the worker as `sw.js?b=BUILD` and read the version off
-  the worker's own URL — a new build is then a byte-different worker URL,
-  which is also what makes the browser replace it.
 - [ ] **The sweep learns the new keys.** `tools/snapshot.py sweep` predates
   build 240: teach it place pictures (`locus:place:<palace>:<id>`) and
   `hq.trace.<uid>` for markers that no longer exist, and place data for
@@ -42,6 +38,11 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **sw.js VERSION derives from BUILD** — 2026-08-31. The page registers
+  `sw.js?b=BUILD`; the worker reads its version off its own URL, so it can
+  never lag the build again (it had lagged seven), and a new build being a
+  new worker URL is what makes the browser replace the worker. BUILD 247.
 
 - [x] **The swap chain compacts on the way out** — 2026-08-31. Leaving a
   palace folds the chain to the fewest pairs that spell the same

@@ -7,10 +7,13 @@
    the cache is asked, because that query is different on every load and
    the cache holds one copy of the file.
 
-   VERSION is bumped by hand with BUILD when the list below changes — a
-   worker that does not change is a worker the browser does not replace.
+   VERSION is not written here: the page registers this worker as
+   `sw.js?b=BUILD` (index.html), and the version is read off the worker's
+   own URL — so it cannot lag the build, which by v8.3 it had done for
+   seven builds running. A new build is a byte-different worker URL, which
+   is also exactly what makes the browser fetch and replace the worker.
    Registered by index.html only over http(s); a file:// page cannot.  */
-const VERSION = 'mq-241';
+const VERSION = 'mq-' + (new URL(self.location.href).searchParams.get('b') || 'dev');
 const FILES = [
   './', './index.html', './platformer.html', './manifest.json', './assets/icon.png',
   './src/store.js', './src/stock.js', './assets/map.js', './src/render.js', './src/lattice.js',

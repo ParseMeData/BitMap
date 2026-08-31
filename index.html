@@ -1052,7 +1052,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 246, cb = '?cb=' + BUILD +
+  var BUILD = 247, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
@@ -1125,7 +1125,10 @@ var Users = (function(){
      and answers when there is no network. A file:// page cannot register one
      and is not asked to — the launcher's profile is its own cache. */
   if (/^https?:$/.test(location.protocol) && 'serviceWorker' in navigator)
-    navigator.serviceWorker.register('sw.js').catch(function(){});
+    /* the build rides the worker's URL: sw.js reads it back as its cache
+       version, and a new build being a new URL is what makes the browser
+       replace the worker at all */
+    navigator.serviceWorker.register('sw.js?b=' + BUILD).catch(function(){});
   /* boot() is fully synchronous once the map picture decodes, so a boot screen
      still up eight seconds later is a load that stopped rather than one that is
      slow — and with nothing watching, "building the lattice…" sits there for

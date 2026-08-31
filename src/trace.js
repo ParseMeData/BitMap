@@ -568,12 +568,19 @@ const Trace = (() => {
     }, true);
     const up = e => {
       if (!press) return;
-      if (dragQ && dragAt){
-        note('place ' + dragQ.n + ' and place ' + dragAt.n + ' traded numbers');
-        swap(dragQ.id, dragAt.id);
-        if (edit) fill();
+      if (dragQ){
+        /* the trade is judged where the button came up, not where the
+           pointer last passed — a release in empty space is a change of
+           mind, not a drop on the last square the drag crossed */
+        const w = evWorld(e), t = squareAt(w[0], w[1]);
+        const at = t && t.id !== dragQ.id && t.n ? t : null;
+        if (at){
+          note('place ' + dragQ.n + ' and place ' + at.n + ' traded numbers');
+          swap(dragQ.id, at.id);
+          if (edit) fill();
+        }
       }
-      else if (!dragQ) openEdit(press.q);
+      else openEdit(press.q);
       press = null; dragQ = null; dragAt = null;
       e.stopPropagation();
     };

@@ -27,9 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **A drag released off the grid no longer trades.** The drop target is
-  the last square the pointer moved over, so releasing in empty space after
-  passing a square still swaps. Hit-test at the release point.
 - [ ] **Grid edits join the undo stack.** Turns, cuts, trades and the typed
   fields bypass history — one stray drag has no ctrl-z. Add the trace key
   to the palace scope's snapshot ({s, m, t}), restore it in apply() before
@@ -54,6 +51,11 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **A drag released off the grid no longer trades** — 2026-08-31. The
+  trade is judged by a hit-test where the button came up, not by the last
+  square the pointer moved over; a release in empty space is a change of
+  mind. Verified both ways over CDP. BUILD 244.
 
 - [x] **`places()` memoised for one task** — 2026-08-31. Measured first on
   the v8.3 town: 0.0085 ms a call, so the win was never milliseconds — it

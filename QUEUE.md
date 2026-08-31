@@ -27,13 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **`places()` stops being rebuilt on every ask.** In the minimal view
-  it is rebuilt several times a frame (overlay, reseat, the markers) and on
-  every pointermove of a drag; each rebuild filters and sorts the shapes,
-  redoes the grid geometry and allocates ~90 objects — steady GC churn.
-  Memoise it for the length of one task (cleared on a microtask, and
-  eagerly by every mutator), so one frame computes it once. Measure the
-  cost per frame before and after on the v8.3 town.
 - [ ] **A drag released off the grid no longer trades.** The drop target is
   the last square the pointer moved over, so releasing in empty space after
   passing a square still swaps. Hit-test at the release point.
@@ -61,6 +54,15 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **`places()` memoised for one task** — 2026-08-31. Measured first on
+  the v8.3 town: 0.0085 ms a call, so the win was never milliseconds — it
+  was ~90 allocations an ask, several asks a frame, plus one per
+  pointermove of a drag. Now one task computes it once (memo dropped on a
+  microtask and eagerly by every mutator in trace.js; a swap is read back
+  correctly in the same task, verified over CDP). 0.00005 ms a call after.
+  The first cut collided with the marker-drop resolver also named `drop` —
+  the memo's clearer is `forget`. BUILD 243.
 
 - [x] **The web stops re-downloading the game every visit** — 2026-08-31.
   The cache-buster is `?cb=BUILD` over http(s), `?cb=BUILD.Date.now()` only

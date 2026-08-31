@@ -184,6 +184,7 @@ const Trace = (() => {
   function cfg(u){
     if (!u || cfgUid === u) return;
     cfgUid = u; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
+    forget();
     const raw = Store.get(KEY(u)) || '';
     if (/^\d+$/.test(raw.trim())){ room = Math.max(1, parseInt(raw, 10) || 1); return; }
     let o = null;
@@ -213,11 +214,23 @@ const Trace = (() => {
      A place's `id` is `room * 8 + square`: the geometry, which does not
      move when the numbers do, and what a marker keeps.
 
-     Rebuilt on ask rather than cached — a plan is a few dozen rooms, and a
-     room that has just been resized or turned must not hand back the places
-     it used to have. Squares that have been taken out come back too, with
-     `n: 0`, because `X` has to be able to find one to put it back. */
+     Squares that have been taken out come back too, with `n: 0`, because
+     `X` has to be able to find one to put it back.
+
+     MEMOISED FOR ONE TASK, no longer. The list is asked for several times
+     a frame (the overlay, the reseat, the markers) and on every
+     pointermove of a drag, and rebuilding it each time was ~90 allocations
+     an ask — measured 0.0085 ms a call on the v8.3 town, so the cost was
+     never the milliseconds, it was the steady GC churn. The memo is
+     dropped on a microtask, so the next task — the next frame, the next
+     event — computes fresh, and a room resized under the grid is stale for
+     at most the task that resized it; everything in THIS file that changes
+     the answer drops it eagerly, because a swap must be read back by the
+     reseat on the very next line. */
+  let memo = null;
+  const forget = () => { memo = null; };
   function places(){
+    if (memo) return memo;
     /* the palace says what its rooms are turned to, so ask the palace you
        are actually in — going in, coming out of a palace inside a palace,
        and being asked by a marker before the view has ever been up all
@@ -255,6 +268,8 @@ const Trace = (() => {
         const t = a.n; a.n = b.n; b.n = t;
       }
     }
+    memo = out;
+    Promise.resolve().then(forget);
     return out;
   }
   /* the live ones, which is what everything but `X` and the drawing wants */
@@ -343,7 +358,7 @@ const Trace = (() => {
     const r = here();
     if (!r){ note('stand in a room to turn it'); return false; }
     turn[r.room] = ((turnOf(r.room) + (d < 0 ? -1 : 1)) % PER + PER) % PER;
-    save(); reseat();
+    forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
     plan = null;
     note((r.label || 'the room') + ' turned · ' + (turnOf(r.room) + 1) + ' of ' + PER);
@@ -361,7 +376,7 @@ const Trace = (() => {
     if (at >= 0){
       list.splice(at, 1);
       gone[q.rid] = list;
-      save(); reseat();
+      forget(); save(); reseat();
       if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
       note('a place back · ' + count() + ' in the palace');
       return true;
@@ -369,7 +384,7 @@ const Trace = (() => {
     if (taken(q.id)){ note('a locus is standing there — take the locus out first'); return false; }
     list.push(q.sq);
     gone[q.rid] = list;
-    save(); reseat();
+    forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
     note('place ' + q.n + ' out · ' + count() + ' in the palace');
     return true;
@@ -397,7 +412,7 @@ const Trace = (() => {
     if (last && ((last[0] === aId && last[1] === bId) ||
                  (last[0] === bId && last[1] === aId))) swaps.pop();
     else swaps.push([aId, bId]);
-    save(); reseat();
+    forget(); save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
   }
 
@@ -716,6 +731,7 @@ const Trace = (() => {
   function off(){
     closeEdit();
     on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
+    forget();
     if (typeof Build !== 'undefined') Build.setMinimal(false);
   }
   function reset(){ room = 1; plan = null; if (cfgUid) save(); }

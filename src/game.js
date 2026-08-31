@@ -506,6 +506,7 @@ addEventListener('keydown', e => {
       if (G.paused) break;                    // the pause owns the screen; click it
       if (typeof Distract !== 'undefined' && Distract.opened()) Distract.close();
       else if (Loci.opened()) Loci.close();
+      else if (typeof Trace !== 'undefined' && Trace.editing()) Trace.closeEdit();
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
       else if (Interior.inside()) Interior.leave();

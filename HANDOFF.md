@@ -76,7 +76,50 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 31 Aug 2026, build 239 (tag **v8.2** at 233)
+## Where we are — 31 Aug 2026, build 240 (tag **v8.2** at 233)
+
+- **Build 240 (31 Aug 2026) — the grid edited by hand: click a place,
+  drag to trade, and a place carries writing.** Eden: *"allow us to edit
+  the floorplan room sequence grid - we want the 3x3 grid to be manually
+  edited when clicked (no need to be in the room) - also make it so if we
+  drag a square onto another square within that grid the numbers swap -
+  also alow for a delete function from within this same mode - then also
+  allow when click on that square we have a data entery for that square
+  (name - description - notes - image upload/reference)"*.
+
+  **Clicking works from anywhere.** The pointer is taken capture-phase on
+  the window, the way the compass takes its drag, and only a press that
+  lands on a square is taken — so build mode and the walk lose nothing,
+  and none of it needs the walker to be in the room the way `[` `]` `X`
+  do. Click opens `#place` (index.html): number, name, description,
+  notes, image ref, the picture, and the same take-out/put-back `X` does.
+  A taken-out square stands as a faint ghost while the view is up so
+  there is something to click to put it back; its number field is
+  disabled because a ghost has no number.
+
+  **A trade is a pair of ids, not a renumbering.** Dragging a square onto
+  another appends `[idA, idB]` to a `swaps` chain applied on top of the
+  derived dense numbering — each pair trades whatever numbers its two
+  places are wearing at that point in the chain. So a trade survives the
+  turns and cuts around it; a pair whose places are not both live waits
+  rather than acts; and dragging the same two straight back pops the pair
+  rather than growing the chain. Retyping the number in the panel is the
+  same trade with the place wearing that number — the palace cannot be
+  typed sparse. The panel's fields land in `data[id]`, saved 400ms after
+  the last keystroke; `hq.trace.<uid>` is now `{room, turn, gone, swaps,
+  data}`.
+
+  **A place's picture rides the loci store.** Keyed `place:<palace>:<id>`
+  through the same `Loci.pick/attach/show/detach` a locus uses — same
+  downscale, same IndexedDB, same lattice preview on View — and loci.js
+  pings `Trace.picture` when one lands so an open panel can say so. Place
+  pictures are not part of the platformer's deck, which stays the loci's.
+  `src/trace.js`, `src/loci.js`, `src/game.js` (Esc closes the panel on
+  its way through the chain), `index.html` (#place, its CSS). Verified
+  over CDP on a throwaway profile against the v8.2 snapshot: click/open,
+  type/save, drag/trade, cancel, panel delete from another room, put
+  back, renumber, picture attach, Esc — and screenshots of the panel,
+  the rings and the ghost.
 
 - **Build 239 (31 Aug 2026) — a room can be turned, a place can be taken
   out, and the colour belongs to the number.** Eden, on the eight:

@@ -217,6 +217,8 @@ and the phone: the keys drawn on the screen, every panel a sheet.
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, every room's eight places, and the trace through it (inside) |
 | `[` `]` | turn the room you are standing in one step round its ring (minimal view) |
 | `X` | take the nearest place out, or put it back (minimal view) |
+| click | open a place: number, name, description, notes, picture (minimal view) |
+| drag | one square onto another, and the two trade numbers (minimal view) |
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus &nbsp;·&nbsp; or deal with the distraction you are standing by |
 | `P` | play the route in the platformer |
 | `M` | the map dialog (top right) and the underlay with it &nbsp;·&nbsp; its ✕ closes both |
@@ -318,8 +320,8 @@ stale.
     src/markers.js       glyph markers, baked to one texture atlas
     src/interior.js      going inside a marker: the stack, and the swap
     src/trace.js         minimal — a plan down to its walls — the eight
-                         places a room, their turning and cutting, and
-                         the trace
+                         places a room, their turning, cutting, trading
+                         and typing-into, and the trace
                          that runs in it: nine squares in a room and a
                          line through its fittings, one room at a time
     src/loci.js          the numbered places inside a room, their pictures,
@@ -1553,10 +1555,42 @@ All three keys do nothing while the grid is down, so they are the minimal
 view's own; `[` and `]` scale the selection in build mode, and the minimal
 view takes them while it is up, where there is no shape to see anyway.
 
-A room's turn and what it has had taken out live with the palace, under
+A room's turn, what it has had taken out, the numbers that have been
+traded and what has been written on each place live with the palace, under
 `hq.trace.<uid>`, beside which room the trace is up to — one JSON object,
-`{room, turn, gone}`. A bare integer is what that key held before any of
-this and still reads as the room number.
+`{room, turn, gone, swaps, data}`. A bare integer is what that key held
+before any of this and still reads as the room number.
+
+#### The hand on the grid
+
+The grid is also edited by **pointing at it, from anywhere** — you do not
+have to be standing in the room.
+
+**Click a square** and it opens: a panel with the place's number, a name,
+a description, notes, an image reference, and its picture — attach one,
+View it (rendered as lattice, the same look a locus's picture gets, Esc
+back), replace it or remove it — and the same take-out/put-back `X` does,
+usable on any square in the palace. A square that has been taken out
+stands as a faint **ghost** while the view is up, so there is something
+to click to put it back. Esc closes the panel; what you type is saved as
+you type it.
+
+**Drag a square onto another** and the two **trade numbers** — the loci
+standing in them stay where they are and wear the numbers their places
+now carry, and the colours travel with the numbers as they always do.
+Retyping the number in the panel is the same trade: the place wearing the
+number you asked for takes yours, so the palace stays dense and stays the
+same length — there is no way to type a hole into it. A trade is kept as
+the pair of place ids, a chain of swaps applied on top of the derived
+numbering, so it survives the turns and cuts that happen around it; a
+pair whose places are not both live waits rather than acts, and trading
+the same two squares straight back cancels the pair rather than growing
+the chain.
+
+A place's picture goes to the loci store under `place:<palace>:<id>`,
+which keeps a photograph out of localStorage for the same reason a
+locus's is (`src/loci.js`). It is the place's own — a note on the square —
+and is not part of the deck the platformer plays, which stays the loci's.
 
 #### Placing a locus
 

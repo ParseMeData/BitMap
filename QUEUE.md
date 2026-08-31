@@ -26,6 +26,15 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **The grid edited by hand: click a place, drag to trade, delete from
+  the panel, and writing on a place** — 2026-08-31. Clicking a square in
+  the minimal view opens #place from anywhere (name, description, notes,
+  image ref, a picture through the loci store, the number retypeable as a
+  trade, take out / put back); dragging one square onto another trades
+  their numbers, kept as a `swaps` chain of id pairs on top of the dense
+  numbering; taken-out squares stand as ghosts to be clicked back.
+  `hq.trace.<uid>` grew `swaps` and `data`. BUILD 240.
+
 - [x] **Turning a room, taking a place out, and the colour by last digit**
   — 2026-08-31. `[` `]` turn the room the walker is in one step clockwise
   round the ring; `X` takes the nearest place out or puts it back, refusing

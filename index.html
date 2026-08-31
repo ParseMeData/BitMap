@@ -755,7 +755,29 @@ body.towns #msg,body.towns #mapbar,body.towns #route,body.towns #palace,body.tow
 #locus span{text-transform:none;letter-spacing:.06em;font-size:11px}
 #locus em{color:var(--dim);font-style:normal}
 body.locus #hud,body.locus #keys,body.locus #palette,body.locus #inside,
-body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route{display:none}
+body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route,
+body.locus #place{display:none}
+/* one place on the grid, opened by clicking its square in the minimal view:
+   the fields for what stands there, and the number, which can be retyped to
+   trade with the place wearing it (src/trace.js) */
+#place{position:fixed;left:16px;top:62px;width:230px;z-index:8;padding:12px;
+  display:flex;flex-direction:column;gap:8px}
+#place .phead b{color:var(--gold)}
+#place .phead b span{font-variant-numeric:tabular-nums}
+#place .phead .btn{padding:4px 7px;font-size:8px}
+#place #plroom{color:var(--dim);font-size:9px;letter-spacing:.06em;text-transform:none;
+  flex:1;margin:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#place label{display:flex;flex-direction:column;gap:3px;color:var(--dim);
+  font-size:8px;letter-spacing:.14em;text-transform:uppercase}
+#place input[type=text],#place textarea{background:var(--well);border:1px solid rgba(237,234,227,.22);
+  color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.04em;text-transform:none}
+#place input[type=text]::placeholder,#place textarea::placeholder{color:var(--faint)}
+#place textarea{resize:vertical;min-height:34px}
+#place #plnum{width:64px;font-variant-numeric:tabular-nums}
+#place #plnum:disabled{color:var(--faint)}
+#place .plrow{display:flex;gap:6px}
+#place .plrow .btn{flex:1;padding:5px 7px;font-size:8px}
+#place .knote{text-align:center}
 /* while the plan is being moved, the tools that place things inside it are
    not just disabled — they are gone, because the promise is that nothing
    inside a room can be touched until the plan is settled.
@@ -819,6 +841,19 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="enterhint" class="glass" hidden></div>
 <div id="locus" class="glass" hidden></div>
 <input id="lfile" type="file" accept="image/*" hidden>
+<!-- one place on the grid, opened by clicking its square in the minimal
+     view (src/trace.js) -->
+<div id="place" class="glass" hidden>
+  <div class="phead"><b>Place <span id="plno">·</span></b><span id="plroom"></span><button class="btn" id="plclose">✕</button></div>
+  <label>Number<input id="plnum" type="text" inputmode="numeric" spellcheck="false"></label>
+  <label>Name<input id="plname" type="text" spellcheck="false" placeholder="what stands here"></label>
+  <label>Description<textarea id="pldesc" rows="3" spellcheck="false"></textarea></label>
+  <label>Notes<textarea id="plnote" rows="3" spellcheck="false"></textarea></label>
+  <label>Image ref<input id="plref" type="text" spellcheck="false" placeholder="url, or where it lives"></label>
+  <div class="plrow"><button class="btn" id="plpic">Attach picture</button><button class="btn" id="plview" hidden>View</button><button class="btn" id="plpicoff" hidden>Remove</button></div>
+  <div class="plrow"><button class="btn" id="plout">Take this place out</button></div>
+  <div class="knote">drag a square onto another to swap &middot; esc closes</div>
+</div>
 <div id="toast" hidden></div>
 <div id="wallhint">click and walk · T to tune</div>
 <div id="palette" class="glass" hidden></div>
@@ -1013,7 +1048,7 @@ var Users = (function(){
    async=false keeps them executing in order, and sitting at the end of <body>
    means the DOM they query is already parsed. */
 (function(){
-  var BUILD = 239, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 240, cb = '?cb=' + BUILD + '.' + Date.now();
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

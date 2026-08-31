@@ -43,6 +43,19 @@
    what it has had taken out live with the palace, under `hq.trace.<uid>`,
    beside which room the trace is up to.
 
+   ── the hand on the grid ──────────────────────────────────────────────
+   The grid is also edited by pointing at it, from anywhere — you do not
+   have to be standing in the room. CLICK a square and it opens: a name,
+   a description, notes, a picture and a reference for it, the number
+   itself, and the same take-out/put-back X does. DRAG a square onto
+   another and the two trade numbers — kept as the pair of place ids, a
+   chain of swaps applied on top of the derived numbering, so a trade
+   survives the turns and cuts that happen around it. A square that has
+   been taken out stands as a ghost while the view is up, so there is
+   something to click to put it back. What is typed lives in
+   `hq.trace.<uid>` beside the turns and cuts; a place's picture goes to
+   the loci store (src/loci.js) under `place:<palace>:<id>`.
+
    ── the trace ─────────────────────────────────────────────────────────
    The method walked one room at a time. The room you are up to wears its
    places whole and the rest of the palace wears theirs faint, and a LINE
@@ -106,7 +119,7 @@ const Trace = (() => {
   /* the turn each room is at and what each has had taken out, by the room's
      own id — read once per palace and kept until the palace is left, because
      the numbers are asked for on every frame and by every marker */
-  let cfgUid = '', turn = {}, gone = {};
+  let cfgUid = '', turn = {}, gone = {}, swaps = [], data = {};
 
   const rooms = () => G.shapes.filter(s => s.label && s.room)
     .sort((a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
@@ -170,7 +183,7 @@ const Trace = (() => {
      still means the room number. */
   function cfg(u){
     if (!u || cfgUid === u) return;
-    cfgUid = u; turn = {}; gone = {}; room = 1;
+    cfgUid = u; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
     const raw = Store.get(KEY(u)) || '';
     if (/^\d+$/.test(raw.trim())){ room = Math.max(1, parseInt(raw, 10) || 1); return; }
     let o = null;
@@ -179,10 +192,12 @@ const Trace = (() => {
     room = Math.max(1, o.room | 0 || 1);
     if (o.turn && typeof o.turn === 'object') turn = o.turn;
     if (o.gone && typeof o.gone === 'object') gone = o.gone;
+    if (Array.isArray(o.swaps)) swaps = o.swaps;
+    if (o.data && typeof o.data === 'object') data = o.data;
   }
   function save(){
     if (!cfgUid) return;
-    Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone}), 'the trace');
+    Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone, swaps, data}), 'the trace');
   }
   const turnOf = id => ((turn[id] | 0) % PER + PER) % PER;
   const goneOf = id => (Array.isArray(gone[id]) ? gone[id] : []);
@@ -225,6 +240,20 @@ const Trace = (() => {
                    side: g.side, k: g.k, cell: g.cell});
       }
       for (const q of seen) out.push(q);
+    }
+    /* the hand swaps ride on top, in the order they were made: each pair
+       trades whatever numbers its two places are wearing at that point in
+       the chain. A pair whose places are not both live WAITS rather than
+       acts — take one of them out and the trade is suspended, put it back
+       and it holds again. */
+    if (swaps.length){
+      const by = {};
+      for (const q of out) by[q.id] = q;
+      for (const pr of swaps){
+        const a = by[pr[0]], b = by[pr[1]];
+        if (!a || !b || !a.n || !b.n) continue;
+        const t = a.n; a.n = b.n; b.n = t;
+      }
     }
     return out;
   }
@@ -321,9 +350,30 @@ const Trace = (() => {
     return true;
   }
 
-  /* take the nearest place out, or put it back. A place with a locus
-     standing in it is refused rather than quietly emptied — the marker is
-     the work, and there is a Delete for it in build mode. */
+  /* take a place out, or put it back. A place with a locus standing in it
+     is refused rather than quietly emptied — the marker is the work, and
+     there is a Delete for it in build mode. `cut` is the keyboard's X and
+     acts on the nearest place in the room the walker is standing in; the
+     panel's button reaches `cutPlace` directly, with the place it is open
+     on, from anywhere. */
+  function cutPlace(q){
+    const list = goneOf(q.rid).slice(), at = list.indexOf(q.sq);
+    if (at >= 0){
+      list.splice(at, 1);
+      gone[q.rid] = list;
+      save(); reseat();
+      if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+      note('a place back · ' + count() + ' in the palace');
+      return true;
+    }
+    if (taken(q.id)){ note('a locus is standing there — take the locus out first'); return false; }
+    list.push(q.sq);
+    gone[q.rid] = list;
+    save(); reseat();
+    if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    note('place ' + q.n + ' out · ' + count() + ' in the palace');
+    return true;
+  }
   function cut(){
     if (!on) return false;
     const r = here();
@@ -336,22 +386,184 @@ const Trace = (() => {
       const d = Math.hypot(q.x - w[0], q.y - w[1]);
       if (d < bd){ bd = d; best = q; }
     }
-    const list = goneOf(r.room).slice(), at = list.indexOf(best.sq);
-    if (at >= 0){
-      list.splice(at, 1);
-      gone[r.room] = list;
-      save(); reseat();
-      if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
-      note('a place back · ' + count() + ' in the palace');
-      return true;
-    }
-    if (taken(best.id)){ note('a locus is standing there — take the locus out first'); return false; }
-    list.push(best.sq);
-    gone[r.room] = list;
+    return cutPlace(best);
+  }
+
+  /* one pair traded — a drag of one square onto another, or a number
+     retyped in the panel. The CHAIN is what is stored, so trading the same
+     two straight back cancels the pair rather than growing the list. */
+  function swap(aId, bId){
+    const last = swaps[swaps.length - 1];
+    if (last && ((last[0] === aId && last[1] === bId) ||
+                 (last[0] === bId && last[1] === aId))) swaps.pop();
+    else swaps.push([aId, bId]);
     save(); reseat();
     if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
-    note('place ' + best.n + ' out · ' + count() + ' in the palace');
+  }
+
+  /* ── the editor ─────────────────────────────────────────────────────────
+     One panel (#place in index.html), filled from the square that was
+     clicked. `edit` keeps only the place ID — the numbers move, so the
+     place is looked up fresh every time it is drawn or written to. The
+     fields land in `data[id]` beside the turns and cuts; the picture goes
+     to the loci store under `place:<palace>:<id>`, which keeps a
+     photograph out of localStorage for the same reason a locus's is
+     (src/loci.js). */
+  let edit = null, ui = null, saveT = 0;
+  const datum = id => data[id] || null;
+  function setDatum(id, field, v){
+    const d = data[id] || (data[id] = {});
+    if (v) d[field] = v; else delete d[field];
+    if (!Object.keys(d).length) delete data[id];
+    clearTimeout(saveT); saveT = setTimeout(save, 400);
+  }
+  const pkey = id => 'place:' + cfgUid + ':' + id;
+
+  function fill(){
+    if (!edit || !ui) return;
+    const q = slotId(edit.id);
+    if (!q){ closeEdit(); return; }
+    const r = rooms()[q.room - 1];
+    ui.no.textContent = q.n ? String(q.n) : '·';
+    ui.room.textContent = (r && r.label) || ('room ' + q.room);
+    ui.num.value = q.n ? String(q.n) : '';
+    ui.num.disabled = !q.n;
+    const has = typeof Loci !== 'undefined' && Loci.has(pkey(q.id));
+    ui.pic.textContent = has ? 'Replace picture' : 'Attach picture';
+    ui.view.hidden = !has;
+    ui.off.hidden = !has;
+    ui.out.textContent = q.n ? 'Take this place out' : 'Put this place back';
+  }
+  function wireEdit(){
+    const root = $('#place');
+    if (!root) return;
+    ui = {root,
+          no: root.querySelector('#plno'), room: root.querySelector('#plroom'),
+          num: root.querySelector('#plnum'), name: root.querySelector('#plname'),
+          desc: root.querySelector('#pldesc'), note: root.querySelector('#plnote'),
+          ref: root.querySelector('#plref'), pic: root.querySelector('#plpic'),
+          view: root.querySelector('#plview'), off: root.querySelector('#plpicoff'),
+          out: root.querySelector('#plout'), close: root.querySelector('#plclose')};
+    const field = (el, f) => el.addEventListener('input', () => {
+      if (edit) setDatum(edit.id, f, el.value.trim());
+    });
+    field(ui.name, 'name'); field(ui.desc, 'desc');
+    field(ui.note, 'note'); field(ui.ref, 'ref');
+    /* the number retyped IS a trade: the place wearing the number you
+       asked for takes yours, so the palace stays dense and stays the same
+       length — there is no way to type a hole into it */
+    const renumber = () => {
+      const q = edit && slotId(edit.id);
+      if (!q || !q.n) return;
+      const want = parseInt(ui.num.value, 10);
+      if (!want || want === q.n){ ui.num.value = String(q.n); return; }
+      const t = slotN(want);
+      if (!t){ note('the palace is ' + count() + ' places long'); ui.num.value = String(q.n); return; }
+      note('place ' + q.n + ' and place ' + want + ' traded numbers');
+      swap(q.id, t.id);
+      fill();
+    };
+    ui.num.addEventListener('change', renumber);
+    ui.num.addEventListener('keydown', e => { if (e.key === 'Enter') renumber(); });
+    ui.pic.addEventListener('click', () => { if (edit) Loci.pick({uid: pkey(edit.id)}); });
+    ui.view.addEventListener('click', () => {
+      if (!edit) return;
+      const q = slotId(edit.id), d = datum(edit.id) || {};
+      Loci.show({uid: pkey(edit.id), n: q ? q.n : 0, name: d.name || ''});
+    });
+    ui.off.addEventListener('click', () => {
+      if (edit) Loci.detach({uid: pkey(edit.id)});
+      fill();
+    });
+    ui.out.addEventListener('click', () => {
+      const q = edit && slotId(edit.id);
+      if (q) cutPlace(q);
+      fill();
+    });
+    ui.close.addEventListener('click', () => closeEdit());
+    /* Esc pressed while typing never reaches the game's keydown (it skips
+       inputs), so the panel answers it itself */
+    root.addEventListener('keydown', e => {
+      if (e.key === 'Escape'){ e.stopPropagation(); closeEdit(); }
+    });
+  }
+  function openEdit(q){
+    if (!ui) wireEdit();
+    if (!ui) return;
+    edit = {id: q.id};
+    const d = datum(q.id) || {};
+    ui.name.value = d.name || ''; ui.desc.value = d.desc || '';
+    ui.note.value = d.note || ''; ui.ref.value = d.ref || '';
+    fill();
+    ui.root.hidden = false;
+  }
+  function closeEdit(){
+    if (!edit) return false;
+    edit = null;
+    if (ui) ui.root.hidden = true;
     return true;
+  }
+  /* loci.js says when a picture has landed, so an open panel can say so */
+  function picture(u){
+    if (edit && ui && u === pkey(edit.id)) fill();
+  }
+
+  /* ── the pointer on the grid ────────────────────────────────────────────
+     Capture-phase on the window, the way the compass takes its drag
+     (src/compass.js): only a press that lands on a square is taken, so
+     build mode and everything under the view lose nothing. A CLICK opens
+     the place; a DRAG that ends on another live square trades their
+     numbers. */
+  let press = null, dragQ = null, dragAt = null, dragX = 0, dragY = 0;
+  const evWorld = ev => {
+    const b = canvas.getBoundingClientRect(), k = VW / (b.width || 1);
+    return [((ev.clientX - b.left) * k - VW / 2) / G.cam[2] + G.cam[0],
+            ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]];
+  };
+  function squareAt(x, y){
+    for (const q of places())
+      if (x >= q.x0 && x <= q.x0 + q.side && y >= q.y0 && y <= q.y0 + q.side)
+        return q;
+    return null;
+  }
+  function wire(){
+    addEventListener('pointerdown', e => {
+      if (!on || e.button !== 0 || e.target !== canvas || G.paused) return;
+      if (typeof Interior === 'undefined' || !Interior.inside()) return;
+      if (typeof Loci !== 'undefined' && Loci.opened()) return;
+      const w = evWorld(e), q = squareAt(w[0], w[1]);
+      if (!q) return;
+      press = {q, x: w[0], y: w[1]};
+      dragQ = null; dragAt = null;
+      e.stopPropagation(); e.preventDefault();
+    }, true);
+    addEventListener('pointermove', e => {
+      if (!press) return;
+      const w = evWorld(e);
+      dragX = w[0]; dragY = w[1];
+      /* a ghost is clicked back, never dragged — it has no number to trade */
+      if (!dragQ && press.q.n &&
+          Math.hypot(w[0] - press.x, w[1] - press.y) > press.q.side * 0.35)
+        dragQ = press.q;
+      if (dragQ){
+        const t = squareAt(w[0], w[1]);
+        dragAt = t && t.id !== dragQ.id && t.n ? t : null;
+      }
+      e.stopPropagation();
+    }, true);
+    const up = e => {
+      if (!press) return;
+      if (dragQ && dragAt){
+        note('place ' + dragQ.n + ' and place ' + dragAt.n + ' traded numbers');
+        swap(dragQ.id, dragAt.id);
+        if (edit) fill();
+      }
+      else if (!dragQ) openEdit(press.q);
+      press = null; dragQ = null; dragAt = null;
+      e.stopPropagation();
+    };
+    addEventListener('pointerup', up, true);
+    addEventListener('pointercancel', () => { press = null; dragQ = null; dragAt = null; }, true);
   }
 
   /* what this room's trace is: the box and the line — built once per room
@@ -395,8 +607,19 @@ const Trace = (() => {
     /* every room's places, the room you are up to whole and the rest faint —
        the grid is the view, and which room the trace has reached is said by
        weight rather than by drawing only one of them. A place that has been
-       taken out is not drawn at all: it is not a place. */
-    for (const q of slots()){
+       taken out is not a place, but while the view is up it stands as a
+       GHOST — the dim tone, no number — because the hand needs something
+       to click to put it back. */
+    for (const q of places()){
+      if (!q.n){
+        const gh = q.room === p.room ? 0.12 : 0.05;
+        for (let j = 0; j < q.k; j++) for (let i = 0; i < q.k; i++){
+          if (m > cap - 4) return m;
+          m = put(a, m, q.x0 + (i + 0.5) * q.cell, q.y0 + (j + 0.5) * q.cell,
+                  TONES[7][0], TONES[7][1], TONES[7][2], gh, q.cell, 0, 0, 0, 1);
+        }
+        continue;
+      }
       const mine = q.room === p.room;
       const al = mine ? 0.92 : 0.3;
       /* the tone is the NUMBER's, not the square's, so it travels with the
@@ -416,6 +639,24 @@ const Trace = (() => {
       if (r * z > 3)
         m = num(a, m, q.n, q.x0 + q.side * 0.32, q.y0 + q.side * 0.30, r,
                 bow ? BONE : ink(t), mine ? 0.95 : 0.5, cap);
+    }
+
+    /* the hand: a ring on the place whose panel is open, and while a
+       square is being dragged, a ring on it, a ring riding the pointer,
+       and a heavier one on the square it would trade with */
+    if (edit && m <= cap - 4){
+      const q = slotId(edit.id);
+      if (q) m = put(a, m, q.x, q.y, GOLD[0], GOLD[1], GOLD[2], 0.8,
+                     Math.max(q.side * 0.75, 10 * px), 1, 0, 0, 1);
+    }
+    if (dragQ && m <= cap - 12){
+      m = put(a, m, dragQ.x, dragQ.y, GOLD[0], GOLD[1], GOLD[2], 0.45,
+              Math.max(dragQ.side * 0.7, 9 * px), 1, 0, 0, 1);
+      if (dragAt)
+        m = put(a, m, dragAt.x, dragAt.y, GOLD[0], GOLD[1], GOLD[2], 0.9,
+                Math.max(dragAt.side * 0.8, 11 * px), 1, 0, 0, 1);
+      m = put(a, m, dragX, dragY, GOLD[0], GOLD[1], GOLD[2], 0.8,
+              Math.max(G.A.cell * 2, 7 * px), 1, 0, 0, 1);
     }
 
     /* the line: aqua dots a cell and a half apart, the plate's route
@@ -457,12 +698,13 @@ const Trace = (() => {
       note('minimal is a view of a plan — go inside a place first'); return false;
     }
     on = !on;
+    if (!on) closeEdit();
     if (on){ uid = Interior.uid(); cfg(uid); plan = null; }
     Build.setMinimal(on);
     if (typeof restampTerrain === 'function') restampTerrain();
     const p = on ? build() : null;
     note(on ? (p ? 'minimal · room ' + p.room + ' of ' + p.of + ' · ' + count() +
-                   ' places · [ ] turn · X out'
+                   ' places · [ ] turn · X out · click a place to open it · drag to swap'
                  : 'minimal · this plan has no rooms to trace')
             : 'the plan as it was');
     return on;
@@ -472,13 +714,19 @@ const Trace = (() => {
      because the next palace's turns and cuts are not this one's — and a
      marker asks for its number the moment its plan is mounted. */
   function off(){
-    on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; room = 1;
+    closeEdit();
+    on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
     if (typeof Build !== 'undefined') Build.setMinimal(false);
   }
   function reset(){ room = 1; plan = null; if (cfgUid) save(); }
 
+  wire();
+
   return {toggle, off, reset, overlay, step, rotate, cut, reseat,
           slots, places, slotN, slotId, numberOf, count, drop,
+          /* the panel: game.js walks Esc through it, loci.js says when a
+             picture has landed */
+          editing: () => !!edit, closeEdit, picture,
           /* the numbers are asked for by markers.js while the view is down,
              so the palace's turns and cuts have to be readable then too */
           mount: u => cfg(u), per: () => PER,

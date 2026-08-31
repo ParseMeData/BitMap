@@ -124,6 +124,9 @@ const Loci = (() => {
       .then(shrink)
       .then(url => store(mk.uid, url).then(() => {
         cache[mk.uid] = url; have[mk.uid] = 1;
+        /* a place's picture lands here too — the grid's editor keys them
+           `place:<palace>:<id>` and its panel wants telling (src/trace.js) */
+        if (typeof Trace !== 'undefined' && Trace.picture) Trace.picture(mk.uid);
         if (open && open.mk === mk) show(mk);      // the picker was opened from the preview
         else if (Build.active()) Build.sync();
         return true;

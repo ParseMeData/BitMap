@@ -22,9 +22,50 @@ queue, or on something that would destroy the town.
 
 ## Queue
 
+(v8.4 is a polish version — Eden, 2026-08-31: "functionality and user
+interface smoothness and back end cleanliness. Essentially I want this to
+feel smoother and not laggy or glitchy". Measure before and after where a
+claim is about speed.)
+
+- [ ] **`places()` stops being rebuilt on every ask.** In the minimal view
+  it is rebuilt several times a frame (overlay, reseat, the markers) and on
+  every pointermove of a drag; each rebuild filters and sorts the shapes,
+  redoes the grid geometry and allocates ~90 objects — steady GC churn.
+  Memoise it for the length of one task (cleared on a microtask, and
+  eagerly by every mutator), so one frame computes it once. Measure the
+  cost per frame before and after on the v8.3 town.
+- [ ] **A drag released off the grid no longer trades.** The drop target is
+  the last square the pointer moved over, so releasing in empty space after
+  passing a square still swaps. Hit-test at the release point.
+- [ ] **Grid edits join the undo stack.** Turns, cuts, trades and the typed
+  fields bypass history — one stray drag has no ctrl-z. Add the trace key
+  to the palace scope's snapshot ({s, m, t}), restore it in apply() before
+  the markers remount, and have trace edits call History.step/tap.
+- [ ] **The swap chain compacts.** Trades append forever; on leaving a
+  palace, flatten the chain to the fewest pairs that give the same
+  numbering — but only when no pair is suspended (referencing a taken-out
+  or vanished place), because a suspended trade's meaning depends on its
+  position in the chain.
+- [ ] **sw.js VERSION derives from BUILD.** It had lagged seven builds
+  behind. Register the worker as `sw.js?b=BUILD` and read the version off
+  the worker's own URL — a new build is then a byte-different worker URL,
+  which is also what makes the browser replace it.
+- [ ] **The sweep learns the new keys.** `tools/snapshot.py sweep` predates
+  build 240: teach it place pictures (`locus:place:<palace>:<id>`) and
+  `hq.trace.<uid>` for markers that no longer exist, and place data for
+  rooms that are gone. Report, remove only on the word, as it already does.
+- [ ] **Audits, alongside:** whether syncUI rebuilds list DOM wholesale
+  during drags (patch rows if so); touch on actual glass is noted for Eden
+  — drag-to-swap, the place panel and the build grips are the three to try.
+
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **The web stops re-downloading the game every visit** — 2026-08-31.
+  The cache-buster is `?cb=BUILD` over http(s), `?cb=BUILD.Date.now()` only
+  on file://; between builds the browser cache now holds on Pages. BUILD
+  242.
 
 - [x] **The grid edited by hand: click a place, drag to trade, delete from
   the panel, and writing on a place** — 2026-08-31. Clicking a square in

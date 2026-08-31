@@ -1043,12 +1043,17 @@ var Users = (function(){
   return {load, save, check, setPassword, current, signIn, signOut, name, hash};
 })();
 
-/* Load every source with a per-load cache buster. A browser that has cached an
-   older build cannot serve it back to us: the URL is different every time.
-   async=false keeps them executing in order, and sitting at the end of <body>
-   means the DOM they query is already parsed. */
+/* Load every source with a cache buster. On file:// it changes every load —
+   a browser that has cached an older build cannot serve it back to us, which
+   is what the working rule needs on the rig. Over http(s) it is the BUILD
+   alone: the URL still changes on every real build, and between builds the
+   browser cache holds, so the web version stops re-fetching ~45 files and
+   the map assets on every visit. async=false keeps them executing in order,
+   and sitting at the end of <body> means the DOM they query is already
+   parsed. */
 (function(){
-  var BUILD = 241, cb = '?cb=' + BUILD + '.' + Date.now();
+  var BUILD = 242, cb = '?cb=' + BUILD +
+    (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
   function door(){

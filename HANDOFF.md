@@ -76,7 +76,43 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 31 Aug 2026, build 241 (tag **v8.3** at 241)
+## Where we are — 31 Aug 2026, build 248 (tag **v8.3** at 241)
+
+- **Builds 242–248 (31 Aug 2026) — the v8.4 polish run.** Eden: *"I just
+  want to focus on functionality and user interface smoothness and back
+  end cleanliness. Essentially I want this to feel smoother and not laggy
+  or glitchy"*. Seven queue items, worked run-through; every claim about
+  speed was measured on the v8.3 town in a throwaway profile first.
+
+  **242** — the web stops re-downloading the game every visit: the
+  cache-buster is `?cb=BUILD` over http(s) (per-load `Date.now()` only on
+  file://), so Pages serves from cache between builds.
+  **243** — `places()` memoised for one task: measured 0.0085 ms a call,
+  so the cost was the ~90 allocations an ask, several a frame — not the
+  time. The memo drops on a microtask and eagerly in every mutator; its
+  clearer is `forget`, because `drop` was already the marker-drop
+  resolver.
+  **244** — a drag released off the grid no longer trades: the trade is
+  judged by a hit-test where the button came up.
+  **245** — grid edits join the undo stack: a palace scope's snapshot is
+  `{s, m, t}`, the trace restored before the markers remount; turns, cuts
+  and trades step, typing taps; ctrl-z answers in the minimal view. Found
+  on the way (pre-existing): Interior.enter stamped History's entry while
+  the scope was half mounted — this plan's shapes with the town's markers
+  — so a gesture before the first quiet-period tap had no "before". The
+  entry is now stamped after Markers.mount.
+  **246** — the swap chain compacts at the door: fewest pairs that spell
+  the same permutation, and a chain holding a suspended pair waits as it
+  is.
+  **247** — sw.js's VERSION rides the worker's own URL (`sw.js?b=BUILD`),
+  so it cannot lag the build again (it had lagged seven).
+  **248** — the index and sweep learn the new keys: `hq.trace.<uid>`
+  everywhere the other palace prefixes go, and place pictures — which the
+  index had been miscounting as orphans since 240. A deleted room's
+  residue in the trace key is groomed on the way out, never against an
+  empty plan. Audited: no DOM is rebuilt during drags (syncRoute's
+  wholesale rebuild runs at gesture ends only); touch on glass stays an
+  open thread.
 
 - **Build 241 (31 Aug 2026) — tag v8.3.** The version cut on Eden's word,
   one build after the hand-edited grid: `snapshots/v8.3.json` beside the

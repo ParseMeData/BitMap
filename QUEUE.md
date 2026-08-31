@@ -27,13 +27,18 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **Audits, alongside:** whether syncUI rebuilds list DOM wholesale
-  during drags (patch rows if so); touch on actual glass is noted for Eden
-  — drag-to-swap, the place panel and the build grips are the three to try.
 
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **Audits** — 2026-08-31. syncUI/syncRoute DO rebuild the route list
+  wholesale (`box.innerHTML = ''`), but only at gesture start and end —
+  the pointermove path during a drag touches no DOM (marker drags do
+  moveTo + htap and return), so there is nothing to patch for smoothness.
+  Touch on actual glass remains for Eden (already an open thread):
+  drag-to-swap, the place panel and the build grips are the three to try.
+  No build — nothing changed.
 
 - [x] **The sweep learns the new keys** — 2026-08-31. The index knows
   `hq.trace.<uid>` (watched, carried on the palace record, swept with the

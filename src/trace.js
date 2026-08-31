@@ -443,6 +443,41 @@ const Trace = (() => {
     hstep();
   }
 
+  /* ── compacting the chain ───────────────────────────────────────────────
+     Trades append forever, and a session of dragging can leave a chain far
+     longer than the permutation it spells. On the way out of the palace it
+     is folded to the fewest pairs that give the same numbering — a cycle
+     walk, so the count is exactly what the permutation needs. Only when no
+     pair is SUSPENDED: a pair whose places are not both live acts by where
+     it sits in the chain, and folding around it would change what it does
+     when its place comes back. A chain with one waits as it is. */
+  function compact(){
+    if (!cfgUid || !swaps.length) return;
+    for (const pr of swaps){
+      const a = slotId(pr[0]), b = slotId(pr[1]);
+      if (!a || !b || !a.n || !b.n) return;
+    }
+    const want = {};
+    for (const q of slots()) want[q.id] = q.n;
+    const hold = swaps;
+    swaps = []; forget();
+    const num = {}, wear = {};
+    for (const q of slots()){ num[q.id] = q.n; wear[q.n] = q.id; }
+    swaps = hold; forget();
+    const flat = [];
+    for (const k of Object.keys(want)){
+      const id = +k, goal = want[id];
+      if (num[id] === goal) continue;
+      const other = wear[goal], was = num[id];
+      flat.push([id, other]);
+      num[id] = goal; num[other] = was;
+      wear[goal] = id; wear[was] = other;
+    }
+    if (flat.length < hold.length){
+      swaps = flat; forget(); save();
+    }
+  }
+
   /* ── the editor ─────────────────────────────────────────────────────────
      One panel (#place in index.html), filled from the square that was
      clicked. `edit` keeps only the place ID — the numbers move, so the
@@ -766,6 +801,7 @@ const Trace = (() => {
      because the next palace's turns and cuts are not this one's — and a
      marker asks for its number the moment its plan is mounted. */
   function off(){
+    compact();
     closeEdit();
     on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
     forget();

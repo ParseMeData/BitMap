@@ -27,11 +27,6 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
-- [ ] **The swap chain compacts.** Trades append forever; on leaving a
-  palace, flatten the chain to the fewest pairs that give the same
-  numbering — but only when no pair is suspended (referencing a taken-out
-  or vanished place), because a suspended trade's meaning depends on its
-  position in the chain.
 - [ ] **sw.js VERSION derives from BUILD.** It had lagged seven builds
   behind. Register the worker as `sw.js?b=BUILD` and read the version off
   the worker's own URL — a new build is then a byte-different worker URL,
@@ -47,6 +42,12 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **The swap chain compacts on the way out** — 2026-08-31. Leaving a
+  palace folds the chain to the fewest pairs that spell the same
+  permutation (a cycle walk); a chain holding a suspended pair waits as it
+  is. Verified: five redundant trades folded to the one transposition they
+  amounted to, numbering identical on re-entry. BUILD 246.
 
 - [x] **Grid edits join the undo stack** — 2026-08-31. A palace scope's
   snapshot is `{s, m, t}` — the trace key beside the shapes and markers —

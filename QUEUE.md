@@ -26,6 +26,18 @@ queue, or on something that would destroy the town.
 
 (ticked items move here with the date)
 
+- [x] **Turning a room, taking a place out, and the colour by last digit**
+  — 2026-08-31. `[` `]` turn the room the walker is in one step clockwise
+  round the ring; `X` takes the nearest place out or puts it back, refusing
+  one a locus is standing in. Numbering is dense and continuous across the
+  palace, so a cut in room 1 moves every later number down and the next
+  room starts lower. A place now has an ID (`room * 8 + square`) and the
+  marker keys on that, not on the number, which moves. Colour is the
+  number's last digit — 1 white … 8 black, 9 gold, 0 a rainbow of the
+  square's own cells in hue order. `hq.trace.<uid>` became
+  `{room, turn, gone}`. `src/trace.js`, `src/markers.js`, `src/game.js`,
+  `src/build.js`, `src/interior.js`. BUILD 239.
+
 - [x] **Eight numbered slots a room, and the view down to just them** —
   2026-08-30. Asked as nine; Eden cut the middle square while it was being
   built, so a room is a 3×3 grid with the centre left out — `1 2 3 / 4 · 5

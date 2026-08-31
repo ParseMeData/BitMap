@@ -10,11 +10,13 @@
    cell of that sheet to cut from (see mode 3 in render.js).
 
    Inside a palace a marker is not pinned anywhere it likes: it lands in one
-   of the room's eight SLOTS and wears that slot's number (src/trace.js).
-   `m.slot` is the whole of what it keeps — an absolute address in the
-   building, `(room − 1) * 8 + i` — and 0 means a marker with no slot, which
-   is every marker out on the town and every locus placed before the slots
-   existed. */
+   of the room's eight PLACES and wears the number that place is carrying
+   (src/trace.js). What it keeps is `m.slot`, the place's ID — `room * 8 +
+   square`, the geometry — and NOT the number, because the numbers move: turn
+   a room or take a place out of an earlier one and every number after it
+   shifts. `m.n` is read back off the place whenever the markers are
+   renumbered. 0 means a marker with no place, which is every marker out on
+   the town. */
 
 const Markers = (() => {
   const WANT = ['☇', '❍', '▲', '〄', '⎋', '⚆', '☾',
@@ -119,12 +121,12 @@ const Markers = (() => {
         if (typeof hqNote === 'function') hqNote('eight places is a room — this one is full', false);
         return null;
       }
-      if (s){ slot = s.n; x = s.x; y = s.y; }
+      if (s){ slot = s.id; x = s.x; y = s.y; }
     }
     if (typeof Stock !== 'undefined' && !Stock.pay('marker')) return null;
     const m = {id: nextId++, uid: mint(), name: '', gi: armed,
                x: slot ? x : snap(x), y: slot ? y : snap(y), slot: slot,
-               size: grid() * 0.8, tint: 0, n: slot || G.markers.length + 1};
+               size: grid() * 0.8, tint: 0, n: G.markers.length + 1};
     G.markers.push(m);
     sel = m;
     renumber();
@@ -154,30 +156,39 @@ const Markers = (() => {
 
      Inside a palace the number is the SLOT — the place in the building, not
      a position in a list — so it is not inferred from where a marker sits
-     and it is not kept dense: take the third of eight out of its room and
-     the other seven keep the numbers they had, because the room did not
-     change shape. Out on the town, where there are no slots, it stays what it always
+     and it is DENSE and continuous across the whole building: the rooms are
+     walked in their order, each room's live places in theirs, and the count
+     never skips. Take a place out of the first room and every number after
+     it comes down by one, the next room included. Out on the town, where there are no slots, it stays what it always
      was: dense, 1-based, and yours to reorder by hand. */
   const ordered = () => (G.markers || []).slice().sort(
     (a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
   function renumber(){
-    /* Anything without a slot — every marker on the town, and a locus placed
-       inside a palace before the slots existed — is numbered densely AFTER
-       the last slot the plan has, so a free marker can never wear a number
-       a slot already owns. Nothing migrates the old ones; a locus takes a
-       slot the moment it is next dragged, and not before. */
+    /* A locus in a place wears the number that place is carrying TODAY —
+       asked of the plan rather than remembered, because turning a room or
+       taking a place out of an earlier one moves every number after it.
+       The plan has to actually be mounted before it can be asked: entering
+       a palace mounts the markers BEFORE the shapes, so `Interior.inside()`
+       is true a moment before `G.shapes` is the plan. */
     let base = 0;
-    for (const m of G.markers || []) if (m.slot > base) base = m.slot;
-    /* the plan has to actually be mounted before it can be asked how long
-       it is: entering a palace mounts the markers BEFORE the shapes, so
-       `Interior.inside()` is true a moment before `G.shapes` is the plan */
     if (typeof Interior !== 'undefined' && Interior.inside() && typeof Trace !== 'undefined' &&
-        typeof Kinds !== 'undefined' && Kinds.scope() === 'floor')
-      base = Math.max(base, Trace.count());
-    const list = ordered();
+        typeof Kinds !== 'undefined' && Kinds.scope() === 'floor'){
+      const at = {};
+      for (const q of Trace.places()) at[q.id] = q.n;
+      for (const m of G.markers || []) if (m.slot){
+        const n = at[m.slot] || 0;
+        /* its place has been taken out from under it, or its room is gone:
+           it is a locus with no spot in the method until it is dropped in
+           one, so it goes loose rather than keeping a number that is a lie */
+        if (n) m.n = n; else m.slot = 0;
+      }
+      base = Trace.count();
+    }
+    /* Anything without a place — every marker on the town, and a locus that
+       has come loose — is numbered densely AFTER the last of them, so a free
+       marker can never wear a number a place already owns. */
     let k = 0;
-    for (const m of list) if (m.slot) m.n = m.slot;
-    for (const m of list) if (!m.slot) m.n = base + (++k);
+    for (const m of ordered()) if (!m.slot) m.n = base + (++k);
   }
   /* move one marker `d` places along the run, and close the hole behind it */
   function reorder(m, d){
@@ -186,11 +197,11 @@ const Markers = (() => {
        at the head of its own, and whatever was standing there takes the slot
        it came from. That is what makes the sequence walkable. */
     if (m.slot && typeof Trace !== 'undefined'){
-      const to = Trace.slotN(m.slot + d), from = Trace.slotN(m.slot);
+      const to = Trace.slotN((m.n | 0) + d), from = Trace.slotId(m.slot);
       if (!to || !from) return false;
-      const held = (G.markers || []).find(x => x !== m && x.slot === to.n);
-      if (held){ held.slot = from.n; held.x = from.x; held.y = from.y; }
-      m.slot = to.n; m.x = to.x; m.y = to.y;
+      const held = (G.markers || []).find(x => x !== m && x.slot === to.id);
+      if (held){ held.slot = from.id; held.x = from.x; held.y = from.y; }
+      m.slot = to.id; m.x = to.x; m.y = to.y;
       renumber();
       save();
       return true;
@@ -228,7 +239,7 @@ const Markers = (() => {
       /* a full room will not take it: the marker simply stops at the wall,
          which says so better than a note repeated every frame of the drag */
       if (s && s.full) return;
-      if (s){ m.slot = s.n; m.x = s.x; m.y = s.y; renumber(); save(); return; }
+      if (s){ m.slot = s.id; m.x = s.x; m.y = s.y; renumber(); save(); return; }
       /* dragged clear of every room it is out of the sequence, and is
          numbered after the slots until it is dropped back into one */
       if (m.slot){ m.slot = 0; renumber(); }
@@ -359,6 +370,9 @@ const Markers = (() => {
        gives the sequence they were placed in, which is the best guess there
        is and is what you would reorder from anyway */
     if (G.markers.some(m => !m.n)){ renumber(); minted = true; }
+    /* and a locus in a place is renumbered on the way in whatever it was
+       saved wearing: the number belongs to the plan, not to the marker */
+    else if (G.markers.some(m => m.slot)) renumber();
     if (minted) save();
   }
   /* swap which set of markers is pinned — see interior.js */

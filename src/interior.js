@@ -64,8 +64,12 @@ const Interior = (() => {
       clock: G.clock, steps: G.steps, over: G.over, msg: G.msg
     });
     Basemap.suspend(true);
-    Markers.mount(MKEY(mk.uid));
     Build.mount('floor', SKEY(mk.uid));
+    /* the shapes before the markers, and the palace's turns and cuts before
+       both: a locus reads its number off a place (src/trace.js), so the plan
+       and what the palace remembers about it have to be there to be asked */
+    if (typeof Trace !== 'undefined') Trace.mount(mk.uid);
+    Markers.mount(MKEY(mk.uid));
     /* a floor plan is never drawn over the printed map, whatever the plate
        is set to outside — and the flag is not written back, so coming out
        finds the town exactly as it was left */

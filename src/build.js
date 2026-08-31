@@ -1791,8 +1791,10 @@ const Build = (() => {
         document.body.classList.remove('arming');
         syncUI();
       }
-      else if (e.code === 'BracketLeft') scaleSel(1 / 1.15);
-      else if (e.code === 'BracketRight') scaleSel(1.15);
+      /* the minimal view turns the room with these while it is up, and you
+         cannot see a shape to scale it in there anyway (src/trace.js) */
+      else if (e.code === 'BracketLeft' && !(typeof Trace !== 'undefined' && Trace.on())) scaleSel(1 / 1.15);
+      else if (e.code === 'BracketRight' && !(typeof Trace !== 'undefined' && Trace.on())) scaleSel(1.15);
       else if (e.code === 'Tab' && e.shiftKey){        // step through the layers
         e.preventDefault();
         const i = layerIndex(layer);

@@ -1,61 +1,73 @@
 'use strict';
-/* ── minimal, the slots, and the trace ──────────────────────────────────
+/* ── minimal, the places, and the trace ─────────────────────────────────
    Inside a palace, V takes the plan down to its walls: the floor and the
    fittings are not drawn and the fittings do not block, so what is left is
    the layout — rooms, windows, doors, stairs — and, in every room, its
-   EIGHT SLOTS.
+   PLACES.
 
-   A slot is a place in the method. Each room carries a 3×3 grid with the
-   MIDDLE SQUARE LEFT OUT — eight squares round the edge of the room,
-   numbered left to right and top to bottom — and a room holds eight loci
-   and no more. The middle is where the walker stands and where the line
-   runs, and a place there would be a place you have to stand on top of to
-   look at. The numbering runs on across the palace — room two's first slot
-   is 9 — so a plan of five rooms is a sequence of 40 and the palace's
-   length is a fact about the building rather than however many markers
-   happen to be pinned in it. `slotN` turns that number back into a place,
-   which is what makes the sequence a thing you can walk.
+   A place is a spot in the method. Each room carries a 3×3 grid with the
+   MIDDLE SQUARE LEFT OUT — eight squares round the edge — and the middle
+   is where the walker stands and where the line runs, so a place there
+   would be one you have to stand on top of to look at.
 
-   A marker dropped inside a room lands in the nearest slot nothing is
-   standing in, and wears that slot's number: the order is the geography,
-   so moving a locus up the list moves it through the building.
+   ── the number ────────────────────────────────────────────────────────
+   The numbering RUNS ON across the palace and is dense: the rooms are
+   walked in their order, each room's live squares are walked in theirs,
+   and the count never stops or skips. Delete two places from the first
+   room and it holds 1–6, so the second room starts at 7. How long a
+   palace is is `count()`, and it is a fact about the building.
 
-   Each square is a block of the plate's own cells in one of eight plate
-   tones — the same material as everything else, by the rule in STYLE.md,
-   and no new colour: 1 white, 2 green, 3 pink, 4 blue, 5 orange, 6 red,
-   7 yellow, 8 black.
+   Because the numbers move, a marker CANNOT key on one. What a locus
+   keeps is a PLACE ID — `room * 8 + square`, stable under every rotation,
+   deletion and renumbering that can happen around it — and its number is
+   read off the place each time it is asked for.
 
-   The trace is that method walked one room at a time. The room you are up
-   to wears its eight whole and the rest of the palace wears theirs faint,
-   and a LINE is drawn through the room you are in: from where you come in
-   (the side it shares with the room before it) through every fitting in
-   the order it was laid, to where you go out (the side it shares with the
-   next room; the middle for the last). The fittings are not drawn; the
-   line goes where they stand, and it is drawn faint, because the slots are
-   the subject and the line is only the thread between them. Walk to its
-   end and the room is done: the whole view moves on to the next room, and
-   so on to the last. Which room you are up to is kept per palace under
-   `hq.trace.<uid>`, so a trace put down is picked up again. V again shows
-   the plan as it was.
+   ── the colour ────────────────────────────────────────────────────────
+   A tone belongs to a NUMBER, not to a square: the colour travels with the
+   number when the grid is turned or a place is taken out, so 1, 11, 21 and
+   31 are the same white wherever in the building they land. It is the
+   number's LAST DIGIT that says which:
+
+       1 white   2 green   3 pink   4 blue    5 orange
+       6 red     7 yellow  8 black  9 gold    0 rainbow
+
+   and every one of them is a colour the game already has (STYLE.md).
+   0 is a RAINBOW — the square's own cells laid in hue order across its
+   diagonal, red, orange, gold, yellow, green, blue, pink — which is the
+   ten's own mark and needs no colour that is not already on the plate.
+
+   ── turning a room, and taking a place out ────────────────────────────
+   `[` and `]` turn the room you are standing in one step round its ring,
+   so the same eight squares carry the numbers in another arrangement;
+   `X` takes the nearest place out, or puts it back. A room's turn and
+   what it has had taken out live with the palace, under `hq.trace.<uid>`,
+   beside which room the trace is up to.
+
+   ── the trace ─────────────────────────────────────────────────────────
+   The method walked one room at a time. The room you are up to wears its
+   places whole and the rest of the palace wears theirs faint, and a LINE
+   is drawn through the room you are in: from where you come in (the side
+   it shares with the room before it) through every fitting in the order it
+   was laid, to where you go out (the side it shares with the next room;
+   the middle for the last). The fittings are not drawn; the line goes
+   where they stand, and it is drawn faint, because the places are the
+   subject and the line is only the thread between them. Walk to its end
+   and the room is done: the whole view moves on to the next room, and so
+   on to the last. V again shows the plan as it was.
 
    The grid is an overlay in the entity stream, not shapes in the plan:
-   nothing here is saved into `hq.rooms.<uid>` and nothing here survives
-   leaving the building except the number. What a marker keeps is its slot,
-   and that lives with the marker.                                       */
+   nothing here is saved into `hq.rooms.<uid>`.                          */
 
 const Trace = (() => {
   const KEY = uid => 'hq.trace.' + uid;
-  /* the eight, in order, and every one of them a colour the game already
-     has (STYLE.md: do not introduce a colour). 1–6 are the focus row's
-     first six. 7 is gold pulled half way toward bone — the palette holds
-     one amber, so yellow is that amber at a lighter weight, the same device
-     focus.js uses when it pulls a tone toward dim; a quarter of the way was
-     not enough and read as the amber twice. 8 is dim rather than black: the
+  /* the ten, by last digit, and every one of them a colour the game
+     already has (STYLE.md: do not introduce a colour). 1–6 are the focus
+     row's first six. 7 is gold pulled HALF WAY toward bone — the palette
+     holds one amber, so yellow has to be that amber at a lighter weight,
+     the device focus.js uses when it pulls a tone toward dim; a quarter of
+     the way read as the amber twice. 8 is dim rather than black: the
      ground is #1B1B21, so a true black square would be a hole in a
-     near-black floor and read as nothing at all.
-
-     Gold is not a slot. It stays what it was — the tone the end of the line
-     wears — which is worth more than a ninth place would have been. */
+     near-black floor. 9 is gold whole. */
   const TONES = [[0.929, 0.918, 0.890],    // 1 white   bone   #EDEAE3
                  [0.482, 0.722, 0.435],    // 2 green   park   #7BB86F
                  [1.000, 0.373, 0.635],    // 3 pink    flare  #FF5FA2
@@ -63,17 +75,38 @@ const Trace = (() => {
                  [0.765, 0.604, 0.361],    // 5 orange  stairs #C39A5C
                  [0.580, 0.220, 0.247],    // 6 red     rug    #94383F
                  [0.939, 0.838, 0.598],    // 7 yellow  gold → bone .5
-                 [0.353, 0.353, 0.400]];   // 8 black   dim    #5A5A66
-  const PER = 8;                        // slots a room, and there is no ninth
+                 [0.353, 0.353, 0.400],    // 8 black   dim    #5A5A66
+                 [0.949, 0.757, 0.306]];   // 9 gold    gold   #F2C14E
+  /* and 0 is all of them: the same tones in HUE order, laid across the
+     square's diagonal — red, orange, gold, yellow, green, blue, pink.
+     White and black sit out, because a rainbow with them in it is not one. */
+  const BOW = [TONES[5], TONES[4], TONES[8], TONES[6], TONES[1], TONES[3], TONES[2]];
+  const rainbow = n => n % 10 === 0;
+  const toneOf = n => TONES[(n % 10 || 10) - 1] || TONES[0];
+
+  const PER = 8;                        // squares a room, and there is no ninth
+  /* The eight in READING order — 0 1 2 / 3 · 4 / 5 6 7 — and the same eight
+     in RING order, clockwise from the top left. A turn is a step round the
+     ring, so it has to be the cycle that is stepped and not the reading
+     order, which jumps from the top right to the middle left and would make
+     a turn look like a shuffle. */
+  const RING = [0, 1, 2, 4, 7, 6, 5, 3];
+  const RPOS = RING.reduce((a, sq, i) => (a[sq] = i, a), []);
   const AQUA = [0.47, 0.88, 0.85], GOLD = [0.95, 0.76, 0.31];
   const GROUND = [0.106, 0.106, 0.129], BONE = [0.929, 0.918, 0.890];
   /* a number on a light tone is drawn in ground and on a dark one in bone,
-     the rule focus.js uses for the letters on its diamonds */
+     the rule focus.js uses for the letters on its diamonds. A rainbow is
+     both at once, so it is given the darker ink and the tones it is made of
+     were chosen without bone in them so that ink always reads. */
   const ink = t => (t[0] * 0.3 + t[1] * 0.59 + t[2] * 0.11 > 0.5 ? GROUND : BONE);
   const DONE = 1.2;                     // tiles from the end that counts as arriving
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   let on = false, uid = '', room = 1, plan = null, planKey = '';
+  /* the turn each room is at and what each has had taken out, by the room's
+     own id — read once per palace and kept until the palace is left, because
+     the numbers are asked for on every frame and by every marker */
+  let cfgUid = '', turn = {}, gone = {};
 
   const rooms = () => G.shapes.filter(s => s.label && s.room)
     .sort((a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
@@ -110,7 +143,8 @@ const Trace = (() => {
 
      which is the order you walk a room in anyway, and leaves the middle of
      the floor — where the walker stands and where the line runs — clear.
-     `i` is 0..7 reading left to right, top to bottom, the centre skipped. */
+     The square index is 0..7 in READING order, the centre skipped, and it
+     is what a place's id is built out of — the geometry, never the number. */
   function gridFor(box){
     if (!G.A) return null;
     const cell = G.A.cell, wall = cell * 2;
@@ -124,33 +158,87 @@ const Trace = (() => {
       if (gx === 1 && gy === 1) continue;              // the middle is not a place
       const x0 = cx + (gx - 1) * pitch - k * cell / 2;
       const y0 = cy + (gy - 1) * pitch - k * cell / 2;
-      sq.push({x0, y0, cx: x0 + k * cell / 2, cy: y0 + k * cell / 2,
-               tone: TONES[sq.length]});
+      sq.push({x0, y0, cx: x0 + k * cell / 2, cy: y0 + k * cell / 2});
     }
     return {squares: sq, k, cell, side: k * cell};
   }
 
-  /* every room's eight, numbered on across the palace: room r's slot i is
-     (r − 1) * 8 + i. Rebuilt on ask rather than cached — the plan is at
-     most a few dozen rooms and a room that has just been resized must not
-     hand back the slots it used to have. */
-  function slots(){
+  /* ── what the palace remembers ──────────────────────────────────────────
+     Which room the trace is up to, the turn each room is at, and which of
+     each room's squares have been taken out. Written as one JSON object;
+     a bare integer is what this key held before any of that existed and
+     still means the room number. */
+  function cfg(u){
+    if (!u || cfgUid === u) return;
+    cfgUid = u; turn = {}; gone = {}; room = 1;
+    const raw = Store.get(KEY(u)) || '';
+    if (/^\d+$/.test(raw.trim())){ room = Math.max(1, parseInt(raw, 10) || 1); return; }
+    let o = null;
+    try { o = JSON.parse(raw); } catch (e){}
+    if (!o || typeof o !== 'object') return;
+    room = Math.max(1, o.room | 0 || 1);
+    if (o.turn && typeof o.turn === 'object') turn = o.turn;
+    if (o.gone && typeof o.gone === 'object') gone = o.gone;
+  }
+  function save(){
+    if (!cfgUid) return;
+    Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone}), 'the trace');
+  }
+  const turnOf = id => ((turn[id] | 0) % PER + PER) % PER;
+  const goneOf = id => (Array.isArray(gone[id]) ? gone[id] : []);
+  const isGone = (id, sq) => goneOf(id).indexOf(sq) >= 0;
+
+  /* ── every place in the palace, in the order they are walked ────────────
+     Rooms in their order; inside a room, the eight squares in READING order
+     turned `turn` steps round the RING, the ones taken out passed over. The
+     number is the running count and nothing else — it is dense, it never
+     skips, and it runs on from room to room, so taking a place out of the
+     first room moves every number after it down by one.
+
+     A place's `id` is `room * 8 + square`: the geometry, which does not
+     move when the numbers do, and what a marker keeps.
+
+     Rebuilt on ask rather than cached — a plan is a few dozen rooms, and a
+     room that has just been resized or turned must not hand back the places
+     it used to have. Squares that have been taken out come back too, with
+     `n: 0`, because `X` has to be able to find one to put it back. */
+  function places(){
+    /* the palace says what its rooms are turned to, so ask the palace you
+       are actually in — going in, coming out of a palace inside a palace,
+       and being asked by a marker before the view has ever been up all
+       reach here, and none of them is a good place to have to remember to
+       mount from */
+    if (typeof Interior !== 'undefined' && Interior.inside()) cfg(Interior.uid());
     const rs = rooms(), out = [];
+    let n = 0;
     for (let r = 0; r < rs.length; r++){
       const g = gridFor(Kinds.geo.bbox(rs[r]));
       if (!g) break;
-      g.squares.forEach((s, i) => out.push(
-        {n: r * PER + i + 1, room: r + 1, i: i + 1, x: s.cx, y: s.cy,
-         x0: s.x0, y0: s.y0, side: g.side, k: g.k, cell: g.cell, tone: s.tone}));
+      const id = rs[r].room, t = turnOf(id);
+      const seen = [];
+      for (let j = 0; j < PER; j++){
+        const sq = RING[(RPOS[j] + t) % PER];
+        const s = g.squares[sq];
+        const dead = isGone(id, sq);
+        seen.push({id: id * PER + sq, room: r + 1, rid: id, sq: sq,
+                   n: dead ? 0 : ++n, x: s.cx, y: s.cy, x0: s.x0, y0: s.y0,
+                   side: g.side, k: g.k, cell: g.cell});
+      }
+      for (const q of seen) out.push(q);
     }
     return out;
   }
-  /* how long this palace is: rooms times eight, whether or not anything
-     stands in them */
-  const count = () => rooms().length * PER;
-  /* the place slot `n` is, or nothing if the plan has no such slot */
-  const slotN = n => slots().find(s => s.n === n) || null;
-  const taken = (n, self) => (G.markers || []).some(m => m !== self && m.slot === n);
+  /* the live ones, which is what everything but `X` and the drawing wants */
+  const slots = () => places().filter(q => q.n);
+  /* how long this palace is: every place that has a number */
+  const count = () => slots().length;
+  /* the place number `n` is, or nothing if the palace is not that long */
+  const slotN = n => slots().find(q => q.n === n) || null;
+  /* the place with id `id`, taken out or not */
+  const slotId = id => places().find(q => q.id === id) || null;
+  /* what number a marker holding this place is wearing today */
+  const numberOf = id => { const q = slotId(id); return q ? q.n : 0; };
+  const taken = (id, self) => (G.markers || []).some(m => m !== self && m.slot === id);
 
   /* ── where a marker dropped at (x, y) belongs ───────────────────────────
      The nearest free slot IN THE ROOM IT WAS DROPPED IN, so a marker never
@@ -170,7 +258,7 @@ const Trace = (() => {
     if (hit < 0) return null;
     const mine = slots().filter(s => s.room === hit + 1);
     if (!mine.length) return null;
-    const free = mine.filter(s => !taken(s.n, self));
+    const free = mine.filter(s => !taken(s.id, self));
     if (!free.length) return {full: true, room: hit + 1, name: rs[hit].label || ''};
     let best = free[0], bd = Infinity;
     for (const s of free){
@@ -180,26 +268,90 @@ const Trace = (() => {
     return best;
   }
 
-  /* ── a locus goes where its slot goes ───────────────────────────────────
-     Resize a room and its eight move with it; the loci standing in them
-     have to come too, because the slot IS the place — a marker left behind
-     would be a locus that is no longer anywhere. Healed at the moment you
-     would notice it, which is when you look at the grid, and it writes only
-     when something actually moved, so it costs nothing on a plan that is
-     already square with itself. */
+  /* ── a locus goes where its place goes, and wears the number it has now ──
+     Resize a room and its eight move with it; turn a room, or take a place
+     out of an earlier one, and the numbers move. The loci have to follow
+     both: the place IS the spot, so a marker left behind would be a locus
+     that is no longer anywhere, and a marker still wearing last week's
+     number would be a locus in the wrong part of the sequence. Healed at
+     the moment you would notice it, which is when you look at the grid, and
+     it writes only when something actually moved, so it costs nothing on a
+     plan that is already square with itself. */
   function reseat(){
     if (!G.markers || !G.markers.length) return;
     const at = {};
-    for (const s of slots()) at[s.n] = s;
+    for (const q of places()) at[q.id] = q;
     let moved = 0;
     for (const m of G.markers){
-      const s = m.slot && at[m.slot];
-      if (!s) continue;
-      if (Math.abs(m.x - s.x) > 1e-3 || Math.abs(m.y - s.y) > 1e-3){
-        m.x = s.x; m.y = s.y; moved++;
+      const q = m.slot && at[m.slot];
+      if (!q) continue;
+      if (Math.abs(m.x - q.x) > 1e-3 || Math.abs(m.y - q.y) > 1e-3){
+        m.x = q.x; m.y = q.y; moved++;
       }
+      if (m.n !== q.n){ m.n = q.n; moved++; }
     }
     if (moved) Markers.commit();
+  }
+
+  /* ── turning a room, and taking a place out ─────────────────────────────
+     Both act on the room the walker is standing in, which is the room you
+     are looking at — there is no selection to get wrong. */
+  function roomAt(x, y){
+    const rs = rooms();
+    for (let r = 0; r < rs.length; r++){
+      const b = Kinds.geo.bbox(rs[r]);
+      if (x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3]) return rs[r];
+    }
+    return null;
+  }
+  const here = () => { const w = toWorld(G.x, G.y); return roomAt(w[0], w[1]); };
+
+  /* one step round the ring. The same eight squares carry the numbers in
+     another arrangement — nothing is added or taken away, so the palace is
+     exactly as long afterwards as it was before. */
+  function rotate(d){
+    if (!on) return false;
+    const r = here();
+    if (!r){ note('stand in a room to turn it'); return false; }
+    turn[r.room] = ((turnOf(r.room) + (d < 0 ? -1 : 1)) % PER + PER) % PER;
+    save(); reseat();
+    if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    plan = null;
+    note((r.label || 'the room') + ' turned · ' + (turnOf(r.room) + 1) + ' of ' + PER);
+    return true;
+  }
+
+  /* take the nearest place out, or put it back. A place with a locus
+     standing in it is refused rather than quietly emptied — the marker is
+     the work, and there is a Delete for it in build mode. */
+  function cut(){
+    if (!on) return false;
+    const r = here();
+    if (!r){ note('stand in a room to take a place out of it'); return false; }
+    const w = toWorld(G.x, G.y);
+    const mine = places().filter(q => q.rid === r.room);
+    if (!mine.length) return false;
+    let best = mine[0], bd = Infinity;
+    for (const q of mine){
+      const d = Math.hypot(q.x - w[0], q.y - w[1]);
+      if (d < bd){ bd = d; best = q; }
+    }
+    const list = goneOf(r.room).slice(), at = list.indexOf(best.sq);
+    if (at >= 0){
+      list.splice(at, 1);
+      gone[r.room] = list;
+      save(); reseat();
+      if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+      note('a place back · ' + count() + ' in the palace');
+      return true;
+    }
+    if (taken(best.id)){ note('a locus is standing there — take the locus out first'); return false; }
+    list.push(best.sq);
+    gone[r.room] = list;
+    save(); reseat();
+    if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    note('place ' + best.n + ' out · ' + count() + ' in the palace');
+    return true;
   }
 
   /* what this room's trace is: the box and the line — built once per room
@@ -240,23 +392,30 @@ const Trace = (() => {
     reseat();
     const z = G.cam[2], px = 1 / z;
 
-    /* every room's eight, the room you are up to whole and the rest faint —
-       the grid is the view, and which room the trace has reached is said
-       by weight rather than by drawing only one of them */
-    for (const s of slots()){
-      const here = s.room === p.room;
-      const al = here ? 0.92 : 0.3;
-      for (let j = 0; j < s.k; j++) for (let i = 0; i < s.k; i++){
+    /* every room's places, the room you are up to whole and the rest faint —
+       the grid is the view, and which room the trace has reached is said by
+       weight rather than by drawing only one of them. A place that has been
+       taken out is not drawn at all: it is not a place. */
+    for (const q of slots()){
+      const mine = q.room === p.room;
+      const al = mine ? 0.92 : 0.3;
+      /* the tone is the NUMBER's, not the square's, so it travels with the
+         number when the room is turned or a place before it is taken out.
+         A ten is every tone at once, laid in hue order across the square's
+         own diagonal — the rainbow is made of the cells, not of a colour. */
+      const bow = rainbow(q.n), t = toneOf(q.n);
+      for (let j = 0; j < q.k; j++) for (let i = 0; i < q.k; i++){
         if (m > cap - 4) return m;
-        m = put(a, m, s.x0 + (i + 0.5) * s.cell, s.y0 + (j + 0.5) * s.cell,
-                s.tone[0], s.tone[1], s.tone[2], al, s.cell, 0, 0, 0, 1);
+        const c = bow ? BOW[(i + j) % BOW.length] : t;
+        m = put(a, m, q.x0 + (i + 0.5) * q.cell, q.y0 + (j + 0.5) * q.cell,
+                c[0], c[1], c[2], al, q.cell, 0, 0, 0, 1);
       }
       /* and its number, in the square's own corner where a marker standing
-         in the middle of the slot cannot cover it */
-      const r = Math.max(s.side * 0.24, 4 * px);
+         in the middle of the place cannot cover it */
+      const r = Math.max(q.side * 0.24, 4 * px);
       if (r * z > 3)
-        m = num(a, m, s.n, s.x0 + s.side * 0.32, s.y0 + s.side * 0.30, r,
-                ink(s.tone), here ? 0.95 : 0.5, cap);
+        m = num(a, m, q.n, q.x0 + q.side * 0.32, q.y0 + q.side * 0.30, r,
+                bow ? BONE : ink(t), mine ? 0.95 : 0.5, cap);
     }
 
     /* the line: aqua dots a cell and a half apart, the plate's route
@@ -293,32 +452,35 @@ const Trace = (() => {
     plan = null;
   }
 
-  function save(){ Store.put(KEY(uid), String(room), 'the trace'); }
-  function load(){ room = Math.max(1, parseInt(Store.get(KEY(uid)) || '1', 10) || 1); }
-
   function toggle(){
     if (typeof Interior === 'undefined' || !Interior.inside()){
       note('minimal is a view of a plan — go inside a place first'); return false;
     }
     on = !on;
-    if (on){ uid = Interior.uid(); load(); plan = null; }
+    if (on){ uid = Interior.uid(); cfg(uid); plan = null; }
     Build.setMinimal(on);
     if (typeof restampTerrain === 'function') restampTerrain();
     const p = on ? build() : null;
     note(on ? (p ? 'minimal · room ' + p.room + ' of ' + p.of + ' · ' + count() +
-                   ' places · walk the line to its end'
+                   ' places · [ ] turn · X out'
                  : 'minimal · this plan has no rooms to trace')
             : 'the plan as it was');
     return on;
   }
-  /* leaving the building takes the view with it; the room number stays */
+  /* Leaving the building takes the view with it; what the palace remembers
+     stays in its key. The config is dropped whether or not the view was up,
+     because the next palace's turns and cuts are not this one's — and a
+     marker asks for its number the moment its plan is mounted. */
   function off(){
-    if (!on) return;
-    on = false; plan = null;
-    Build.setMinimal(false);
+    on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; room = 1;
+    if (typeof Build !== 'undefined') Build.setMinimal(false);
   }
-  function reset(){ room = 1; plan = null; if (uid) save(); }
+  function reset(){ room = 1; plan = null; if (cfgUid) save(); }
 
-  return {toggle, off, reset, overlay, step, slots, slotN, count, drop, reseat, per: () => PER,
+  return {toggle, off, reset, overlay, step, rotate, cut, reseat,
+          slots, places, slotN, slotId, numberOf, count, drop,
+          /* the numbers are asked for by markers.js while the view is down,
+             so the palace's turns and cuts have to be readable then too */
+          mount: u => cfg(u), per: () => PER,
           on: () => on, room: () => room};
 })();

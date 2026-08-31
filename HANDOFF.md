@@ -76,7 +76,91 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 30 Aug 2026, build 238 (tag **v8.2** at 233)
+## Where we are — 31 Aug 2026, build 239 (tag **v8.2** at 233)
+
+- **Build 239 (31 Aug 2026) — a room can be turned, a place can be taken
+  out, and the colour belongs to the number.** Eden, on the eight:
+  *"make it so i can rotate the grid so numbers land in it another place
+  — make it so we can delete numbers then as you already have it the next
+  available number shows in the next room — in that room the numbers
+  colour is always consistant to the original so 1, 11, 21, 31 and so on
+  is grouped by white and same with other colour — 0, 10, 20, 30 (make
+  this multicoloured rainbow)"*. Three changes, and one of them undoes an
+  assumption 238 was built on.
+
+  **The number is no longer an address.** At 238 a place's number WAS its
+  identity — `(room − 1) * 8 + i`, fixed — and a marker keyed on it. It
+  cannot be, now: the numbering is dense and continuous, so taking a place
+  out of the first room moves every number after it down by one, and
+  turning a room rearranges eight of them at once. So a place has an
+  **id** — `room * 8 + square`, the geometry, which does not move when the
+  numbers do — and `m.slot` holds that. `m.n` is read back off the place
+  whenever the markers are renumbered, and a locus whose place has gone
+  out from under it is set loose (`slot = 0`) rather than left wearing a
+  number that is a lie. `places()` returns every square including the ones
+  taken out (`n: 0`), because `X` has to find one to put it back;
+  `slots()` is the live ones.
+
+  **Turning is a step round the RING, not through the reading order.**
+  `RING = [0,1,2,4,7,6,5,3]` — the eight clockwise from the top left —
+  because the reading order jumps from the top right to the middle left,
+  and turning through it would look like a shuffle rather than a turn. The
+  numbers are laid in reading order and the whole arrangement is then
+  offset round the ring, so a turn of 0 is `1 2 3 / 4 · 5 / 6 7 8`
+  unchanged and each step moves every number one place clockwise.
+
+  **The colour is the number's last digit** — 1 white, 2 green, 3 pink,
+  4 blue, 5 orange, 6 red, 7 yellow, 8 black, 9 **gold**, 0 **rainbow**.
+  Gold comes back: it was the ninth tone the eight had dropped, and
+  *"consistent to the original"* is Eden's own first list. **The rainbow
+  is made of the cells, not of a colour** — `BOW` is the same tones in hue
+  order (red, orange, gold, yellow, green, blue, pink) laid across the
+  square's diagonal as `(i + j) % 7`, so a ten needs nothing that is not
+  already on the plate. Bone and dim sit out of it: a rainbow with white
+  and black in it is not one. Its number is drawn in bone, and the band
+  was chosen without bone in it so that ink always reads.
+
+  **The keys** (Eden picked keys over clicking): `[` and `]` turn the room
+  the WALKER IS STANDING IN — there is no selection to get wrong — and `X`
+  takes the nearest place out or puts it back. All three do nothing while
+  the grid is down. `[` and `]` were already bound in build.js to scale the
+  selection, so that pair is now guarded on `!Trace.on()`: the minimal view
+  takes them while it is up, where there is no shape to see anyway. A place
+  with a locus standing in it is refused rather than quietly emptied.
+
+  **What the palace remembers** grew from a bare integer to
+  `{room, turn, gone}` under `hq.trace.<uid>` — the turn each room is at
+  and the squares each has had taken out, keyed by the room's own `s.room`
+  id rather than its index, so adding a room does not shuffle them. A bare
+  integer still reads as the room number, which is what that key held
+  before.
+
+  **Two ordering traps, both fixed.** `Interior.enter` mounted the markers
+  BEFORE the shapes, so a locus asked for its number while `G.shapes` was
+  still the town — the mount order is swapped and `Trace.mount(uid)` runs
+  between them. And `places()` mounts the palace's config itself, from
+  `Interior.uid()`, because coming out of a palace inside a palace and
+  being asked by a marker before the view has ever been up both reach it
+  and neither is a good place to have to remember to mount from.
+
+  Verified on a throwaway at 9223 with v8.2 restored, inside ⤊Barwidgee
+  (11 rooms): the default is `1 2 3 / 4 · 5 / 6 7 8` with room 2 starting
+  at 9 and 88 places; `]` gives `4 1 2 / 6 · 3 / 7 8 5` and `[` takes it
+  back, matched against the ring arithmetic worked by hand; three `[` from
+  a turn of 2 lands on 7 and gives `2 3 5 / 1 · 8 / 4 6 7`, also matched.
+  `X` cuts and the count falls 88 → 87 → 86 with room 2's first number
+  following it down 9 → 8 → 7; `X` again puts it back. A place holding a
+  locus is refused with the count unmoved. Four loci in room 1 keep their
+  ids through a cut and a turn and come out wearing 4, 1, 2 and 5, which is
+  the rotated layout with the cut square passed over. Driven by real
+  `keydown` events as well as by the API, and the keys are inert with the
+  view down. `{"room":1,"turn":{"1":0,"2":2},"gone":{"1":[],"2":[1]}}`
+  survives a reload byte for byte and the loci come back on their places
+  with the right numbers **without the view ever being turned on**.
+  `Interior.leave()` brings the town back whole (39 shapes, 1 marker, slot
+  0) and re-entering restores the palace. Screenshots confirm the ten as a
+  diagonal rainbow beside 9 gold, 11 white, 12 green, 13 pink, 14 blue,
+  15 orange and 16 red. No errors throughout.
 
 - **Build 238 (30 Aug 2026) — a room is eight places, and the minimal
   view is those places.** Eden asked for the 3×3 grid to become somewhere

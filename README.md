@@ -214,7 +214,9 @@ and the phone: the keys drawn on the screen, every panel a sheet.
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
-| `V` | minimal &nbsp;·&nbsp; the plan down to its walls, every room's eight slots, and the trace through it (inside) |
+| `V` | minimal &nbsp;·&nbsp; the plan down to its walls, every room's eight places, and the trace through it (inside) |
+| `[` `]` | turn the room you are standing in one step round its ring (minimal view) |
+| `X` | take the nearest place out, or put it back (minimal view) |
 | `Enter` | open the marker you are standing by &nbsp;·&nbsp; a room, or a locus &nbsp;·&nbsp; or deal with the distraction you are standing by |
 | `P` | play the route in the platformer |
 | `M` | the map dialog (top right) and the underlay with it &nbsp;·&nbsp; its ✕ closes both |
@@ -316,7 +318,8 @@ stale.
     src/markers.js       glyph markers, baked to one texture atlas
     src/interior.js      going inside a marker: the stack, and the swap
     src/trace.js         minimal — a plan down to its walls — the eight
-                         slots a room, and the trace
+                         places a room, their turning and cutting, and
+                         the trace
                          that runs in it: nine squares in a room and a
                          line through its fittings, one room at a time
     src/loci.js          the numbered places inside a room, their pictures,
@@ -1479,66 +1482,106 @@ a fine script will be finer than a short one. A name too wide for the
 town at the plate's pitch is let shrink, because a title off both edges
 names nothing.
 
-### Minimal, the slots, and the trace
+### Minimal, the places, and the trace
 
 Inside a palace, `V` takes the plan down to its walls: the floor and the
 fittings are not drawn, and the fittings do not block, so what is left is
 the layout — rooms, windows, doors, stairs — and, in **every** room, its
-**eight slots** (`src/trace.js`).
+**places** (`src/trace.js`).
 
-A slot is a place in the method. Each room carries a 3×3 grid with the
-**middle square left out** — eight squares round the edge of the room,
-numbered left to right and top to bottom:
+A place is a spot in the method. Each room carries a 3×3 grid with the
+**middle square left out** — eight squares round the edge — because the
+middle is where the walker stands and where the line runs, and a place
+there would be one you have to stand on top of to look at.
 
-    1 2 3
-    4 · 5
-    6 7 8
+#### The number
 
-The middle is where the walker stands and where the line runs, and a place
-there would be one you have to stand on top of to look at. The numbering
-**runs on across the palace** — room two's first slot is 9 — so a plan of
-five rooms is a sequence of 40, and how long a palace is becomes a fact
-about the building rather than however many markers happen to be pinned in
-it.
+The numbering **runs on across the palace and is dense**: the rooms are
+walked in their order, each room's live squares in theirs, and the count
+never stops or skips. Delete two places from the first room and it holds
+1–6, so the second room starts at 7. How long a palace is is what
+`count()` says, and it is a fact about the building.
 
-Each square is a block of the plate's own cells in one of eight plate
-tones — the same material as everything else, and no new colour:
+Because the numbers move, **a marker cannot key on one**. What a locus
+keeps is a **place id** — `room * 8 + square`, the geometry, stable under
+every turn, deletion and renumbering that can happen around it — and its
+number is read off the place each time it is asked for.
 
-| | | | | | | | |
-|---|---|---|---|---|---|---|---|
-| 1 white | 2 green | 3 pink | 4 blue | 5 orange | 6 red | 7 yellow | 8 black |
-| bone | park | flare | creek | stairs | rug | gold → bone | dim |
+#### The colour
 
-Yellow and gold are one token at two weights — the palette holds a single
-amber — and 8 is `dim` rather than `#000`, because the ground is `#1B1B21`
-and a true black square would be a hole in a near-black floor. Gold whole
-is not a slot: it stays the tone the end of the line wears. A number is
-drawn in the square's own corner, in ground on a light tone and bone on a
-dark one, where a marker standing in the middle of the slot cannot cover
-it.
+A tone belongs to a **number**, not to a square, so the colour travels
+with the number when the grid is turned or a place is taken out: 1, 11, 21
+and 31 are the same white wherever in the building they land. It is the
+number's **last digit** that says which:
 
-**A marker dropped inside a room lands in the nearest free slot** and wears
-that slot's number, so the order is the geography. A room holds eight loci
-and there is no ninth — the ninth is refused, and refused before the blocks
-are paid. Move a locus up the list (`▲` in the route panel) and it *moves*:
-to the slot before this one, the previous room's last if it is at the head
-of its own, and whatever was standing there takes the slot it came from.
-Resize a room and its eight move with it, and the loci in them follow.
-What a marker keeps is `m.slot`, an absolute address in the building;
-`0` means no slot, which is every marker out on the town.
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 |
+|---|---|---|---|---|---|---|---|---|---|
+| white | green | pink | blue | orange | red | yellow | black | gold | rainbow |
+| bone | park | flare | creek | stairs | rug | gold → bone | dim | gold | all of them |
 
-The **trace** is that method walked one room at a time. The room you are up
-to wears its eight whole and the rest of the palace wears theirs faint, and
-a **line** is drawn through the room you are in: from where you come in —
-the side it shares with the room before it; for the first room, the side
-across from where it leaves — through every fitting in the order it was
-laid, to where you go out, marked in gold; the middle, for the last. It is
-drawn faint, because the slots are the subject and the line is only the
-thread between them, and nothing is drawn where the fittings stood. Walk to
-its end and the room is done: the view moves on to the next room, and so on
-to the last, which says so. Which room you are up to is kept per palace
-under `hq.trace.<uid>`, so a trace put down is picked up again. `V` again,
-or leaving the building, shows the plan as it was; the number is kept.
+Every one of those is a colour the game already has (STYLE.md). Yellow and
+gold are one token at two weights — the palette holds a single amber — and
+8 is `dim` rather than `#000`, because the ground is `#1B1B21` and a true
+black square would be a hole in a near-black floor. **0 is a rainbow**: the
+square's own cells laid in hue order across its diagonal — red, orange,
+gold, yellow, green, blue, pink — which is the ten's own mark and needs no
+colour that is not already on the plate. White and black sit out of it,
+because a rainbow with them in is not one.
+
+A number is drawn in the square's own corner, in ground on a light tone and
+bone on a dark one, where a marker standing in the middle of the place
+cannot cover it.
+
+#### Turning a room, and taking a place out
+
+| key | |
+|---|---|
+| `[` `]` | turn the room you are standing in one step round its ring |
+| `X` | take the nearest place out, or put it back |
+
+A turn moves every number one step **clockwise** round the ring, so the
+same eight squares carry them in another arrangement and the palace is
+exactly as long afterwards as before:
+
+    1 2 3        4 1 2        6 4 1
+    4 · 5   ]→   6 · 3   ]→   7 · 2
+    6 7 8        7 8 5        8 5 3
+
+A place with a locus standing in it is refused rather than quietly emptied
+— the marker is the work, and there is a `Delete` for it in build mode.
+All three keys do nothing while the grid is down, so they are the minimal
+view's own; `[` and `]` scale the selection in build mode, and the minimal
+view takes them while it is up, where there is no shape to see anyway.
+
+A room's turn and what it has had taken out live with the palace, under
+`hq.trace.<uid>`, beside which room the trace is up to — one JSON object,
+`{room, turn, gone}`. A bare integer is what that key held before any of
+this and still reads as the room number.
+
+#### Placing a locus
+
+**A marker dropped inside a room lands in the nearest free place** and
+wears the number that place is carrying. A room holds eight loci and there
+is no ninth — the ninth is refused, and refused before the blocks are paid.
+Move a locus up the list (`▲` in the route panel) and it *moves*: to the
+place before this one, the previous room's last if it is at the head of its
+own, and whatever was standing there takes the place it came from. Resize a
+room, turn it, or take a place out of an earlier one, and the loci follow
+their places and take the numbers they are wearing now.
+
+#### The trace
+
+The method walked one room at a time. The room you are up to wears its
+places whole and the rest of the palace wears theirs faint, and a **line**
+is drawn through the room you are in: from where you come in — the side it
+shares with the room before it; for the first room, the side across from
+where it leaves — through every fitting in the order it was laid, to where
+you go out, marked in gold; the middle, for the last. It is drawn faint,
+because the places are the subject and the line is only the thread between
+them, and nothing is drawn where the fittings stood. Walk to its end and
+the room is done: the view moves on to the next room, and so on to the
+last, which says so. `V` again, or leaving the building, shows the plan as
+it was; the number is kept.
 
 ### The asset folders
 

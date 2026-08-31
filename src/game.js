@@ -524,6 +524,19 @@ addEventListener('keydown', e => {
       if (Loci.opened()) break;
       if (typeof Trace !== 'undefined') Trace.toggle();
       break;
+    /* and in that view, the room you are standing in is turned with [ and ]
+       and has a place taken out of it — or put back — with X. All three do
+       nothing when the grid is down, so the keys are the minimal view's own
+       and are not spent anywhere else. */
+    case 'BracketLeft': case 'BracketRight':
+      if (Loci.opened() || typeof Trace === 'undefined' || !Trace.on()) break;
+      e.preventDefault();
+      Trace.rotate(e.code === 'BracketLeft' ? -1 : 1);
+      break;
+    case 'KeyX':
+      if (Loci.opened() || typeof Trace === 'undefined' || !Trace.on()) break;
+      Trace.cut();
+      break;
     case 'KeyO':
       if (Loci.opened()) break;
       if (Palace.opened()) Palace.close();

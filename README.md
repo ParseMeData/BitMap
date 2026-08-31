@@ -1,4 +1,4 @@
-# Loci Bitmap V8.1
+# Loci Bitmap V8.3
 
 Build a town out of diamond glyphs, over a real one.
 

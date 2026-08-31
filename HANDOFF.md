@@ -76,7 +76,14 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 31 Aug 2026, build 240 (tag **v8.2** at 233)
+## Where we are — 31 Aug 2026, build 241 (tag **v8.3** at 241)
+
+- **Build 241 (31 Aug 2026) — tag v8.3.** The version cut on Eden's word,
+  one build after the hand-edited grid: `snapshots/v8.3.json` beside the
+  tag (39 shapes, 1 marker, 5 interiors holding 200 shapes, 14 locus
+  pictures), the title and the README's name moved up — they had been
+  left saying V8.1 through two tags — sw.js's cache moved to `mq-241`,
+  and a frozen clone at `~/Projects/Loci Bitmap V8.3`.
 
 - **Build 240 (31 Aug 2026) — the grid edited by hand: click a place,
   drag to trade, and a place carries writing.** Eden: *"allow us to edit
@@ -739,10 +746,10 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 `origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages
 serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
-the session waited for it. Tag **v8.2** (30 Aug, build 233) is the last
-tag, with `snapshots/v8.2.json` beside it and a frozen clone at
-`~/Projects/Loci Bitmap V8.2`; one commit since (build 234, below).
-v8.1 (28 Aug) is the one before, 45 commits back. `gh` is installed and
+the session waited for it. Tag **v8.3** (31 Aug, build 241) is the last
+tag, with `snapshots/v8.3.json` beside it and a frozen clone at
+`~/Projects/Loci Bitmap V8.3`. v8.2 (30 Aug, build 233) is the one
+before. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and
 `VERSION` in sw.js together.

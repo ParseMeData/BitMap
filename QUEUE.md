@@ -32,6 +32,18 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The walking line retired; the room in hand follows the hand** —
+  2026-08-31. Eden: *"there seems to be an artifact that lays over the
+  first room printed small dotted line with yellow diamond (unable to edit
+  or remove) - also when we select another room it stays greyed out - we
+  would like the original highlighted room to then grey out and new grid
+  selected highlight become more vibrant"*. The artifact was the trace's
+  walking line (aqua dots, gold ends) — a feature from before the grid was
+  hand-edited, pinned to room 1 until walked. Gone, with `step()`, the
+  line geometry and its two colours; pressing any square now makes its
+  room the one in hand (bright 0.92, the field back to 0.22), kept with
+  the palace. BUILD 249.
+
 - [x] **Audits** — 2026-08-31. syncUI/syncRoute DO rebuild the route list
   wholesale (`box.innerHTML = ''`), but only at gesture start and end —
   the pointermove path during a drag touches no DOM (marker drags do

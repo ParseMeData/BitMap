@@ -76,7 +76,22 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 31 Aug 2026, build 248 (tag **v8.3** at 241)
+## Where we are — 31 Aug 2026, build 249 (tag **v8.3** at 241)
+
+- **Build 249 (31 Aug 2026) — the walking line retired; the room in hand
+  follows the hand.** Eden reported "an artifact over the first room…
+  small dotted line with yellow diamond (unable to edit or remove)" and
+  asked that selecting another room move the highlight. The artifact was
+  the TRACE's own walking line — aqua dots through the fittings with two
+  gold ends, advanced by walking to its end — a feature from before the
+  grid was hand-edited, and pinned to room 1 until walked. It is gone:
+  `step()`, `side()`, `fixt()`, the AQUA colour and the line geometry all
+  left trace.js, and game.js no longer calls `Trace.step()`. Pressing any
+  square makes its room the one in hand (the weighting the trace used —
+  bright vs faint — now keyed to the press, field dimmed 0.3 → 0.22), and
+  the choice persists in `hq.trace.<uid>` under the same `room` field the
+  trace kept. If the walked trace is ever wanted back, build 248 is the
+  last commit that has it whole.
 
 - **Builds 242–248 (31 Aug 2026) — the v8.4 polish run.** Eden: *"I just
   want to focus on functionality and user interface smoothness and back

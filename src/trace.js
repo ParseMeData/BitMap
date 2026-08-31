@@ -7,8 +7,8 @@
 
    A place is a spot in the method. Each room carries a 3×3 grid with the
    MIDDLE SQUARE LEFT OUT — eight squares round the edge — and the middle
-   is where the walker stands and where the line runs, so a place there
-   would be one you have to stand on top of to look at.
+   is where the walker stands, so a place there would be one you have to
+   stand on top of to look at.
 
    ── the number ────────────────────────────────────────────────────────
    The numbering RUNS ON across the palace and is dense: the rooms are
@@ -56,17 +56,16 @@
    `hq.trace.<uid>` beside the turns and cuts; a place's picture goes to
    the loci store (src/loci.js) under `place:<palace>:<id>`.
 
-   ── the trace ─────────────────────────────────────────────────────────
-   The method walked one room at a time. The room you are up to wears its
-   places whole and the rest of the palace wears theirs faint, and a LINE
-   is drawn through the room you are in: from where you come in (the side
-   it shares with the room before it) through every fitting in the order it
-   was laid, to where you go out (the side it shares with the next room;
-   the middle for the last). The fittings are not drawn; the line goes
-   where they stand, and it is drawn faint, because the places are the
-   subject and the line is only the thread between them. Walk to its end
-   and the room is done: the whole view moves on to the next room, and so
-   on to the last. V again shows the plan as it was.
+   ── the room in hand ──────────────────────────────────────────────────
+   One room at a time is still how the view reads: the room in hand wears
+   its places whole and the rest of the palace wears theirs faint — but
+   which room that is FOLLOWS THE HAND. Press any square and its room is
+   the one in hand; the last one greys back into the field. It is kept
+   with the palace, so the view comes back up on the room you left off in.
+   (Until build 249 this view also drew a walking line through the room —
+   aqua dots and two gold ends, advanced by walking to its end. It read as
+   an artifact you could not remove once the grid became hand-edited, and
+   it is gone; the room is chosen by pointing, not by walking.)
 
    The grid is an overlay in the entity stream, not shapes in the plan:
    nothing here is saved into `hq.rooms.<uid>`.                          */
@@ -105,17 +104,16 @@ const Trace = (() => {
      a turn look like a shuffle. */
   const RING = [0, 1, 2, 4, 7, 6, 5, 3];
   const RPOS = RING.reduce((a, sq, i) => (a[sq] = i, a), []);
-  const AQUA = [0.47, 0.88, 0.85], GOLD = [0.95, 0.76, 0.31];
+  const GOLD = [0.95, 0.76, 0.31];
   const GROUND = [0.106, 0.106, 0.129], BONE = [0.929, 0.918, 0.890];
   /* a number on a light tone is drawn in ground and on a dark one in bone,
      the rule focus.js uses for the letters on its diamonds. A rainbow is
      both at once, so it is given the darker ink and the tones it is made of
      were chosen without bone in them so that ink always reads. */
   const ink = t => (t[0] * 0.3 + t[1] * 0.59 + t[2] * 0.11 > 0.5 ? GROUND : BONE);
-  const DONE = 1.2;                     // tiles from the end that counts as arriving
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
-  let on = false, uid = '', room = 1, plan = null, planKey = '';
+  let on = false, uid = '', room = 1, plan = null;
   /* the turn each room is at and what each has had taken out, by the room's
      own id — read once per palace and kept until the palace is left, because
      the numbers are asked for on every frame and by every marker */
@@ -123,23 +121,6 @@ const Trace = (() => {
 
   const rooms = () => G.shapes.filter(s => s.label && s.room)
     .sort((a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
-  const fixt = r => G.shapes.filter(s => !s.label && s.room === r.room &&
-                                    (Kinds.by[s.kind] || {}).layer === 'fixt')
-    .sort((a, b) => a.id - b.id);
-
-  /* the middle of the side `a` shares with `b`, or the point on a's edge
-     nearest b when they do not quite meet */
-  function side(a, b){
-    const tol = G.terr.tsz;
-    const my = (Math.max(a[1], b[1]) + Math.min(a[3], b[3])) / 2;
-    const mx = (Math.max(a[0], b[0]) + Math.min(a[2], b[2])) / 2;
-    if (b[0] >= a[2] - tol) return [a[2], my];
-    if (b[2] <= a[0] + tol) return [a[0], my];
-    if (b[1] >= a[3] - tol) return [mx, a[3]];
-    if (b[3] <= a[1] + tol) return [mx, a[1]];
-    const c = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
-    return [Math.max(a[0], Math.min(a[2], c[0])), Math.max(a[1], Math.min(a[3], c[1]))];
-  }
 
   /* ── the eight, for any room ────────────────────────────────────────────
      Three by three inside the room's walls, a cell of gap between the
@@ -155,7 +136,7 @@ const Trace = (() => {
          6 7 8
 
      which is the order you walk a room in anyway, and leaves the middle of
-     the floor — where the walker stands and where the line runs — clear.
+     the floor — where the walker stands — clear.
      The square index is 0..7 in READING order, the centre skipped, and it
      is what a place's id is built out of — the geometry, never the number. */
   function gridFor(box){
@@ -635,6 +616,9 @@ const Trace = (() => {
       if (typeof Loci !== 'undefined' && Loci.opened()) return;
       const w = evWorld(e), q = squareAt(w[0], w[1]);
       if (!q) return;
+      /* the room in hand follows the press: the square's room brightens
+         and the last one greys back into the field */
+      if (q.room !== room){ room = q.room; plan = null; save(); }
       press = {q, x: w[0], y: w[1]};
       dragQ = null; dragAt = null;
       e.stopPropagation(); e.preventDefault();
@@ -675,28 +659,12 @@ const Trace = (() => {
     addEventListener('pointercancel', () => { press = null; dragQ = null; dragAt = null; }, true);
   }
 
-  /* what this room's trace is: the box and the line — built once per room
-     and per plan, because the shapes do not move while the trace is walked */
+  /* which room is in hand, held to the rooms the plan actually has */
   function build(){
     const rs = rooms();
     if (!rs.length){ plan = null; return null; }
     if (room > rs.length) room = rs.length;
-    const i = room - 1, r = rs[i];
-    const key = uid + '|' + room + '|' + G.shapes.length;
-    if (plan && planKey === key) return plan;
-    const box = Kinds.geo.bbox(r);
-    const end = i < rs.length - 1 ? side(box, Kinds.geo.bbox(rs[i + 1]))
-                                  : [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2];
-    /* the first room has no room before it, so its start is the side
-       across from its end — a line from one wall to the same wall is not
-       a walk through the room */
-    const mx = (box[0] + box[2]) / 2, my = (box[1] + box[3]) / 2;
-    const start = i > 0 ? side(box, Kinds.geo.bbox(rs[i - 1]))
-      : end[0] === box[0] ? [box[2], my] : end[0] === box[2] ? [box[0], my]
-      : end[1] === box[1] ? [mx, box[3]] : [mx, box[1]];
-    const pts = [start].concat(fixt(r).map(s => Kinds.geo.centre(s)), [end]);
-    plan = {room, of: rs.length, name: r.label, box, start, end, pts};
-    planKey = key;
+    plan = {room, of: rs.length, name: rs[room - 1].label};
     return plan;
   }
 
@@ -713,12 +681,12 @@ const Trace = (() => {
     reseat();
     const z = G.cam[2], px = 1 / z;
 
-    /* every room's places, the room you are up to whole and the rest faint —
-       the grid is the view, and which room the trace has reached is said by
-       weight rather than by drawing only one of them. A place that has been
-       taken out is not a place, but while the view is up it stands as a
-       GHOST — the dim tone, no number — because the hand needs something
-       to click to put it back. */
+    /* every room's places, the room in hand whole and the rest faint —
+       the grid is the view, and which room is in hand is said by weight
+       rather than by drawing only one of them. A place that has been taken
+       out is not a place, but while the view is up it stands as a GHOST —
+       the dim tone, no number — because the hand needs something to click
+       to put it back. */
     for (const q of places()){
       if (!q.n){
         const gh = q.room === p.room ? 0.12 : 0.05;
@@ -730,7 +698,7 @@ const Trace = (() => {
         continue;
       }
       const mine = q.room === p.room;
-      const al = mine ? 0.92 : 0.3;
+      const al = mine ? 0.92 : 0.22;
       /* the tone is the NUMBER's, not the square's, so it travels with the
          number when the room is turned or a place before it is taken out.
          A ten is every tone at once, laid in hue order across the square's
@@ -767,39 +735,7 @@ const Trace = (() => {
       m = put(a, m, dragX, dragY, GOLD[0], GOLD[1], GOLD[2], 0.8,
               Math.max(G.A.cell * 2, 7 * px), 1, 0, 0, 1);
     }
-
-    /* the line: aqua dots a cell and a half apart, the plate's route
-       colour, faint — the thread between the slots, not the subject */
-    const c = p.pts.length ? G.A.cell : 0, step = c * 1.5;
-    for (let s = 0; s < p.pts.length - 1; s++){
-      const [x0, y0] = p.pts[s], [x1, y1] = p.pts[s + 1];
-      const d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.round(d / step));
-      for (let i = 0; i <= n; i++){
-        if (m > cap - 4) return m;
-        const t = i / n;
-        m = put(a, m, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, AQUA[0], AQUA[1], AQUA[2], 0.28,
-                Math.max(c * 0.9, 1.5 * px), 0, 0, 0, 1);
-      }
-    }
-    /* the two ends of it, and nothing where the fittings stood: the rings
-       on the fittings were the clutter this view exists to be rid of */
-    m = put(a, m, p.end[0], p.end[1], GOLD[0], GOLD[1], GOLD[2], 0.7, Math.max(c * 3, 12 * px), 1, 0, 0, 1);
-    m = put(a, m, p.start[0], p.start[1], GOLD[0], GOLD[1], GOLD[2], 0.35, Math.max(c * 2, 8 * px), 1, 0, 0, 1);
     return m;
-  }
-
-  /* arriving at the end of the line is the room done */
-  function step(){
-    if (!on || !plan || G.moving) return;
-    const w = toWorld(G.x, G.y);
-    if (Math.hypot(w[0] - plan.end[0], w[1] - plan.end[1]) > G.terr.tsz * DONE) return;
-    if (plan.room >= plan.of){
-      if (!plan.said){ plan.said = true; note('the trace is walked — every room'); }
-      return;
-    }
-    room = plan.room + 1; save();
-    note('room ' + plan.room + ' done · ' + room + ' of ' + plan.of);
-    plan = null;
   }
 
   function toggle(){
@@ -814,7 +750,7 @@ const Trace = (() => {
     const p = on ? build() : null;
     note(on ? (p ? 'minimal · room ' + p.room + ' of ' + p.of + ' · ' + count() +
                    ' places · [ ] turn · X out · click a place to open it · drag to swap'
-                 : 'minimal · this plan has no rooms to trace')
+                 : 'minimal · this plan has no rooms')
             : 'the plan as it was');
     return on;
   }
@@ -833,7 +769,7 @@ const Trace = (() => {
 
   wire();
 
-  return {toggle, off, reset, overlay, step, rotate, cut, reseat,
+  return {toggle, off, reset, overlay, rotate, cut, reseat,
           slots, places, slotN, slotId, numberOf, count, drop,
           /* the panel: game.js walks Esc through it, loci.js says when a
              picture has landed */

@@ -843,7 +843,7 @@ function frame(now){
   if (live) Doors.step(dt, pxw, pyw);
   m = Doors.draw(ENT, m, ENTMAX);
   m = Interior.overlay(ENT, m, ENTMAX);
-  if (typeof Trace !== 'undefined'){ m = Trace.overlay(ENT, m, ENTMAX); if (live) Trace.step(); }
+  if (typeof Trace !== 'undefined') m = Trace.overlay(ENT, m, ENTMAX);
   if (typeof Distract !== 'undefined'){ m = Distract.overlay(ENT, m, ENTMAX); if (live) Distract.step(dt); }
   if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);

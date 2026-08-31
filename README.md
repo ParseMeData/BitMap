@@ -214,7 +214,7 @@ and the phone: the keys drawn on the screen, every panel a sheet.
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
-| `V` | minimal &nbsp;·&nbsp; the plan down to its walls, every room's eight places, and the trace through it (inside) |
+| `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and every room's eight places (inside) |
 | `[` `]` | turn the room you are standing in one step round its ring (minimal view) |
 | `X` | take the nearest place out, or put it back (minimal view) |
 | click | open a place: number, name, description, notes, picture (minimal view) |
@@ -321,9 +321,7 @@ stale.
     src/interior.js      going inside a marker: the stack, and the swap
     src/trace.js         minimal — a plan down to its walls — the eight
                          places a room, their turning, cutting, trading
-                         and typing-into, and the trace
-                         that runs in it: nine squares in a room and a
-                         line through its fittings, one room at a time
+                         and typing-into, one room in hand at a time
     src/loci.js          the numbered places inside a room, their pictures,
                          the lattice preview, and the route the platformer
                          plays
@@ -1484,7 +1482,7 @@ a fine script will be finer than a short one. A name too wide for the
 town at the plate's pitch is let shrink, because a title off both edges
 names nothing.
 
-### Minimal, the places, and the trace
+### Minimal, and the places
 
 Inside a palace, `V` takes the plan down to its walls: the floor and the
 fittings are not drawn, and the fittings do not block, so what is left is
@@ -1603,19 +1601,19 @@ own, and whatever was standing there takes the place it came from. Resize a
 room, turn it, or take a place out of an earlier one, and the loci follow
 their places and take the numbers they are wearing now.
 
-#### The trace
+#### The room in hand
 
-The method walked one room at a time. The room you are up to wears its
-places whole and the rest of the palace wears theirs faint, and a **line**
-is drawn through the room you are in: from where you come in — the side it
-shares with the room before it; for the first room, the side across from
-where it leaves — through every fitting in the order it was laid, to where
-you go out, marked in gold; the middle, for the last. It is drawn faint,
-because the places are the subject and the line is only the thread between
-them, and nothing is drawn where the fittings stood. Walk to its end and
-the room is done: the view moves on to the next room, and so on to the
-last, which says so. `V` again, or leaving the building, shows the plan as
-it was; the number is kept.
+One room at a time is still how the view reads: the **room in hand** wears
+its places whole and the rest of the palace wears theirs faint — and which
+room that is follows the hand. Press any square and its room brightens;
+the last one greys back into the field. The choice is kept with the
+palace, so the view comes back up on the room you left off in. `V` again,
+or leaving the building, shows the plan as it was.
+
+(Until build 249 this view also drew a walking line through one room —
+aqua dots with two gold ends, advanced by physically walking to its end.
+Once the grid became hand-edited it read as an artifact that could not be
+removed, and it is gone: the room is chosen by pointing, not by walking.)
 
 ### The asset folders
 

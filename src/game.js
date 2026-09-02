@@ -674,6 +674,10 @@ function toggleFull(){
 function togglePause(force){
   G.paused = force === true ? true : !G.paused;
   $('#pause').hidden = !G.paused;
+  /* the class is for the chrome that only shows over the pause screen —
+     the interior's `Inside · Esc leaves` banner (Eden, 2026-09-02: a
+     standing reminder of a key is noise once you are walking) */
+  document.body.classList.toggle('paused', G.paused);
 }
 /* Anywhere on it, because the click that brings the window back to the front
    is the same click that should put you back in the game — asking for a

@@ -154,7 +154,7 @@ body.mobile #compass{transform:scale(.5);transform-origin:0 0;left:4px;top:8px}
 body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px}
 body.mobile #quest{top:112px;left:8px;right:8px;transform:none;font-size:8.5px}
 body.mobile #inside,body.mobile #region{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
-body.mobile #kind{top:180px}
+body.mobile #kind{top:146px}
 body.mobile #enterhint{bottom:auto;top:180px;left:8px;right:8px;transform:none;justify-content:center}
 body.mobile #msg{top:214px}
 body.mobile #toast{left:8px;right:8px;top:44px;bottom:auto;max-width:none}
@@ -331,10 +331,13 @@ body.ordering #palette{display:none}
 #ktune .prow .pv,#khtune .prow .pv{width:46px;font-size:9px}
 #ktune .prow.off,#khtune .prow.off{opacity:.38}
 #ktune input[type=range],#khtune input[type=range]{height:14px}
-/* inside a building: a standing banner saying where you are, and the prompt
-   that appears under the walker whenever a place is within reach */
+/* inside a building: a banner saying where you are and how to leave, and the
+   prompt that appears under the walker whenever a place is within reach.
+   The banner shows over the pause screen only (since 2026-09-02): it names
+   a key, and the pause screen is where the keys are listed */
 /* clear of the HUD, which is wide enough to reach the middle of the screen;
    and the round message steps down out of its way while it is up */
+body:not(.paused) #inside{display:none}
 #inside{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
   padding:8px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
@@ -362,7 +365,7 @@ body.region #kmlabel,body.region #kmarkers,body.region #kmname{display:none!impo
   padding:7px 12px;display:flex;gap:9px;align-items:center;font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
 #enterhint em{color:var(--gold);font-style:normal}
-body.inside #msg{top:98px}
+body.inside.paused #msg{top:98px}
 body.wall #inside,body.wall #enterhint{display:none}
 #kmname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em}
@@ -386,14 +389,15 @@ body.wall #inside,body.wall #enterhint{display:none}
 body.locus #palace{display:none}
 #palace .pkind .chip{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;padding:6px 0}
 /* the same choice while the minimal view is up: a strip at the top centre,
-   under the interior's banner and clear of the palette and the route */
-#kind{position:fixed;left:50%;top:86px;transform:translateX(-50%);z-index:5;
+   in the interior banner's slot (the banner only shows while paused, and
+   the strip steps aside for it) and clear of the palette and the route */
+#kind{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:5;
   padding:6px 8px 6px 13px;display:flex;gap:6px;align-items:center;font-size:9.5px;
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
 #kind b{color:var(--flare);font-weight:400}
 #kind span{margin-right:5px}
 #kind .chip{padding:5px 11px;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase}
-body.locus #kind,body.journal #kind,body.wall #kind{display:none}
+body.locus #kind,body.journal #kind,body.wall #kind,body.paused #kind{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
 #route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
@@ -1082,7 +1086,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 254, cb = '?cb=' + BUILD +
+  var BUILD = 255, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

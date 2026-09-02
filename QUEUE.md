@@ -29,14 +29,19 @@ claim is about speed.)
 
 (Eden, 2026-09-02 — "continue floor plan view", six asks, in this order.)
 
-- [ ] **The `Inside · Esc leaves` banner only while paused.** Eden: *"only
-  show the inside ESC leaves prompt when in pause view"*.
 
 
 ## Done
 
 (ticked items move here with the date)
 
+- [x] **The `Inside · Esc leaves` banner only while paused** —
+  2026-09-02. Eden: *"only show the inside ESC leaves prompt when in
+  pause view"*. `togglePause` puts `paused` on the body; the banner is
+  `display:none` without it, the round message no longer steps down for
+  it unless paused, and the minimal view's kind strip takes the banner's
+  slot at 52px (146 on a phone) and hides while the banner is up. BUILD
+  255.
 - [x] **The room name a little larger, in the clean UI font** —
   2026-09-02. Eden: *"make the room name a little larger and match our
   clean ui font (not the caligraphy)"*. Room captions leave the 5×7

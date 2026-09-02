@@ -1030,7 +1030,10 @@ has to survive that. Markers saved before v3.0 have one minted on first load.
 Walk up to a marker and press `Enter`. The plate becomes that building's
 **floor plan**, drawn in the same editor with a different set of kinds. `Esc`
 comes back out, to the tile you stepped in from and the round you were in the
-middle of.
+middle of. The `Inside · <name> · Esc leaves` banner that says so shows
+over the pause screen only (Eden, 2026-09-02) — it names a key, and the
+pause screen is where the keys are listed; while you are walking, the top
+of the plate is the plan's.
 
     Walls       wall · room · window
     ─────────────────────────────────

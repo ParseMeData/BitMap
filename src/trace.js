@@ -823,8 +823,11 @@ const Trace = (() => {
     if (typeof restampTerrain === 'function') restampTerrain();
     strip();
     const p = on ? build() : null;
-    note(on ? (p ? 'minimal · room ' + p.room + ' of ' + p.of + ' · ' + count() +
-                   ' places · [ ] turn · X out · click a place to open it · drag to swap'
+    /* the view comes up with the walker on place 1: the wheel takes it
+       from there */
+    if (on && p) goTo(1);
+    note(on ? (p ? 'minimal · ' + count() + ' places · you are on 1 · wheel walks the numbers · ' +
+                   '[ ] turn · X out · click a place to open it · drag to swap'
                  : 'minimal · this plan has no rooms')
             : 'the plan as it was');
     return on;
@@ -837,6 +840,7 @@ const Trace = (() => {
     groom(); compact();
     closeEdit();
     on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1; kind = KINDS[0];
+    atId = 0; G.perch = null;
     forget();
     strip();
     if (typeof Build !== 'undefined') Build.setMinimal(false);
@@ -866,6 +870,49 @@ const Trace = (() => {
        : 'looped · a sequence whose last place leads back to 1');
     return true;
   }
+  /* ── walking the numbers ────────────────────────────────────────────────
+     With the view up, the wheel walks the walker through the palace in
+     the order of its numbers: V puts them on place 1, down is the next
+     place and up is the one before, and in a looped palace the last place
+     leads back to 1. The walker stands ON the place — a place is smaller
+     than a walk tile, so the tile under it is where the walker IS (for
+     the doors and the prompts) and `G.perch` is where they are DRAWN
+     (game.js reads it in place of the tile's centre until the next step
+     taken on foot). What is kept is the place's id, not its number, so a
+     renumbering under the walker's feet does not move them. */
+  let atId = 0;
+  function goTo(n){
+    const q = slotN(n);
+    if (!q || !G.terr) return false;
+    const tsz = G.terr.tsz, t = G.terr;
+    const tx = clamp(Math.round(q.x / tsz - 0.5), 0, t.tw - 1);
+    const ty = clamp(Math.round(q.y / tsz - 0.5), 0, t.th - 1);
+    const from = G.perch ? [G.perch[0], G.perch[1]]
+               : G.moving ? [G.tx, G.ty] : toWorld(G.x, G.y);
+    G.x = tx; G.y = ty;
+    G.fx = from[0]; G.fy = from[1]; G.tx = q.x; G.ty = q.y;
+    G.moving = true; G.stepT = 0; G.bump = false; G.stepScale = 1;
+    const dx = q.x - from[0], dy = q.y - from[1];
+    if (dx || dy) G.face = Math.abs(dx) >= Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)];
+    G.perch = [q.x, q.y, tx, ty];
+    atId = q.id;
+    if (q.room !== room){ room = q.room; plan = null; save(); }
+    return true;
+  }
+  function walk(dir){
+    if (!on) return false;
+    const N = count();
+    if (!N) return false;
+    const cur = atId ? numberOf(atId) : 0;
+    let n = cur ? cur + dir : (dir < 0 ? N : 1);
+    if (kind === 'looped') n = ((n - 1) % N + N) % N + 1;
+    else if (n < 1 || n > N){
+      note(n < 1 ? 'place 1 is the first — the palace starts here'
+                 : 'place ' + N + ' is the last — the palace ends here');
+      return true;
+    }
+    return goTo(n);
+  }
   /* the strip is drawn once from the markup and lit from here */
   let kstrip = null;
   function strip(){
@@ -890,5 +937,7 @@ const Trace = (() => {
           mount: u => cfg(u), per: () => PER,
           /* the kind, for the room-order box's chips and the walk */
           kind: () => kind, kinds: () => KINDS.slice(), setKind,
+          /* the wheel, from game.js: +1 is the next place, -1 the one before */
+          walk, goTo,
           on: () => on, room: () => room};
 })();

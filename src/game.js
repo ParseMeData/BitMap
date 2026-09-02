@@ -394,7 +394,10 @@ function tryStep(dx, dy){
   }
   G.stepT = 0; G.moving = true;
   G.stepScale = (sx && sy) ? 1.414 : 1;      // a diagonal is a longer stride
-  const from = toWorld(G.x, G.y);
+  /* a step on foot starts from wherever the walker is standing — on a
+     place, if the wheel put them there — and ends the perch */
+  const from = G.perch ? [G.perch[0], G.perch[1]] : toWorld(G.x, G.y);
+  G.perch = null;
   G.fx = from[0]; G.fy = from[1];
   if (wAt(nx, ny)){
     G.bump = false;
@@ -603,6 +606,9 @@ canvas.addEventListener('wheel', e => {
   if (!G.terr || G.paused) return;
   const s = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
   if (!s) return;
+  /* with the minimal view up the wheel walks the palace's numbers, not
+     the road (src/trace.js) */
+  if (typeof Trace !== 'undefined' && Trace.on() && Trace.walk(s)){ wake(); rail = null; return; }
   if (!rail || turned === 'fresh'){ rail = railFrom(G.face); turned = false; }
   wake();
   tryStep(rail[0] * s, rail[1] * s);
@@ -748,7 +754,11 @@ function frame(now){
     const q = clamp(G.stepT, 0, 1);
     const e = G.bump ? Math.sin(Math.PI * q) : 1 - Math.exp(-3.2 * q) * Math.cos(4.712 * q);
     pxw = lerp(G.fx, G.tx, e); pyw = lerp(G.fy, G.ty, e);
-  } else { const c = toWorld(G.x, G.y); pxw = c[0]; pyw = c[1]; }
+  } else if (G.perch && G.perch[2] === G.x && G.perch[3] === G.y){
+    /* standing on a place rather than a tile's centre (src/trace.js);
+       the perch lapses the moment a step on foot changes the tile */
+    pxw = G.perch[0]; pyw = G.perch[1];
+  } else { G.perch = null; const c = toWorld(G.x, G.y); pxw = c[0]; pyw = c[1]; }
 
   /* idle bookkeeping — a woken plate drowses back off on its own */
   if (WALL && live){

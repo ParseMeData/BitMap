@@ -209,7 +209,7 @@ and the phone: the keys drawn on the screen, every panel a sheet.
 | `Shift` | sprint |
 | `Space` | recrystallise the map |
 | `Tab` (hold) | overview of the whole map |
-| wheel | walk the road &nbsp;·&nbsp; down is onward, up is back, on the axis you face; rest a second on a crossing and the wheel takes the crossing road |
+| wheel | walk the road &nbsp;·&nbsp; down is onward, up is back, on the axis you face; rest a second on a crossing and the wheel takes the crossing road. With the minimal view up it walks the palace's **numbers** instead |
 | `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at (a pinch on a phone) |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
@@ -1528,6 +1528,19 @@ three words in both places, and kept with the palace as `kind` in
 The hand's trades ride on top of all three, and changing the kind
 renumbers the whole palace: the loci follow their places' new numbers,
 and it is a step on the undo stack like a turn is.
+
+#### Walking the numbers
+
+With the view up, **the wheel walks the walker through the palace in the
+order of its numbers**: `V` puts them on place 1, down is the next place
+and up is the one before, and in a looped palace the last place leads
+back to 1 (in the other two the ends say so and stay put). The room in
+hand follows the walker. They stand *on* the place — a place is smaller
+than a walk tile, so the tile under it is where the walker *is*, for the
+doors and the prompts, and `G.perch` is where they are *drawn*; the
+first step taken on foot ends the perch and starts from it. What is kept
+is the place's id, not its number, so a renumbering under the walker's
+feet does not move them.
 
 #### The colour
 

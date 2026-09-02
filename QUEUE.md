@@ -29,9 +29,6 @@ claim is about speed.)
 
 (Eden, 2026-09-02 — "continue floor plan view", six asks, in this order.)
 
-- [ ] **In a sequence the sprite starts at 1 and the wheel walks the
-  order.** Eden: *"make it so for sequence our sprite starts at 1 and as
-  we scroll our sprite follows the order throughout the palace"*.
 - [ ] **A room too small to read gets its grid drawn outside it.** Eden:
   *"if room is shrunk down too small to read because room is too small
   then the square grid is dupicated and shown outside the room with a
@@ -46,6 +43,16 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **The sprite starts at 1 and the wheel walks the order** —
+  2026-09-02. Eden: *"make it so for sequence our sprite starts at 1 and
+  as we scroll our sprite follows the order throughout the palace"*. `V`
+  puts the walker on place 1; with the view up the wheel walks the
+  numbers (down next, up back), the ends hold in a sequence and wrap in a
+  looped palace, the room in hand follows. The walker stands on the place
+  itself via `G.perch` (drawn there, tile under it for the doors), and a
+  step on foot ends the perch. Verified over CDP: 1→4→3, back to 1 and
+  held, looped 1→88→1, a WASD step drops the perch. BUILD 252.
 
 - [x] **Three kinds of palace: sequence, scattered, looped** —
   2026-09-02. Eden: *"on startup and in minimal v mode allow for

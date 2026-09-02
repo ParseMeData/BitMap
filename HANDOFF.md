@@ -76,7 +76,41 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 31 Aug 2026, build 249 (tag **v8.3** at 241)
+## Where we are — 2 Sep 2026, build 255 (tag **v8.3** at 241)
+
+- **Builds 250–255 (2 Sep 2026) — "continue floor plan view".** Six asks
+  from Eden, worked run-through in the order given, each on the throwaway
+  on 9223 before it was committed.
+
+  **250** — a ghost is somewhere to put a number down: a square dropped on
+  a taken-out place carries its number across and leaves its own square
+  out, held as a trade so the numbers between the two cuts stay put.
+  **251** — a palace has a **kind**: sequence, scattered or looped
+  (`hq.trace.<uid>.kind`), chosen on the palace panel where a palace is
+  started and again on a strip at the top centre of the minimal view.
+  Scattered is dealt by `Kinds.hash(place, seed)` with the seed a fold of
+  the uid, so it is the same deal every visit; a hand swap still applies
+  over it.
+  **252** — the **wheel walks the numbers**: `V` puts the walker on place 1
+  and each notch carries them to the next place in the palace's order,
+  wrapping when looped; WASD drops the perch (`G.perch`) and the rail is
+  back to the road when the view is off.
+  **253** — a room too small to read gets a **card**: rooms whose squares
+  are under four cells get their caption and eight squares drawn outside
+  the walls at five cells a square, a dotted line back to the small grid,
+  in the nearest clear spot round the block (rooms cost a line two card
+  widths to cross, cards half). The card's squares *are* the places —
+  click opens, drag trades — and undo covers it.
+  **254** — room captions leave the 5×7 diamond type for the chrome's
+  `--mono` on a 2D sheet over the plate (`#type`, the focus column's
+  route), a fifth taller, still sized to the tile; under seven device px
+  of cap the number stands alone. STYLE.md's lattice table records the
+  exception. Cards grow to the measured caption.
+  **255** — the `Inside · Esc leaves` banner shows over the pause screen
+  only (`body.paused`); the kind strip takes its slot at 52px.
+
+  Not tested on the way: reseat of markers with slots after a kind change
+  (the throwaway palace has none); the kind strip and cards on a phone.
 
 - **Build 249 (31 Aug 2026) — the walking line retired; the room in hand
   follows the hand.** Eden reported "an artifact over the first room…

@@ -35,6 +35,10 @@ if (location.search.indexOf('wallpaper') >= 0) document.title = 'Memory Quest Lo
 html,body{height:100%;overflow:hidden;background:var(--ground);color:var(--bone);
   font:400 12px/1.5 var(--mono);user-select:none;cursor:default}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1}
+/* the room captions: the chrome's mono over the plate (src/palace.js). A
+   locus preview stops the frame short of drawing them, so it hides them too */
+#type{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;pointer-events:none}
+body.locus #type,body.wall #type{display:none}
 /* the tracing underlay sits behind the plate; the plate clears transparent
    while it is on, so a real map shows through the lattice */
 /* The underlay is the element the camera transforms, so it must not also
@@ -806,6 +810,7 @@ body.arming,body.arming #gl{cursor:copy}
 <body>
 <div id="basemap"></div>
 <canvas id="gl"></canvas>
+<canvas id="type"></canvas>
 
 <!-- the map dialog: top right, a column of rows (Eden, 2026-08-28). No Show:
      the X closes the dialog and takes the map with it, M brings both back. -->
@@ -1077,7 +1082,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 253, cb = '?cb=' + BUILD +
+  var BUILD = 254, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

@@ -391,28 +391,83 @@ const Palace = (() => {
      a room dragged somewhere else takes its name with it and a room deleted
      takes its name away. */
   /* ── what the plan says about itself ───────────────────────────────────
-     Every word here is drawn in the diamond type: made of the same thing the
-     rooms are made of, breathing at the same rate, rather than a texture
-     laid over the top of them.
+     The room captions are the chrome's mono, set on a 2D canvas laid over
+     the plate (`#type`) — the route the focus column takes for its type
+     (src/focus.js) — since 2026-09-02, when Eden asked for the names a
+     little larger and in the clean UI font. They were the 5×7 diamond type
+     before: made of the plate, and at a caption's size a little too made
+     of it to read at a glance. The rule in STYLE.md (*The lattice*) is
+     amended the same way it was for the focus: type over the diamonds, in
+     the one family the chrome uses, never bold.
+
+     They are still sized to the plan and not the screen — a caption's cap
+     height is a share of a tile, and the font grows and shrinks with the
+     zoom like everything else on the plate — so the geometry here is all
+     in world units and only the last step is pixels.
 
      The NUMBER sits outside the room, above its top-left corner, the way a
      number sits outside a room on a drawn plan — inside it, it lands on the
-     floor you are trying to arrange. The NAME sits inside at the top, and
-     only while it is big enough to read: pulled back far enough the letters
-     stop being letters, and what you want from across a palace is the order
-     anyway. */
-  const NUM_TILES = 1.6;                       // how tall a lone room number stands
-  const NAME_TILES = 0.9;
-  const LEGIBLE = 1.5;                         // device px per letterform pixel
+     floor you are trying to arrange. The NAME follows it, and only while it
+     is big enough to read: pulled back far enough the letters stop being
+     letters, and what you want from across a palace is the order anyway. */
+  const NUM_TILES = 1.1;                       // cap height of a lone room number, in tiles
+  const NAME_TILES = 0.85;                     // cap height of a caption, in tiles (0.9 as 5×7 was a fifth smaller)
+  const LEGIBLE = 7;                           // device px of cap height, under which the name goes
+  const TRACK = 0.06;                          // em between letters: the user's words, not a label
+  const LEAD = 1.35;                           // the caption's band, as a share of its cap height
+  /* the mono's own proportions, read once: how far one glyph advances and
+     how tall a capital stands, both in em, so a caption can be measured in
+     world units at any zoom without setting a font */
+  let mono = null, ADV = 0.6, CAPR = 0.72, tcv = null, tctx = null;
+  function metrics(){
+    if (mono) return;
+    mono = getComputedStyle(document.documentElement).getPropertyValue('--mono').trim() || 'monospace';
+    const c = document.createElement('canvas').getContext('2d');
+    c.font = '400 100px ' + mono;
+    const m = c.measureText('H');
+    ADV = m.width / 100 || ADV;
+    CAPR = (m.actualBoundingBoxAscent || 72) / 100;
+  }
+  /* the canvas the captions go on, sized to the plate's device pixels
+     (`VW`, `VH` are device px) and cleared every frame before any is set */
+  function sheet(){
+    if (!tcv){
+      tcv = document.getElementById('type');
+      if (!tcv) return null;
+      tctx = tcv.getContext('2d');
+    }
+    if (tcv.width !== VW || tcv.height !== VH){ tcv.width = VW; tcv.height = VH; }
+    tctx.clearRect(0, 0, VW, VH);
+    return tctx;
+  }
+  /* a string set at world x, y (its left edge, its cap's middle) with a
+     cap height of `ch` world units, letter by letter so the advance is
+     the measured one and the width drawn is the width reserved */
+  function setType(c, str, x, y, ch, rgb, al){
+    const z = G.cam[2];
+    const em = ch / CAPR * z;
+    c.font = '400 ' + em.toFixed(2) + 'px ' + mono;
+    c.fillStyle = 'rgb(' + Math.round(rgb[0] * 255) + ',' + Math.round(rgb[1] * 255) + ',' + Math.round(rgb[2] * 255) + ')';
+    c.globalAlpha = al;
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    let sx = (x - G.cam[0]) * z + VW / 2;
+    const sy = (y - G.cam[1]) * z + VH / 2 + ch * z / 2;
+    const adv = em * (ADV + TRACK);
+    for (const ch2 of str){ if (ch2 !== ' ') c.fillText(ch2, sx, sy); sx += adv; }
+  }
+  /* the width and band a string takes at cap height `ch`, in world units */
+  const typeW = (str, ch) => str.length * (ch / CAPR) * (ADV + TRACK) - (ch / CAPR) * TRACK;
+  const typeH = ch => ch * LEAD;
   /* a room's full caption — number and name — and the room it takes, for
      the minimal view to reserve on the cards it draws for the small rooms
      (src/trace.js) */
   function caption(s){
+    metrics();
     const t = G.terr ? G.terr.tsz : 12;
-    const px = t * NAME_TILES / 7;
+    const ch = t * NAME_TILES;
     const num = s.n ? String(s.n) : '';
     const str = num ? num + ' ' + s.label.toUpperCase() : s.label.toUpperCase();
-    return {str, px, w: Type.width(str, px), h: Type.height(px)};
+    return {str, ch, w: typeW(str, ch), h: typeH(ch)};
   }
 
   /* ── where a room's caption goes ───────────────────────────────────────
@@ -445,6 +500,8 @@ const Palace = (() => {
   }
 
   function overlay(a, m, cap){
+    metrics();
+    const c = sheet();                          // cleared, so an early return leaves nothing behind
     /* the heading names the town; the region is not the town */
     if (typeof Region !== 'undefined' && Region.on()) return m;
     if (!G.shapes || !G.terr || WALL) return m;
@@ -469,34 +526,33 @@ const Palace = (() => {
        take a room's wall the way a caption would (src/trace.js) */
     const outs = (typeof Trace !== 'undefined' && Trace.on()) ? Trace.callouts() : [];
 
-    for (let i = 0; i < rooms.length; i++){
+    for (let i = 0; c && i < rooms.length; i++){
       const s = rooms[i], b = boxes[i];
       if (b[2] < vx0 - t * 3 || b[0] > vx1 + t * 3 ||
           b[3] < vy0 - t * 3 || b[1] > vy1 + t * 3) continue;
-      if (m > cap - 300) continue;
       const num = s.n ? String(s.n) : '';
       const name = s.label.toUpperCase();
       /* the caption is the number and the name together while the letters
          are letters, and the number alone once they stop being */
-      const npx = t * NAME_TILES / 7;
-      const full = npx * z >= LEGIBLE;
-      const px = full ? npx : Math.max(t * NUM_TILES / 7, 2.6 / z);
+      const nch = t * NAME_TILES;
+      const full = nch * z >= LEGIBLE;
+      const ch = full ? nch : Math.max(t * NUM_TILES, 9 / z);
       const str = full ? (num ? num + ' ' + name : name) : num;
       if (!str) continue;
-      const w = Type.width(str, px), h = Type.height(px);
+      const w = typeW(str, ch), h = typeH(ch);
       /* a room whose grid is copied outside it is captioned ON THE COPY:
          the card keeps a band above its grid for exactly this caption, so
          what is read is labelled where it is read */
-      const o = outs.find(c => c.rid === s.room);
+      const o = outs.find(k => k.rid === s.room);
       const at = o ? o.cap
-               : place(b, w, h, t * 0.55, boxes.filter((_, j) => j !== i).concat(outs.map(c => c.box)));
+               : place(b, w, h, t * 0.55, boxes.filter((_, j) => j !== i).concat(outs.map(k => k.box)));
       if (num){
-        m = Type.text(a, m, num, at.x, at.y, px, gold, 0.95, cap);
+        setType(c, num, at.x, at.y, ch, gold, 0.95);
         if (full)
-          m = Type.text(a, m, name, at.x + Type.width(num + ' ', px), at.y, px,
-                        bone, at.inside ? 0.55 : 0.72, cap);
+          setType(c, name, at.x + typeW(num + ' ', ch) + (ch / CAPR) * TRACK, at.y, ch,
+                  bone, at.inside ? 0.55 : 0.72);
       } else {
-        m = Type.text(a, m, name, at.x, at.y, px, bone, 0.72, cap);
+        setType(c, name, at.x, at.y, ch, bone, 0.72);
       }
     }
 

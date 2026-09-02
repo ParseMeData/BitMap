@@ -29,9 +29,6 @@ claim is about speed.)
 
 (Eden, 2026-09-02 — "continue floor plan view", six asks, in this order.)
 
-- [ ] **The room name a little larger, in the clean UI font.** Eden:
-  *"make the room name a little larger and match our clean ui font (not
-  the caligraphy)"*.
 - [ ] **The `Inside · Esc leaves` banner only while paused.** Eden: *"only
   show the inside ESC leaves prompt when in pause view"*.
 
@@ -40,6 +37,17 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The room name a little larger, in the clean UI font** —
+  2026-09-02. Eden: *"make the room name a little larger and match our
+  clean ui font (not the caligraphy)"*. Room captions leave the 5×7
+  diamond type for the chrome's `--mono`, set on a 2D sheet over the
+  plate (`#type`, the focus column's route). Still sized to the tile —
+  caps at `0.85` of a tile, a fifth taller than the 5×7 stood — and
+  zooming with the plan; under seven device px of cap the name goes and
+  the number stays alone, gold, floored at nine. `Palace.caption` now
+  measures in the mono's own metrics, so the minimal view's cards grow to
+  fit. STYLE.md's lattice table records the exception beside the focus.
+  BUILD 254.
 - [x] **A room too small to read gets its grid drawn outside it** —
   2026-09-02. Eden: *"if room is shrunk down too small to read because
   room is too small then the square grid is dupicated and shown outside

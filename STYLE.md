@@ -87,6 +87,12 @@ thing read up close. Add a row here or do not use a new one.
                                      the diamonds — not lattice. (A path to
                                      set a letter as lattice through
                                      Title.face is kept in focus.js, unused.)
+    room captions               —    a room's number and name on a plan are
+                                     the chrome's mono too, on a sheet over
+                                     the plate (`#type`, src/palace.js),
+                                     sized to the tile so they zoom with the
+                                     walls. 5×7 diamonds before 2026-09-02;
+                                     Eden asked for the clean UI face.
 
 **Where it is checked.** `G.A.cell` is the cell; `Title.paint` is the
 chrome path; the compass's *Detail* slider and a title's *Size* both read

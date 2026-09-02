@@ -1356,17 +1356,27 @@ lattice, and at any distance it reads as a different material, because it is
 one. Written in diamonds a name is made of the town rather than printed on
 it, breathes at the same rate, and costs no texture and no draw call.
 
-It carries each room's number and name — **outside** the room, on a wall with
-nothing built against it. Rooms in a generated palace are packed edge to
-edge, so most of a room's perimeter is somebody else's room, and a caption
-laid on one of those walls is written across the neighbour's floor. The four
-sides are tried in turn and the first clear one wins, which for a plan of any
-shape is always at least one, because a block has an outside. If every side
-is taken it goes back inside at the top — the worst of the options, and the
-only one always available.
+It carried each room's number and name until 2026-09-02, when the captions
+moved to the chrome's mono — a little larger, and the same clean face the
+rest of the interface is set in — on a sheet laid over the plate
+(`#type`, drawn by `src/palace.js` the way the focus column draws its own
+type). They are still sized to the plan rather than the screen: a caption's
+capitals stand `0.85` of a tile, grow and shrink with the zoom like the
+walls, and once they would be under seven device pixels the name goes and
+the number stays, larger and alone, because the order is what you want from
+across a palace.
 
-It also carries the palace's name over its plan and the town's name across
-the map.
+A caption sits **outside** the room, on a wall with nothing built against
+it. Rooms in a generated palace are packed edge to edge, so most of a room's
+perimeter is somebody else's room, and a caption laid on one of those walls
+is written across the neighbour's floor. The four sides are tried in turn
+and the first clear one wins, which for a plan of any shape is always at
+least one, because a block has an outside. If every side is taken it goes
+back inside at the top — the worst of the options, and the only one always
+available.
+
+The diamond type still carries the palace's name over its plan and the
+town's name across the map.
 
 A palace's name is a title block and goes above the plan, clear of it. A
 town's name is a map label and lies *across* the ground it names: put above

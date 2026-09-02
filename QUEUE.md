@@ -29,10 +29,6 @@ claim is about speed.)
 
 (Eden, 2026-09-02 — "continue floor plan view", six asks, in this order.)
 
-- [ ] **A room too small to read gets its grid drawn outside it.** Eden:
-  *"if room is shrunk down too small to read because room is too small
-  then the square grid is dupicated and shown outside the room with a
-  line pointer still representing its space in the room"*.
 - [ ] **The room name a little larger, in the clean UI font.** Eden:
   *"make the room name a little larger and match our clean ui font (not
   the caligraphy)"*.
@@ -43,6 +39,20 @@ claim is about speed.)
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **A room too small to read gets its grid drawn outside it** —
+  2026-09-02. Eden: *"if room is shrunk down too small to read because
+  room is too small then the square grid is dupicated and shown outside
+  the room with a line pointer still representing its space in the
+  room"*. Rooms whose squares are under four cells (`KREAD`) get a card
+  outside the walls — caption band, the eight at five cells a square, a
+  dim frame — and a dotted line back to the small grid, which stays.
+  Card squares hit-test as the place (click opens, drag trades, verified
+  over CDP with undo). Cards take the nearest clear spot round the block
+  with a cost for lines crossing rooms; the layout is memoised on the
+  room boxes. Captions keep off the cards and a small room's caption
+  sits on its card. Barwidgee: hallway, laundry, toilet, bathroom all
+  carded down the right of the block. BUILD 253.
 
 - [x] **The sprite starts at 1 and the wheel walks the order** —
   2026-09-02. Eden: *"make it so for sequence our sprite starts at 1 and

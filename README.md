@@ -1633,6 +1633,25 @@ which keeps a photograph out of localStorage for the same reason a
 locus's is (`src/loci.js`). It is the place's own — a note on the square —
 and is not part of the deck the platformer plays, which stays the loci's.
 
+#### The small rooms
+
+A square is a block of cells with the number in its corner, so under
+about four cells a square the numbers stop being numbers — a hallway, a
+toilet, a laundry. Such a room keeps its small grid where it is (it is
+still the place, and a locus still stands on it) and is given a **card**
+outside the walls: the room's caption in a band across the top, the same
+eight squares at a size that reads, and a dotted line back to the grid
+they stand for. A card's square *is* the place — press it and it opens,
+drag it and it trades, exactly as the square in the room would. The
+cards take the nearest clear spot round the block, sliding along a wall
+or stepping further out until they clear the neighbours and the cards
+already laid; a line back that would run through somebody else's room
+costs that spot dearly, so the cards tend to gather on the block's
+outside. The captions know where the cards are and keep off them, and a
+small room's caption is drawn *on* its card rather than at its wall,
+because the card is what is read. (`KREAD`, `KOUT` and `spot()` in
+`src/trace.js`; `Palace.caption` says how much room the caption needs.)
+
 #### Placing a locus
 
 **A marker dropped inside a room lands in the nearest free place** and

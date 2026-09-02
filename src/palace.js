@@ -404,6 +404,16 @@ const Palace = (() => {
   const NUM_TILES = 1.6;                       // how tall a lone room number stands
   const NAME_TILES = 0.9;
   const LEGIBLE = 1.5;                         // device px per letterform pixel
+  /* a room's full caption — number and name — and the room it takes, for
+     the minimal view to reserve on the cards it draws for the small rooms
+     (src/trace.js) */
+  function caption(s){
+    const t = G.terr ? G.terr.tsz : 12;
+    const px = t * NAME_TILES / 7;
+    const num = s.n ? String(s.n) : '';
+    const str = num ? num + ' ' + s.label.toUpperCase() : s.label.toUpperCase();
+    return {str, px, w: Type.width(str, px), h: Type.height(px)};
+  }
 
   /* ── where a room's caption goes ───────────────────────────────────────
      Outside it, on a wall that has nothing built against it.
@@ -455,6 +465,10 @@ const Palace = (() => {
                    Math.max(box[2], b[2]), Math.max(box[3], b[3])] : b.slice();
     }
 
+    /* and off the minimal view's copies of the small rooms' grids, which
+       take a room's wall the way a caption would (src/trace.js) */
+    const outs = (typeof Trace !== 'undefined' && Trace.on()) ? Trace.callouts() : [];
+
     for (let i = 0; i < rooms.length; i++){
       const s = rooms[i], b = boxes[i];
       if (b[2] < vx0 - t * 3 || b[0] > vx1 + t * 3 ||
@@ -470,7 +484,12 @@ const Palace = (() => {
       const str = full ? (num ? num + ' ' + name : name) : num;
       if (!str) continue;
       const w = Type.width(str, px), h = Type.height(px);
-      const at = place(b, w, h, t * 0.55, boxes.filter((_, j) => j !== i));
+      /* a room whose grid is copied outside it is captioned ON THE COPY:
+         the card keeps a band above its grid for exactly this caption, so
+         what is read is labelled where it is read */
+      const o = outs.find(c => c.rid === s.room);
+      const at = o ? o.cap
+               : place(b, w, h, t * 0.55, boxes.filter((_, j) => j !== i).concat(outs.map(c => c.box)));
       if (num){
         m = Type.text(a, m, num, at.x, at.y, px, gold, 0.95, cap);
         if (full)
@@ -1013,6 +1032,7 @@ const Palace = (() => {
   }
 
   return {init, show, close, sync, overlay, build, rename, named, refit, titleAt: () => titleAt(),
+          caption,
           cycleTreatment, cycleBorder, setTreatment, setBorder, setFont, resetTitle,
           setBright, setJitter, setTune, storeHeading: storeStyle,
           /* what a control that drives the cycle needs to draw itself: the

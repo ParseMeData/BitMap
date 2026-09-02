@@ -70,6 +70,14 @@
    an artifact you could not remove once the grid became hand-edited, and
    it is gone; the room is chosen by pointing, not by walking.)
 
+   ── the small rooms ───────────────────────────────────────────────────
+   A room too small for its squares to be read keeps its grid where it is
+   and is given a CARD outside the walls: the room's caption, the same
+   eight squares at a size that reads, and a dotted line back to the grid
+   they stand for. A card's square IS the place — press it, drag it, and
+   it is the place in the room you are handling. The cards find the
+   nearest clear spot round the block, the way the captions find a wall.
+
    The grid is an overlay in the entity stream, not shapes in the plan:
    nothing here is saved into `hq.rooms.<uid>`.                          */
 
@@ -174,6 +182,53 @@ const Trace = (() => {
       sq.push({x0, y0, cx: x0 + k * cell / 2, cy: y0 + k * cell / 2});
     }
     return {squares: sq, k, cell, side: k * cell};
+  }
+
+  /* ── a room too small to read gets its grid drawn OUTSIDE it ────────────
+     A square is a block of cells and the number sits in its corner, so
+     under about four cells a square the numbers stop being numbers — the
+     hallway, the toilet, a laundry. Those rooms keep their small grid where
+     it is (it is still the place, and a locus still stands on it) and are
+     given a second copy of it outside the walls at a size that reads, with
+     a dotted line back to the grid it stands for. The copy is the same
+     eight places — press one and it is the place you pressed, drag one and
+     it is the place you dragged. It is laid on the first clear side of the
+     room, stepping further out until it clears the neighbours and the
+     copies already laid, the way a caption finds its wall (src/palace.js);
+     the captions are told where the copies are so they keep off them. */
+  const KREAD = 4, KOUT = 5;
+  let outs = [], cards = null;          // this task's copies: {rid, box, from, to}
+  const callouts = () => (places(), outs);
+  function spot(b, W, H, gap, others){
+    const clear = box => !others.some(o => box[0] < o[2] && o[0] < box[2] && box[1] < o[3] && o[1] < box[3]);
+    const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    /* every clear spot on every side — against the wall, slid along it,
+       or stepped further out — and the nearest of them wins, so the line
+       back is as short as the neighbours allow */
+    let best = null, bd = Infinity;
+    for (let i = 0; i < 5; i++) for (let j = -2; j <= 2; j++) for (let k = 0; k < 4; k++){
+      let x0, y0;
+      if (k === 0){ x0 = cx - W / 2 + j * W / 2; y0 = b[1] - gap - H - i * H; }
+      else if (k === 1){ x0 = cx - W / 2 + j * W / 2; y0 = b[3] + gap + i * H; }
+      else if (k === 2){ x0 = b[0] - gap - W - i * W; y0 = cy - H / 2 + j * H / 2; }
+      else { x0 = b[2] + gap + i * W; y0 = cy - H / 2 + j * H / 2; }
+      const box = [x0, y0, x0 + W, y0 + H];
+      let d = Math.hypot(x0 + W / 2 - cx, y0 + H / 2 - cy);
+      if (d >= bd || !clear(box)) continue;
+      /* a line back that runs through somebody else's room reads as that
+         room's — so every room the line would cross costs two widths, a
+         card it would cross costs half of one, and a longer line round
+         them wins */
+      const ex = x0 + W / 2, ey = y0 + H / 2, hit = new Set();
+      for (let t = 0.04; t < 1; t += 0.04){
+        const sx = cx + (ex - cx) * t, sy = cy + (ey - cy) * t;
+        if (sx >= b[0] && sx <= b[2] && sy >= b[1] && sy <= b[3]) continue;
+        for (const o of others) if (sx >= o[0] && sx <= o[2] && sy >= o[1] && sy <= o[3]) hit.add(o);
+      }
+      for (const o of hit) d += o.card ? W * 0.5 : W * 2;
+      if (d < bd){ best = box; bd = d; }
+    }
+    return best || [b[2] + gap, cy - H / 2, b[2] + gap + W, cy + H / 2];
   }
 
   /* ── what the palace remembers ──────────────────────────────────────────
@@ -281,6 +336,54 @@ const Trace = (() => {
                    side: g.side, k: g.k, cell: g.cell});
       }
       for (const q of seen) out.push(q);
+    }
+    /* the copies for the rooms too small to read, laid room by room so
+       each keeps off the ones before it */
+    outs = [];
+    if (G.A){
+      const cell = G.A.cell, side = KOUT * cell, pitch = (KOUT + 1) * cell;
+      const G3 = (3 * KOUT + 2) * cell;                // the 3×3 itself
+      const boxes = rs.map(r => Kinds.geo.bbox(r));
+      /* where the cards go is a search over the neighbours, and the plan
+         does not move between frames — so the layout is kept until a room
+         does, and only the places are dealt onto it fresh */
+      const key = boxes.map(b => b.join()).join('|') + '#' + rs.map(r => r.n + r.label).join('|');
+      if (!cards || cards.key !== key){
+        cards = {key, by: {}};
+        const taken = boxes.slice();
+        for (let r = 0; r < rs.length; r++){
+          const g = gridFor(boxes[r]);
+          if (!g || g.k >= KREAD) continue;
+          const b = boxes[r];
+          /* the card: the room's caption in a band across the top, the
+             grid under it, a cell of margin round both — as wide as the
+             wider of the two, so the name is on the card and not across
+             the neighbour */
+          const cap = (typeof Palace !== 'undefined' && Palace.caption) ? Palace.caption(rs[r]) : {w: 0, h: 0};
+          const W = Math.max(G3, cap.w) + 2 * cell, H = G3 + cap.h + 3 * cell;
+          const box = spot(b, W, H, G.terr.tsz * 0.55, taken);
+          box.card = true;
+          taken.push(box);
+          const cx = (box[0] + box[2]) / 2, cy = box[1] + cap.h + 2 * cell + G3 / 2;
+          cards.by[rs[r].room] = {rid: rs[r].room, room: r + 1, box, to: [cx, cy],
+                                  from: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2],
+                                  cap: {x: box[0] + cell, y: box[1] + cell + cap.h / 2},
+                                  reach: g.side * 1.5 + cell * 1.5};
+        }
+      }
+      for (let r = 0; r < rs.length; r++){
+        const o = cards.by[rs[r].room];
+        if (!o) continue;
+        outs.push(o);
+        const cx = o.to[0], cy = o.to[1];
+        for (const q of out){
+          if (q.room !== r + 1) continue;
+          /* reading order with the centre skipped: 0 1 2 / 3 · 4 / 5 6 7 */
+          const gxi = q.sq < 4 ? q.sq % 3 : (q.sq + 1) % 3, gyi = q.sq < 3 ? 0 : q.sq < 5 ? 1 : 2;
+          const x0 = cx + (gxi - 1) * pitch - side / 2, y0 = cy + (gyi - 1) * pitch - side / 2;
+          q.out = {x0, y0, x: x0 + side / 2, y: y0 + side / 2, side, k: KOUT};
+        }
+      }
     }
     /* scattered: the same numbers, dealt over the live places in the order
        of each place's roll. The roll is on the place id and the palace, so
@@ -671,9 +774,13 @@ const Trace = (() => {
             ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]];
   };
   function squareAt(x, y){
-    for (const q of places())
+    for (const q of places()){
       if (x >= q.x0 && x <= q.x0 + q.side && y >= q.y0 && y <= q.y0 + q.side)
         return q;
+      const o = q.out;
+      if (o && x >= o.x0 && x <= o.x0 + o.side && y >= o.y0 && y <= o.y0 + o.side)
+        return q;
+    }
     return null;
   }
   /* where a dragged square may land: on any other square that is live, or
@@ -761,51 +868,90 @@ const Trace = (() => {
        out is not a place, but while the view is up it stands as a GHOST —
        the dim tone, no number — because the hand needs something to click
        to put it back. */
-    for (const q of places()){
+    const cell = G.A.cell;
+    /* one square, at the place itself or at its copy outside the room */
+    const square = (q, g, mine) => {
       if (!q.n){
-        const gh = q.room === p.room ? 0.12 : 0.05;
-        for (let j = 0; j < q.k; j++) for (let i = 0; i < q.k; i++){
-          if (m > cap - 4) return m;
-          m = put(a, m, q.x0 + (i + 0.5) * q.cell, q.y0 + (j + 0.5) * q.cell,
-                  TONES[7][0], TONES[7][1], TONES[7][2], gh, q.cell, 0, 0, 0, 1);
+        const gh = mine ? 0.12 : 0.05;
+        for (let j = 0; j < g.k; j++) for (let i = 0; i < g.k; i++){
+          if (m > cap - 4) return false;
+          m = put(a, m, g.x0 + (i + 0.5) * cell, g.y0 + (j + 0.5) * cell,
+                  TONES[7][0], TONES[7][1], TONES[7][2], gh, cell, 0, 0, 0, 1);
         }
-        continue;
+        return true;
       }
-      const mine = q.room === p.room;
       const al = mine ? 0.92 : 0.22;
       /* the tone is the NUMBER's, not the square's, so it travels with the
          number when the room is turned or a place before it is taken out.
          A ten is every tone at once, laid in hue order across the square's
          own diagonal — the rainbow is made of the cells, not of a colour. */
       const bow = rainbow(q.n), t = toneOf(q.n);
-      for (let j = 0; j < q.k; j++) for (let i = 0; i < q.k; i++){
-        if (m > cap - 4) return m;
+      for (let j = 0; j < g.k; j++) for (let i = 0; i < g.k; i++){
+        if (m > cap - 4) return false;
         const c = bow ? BOW[(i + j) % BOW.length] : t;
-        m = put(a, m, q.x0 + (i + 0.5) * q.cell, q.y0 + (j + 0.5) * q.cell,
-                c[0], c[1], c[2], al, q.cell, 0, 0, 0, 1);
+        m = put(a, m, g.x0 + (i + 0.5) * cell, g.y0 + (j + 0.5) * cell,
+                c[0], c[1], c[2], al, cell, 0, 0, 0, 1);
       }
       /* and its number, in the square's own corner where a marker standing
          in the middle of the place cannot cover it */
-      const r = Math.max(q.side * 0.24, 4 * px);
+      const r = Math.max(g.side * 0.24, 4 * px);
       if (r * z > 3)
-        m = num(a, m, q.n, q.x0 + q.side * 0.32, q.y0 + q.side * 0.30, r,
+        m = num(a, m, q.n, g.x0 + g.side * 0.32, g.y0 + g.side * 0.30, r,
                 bow ? BONE : ink(t), mine ? 0.95 : 0.5, cap);
+      return true;
+    };
+    for (const q of places()){
+      const mine = q.room === p.room;
+      if (!square(q, q, mine)) return m;
+      if (q.out && !square(q, q.out, mine)) return m;
+    }
+    /* the copies' frames, and the dotted line from each back to the grid
+       it stands for — the small grid is still the place, so the line ends
+       on it and a ring says which */
+    for (const o of outs){
+      if (m > cap - 200) break;
+      const mine = o.room === p.room, al = mine ? 0.5 : 0.16;
+      const b = o.box, d = TONES[7];
+      const nx = Math.round((b[2] - b[0]) / cell), ny = Math.round((b[3] - b[1]) / cell);
+      for (let i = 0; i <= nx; i++){
+        m = put(a, m, b[0] + i * cell, b[1], d[0], d[1], d[2], al, cell, 0, 0, 0, 1);
+        m = put(a, m, b[0] + i * cell, b[3], d[0], d[1], d[2], al, cell, 0, 0, 0, 1);
+      }
+      for (let j = 1; j < ny; j++){
+        m = put(a, m, b[0], b[1] + j * cell, d[0], d[1], d[2], al, cell, 0, 0, 0, 1);
+        m = put(a, m, b[2], b[1] + j * cell, d[0], d[1], d[2], al, cell, 0, 0, 0, 1);
+      }
+      /* the line leaves the frame where it faces the room and stops at
+         the edge of the small grid, which is the place it stands for */
+      const dx = o.from[0] - o.to[0], dy = o.from[1] - o.to[1], L = Math.hypot(dx, dy) || 1;
+      const ux = dx / L, uy = dy / L;
+      /* how far from the grid's centre the frame is, in the line's direction */
+      const ex = ux > 0 ? b[2] - o.to[0] : o.to[0] - b[0], ey = uy > 0 ? b[3] - o.to[1] : o.to[1] - b[1];
+      const s0 = Math.min(ex / Math.max(Math.abs(ux), 1e-6), ey / Math.max(Math.abs(uy), 1e-6)) + cell;
+      const s1 = L - o.reach;
+      for (let sd = s0; sd < s1; sd += cell * 1.6){
+        if (m > cap - 4) return m;
+        m = put(a, m, o.to[0] + ux * sd, o.to[1] + uy * sd, BONE[0], BONE[1], BONE[2],
+                mine ? 0.55 : 0.18, cell * 0.8, 0, 0, 0, 1);
+      }
     }
 
     /* the hand: a ring on the place whose panel is open, and while a
        square is being dragged, a ring on it, a ring riding the pointer,
-       and a heavier one on the square it would trade with */
-    if (edit && m <= cap - 4){
+       and a heavier one on the square it would trade with. A place with a
+       copy outside its room wears the ring in both */
+    const ring = (q, al, f, floor) => {
+      m = put(a, m, q.x, q.y, GOLD[0], GOLD[1], GOLD[2], al, Math.max(q.side * f, floor * px), 1, 0, 0, 1);
+      if (q.out) m = put(a, m, q.out.x, q.out.y, GOLD[0], GOLD[1], GOLD[2], al,
+                         Math.max(q.out.side * f, floor * px), 1, 0, 0, 1);
+    };
+    if (edit && m <= cap - 8){
       const q = slotId(edit.id);
-      if (q) m = put(a, m, q.x, q.y, GOLD[0], GOLD[1], GOLD[2], 0.8,
-                     Math.max(q.side * 0.75, 10 * px), 1, 0, 0, 1);
+      if (q) ring(q, 0.8, 0.75, 10);
     }
-    if (dragQ && m <= cap - 12){
-      m = put(a, m, dragQ.x, dragQ.y, GOLD[0], GOLD[1], GOLD[2], 0.45,
-              Math.max(dragQ.side * 0.7, 9 * px), 1, 0, 0, 1);
-      if (dragAt)
-        m = put(a, m, dragAt.x, dragAt.y, GOLD[0], GOLD[1], GOLD[2], 0.9,
-                Math.max(dragAt.side * 0.8, 11 * px), 1, 0, 0, 1);
+    if (dragQ && m <= cap - 24){
+      ring(dragQ, 0.45, 0.7, 9);
+      if (dragAt) ring(dragAt, 0.9, 0.8, 11);
       m = put(a, m, dragX, dragY, GOLD[0], GOLD[1], GOLD[2], 0.8,
               Math.max(G.A.cell * 2, 7 * px), 1, 0, 0, 1);
     }
@@ -939,5 +1085,7 @@ const Trace = (() => {
           kind: () => kind, kinds: () => KINDS.slice(), setKind,
           /* the wheel, from game.js: +1 is the next place, -1 the one before */
           walk, goTo,
+          /* where the copies of the small rooms' grids are, for the captions */
+          callouts,
           on: () => on, room: () => room};
 })();

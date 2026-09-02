@@ -121,6 +121,22 @@ const Trace = (() => {
      own id — read once per palace and kept until the palace is left, because
      the numbers are asked for on every frame and by every marker */
   let cfgUid = '', turn = {}, gone = {}, swaps = [], data = {};
+  /* ── the kind of palace ──────────────────────────────────────────────
+     How the numbers are laid through the building. A SEQUENCE walks the
+     rooms in their order and each room's eight in theirs — the numbering
+     the header describes. SCATTERED lays the same count of numbers over
+     the same places in an order that is fixed by the palace and the place
+     and nothing else: a roll on the place id and the palace, so it does
+     not change from one visit to the next, and taking a place out closes
+     the gap without dealing the rest again. LOOPED is a sequence whose
+     end leads back to 1 — the numbers are the sequence's; what differs is
+     the walk (the wheel wraps rather than stopping at the last place).
+     The hand's trades ride on top of all three. */
+  const KINDS = ['sequence', 'scattered', 'looped'];
+  let kind = KINDS[0];
+  /* a palace's roll: its uid folded to an integer, once per config */
+  let seed = 0;
+  const fold = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h | 0; };
 
   const rooms = () => G.shapes.filter(s => s.label && s.room)
     .sort((a, b) => (a.n || 0) - (b.n || 0) || a.id - b.id);
@@ -167,7 +183,8 @@ const Trace = (() => {
      still means the room number. */
   function cfg(u){
     if (!u || cfgUid === u) return;
-    cfgUid = u; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
+    cfgUid = u; turn = {}; gone = {}; swaps = []; data = {}; room = 1; kind = KINDS[0];
+    seed = fold(u);
     forget();
     const raw = Store.get(KEY(u)) || '';
     if (/^\d+$/.test(raw.trim())){ room = Math.max(1, parseInt(raw, 10) || 1); return; }
@@ -179,10 +196,11 @@ const Trace = (() => {
     if (o.gone && typeof o.gone === 'object') gone = o.gone;
     if (Array.isArray(o.swaps)) swaps = o.swaps;
     if (o.data && typeof o.data === 'object') data = o.data;
+    if (KINDS.indexOf(o.kind) >= 0) kind = o.kind;
   }
   function save(){
     if (!cfgUid) return;
-    Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone, swaps, data}), 'the trace');
+    Store.put(KEY(cfgUid), JSON.stringify({room, turn, gone, swaps, data, kind}), 'the trace');
   }
   /* an undo has just rewritten this palace's key under us: read it back.
      Only the config — the markers are History's next move (apply() mounts
@@ -195,6 +213,8 @@ const Trace = (() => {
     cfgUid = '';
     cfg(u);
     forget(); plan = null;
+    strip();
+    if (typeof Palace !== 'undefined' && Palace.opened && Palace.opened()) Palace.sync();
     /* the panel says the restored truth, text fields included — the undo
        was pressed with focus on the game, so there is no typing to fight */
     if (edit && ui){
@@ -261,6 +281,18 @@ const Trace = (() => {
                    side: g.side, k: g.k, cell: g.cell});
       }
       for (const q of seen) out.push(q);
+    }
+    /* scattered: the same numbers, dealt over the live places in the order
+       of each place's roll. The roll is on the place id and the palace, so
+       the deal is the same every visit and a place taken out just closes
+       its gap — the walk order above only breaks ties, which the roll
+       does not produce in practice */
+    if (kind === 'scattered'){
+      const live = out.filter(q => q.n);
+      const roll = {};
+      for (const q of live) roll[q.id] = Kinds.hash(q.id, seed, 7919);
+      live.sort((p, q) => roll[p.id] - roll[q.id]);
+      for (let i = 0; i < live.length; i++) live[i].n = i + 1;
     }
     /* the hand swaps ride on top, in the order they were made: each pair
        trades whatever numbers its two places are wearing at that point in
@@ -789,6 +821,7 @@ const Trace = (() => {
     if (on){ uid = Interior.uid(); cfg(uid); plan = null; }
     Build.setMinimal(on);
     if (typeof restampTerrain === 'function') restampTerrain();
+    strip();
     const p = on ? build() : null;
     note(on ? (p ? 'minimal · room ' + p.room + ' of ' + p.of + ' · ' + count() +
                    ' places · [ ] turn · X out · click a place to open it · drag to swap'
@@ -803,11 +836,47 @@ const Trace = (() => {
   function off(){
     groom(); compact();
     closeEdit();
-    on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1;
+    on = false; plan = null; cfgUid = ''; turn = {}; gone = {}; swaps = []; data = {}; room = 1; kind = KINDS[0];
     forget();
+    strip();
     if (typeof Build !== 'undefined') Build.setMinimal(false);
   }
   function reset(){ room = 1; plan = null; if (cfgUid) save(); }
+
+  /* ── choosing the kind ──────────────────────────────────────────────────
+     Two places offer it: the room-order box, which is the palace being
+     started (src/palace.js draws the chips there and calls in), and a
+     strip that stands at the top of the minimal view — the same three
+     words, lit the same way. Changing it renumbers the whole palace, so
+     the loci follow their places' new numbers and it is a step on the
+     undo stack like a turn is. */
+  function setKind(k){
+    if (KINDS.indexOf(k) < 0 || k === kind) return false;
+    if (typeof Interior === 'undefined' || !Interior.inside()) return false;
+    cfg(Interior.uid());
+    kind = k;
+    forget(); save(); reseat();
+    if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    hstep();
+    if (edit) fill();
+    strip();
+    if (typeof Palace !== 'undefined' && Palace.sync) Palace.sync();
+    note(k === 'sequence' ? 'a sequence · the numbers walk the rooms in order'
+       : k === 'scattered' ? 'scattered · the numbers are dealt across the palace, the same deal every visit'
+       : 'looped · a sequence whose last place leads back to 1');
+    return true;
+  }
+  /* the strip is drawn once from the markup and lit from here */
+  let kstrip = null;
+  function strip(){
+    if (!kstrip){
+      kstrip = document.getElementById('kind');
+      if (!kstrip) return;
+      kstrip.querySelectorAll('.chip').forEach(c => c.onclick = () => setKind(c.dataset.kind));
+    }
+    kstrip.querySelectorAll('.chip').forEach(c => c.classList.toggle('sel', c.dataset.kind === kind));
+    kstrip.hidden = !on;
+  }
 
   wire();
 
@@ -819,5 +888,7 @@ const Trace = (() => {
           /* the numbers are asked for by markers.js while the view is down,
              so the palace's turns and cuts have to be readable then too */
           mount: u => cfg(u), per: () => PER,
+          /* the kind, for the room-order box's chips and the walk */
+          kind: () => kind, kinds: () => KINDS.slice(), setKind,
           on: () => on, room: () => room};
 })();

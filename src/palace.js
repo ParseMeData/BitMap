@@ -363,6 +363,10 @@ const Palace = (() => {
     if (btn) btn.textContent = !n ? 'Generate'
       : (had && !armed) ? 'Replace the plan' : ('Generate ' + n + ' room' + (n === 1 ? '' : 's'));
     if (btn) btn.classList.toggle('sel', armed);
+    /* the kind of palace is the trace's (src/trace.js); the chips only
+       show it and pass a press on */
+    const kind = typeof Trace !== 'undefined' && Trace.kind ? Trace.kind() : 'sequence';
+    document.querySelectorAll('#pkind .chip').forEach(c => c.classList.toggle('sel', c.dataset.kind === kind));
     if (note) note.textContent = !n
       ? 'one room to a line · bedroom, bathroom, kitchen, study…'
       : (had && !armed)
@@ -993,6 +997,10 @@ const Palace = (() => {
     }
     if (btn) btn.onclick = go;
     if (x) x.onclick = () => close();
+    document.querySelectorAll('#pkind .chip').forEach(c => c.onclick = () => {
+      if (typeof Trace !== 'undefined' && Trace.setKind) Trace.setKind(c.dataset.kind);
+      sync();
+    });
     loadStyle();
     /* `Build.init` runs before this one and drew the heading controls from
        whatever was in memory, which at that point was the defaults — so the

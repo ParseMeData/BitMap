@@ -1507,6 +1507,28 @@ keeps is a **place id** — `room * 8 + square`, the geometry, stable under
 every turn, deletion and renumbering that can happen around it — and its
 number is read off the place each time it is asked for.
 
+#### The kind of palace
+
+How the numbers are laid through the building is a choice, made in the
+room-order box when the palace is started and again on a strip at the
+top of the minimal view — **Sequence · Scattered · Looped**, the same
+three words in both places, and kept with the palace as `kind` in
+`hq.trace.<uid>`.
+
+- **Sequence** is the numbering above: the rooms in their order, each
+  room's eight in theirs.
+- **Scattered** deals the same numbers over the same places in an order
+  fixed by the palace and the place and nothing else — a roll on the
+  place id and the palace's uid — so the deal is the same every visit,
+  and taking a place out closes its gap without dealing the rest again.
+- **Looped** is a sequence whose last place leads back to 1. The numbers
+  are the sequence's; what differs is the walk (the wheel wraps rather
+  than stopping at the end).
+
+The hand's trades ride on top of all three, and changing the kind
+renumbers the whole palace: the loci follow their places' new numbers,
+and it is a step on the undo stack like a turn is.
+
 #### The colour
 
 A tone belongs to a **number**, not to a square, so the colour travels

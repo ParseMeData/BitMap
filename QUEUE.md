@@ -27,10 +27,47 @@ interface smoothness and back end cleanliness. Essentially I want this to
 feel smoother and not laggy or glitchy". Measure before and after where a
 claim is about speed.)
 
+(Eden, 2026-09-02 — "continue floor plan view", six asks, in this order.)
+
+- [ ] **In a sequence the sprite starts at 1 and the wheel walks the
+  order.** Eden: *"make it so for sequence our sprite starts at 1 and as
+  we scroll our sprite follows the order throughout the palace"*.
+- [ ] **A room too small to read gets its grid drawn outside it.** Eden:
+  *"if room is shrunk down too small to read because room is too small
+  then the square grid is dupicated and shown outside the room with a
+  line pointer still representing its space in the room"*.
+- [ ] **The room name a little larger, in the clean UI font.** Eden:
+  *"make the room name a little larger and match our clean ui font (not
+  the caligraphy)"*.
+- [ ] **The `Inside · Esc leaves` banner only while paused.** Eden: *"only
+  show the inside ESC leaves prompt when in pause view"*.
+
 
 ## Done
 
 (ticked items move here with the date)
+
+- [x] **Three kinds of palace: sequence, scattered, looped** —
+  2026-09-02. Eden: *"on startup and in minimal v mode allow for
+  different types of palaces (sequence, scattered, looped)"*. Three chips
+  in the room-order box and a strip at the top of the minimal view, lit
+  the same; kept as `kind` in `hq.trace.<uid>`. Sequence is the numbering
+  as it was; scattered deals the numbers by a roll on place id × palace
+  uid, the same deal every visit; looped numbers like a sequence and its
+  walk wraps (the next item). Changing it renumbers, reseats the loci,
+  and steps undo. Verified: deal identical across a reload, undo relights
+  both controls, chips drive it from either side. BUILD 251.
+
+- [x] **A taken-out place can be traded with a numbered one** —
+  2026-09-02. Eden: *"if we delete or remove a room allow it to be swapped
+  with an existing number square"*. A ghost is a drop target: a live
+  square dragged onto it, or the ghost dragged onto a live square,
+  CARRIES the number — the ghost comes back wearing it and the square it
+  left goes out, so the palace stays the same length; a number typed into
+  a ghost's panel is the same carry. The carried number is held by a
+  trade with whichever place would otherwise derive it (`carry()` in
+  trace.js). Verified over CDP both directions, from the panel, and three
+  undos back to the start. BUILD 250.
 
 - [x] **The walking line retired; the room in hand follows the hand** —
   2026-08-31. Eden: *"there seems to be an artifact that lays over the

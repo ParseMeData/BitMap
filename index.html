@@ -150,6 +150,7 @@ body.mobile #compass{transform:scale(.5);transform-origin:0 0;left:4px;top:8px}
 body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px}
 body.mobile #quest{top:112px;left:8px;right:8px;transform:none;font-size:8.5px}
 body.mobile #inside,body.mobile #region{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
+body.mobile #kind{top:180px}
 body.mobile #enterhint{bottom:auto;top:180px;left:8px;right:8px;transform:none;justify-content:center}
 body.mobile #msg{top:214px}
 body.mobile #toast{left:8px;right:8px;top:44px;bottom:auto;max-width:none}
@@ -379,6 +380,16 @@ body.wall #inside,body.wall #enterhint{display:none}
    and it will throw work away. */
 #pgen.sel,#krevert.sel{background:var(--gold);color:var(--ground);border-color:var(--gold)}
 body.locus #palace{display:none}
+#palace .pkind .chip{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;padding:6px 0}
+/* the same choice while the minimal view is up: a strip at the top centre,
+   under the interior's banner and clear of the palette and the route */
+#kind{position:fixed;left:50%;top:86px;transform:translateX(-50%);z-index:5;
+  padding:6px 8px 6px 13px;display:flex;gap:6px;align-items:center;font-size:9.5px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
+#kind b{color:var(--flare);font-weight:400}
+#kind span{margin-right:5px}
+#kind .chip{padding:5px 11px;font-size:8.5px;letter-spacing:.18em;text-transform:uppercase}
+body.locus #kind,body.journal #kind,body.wall #kind{display:none}
 /* the route sits opposite the palette: one panel is the brush and the other
    is the sequence, and the sequence is the half a memory palace is made of */
 #route{position:fixed;right:16px;top:14px;width:224px;max-height:calc(100vh - 28px);
@@ -905,7 +916,21 @@ body.arming,body.arming #gl{cursor:copy}
   <textarea id="porder" spellcheck="false" rows="7"
             placeholder="hall&#10;bedroom&#10;bathroom&#10;kitchen&#10;study"></textarea>
   <button class="btn" id="pgen">Generate</button>
+  <div class="chips three pkind" id="pkind" title="how the numbers run through the palace">
+    <div class="chip" data-kind="sequence">Sequence</div>
+    <div class="chip" data-kind="scattered">Scattered</div>
+    <div class="chip" data-kind="looped">Looped</div>
+  </div>
   <div class="knote" id="pgnote"></div>
+</div>
+
+<!-- the kind of palace, offered again at the top of the minimal view: the
+     same three words the room-order box has, lit the same way (src/trace.js) -->
+<div id="kind" class="glass" hidden>
+  <span>The <b>numbers</b></span>
+  <div class="chip" data-kind="sequence">Sequence</div>
+  <div class="chip" data-kind="scattered">Scattered</div>
+  <div class="chip" data-kind="looped">Looped</div>
 </div>
 
 <div id="route" class="glass" hidden>
@@ -1052,7 +1077,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 250, cb = '?cb=' + BUILD +
+  var BUILD = 251, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

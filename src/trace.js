@@ -52,7 +52,10 @@
    chain of swaps applied on top of the derived numbering, so a trade
    survives the turns and cuts that happen around it. A square that has
    been taken out stands as a ghost while the view is up, so there is
-   something to click to put it back. What is typed lives in
+   something to click to put it back — and something to drop a number ON:
+   a live square dragged onto a ghost (or the ghost onto it) carries the
+   number across, the ghost coming back in it and the square it left going
+   out, so the palace stays the same length. What is typed lives in
    `hq.trace.<uid>` beside the turns and cuts; a place's picture goes to
    the loci store (src/loci.js) under `place:<palace>:<id>`.
 
@@ -424,6 +427,35 @@ const Trace = (() => {
     hstep();
   }
 
+  /* a number carried onto a square that has been taken out: the ghost comes
+     back wearing it and the square it came from goes out in its stead, so
+     the palace is exactly as long afterwards. The two cuts move every
+     number between them, so the ghost does not derive the number it was
+     handed — a trade with whichever place is wearing it puts it there. A
+     place with a locus standing in it is refused, as `cutPlace` refuses,
+     because the locus is the work. */
+  function carry(from, ghost){
+    if (!from || !ghost || !from.n || ghost.n) return false;
+    if (taken(from.id)){ note('a locus is standing there — take the locus out first'); return false; }
+    const want = from.n;
+    const back = goneOf(ghost.rid).filter(sq => sq !== ghost.sq);
+    gone[ghost.rid] = back;
+    const out = goneOf(from.rid).slice();
+    if (out.indexOf(from.sq) < 0) out.push(from.sq);
+    gone[from.rid] = out;
+    forget();
+    const q = slotId(ghost.id);
+    if (q && q.n !== want){
+      const t = slotN(want);
+      if (t && t.id !== ghost.id) swaps.push([ghost.id, t.id]);
+    }
+    forget(); save(); reseat();
+    if (typeof Markers !== 'undefined'){ Markers.renumber(); Markers.commit(); }
+    hstep();
+    note('place ' + want + ' carried over · the square it left is out');
+    return true;
+  }
+
   /* ── grooming what the plan no longer carries ───────────────────────────
      A room deleted from the plan leaves its turn, its cuts, its trades and
      its writing behind in the key. They are dropped on the way out — but
@@ -510,7 +542,9 @@ const Trace = (() => {
     ui.no.textContent = q.n ? String(q.n) : '·';
     ui.room.textContent = (r && r.label) || ('room ' + q.room);
     ui.num.value = q.n ? String(q.n) : '';
-    ui.num.disabled = !q.n;
+    /* a ghost has no number, but the field is open: a number typed into it
+       is carried here from the place wearing it */
+    ui.num.placeholder = q.n ? '' : 'carry a number here';
     const has = typeof Loci !== 'undefined' && Loci.has(pkey(q.id));
     ui.pic.textContent = has ? 'Replace picture' : 'Attach picture';
     ui.view.hidden = !has;
@@ -537,11 +571,12 @@ const Trace = (() => {
        length — there is no way to type a hole into it */
     const renumber = () => {
       const q = edit && slotId(edit.id);
-      if (!q || !q.n) return;
+      if (!q) return;
       const want = parseInt(ui.num.value, 10);
-      if (!want || want === q.n){ ui.num.value = String(q.n); return; }
+      if (!want || want === q.n){ ui.num.value = q.n ? String(q.n) : ''; return; }
       const t = slotN(want);
-      if (!t){ note('the palace is ' + count() + ' places long'); ui.num.value = String(q.n); return; }
+      if (!t){ note('the palace is ' + count() + ' places long'); ui.num.value = q.n ? String(q.n) : ''; return; }
+      if (!q.n){ carry(t, q); fill(); return; }
       note('place ' + q.n + ' and place ' + want + ' traded numbers');
       swap(q.id, t.id);
       fill();
@@ -609,6 +644,10 @@ const Trace = (() => {
         return q;
     return null;
   }
+  /* where a dragged square may land: on any other square that is live, or
+     on a ghost when the one in hand has a number to carry — a ghost dropped
+     on a ghost is nothing traded */
+  const landing = (from, to) => to.id !== from.id && (to.n || from.n);
   function wire(){
     addEventListener('pointerdown', e => {
       if (!on || e.button !== 0 || e.target !== canvas || G.paused) return;
@@ -627,13 +666,11 @@ const Trace = (() => {
       if (!press) return;
       const w = evWorld(e);
       dragX = w[0]; dragY = w[1];
-      /* a ghost is clicked back, never dragged — it has no number to trade */
-      if (!dragQ && press.q.n &&
-          Math.hypot(w[0] - press.x, w[1] - press.y) > press.q.side * 0.35)
+      if (!dragQ && Math.hypot(w[0] - press.x, w[1] - press.y) > press.q.side * 0.35)
         dragQ = press.q;
       if (dragQ){
         const t = squareAt(w[0], w[1]);
-        dragAt = t && t.id !== dragQ.id && t.n ? t : null;
+        dragAt = t && landing(dragQ, t) ? t : null;
       }
       e.stopPropagation();
     }, true);
@@ -644,10 +681,15 @@ const Trace = (() => {
            pointer last passed — a release in empty space is a change of
            mind, not a drop on the last square the drag crossed */
         const w = evWorld(e), t = squareAt(w[0], w[1]);
-        const at = t && t.id !== dragQ.id && t.n ? t : null;
+        const at = t && landing(dragQ, t) ? t : null;
         if (at){
-          note('place ' + dragQ.n + ' and place ' + at.n + ' traded numbers');
-          swap(dragQ.id, at.id);
+          /* two numbers trade; a number dropped on a ghost — or a ghost
+             dragged onto a number — carries the number across */
+          if (at.n && dragQ.n){
+            note('place ' + dragQ.n + ' and place ' + at.n + ' traded numbers');
+            swap(dragQ.id, at.id);
+          }
+          else carry(dragQ.n ? dragQ : at, dragQ.n ? at : dragQ);
           if (edit) fill();
         }
       }

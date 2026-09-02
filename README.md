@@ -1585,6 +1585,14 @@ pair whose places are not both live waits rather than acts, and trading
 the same two squares straight back cancels the pair rather than growing
 the chain.
 
+**Drop a number on a ghost** — a live square dragged onto a taken-out one,
+or the ghost dragged onto a live square — and the number is **carried
+across**: the ghost comes back wearing it and the square it left goes out
+in its stead, so the palace is exactly as long afterwards. Typing a number
+into a ghost's panel is the same carry. (The two cuts move every number
+between them, so the carried number is held in place by a trade with
+whichever square would otherwise have worn it.)
+
 A place's picture goes to the loci store under `place:<palace>:<id>`,
 which keeps a photograph out of localStorage for the same reason a
 locus's is (`src/loci.js`). It is the place's own — a note on the square —

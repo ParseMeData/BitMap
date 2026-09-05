@@ -76,7 +76,45 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 278 (tag **v8.7** at 273; **v8.8 open**)
+## Where we are — 5 Sep 2026, build 279 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 279 (5 Sep 2026) — a cluster opens, with a blend and a glide;
+  the links go organic; the diamonds shade.** Eden: *"when a cluster is
+  opened this expands this region and then closes the previous region
+  into its own cluster — add a clean smooth animation for this — as well
+  as animation for our sprite moving from one section to the other —
+  also the lines seem very clean and symmetrical which feels artificial
+  — make the line curve shape look a little more natural and organic
+  while maintaining existing style — give the diamonds a subtle
+  variation in shading and colour"*. region.js is rebuilt round a
+  **scene**: `layout()` from an **eye** (`view` — home's anchor until a
+  cluster is opened, then the group's mean geo; `hq.region`'s own
+  centre is untouched, and `toXY`/`toGeo` read the eye) → `scene()`, a
+  keyed list of gems, labels and links → `emit()`. `open(cl)` (on
+  `Region`) keeps the scene it leaves in `trans` and `overlay` blends
+  it into the live one by key for 900 ms with a cubic ease (`blend`:
+  positions, sizes, colours and alphas lerp; what is only on one side
+  fades), and `glide(at)` stands the walker on the town's tile through
+  the game's own step — `G.fx/fy` from, `G.tx/ty` to, `stepScale` 3–7
+  by the distance — so the sprite travels with the spring at the end;
+  `hop()` glides too. Enter on a cluster opens it (`press`, and the hint
+  says "open Mildura · 4 towns beyond the plate"); the previous group
+  gathers at the edge on its own as the eye moves — "BARWIDGEE 6" — and
+  Enter on it is the way home. Leaving the region drops the eye, the
+  transition and `stood`. **Links:** `curve()` is a cubic with two
+  control points off to a side of its own (a seeded `rnd` by the pair's
+  names: 5–12 % of the run, the second 2–9 % and back the other way
+  three times in ten) and a slow wave of 1.2 % along it; `bow()` for a
+  drawn link picks its side and a twelfth-to-a-ninth by a seed of its
+  endpoints. **Diamonds:** `shade(col, name)` is ±10 % brightness and up
+  to 18 % toward warm or cool, and `gem()` adds a lit facet up-left at
+  half the size. Clusters landing under the keys panel (the foot of the
+  right-hand third) are lifted clear. Verified on Eden's window: hop up,
+  hop left, Enter — Mildura's four spread out with the walker gliding
+  to Mildura, Melbourne's cluster south-east, Barwidgee's six at the
+  edge; hop right, Enter — home again, "back to Barwidgee". No errors.
+  Not tested: a real town off the eye (only samples were), a drawn
+  link's bow, the blend's look on a phone.
 
 - **Build 278 (5 Sep 2026) — every link bows; the arrows hop between
   towns.** Eden: *"give all lines in between towns a slight curve and

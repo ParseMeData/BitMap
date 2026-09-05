@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **A cluster opens with a blend and a glide; organic links; shaded
+  diamonds** — 2026-09-05, build 279. The region as a keyed scene from
+  an eye, two scenes blended when a cluster is opened, the walker's hop
+  as one long step, seeded curves and shades.
 - [x] **Every link bows; the arrows hop between towns** — 2026-09-05,
   build 278. One bow rule for drawn and sample links; arrows on the
   region take the walker to the nearest town that way, with the hint.

@@ -255,7 +255,17 @@ groups, Melbourne and Mildura, are among the samples. Every link bows
 a little, a twelfth of its length to one side, a drawn one as a
 sample's; and on the region the **arrows** hop the walker to the
 nearest town in that direction — a town, a sample or a cluster, the
-hint saying which — while `WASD` still walks the links.
+hint saying which — while `WASD` still walks the links. **Enter on a
+cluster opens it**: the region's eye moves to the middle of that group,
+its towns spread out on the plate and what was on the plate gathers at
+the edge as a cluster of its own, the one scene blending into the other
+over most of a second, and the walker glides — one long step, the
+game's own spring at its end — to the town the cluster was named for;
+the home town's cluster is the way back. Each link curves its own way,
+bowed by an amount of its own and now and then swinging back, with a
+slow wave along it; each diamond is a shade brighter or dimmer and a
+touch warmer or cooler than its colour, with a lit facet, seeded by its
+name so nothing flickers.
 
 ## Controls
 

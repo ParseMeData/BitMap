@@ -76,7 +76,15 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 265 (tag **v8.4** at 264)
+## Where we are — 5 Sep 2026, build 266 (tag **v8.5** at 266)
+
+- **Build 266 (5 Sep 2026) — tag v8.5.** Cut on Eden's word straight
+  after 265: `snapshots/v8.5.json` beside the tag (the second Barwidgee,
+  founded on the profile wiped that afternoon, the compass on the code's
+  defaults and set where Eden had it), the title and the README's name
+  moved up to V8.5, the README's history given v8.5, and a frozen clone
+  at `~/Projects/Loci Bitmap V8.5`. The one build in the version is 265,
+  the compass tune as default.
 
 - **Build 265 (5 Sep 2026) — Eden's compass tune is the default.** The
   profile was wiped a second time that day to watch a first boot (the
@@ -1051,9 +1059,9 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 `origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages
 serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
-the session waited for it. Tag **v8.4** (5 Sep, build 264) is the last
-tag, with `snapshots/v8.4.json` beside it and a frozen clone at
-`~/Projects/Loci Bitmap V8.4`. v8.3 (31 Aug, build 241) is the one
+the session waited for it. Tag **v8.5** (5 Sep, build 266) is the last
+tag, with `snapshots/v8.5.json` beside it and a frozen clone at
+`~/Projects/Loci Bitmap V8.5`. v8.4 (5 Sep, build 264) is the one
 before. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and

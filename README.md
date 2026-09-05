@@ -1,4 +1,4 @@
-# Loci Bitmap V8.4
+# Loci Bitmap V8.5
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -216,6 +216,12 @@ inside it, the ring still; and per layer its Ink, Grain, Bright,
 Screen, Tone, Weight, Scale, Sheen, Fine, Fill, Scatter and Jitter, the
 ring nudged in whole cells. Eden's profile started fresh that morning
 and Barwidgee founded on it; `snapshots/v8.4.json` is that town.
+
+**v8.5** — 2026-09-05, later the same day. Eden's compass tune is the
+default: a fresh profile comes up on the compass Eden settled, not the
+plain cut. The profile was started from scratch a second time to watch
+the first boot, and Barwidgee founded again; `snapshots/v8.5.json` is
+that town.
 
 ## Controls
 

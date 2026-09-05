@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The compass centred on its ring; Weight, Fine and the ring's
+  nudge per layer** — 2026-09-05, build 260. Every sheet cut in a box
+  centred on the ring so the rose turns inside it; `Title.stencil` gets
+  `cut`; the top layer's body at three tenths under its lines.
 - [x] **The compass in four layers, four inks** — 2026-09-05, build 259.
   Eden's four sheets in `assets/compass/`; each cut and inked on its
   own, the ring still, per-layer Ink/Bright/Screen in the Tune panel.

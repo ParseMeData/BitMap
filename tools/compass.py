@@ -12,19 +12,29 @@ stays still. Before this the rose was one sheet, `assets/compass.png`
 (2026-08-28 to build 258), and one cut in one ink.
 
 Ink is alpha (`Title.stencil`). The top layer is a white spike with dark
-hatching, and the hatching is the drawing: white is keyed out of it
-first, exactly as the whole sheet's white was before, so the lines are
-the ink and the body is nothing. The bursts and the ring are shapes on a
-clear ground and are taken as they are — the ring is white, and keying
-would delete it.
+hatching: its alpha is set from its own tone, the dark lines at full ink
+and the white body at two fifths, so the hatching is the drawing and the
+body a faint fill under it — the points of the spike stand as a shape,
+and the Fine slider in the tune panel (src/compass.js) cuts the body
+away to the lines alone. (Build 259 keyed the white out instead, as the
+whole sheet's white had been before, and the points came out ragged.)
+The bursts and the ring are shapes on a clear ground and are taken as
+they are — the ring is white, and keying would delete it.
 
-All four are cropped to the same box, the one the cross fills (224 × 268
-at +47+4 on the 317 × 280 sheet), which is the old single sheet's size,
-so Size in the tune panel means what it always meant. Halved, like every
-mask. A fifth, `rose`, is the four flattened into one, for the chrome
-canvas the tune panel reads. They ship as CSS masks, and for the reason
-`tools/frame.py` gives, as data: URIs in a generated file rather than as
-files: a file:// image cannot be a mask.
+All four are cut to the same box, 224 × 318, CENTRED ON THE RING — its
+centre is (159, 163) on the sheet, the spike's crossing (156, 162) and
+the bursts' (153, 164), so the art is concentric to within a cell — and
+padded with nothing where the box runs off the sheet's top and bottom.
+The stencil turns a drawing about its box's centre, so a box centred on
+the ring keeps the rose spinning inside the ring at every heading; the
+first cut (build 259) took the box the cross fills, whose centre is 25
+px above the ring's, and the rose orbited it as the map turned. The
+width is the old single sheet's, so Size in the tune panel means what it
+always meant. Halved, like every mask. A fifth, `rose`, is the four
+flattened into one, for the chrome canvas the tune panel reads. They
+ship as CSS masks, and for the reason `tools/frame.py` gives, as data:
+URIs in a generated file rather than as files: a file:// image cannot
+be a mask.
 
     tools/compass.py          # assets/compass/*.png → src/compass-art.js
 """
@@ -33,18 +43,19 @@ import base64, pathlib, subprocess, sys, tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / 'assets' / 'compass'
 OUT = ROOT / 'src' / 'compass-art.js'
-BOX = '224x268+47+4'         # the crop every sheet gets, measured once on the top layer
-LAYERS = [                   # in drawing order, bottom first; `key` keys the sheet's white out
+BOX = '224x318+47+4'         # every sheet's box: centred on the ring, the cross's width, padded top and bottom
+BODY = 0.3                   # the top layer's white body, as a share of its lines' ink
+LAYERS = [                   # in drawing order, bottom first; `body` reads the sheet's tone into its alpha
     ('bottom', 'bottom.png', False),
     ('middle', 'middle.png', False),
     ('top',    'top.png',    True),
     ('ring',   'ring.png',   False),
 ]
 
-def cut(path, key):
-    args = ['magick', str(path), '-crop', BOX, '+repage']
-    if key:
-        args += ['-fuzz', '18%', '-transparent', 'white']
+def cut(path, body):
+    args = ['magick', str(path), '-background', 'none', '-extent', BOX, '+repage']
+    if body:
+        args += ['-channel', 'A', '-fx', f'a*(1-{1 - BODY}*(0.299*r+0.587*g+0.114*b))', '+channel']
     args += ['-fill', 'white', '-colorize', '100%', '-resize', '50%',
              '-define', 'png:color-type=4', '-strip', 'PNG:-']
     return subprocess.run(args, check=True, capture_output=True).stdout
@@ -63,7 +74,7 @@ def main():
     missing = [f for _, f, _ in LAYERS if not (SRC / f).exists()]
     if missing:
         sys.exit(f'no compass sheet at {SRC}: ' + ', '.join(missing))
-    cuts = {k: cut(SRC / f, key) for k, f, key in LAYERS}
+    cuts = {k: cut(SRC / f, body) for k, f, body in LAYERS}
     cuts['rose'] = flatten([cuts[k] for k, _, _ in LAYERS])
     parts = {k: base64.b64encode(v).decode() for k, v in cuts.items()}
     body = ",\n".join(f"  {k}: 'url(\"data:image/png;base64,{v}\")'" for k, v in parts.items())

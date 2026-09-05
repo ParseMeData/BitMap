@@ -2162,10 +2162,18 @@ a large burst, a small burst over it, the hatched spike cross, and a
 ring round the whole — each cut through the lettering's own screen on
 its own and drawn in its own ink, bottom to top, a layer's cells dropped
 where a layer above it has ink, so the inks stay apart. The three drawn
-layers turn with the map; the ring stays still. Each layer has its own
-Ink (a chip in that ink), Bright (0 hides it) and Screen in the Tune
-panel's Compass block, under the shared Size, Weight, Tone, Sheen and
-Detail; the tune lives in `hq.compass`. Every point
+layers turn with the map; the ring stays still. Every sheet is cut in a
+box centred on the ring, so the rose turns inside the ring at every
+heading. Each layer has its own Ink (a chip in that ink), Bright (0
+hides it), Screen, Weight and Fine in the Tune panel's Compass block,
+under the shared Size (16 to 120 cells), Weight, Tone, Sheen and Detail,
+and the ring has a nudge either way in whole cells; the tune lives in
+`hq.compass`. Fine is a floor under the ink: ink thinner than it is not
+cut at all, which takes the half-covered side cells off the ring's line
+and, high up, the top layer's body off its lines. The hatching itself is
+finer than a plate cell at any size the corner holds, so the spike reads
+as a fill with a solid line through it rather than as lines — the
+lattice is one pitch, and this is what that costs. Every point
 goes through `Basemap.worldOf`, which reads the picture as it is placed.
 Three Overpass instances are tried in turn, twice each: the main one
 answers the web version in a second and a `file://` page not at all

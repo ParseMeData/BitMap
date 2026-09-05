@@ -76,7 +76,42 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 259 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 260 (tag **v8.3** at 241)
+
+- **Build 260 (5 Sep 2026) — the compass centred on its ring, and each
+  layer's Weight, Fine and (the ring's) nudge.** Eden: *"an option in
+  tuning to slightly change thickness of circle pixels (fade so looks
+  finer, as of now appears to be 2 pixels wide) — also want to move the
+  circle left right up or down to align better — and the top layer's
+  detail visible tuning so can see the points better and line detail"*.
+  Found on the way: 259 cut every sheet in the box the cross fills,
+  whose centre is 25 px above the ring's, and the stencil turns a
+  drawing about its box's centre — so the rose orbited the ring as the
+  map turned, which on a plate the survey had turned 28° was the
+  misalignment. `tools/compass.py` now cuts every sheet in a 224 × 318
+  box centred on the ring (`-extent`, padded with nothing top and
+  bottom; the ring's centre (159, 163), the spike's crossing (156, 162)
+  and the bursts' (153, 164) are concentric to within a cell); verified
+  at −28°, 0°, 90° and 180°: the rose spins inside the ring. The ring
+  was two cells wide because the type's recipe stretches what it reads
+  to its 4th–96th percentile, which brings a thin line's half-covered
+  side cells up to full ink; the compass passes `recipe: {lo: 0, hi:
+  0.999}` so a cut is read as covered. `Title.stencil` takes `cut`, a
+  floor under the ink after screening (`screen()`'s last test), exposed
+  per layer as **Fine**. Per layer also **Weight** (on the shared one),
+  and for the ring **Left – right** / **Up – down** in whole cells, read
+  at draw time. The top layer's cut is no longer keyed: its alpha is its
+  tone, lines at full, the white body at three tenths (`BODY`), so the
+  points stand as a shape — at 40 cells the body reads ~0.5–0.7 and the
+  line-dense cells 0.9+, so Fine 0.7 strips it to a one-cell cross;
+  Tone textures it. The hatching does not resolve at 40, 72 or 100 cells
+  (stencilled and looked at): a hatch period is under a plate cell at
+  any size the corner holds, so "line detail" is the fill-and-line
+  contrast and the textures, not lines. Size's ceiling is 120 cells.
+  Verified on a throwaway: 23 rows and 32 chips in the block; ring Fine
+  0.5 + Weight 0.7 + Left – right +2 took effect and saved. Eden's live
+  profile carries a 259 tune (`hq.compass`, no layer tune yet), which
+  reads fine under 260.
 
 - **Build 259 (5 Sep 2026) — the compass in four layers, four inks.**
   Eden drew the rose as four sheets (`~/Desktop/compass layers`, 317 ×

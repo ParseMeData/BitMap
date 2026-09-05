@@ -32,8 +32,8 @@ const Compass = (() => {
      cells as fit its width at that pitch, and painted at 2× for the
      screen */
   const SCALE = 2;
-  /* the rose's box: the sheet's own proportion (225 × 268), 120 tall */
-  const SIZE = {rose: [101, 120]};
+  /* the rose's box: the sheets' own proportion (224 × 318), 143 tall */
+  const SIZE = {rose: [101, 143]};
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
   /* the ink runs bone at the top to a grey at the foot — bone mixed a
      little toward dim, subtle, not a shadow; flare toward dim while it
@@ -51,7 +51,7 @@ const Compass = (() => {
        `tone`, `weight` and `shade` are the four the lettering already
        has, at the lettering's defaults, so a compass at rest is cut the
        way a name at rest is cut (Eden, 2026-08-30) */
-    size:    {lo: 16,  hi: 72,  dflt: 40,  step: 100, label: 'Size',   fmt: v => Math.round(v) + ' cells'},
+    size:    {lo: 16,  hi: 120, dflt: 40,  step: 100, label: 'Size',   fmt: v => Math.round(v) + ' cells'},
     weight:  {lo: 0.5, hi: 2.0, dflt: 1,   label: 'Weight', fmt: v => v.toFixed(2) + '\u00d7'},
     tone:    {lo: 0,   hi: 1,   dflt: 0,   label: 'Tone',   fmt: v => v ? v.toFixed(2) : 'even'},
     shade:   {lo: 0,   hi: 0.7, dflt: 0.25, label: 'Sheen', fmt: v => v.toFixed(2)},
@@ -84,10 +84,29 @@ const Compass = (() => {
     {k: 'bottom', label: 'Bottom layer', turns: true,  ink: 'dim'},
     {k: 'middle', label: 'Middle layer', turns: true,  ink: 'gold'},
     {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone'},
-    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua'}];
+    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true}];
+  /* per layer: Bright (0 hides it), Screen, Weight (on the shared one —
+     smaller diamonds read as a finer line), Fine (ink thinner than this
+     is not cut at all: the sides of the ring's line, the top layer's
+     faint body), and for the ring alone a nudge in whole cells either
+     way, to sit it on the rose (Eden, 2026-09-05: "slightly change
+     thickness of circle pixels … move the circle left right up or down
+     to align better … the top layer's detail visible"). */
   const LTUNE = {
-    lit:    {lo: 0, hi: 1.5, dflt: 1, label: 'Bright', fmt: v => v ? Math.round(v * 100) + '%' : 'off'},
-    dither: {lo: 0, hi: 1,   dflt: 1, label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'}};
+    lit:    {lo: 0,   hi: 1.5, dflt: 1, label: 'Bright', fmt: v => v ? Math.round(v * 100) + '%' : 'off'},
+    dither: {lo: 0,   hi: 1,   dflt: 1, label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'},
+    weight: {lo: 0.4, hi: 1.6, dflt: 1, label: 'Weight', fmt: v => v.toFixed(2) + '\u00d7'},
+    fine:   {lo: 0,   hi: 0.9, dflt: 0, label: 'Fine',   fmt: v => v ? v.toFixed(2) : 'as read'},
+    dx:     {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Left \u2013 right', shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'},
+    dy:     {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Up \u2013 down',    shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'}};
+  /* the screen's recipe, for a drawing rather than a letter: the type's
+     recipe stretches what it reads between its 4th and 96th percentile,
+     which is right for a word — every stroke comes up to full ink — and
+     wrong for a thin ring, whose half-covered side cells come up to full
+     ink with the rest and make a two-cell line of a one-cell one. Read
+     as covered, the ring is as fine as it was drawn, and Fine trims it
+     from there. */
+  const RECIPE = {lo: 0, hi: 0.999};
   let layers = {};                             // {bottom: {ink, lit, dither}, …}
   const ltuned = (k, key) => {
     const v = layers[k] && isFinite(layers[k][key]) ? +layers[k][key] : LTUNE[key].dflt;
@@ -246,8 +265,10 @@ const Compass = (() => {
         chips.append(c);
       }
       el.append(chips);
-      for (const key in LTUNE)
+      for (const key in LTUNE){
+        if (LTUNE[key].shift && !l.shift) continue;      // the nudge is the ring's alone
         el.append(slider(LTUNE[key].label, () => ltuned(l.k, key), v => setLayer(l.k, key, v), LTUNE[key], null));
+      }
     }
     body.append(el);
   }
@@ -337,13 +358,15 @@ const Compass = (() => {
      numbers that shape it. `overlay` compares this every frame and asks
      for a new one when it moves, so a slider or a turn of the map needs
      no callback. */
-  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size')) + '|' + ltuned(l.k, 'dither').toFixed(2);
+  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size')) + '|' +
+                               ltuned(l.k, 'dither').toFixed(2) + '|' + ltuned(l.k, 'fine').toFixed(2);
   function wantPlates(deg){
     for (const l of LAYERS){
       const k = layerKey(l, deg);
       if (faceKeys[l.k] === k || asking[l.k] === k) continue;
       asking[l.k] = k;
-      Title.stencil(url(l.k), Math.round(tuned('size')), {deg: l.turns ? deg : 0, dither: ltuned(l.k, 'dither')})
+      Title.stencil(url(l.k), Math.round(tuned('size')),
+                    {deg: l.turns ? deg : 0, dither: ltuned(l.k, 'dither'), cut: ltuned(l.k, 'fine'), recipe: RECIPE})
         .then(f => { if (asking[l.k] === k){ facePlates[l.k] = f; faceKeys[l.k] = k; asking[l.k] = null; } })
         .catch(() => { if (asking[l.k] === k) asking[l.k] = null; });
     }
@@ -381,7 +404,7 @@ const Compass = (() => {
       /* Bright past 1 lifts the ink itself toward white, since the alpha
          has nowhere further to go */
       const ink = INKS[inkOf(l.k)] || BONE, k = Math.max(1, lit);
-      list.push({f: {cols: f.cols, rows: f.rows, cells}, col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit)});
+      list.push({k: l.k, shift: !!l.shift, f: {cols: f.cols, rows: f.rows, cells}, col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit)});
     }
     comp = list; compKey = key;
     return comp;
@@ -415,10 +438,14 @@ const Compass = (() => {
     let need = 0;
     for (const e of list) need += Title.cost(e.f);
     if (m + need > cap) return m;
-    const t = {weight: tuned('weight'), tone: tuned('tone'), shade: tuned('shade')};
+    /* Weight, and the ring's nudge, are read here rather than composed
+       in: they change nothing about which cells stand, only how big and
+       where, so a slider on them costs no cut */
     for (const e of list){
+      const t = {weight: tuned('weight') * ltuned(e.k, 'weight'), tone: tuned('tone'), shade: tuned('shade')};
       const iw = e.f.cols - 1, ih = e.f.rows - 1;
-      m = Title.emit(a, m, e.f, cx - iw * px / 2, cy - ih * px / 2, px, e.col, e.al, cap, 0, 0, t);
+      const ox = e.shift ? Math.round(ltuned(e.k, 'dx')) * px : 0, oy = e.shift ? Math.round(ltuned(e.k, 'dy')) * px : 0;
+      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + oy, px, e.col, e.al, cap, 0, 0, t);
     }
     return m;
   }

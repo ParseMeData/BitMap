@@ -263,7 +263,7 @@ const Title = (() => {
 
      `gray` is the ink plane, dark-is-ink, `SS` raster pixels to a cell
      with one cell of margin all round (so `W = (cols + 2) * SS`). */
-  function screen(gray, W, H, cols, rows, R, DITH){
+  function screen(gray, W, H, cols, rows, R, DITH, CUT){
     briCon(gray, R.bri, R.con);
     if (R.sharp > 0) sharpen(gray, W, H, R.sharp * .5);
 
@@ -299,6 +299,11 @@ const Title = (() => {
       /* the threshold slides between the tool's Bayer ramp and a flat cut
          at its middle, so dither 0 keeps the same average ink as 1 */
       if (v <= (0.5 + (th - 0.5) * DITH) * .55 + .04) continue;
+      /* and a floor a caller may set above that: ink thinner than `cut`
+         is not drawn at all, which is how a stencil's faint cells — the
+         sides of a thin line, a pale fill — are taken out (the compass's
+         Fine, src/compass.js) */
+      if (CUT > 0 && v < CUT) continue;
       cells.push({x: cx - 1, y: cy - 1, al: .5 + v * .42, sz: .4 + v * 1.1});
     }
     return {cols, rows, cells};
@@ -346,11 +351,12 @@ const Title = (() => {
     t = t || {};
     const R = Object.assign({}, RECIPE, t.recipe || {});
     const DITH = tuned(t, 'dither');
+    const CUT = clamp(+t.cut || 0, 0, 0.95);
     /* a whole degree is finer than the plate can show at this size, and
        it keeps the map's drag from building a face a frame */
     const deg = Math.round(((+t.deg || 0) % 360 + 360) % 360);
     cols = clamp(Math.round(cols || 40), 8, MAXC);
-    const key = url + '\n' + cols + '\n' + deg + '\n' + DITH + '\n' + JSON.stringify(R);
+    const key = url + '\n' + cols + '\n' + deg + '\n' + DITH + '\n' + CUT + '\n' + JSON.stringify(R);
     let p = stencils.get(key);
     if (p) return p;
     p = image(url).then(im => {
@@ -382,7 +388,7 @@ const Title = (() => {
       const d = x.getImageData(0, 0, W, H).data;
       const gray = new Float32Array(W * H);
       for (let i = 0, q = 3; i < gray.length; i++, q += 4) gray[i] = 255 - d[q];
-      return screen(gray, W, H, bc, rows, R, DITH);
+      return screen(gray, W, H, bc, rows, R, DITH, CUT);
     });
     if (stencils.size > 96) stencils.clear();
     stencils.set(key, p);

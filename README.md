@@ -2191,7 +2191,10 @@ drawing and not the box it was cut in, exactly as a name's runs down
 the word), Fine, Fill, Scatter and Jitter in the Tune
 panel's Compass block, under the shared
 Size (16 to 120 cells), Weight, Tone, Sheen and Detail; the ring has a
-nudge either way in whole cells; the tune lives in `hq.compass`. Fill
+nudge either way in whole cells; the tune lives in `hq.compass`, and
+what a profile with nothing saved gets is the tune Eden settled on the
+first Barwidgee (2026-09-05), written into each layer in `src/compass.js`
+— not the plain cut. Fill
 paints the layer's whole silhouette in the ground's own colour under its
 ink, so the layers beneath it and the terrain the compass stands on are
 put out and its lines and grain are its inside — on for the top layer

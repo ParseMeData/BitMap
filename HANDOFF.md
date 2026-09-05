@@ -76,7 +76,23 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 264 (tag **v8.4** at 264)
+## Where we are — 5 Sep 2026, build 265 (tag **v8.4** at 264)
+
+- **Build 265 (5 Sep 2026) — Eden's compass tune is the default.** The
+  profile was wiped a second time that day to watch a first boot (the
+  town saved first to `snapshots/live-2026-09-05-barwidgee.json`,
+  untracked, compass tune and all), and the compass came up on the plain
+  cut. Eden: *"save the settings we had copied across to the compass as
+  the refresh brought back the very original version"*. The saved tune —
+  bottom: dim, Screen .5, Fill 60%, Scatter 55%, Jitter .7; middle: dim,
+  Bright 70%, Screen flat, Weight 1.1, Fine .75, Fill 60%, Scatter 10%,
+  Jitter .6; top: bone, Bright 150%, Screen .35, Weight 1.2, Scale 1.2,
+  Fine .55, Fill 100%; ring: aqua, Bright 150%, Weight .85, Tone 1, Fill
+  25%, Scatter 25%, nudged 1 left and 1 down; shared rows untouched —
+  is now each layer's `<key>0` in `LAYERS`, which is what `ltuned`
+  answers when nothing is saved. Verified on the fresh profile with only
+  the compass's place written back: every row of the block reads the
+  tune. A profile that has its own tune saved is unaffected.
 
 - **Build 264 (5 Sep 2026) — tag v8.4.** The version cut on Eden's word
   after a restart had shown every setting come back: `snapshots/v8.4.json`

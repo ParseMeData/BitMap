@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Eden's compass tune as the default** — 2026-09-05, build 265.
+  Each layer's `<key>0` in `LAYERS` is the tune from the first
+  Barwidgee, so a fresh profile does not come up on the plain cut.
 - [x] **Tag v8.4** — 2026-09-05, build 264. The town beside it in
   `snapshots/v8.4.json`, the name moved up, the clone frozen.
 - [x] **A Sheen per compass layer, down its ink** — 2026-09-05, build

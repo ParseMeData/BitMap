@@ -74,17 +74,25 @@ const Compass = (() => {
      terrain — and its own Bright (0 hides it) and Screen, kept per layer
      in `hq.compass`, so any one can be brought up until it reads (Eden,
      2026-09-05: "each layer its own ink … allow for tuning of each layer
-     to make sure each layer's visible"). The defaults put the four apart:
-     the spike in bone, the small burst in gold, the large in dim, the
-     ring in aqua. */
+     to make sure each layer's visible"). The defaults are the tune Eden
+     settled on the first Barwidgee that day, asked for as the default
+     when a fresh profile came up on the plain one ("save the settings we
+     had … as the refresh brought back the very original version"): each
+     layer's `<key>0` here is what `ltuned` answers when the profile has
+     nothing saved for it (build 265; before that only the top layer's
+     fill was set, and the middle burst was gold). */
   const INKS = {bone: [0.93, 0.92, 0.89], gold: [0.95, 0.76, 0.31], flare: [1, 0.373, 0.635], aqua: [0.47, 0.88, 0.85],
                 dim: [0.353, 0.353, 0.4], grass: [0.50, 0.70, 0.36], water: [0.56, 0.84, 0.93], sand: [0.84, 0.72, 0.48]};
   const INK_LABEL = {bone: 'Bone', gold: 'Gold', flare: 'Flare', aqua: 'Aqua', dim: 'Dim', grass: 'Grass', water: 'Water', sand: 'Sand'};
   const LAYERS = [
-    {k: 'bottom', label: 'Bottom layer', turns: true,  ink: 'dim'},
-    {k: 'middle', label: 'Middle layer', turns: true,  ink: 'gold'},
-    {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone', fill0: 1},
-    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true}];
+    {k: 'bottom', label: 'Bottom layer', turns: true,  ink: 'dim',
+     dither0: 0.5, fill0: 0.6, scatter0: 0.55, jitter0: 0.7},
+    {k: 'middle', label: 'Middle layer', turns: true,  ink: 'dim',
+     lit0: 0.7, dither0: 0, weight0: 1.1, fine0: 0.75, fill0: 0.6, scatter0: 0.1, jitter0: 0.6},
+    {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone',
+     lit0: 1.5, dither0: 0.35, weight0: 1.2, scale0: 1.2, fine0: 0.55, fill0: 1},
+    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true,
+     lit0: 1.5, weight0: 0.85, tone0: 1, fill0: 0.25, scatter0: 0.25, dx0: -1, dy0: 1}];
   /* per layer: Bright (0 hides it), Screen, Weight (on the shared one —
      smaller diamonds read as a finer line), Fine (ink thinner than this
      is not cut at all: the sides of the ring's line, the top layer's

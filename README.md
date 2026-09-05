@@ -2123,15 +2123,18 @@ through touches on the plate, is printed: a run joined to it only off
 the plate is an island and is not — every **body of
 water** near (lakes, dams, reservoirs as water, beaches as sand, rivers
 and streams as river and creek lines), a field of **grass** under it
-all, and a **boundary** laid by default, set so every edge of the plate lies
-inside its dithered fade and none inside its core — the top and bottom
-most of the way through it, the left past halfway, the right, where the
-plate carries its spare margin, only a quarter in, so the ground goes
-slowly there. At the working zoom the plate's full height fills the
-screen — on a phone held portrait that is closer than fit-all, the
-plate wider than the screen and the camera carrying you along it — so
-the ground runs from under the compass to past the hub, thinning out at
-both ends.
+all, and a **boundary** laid by default: an oval in the middle of the
+plate, half its width and seven tenths of its height, the door at its
+centre and its whole dithered fade on the plate, so no edge cuts it. A
+town starts small, and the boundary is the shape you pull out as it
+grows — the ground, the roads and the water are laid under the whole
+plate, so there is something to grow into. (Until build 255 the oval was
+drawn larger than the plate, every edge inside its fade and the right
+edge least so, and on a plate narrower than the screen it read as the
+border cut off on the right — Eden, 2026-09-05.) At the working zoom the
+plate's full height fills the screen — on a phone held portrait that is
+closer than fit-all, the plate wider than the screen and the camera
+carrying you along it.
 Before the shapes go down the frozen picture is **turned** so the road
 at the address lies perfectly vertical or horizontal — whichever is
 nearer — and the compass turns with it, so the roads on the plate agree
@@ -2142,9 +2145,11 @@ building; the first palace's marker stands on it; the palace can be
 dragged anywhere within the boundary afterwards like any marker. Before
 the picture is baked the camera frames the whole plate, so the frozen
 map covers it edge to edge, and afterwards it comes back to the working
-zoom on the door. The town's name stands four tiles down from the top,
-set to the right so most of it runs off the sheet — it can extend off
-screen; the walker goes to it if a road does — in **Fleur De Leah**,
+zoom on the door. The town's name stands four tiles down from the top
+and two in from the plate's right edge, whole in the corner and clear of
+the town in the middle (until build 255 it was set past the printed
+sheet's edge, so most of it ran off into the plate's margin) — in
+**Fleur De Leah**,
 which ships with the page under the OFL (`assets/fonts/`) so a phone
 with no fonts service draws the same face, read at sixteen cells (Size in
 the palette). Its own mat — a light, feathered, dithered dimming of the
@@ -2160,9 +2165,11 @@ Mail.ru's mirror, which takes half a minute or so. A survey that fails
 leaves the plate frozen and empty — still founded, and the note says.
 
 **A plate is one size, and that size is the limit.** Every plate is
-**60 × 57 walk tiles** — 240 × 228 lattice cells, 755 × 720 world units,
-the printed sheet's height and its width plus `PLATE_EXT_COLS` (64) cells
-of plain ground — and build mode holds every shape inside that edge
+**102 × 57 walk tiles** — 407 × 228 lattice cells, 1281 × 720 world
+units: the printed sheet's height at 16:9 (`PLATE_ASPECT`), which is the
+sheet's own 176 columns and `PLATE_EXT_COLS` (231, worked out from the
+sheet at boot) of plain ground on the right — and build mode holds every
+shape inside that edge
 (`keepOnPlate`). There is no bigger plate: a town that needs more room
 takes an extension, opened from the end of a road, and the region plate
 shows the town as one diamond per plate it has grown. Walk
@@ -2188,11 +2195,17 @@ may have many roads, long or short, and each can lead to a plate of its
 own. Pressing sideways off a road mid-way never asks; only a real end
 does.
 
-The plate is the printed sheet plus a strip of plain ground down the
-right — `PLATE_EXT_COLS` lattice cells of it, 64 today — because the sheet
-is taller than it is wide and the window is the other way round. Measured
-in cells so the pitch the town is built at does not move; the tracing
-underlay stays anchored to the sheet, not the plate.
+The plate is the printed sheet plus plain ground down the right, out to
+a 16:9 frame — `PLATE_EXT_COLS` lattice cells of it, 231 today, worked
+out from the sheet at boot — because the sheet is taller than it is wide
+and the screen is the other way round, and at fit-all the plate is the
+screen (build 256; before it the strip was 64 cells and the plate stood
+narrower than the window with a third of the screen empty either side).
+Measured in cells so the pitch the town is built at does not move. The
+tracing underlay, the door, the boundary and the town's name all measure
+off the plate's centre and corners — nothing is anchored to the sheet,
+and a town written before build 256 sits at the same coordinates on the
+wider plate, in its left three fifths.
 
 Each plate has its own tracing underlay: search, freeze and place on a
 plate and that picture is that plate's, under `hq.basemap.<id>`, and the

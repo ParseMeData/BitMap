@@ -76,7 +76,45 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 2 Sep 2026, build 255 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 256 (tag **v8.3** at 241)
+
+- **Build 256 (5 Sep 2026) — the plate is the screen; the rim is born
+  small.** Eden, on a profile wiped that morning to start clean (the live
+  town saved first to `snapshots/live-2026-09-05-before-wipe.json`,
+  untracked): *"make it so the border or boundary is not cut off on the
+  right side … set frame to full screen but actual feathered grass border
+  much smaller so can be expanded later"*. That decides the first Open
+  thread: the plate goes to **16:9** (`PLATE_ASPECT` in game.js;
+  `PLATE_EXT_COLS` is worked out from the sheet at boot, 231 columns
+  today) — 1281 × 720 world units, 407 × 228 cells, 102 × 57 tiles — the
+  cheap half, rightward only, **no coordinate migration**: a town written
+  before this restores at the same coordinates in the plate's left three
+  fifths. Nothing measures off the sheet any more: the live tiles and the
+  print hang off the plate's centre (basemap.js — the address lands
+  mid-screen), the marker's fallback and the frame's fallback oval
+  (found.js) likewise, the town's name stands two tiles in from the
+  plate's right edge instead of running off the sheet (palace.js), and
+  `G.sheetW` is gone. `Survey.boundary()` is an oval at the plate's
+  centre, half the width and seven tenths the height, core 0.55 as
+  before, its whole fade on the plate; the grass is laid in six rects
+  (three by two) because the plate is 93 000 cells now and a quarter of
+  it would have crowded `MAX_CELLS`. `MAXSPAN` in build.js is the plate's
+  long side and half again in whole tiles (it was sixty tiles — the old
+  plate's width), so the rim can be pulled out past the edge the way the
+  survey once laid it. The region's projection scales off the plate's
+  shorter side, so the wider plate shows more east–west rather than less
+  north–south.
+
+  **Measured** on the rig, headless throwaways at 1600 × 944 running side
+  by side: build 255 founded, 60 ms a frame at fit-all; build 256
+  founded, 53; build 256 with nothing on the plate but tiles, 49. The
+  headless GL is the cost; the bigger field is not. **Verified** on a
+  throwaway: founding at the default address lays 8 roads, 1 water, 6
+  grass, the rim and the house at the centre of the screen, the name in
+  the top-right corner; in build mode the rim grows with `]` (two cells
+  a press — it is a fine-mode shape) past the old sixty-tile cap. **Not
+  tested:** a phone; a pre-256 town restored onto the wide plate (the
+  arithmetic says it lands left; nothing has been looked at).
 
 - **Builds 250–255 (2 Sep 2026) — "continue floor plan view".** Six asks
   from Eden, worked run-through in the order given, each on the throwaway
@@ -1731,26 +1769,22 @@ thing that was measured, and the mistake that was made on the way.
 
 ## Open threads
 
-- **The plate is narrower than the window, and only the RIGHT side has
-  slack.** Measured 2026-08-30 on the rig: the plate is 755 x 720 world
-  units (aspect 1.05) in a 1600 x 944 window (1.70), so about 610 px of
-  the screen is empty — roughly 305 px either side, because the fit
-  centres it. The cause is `PLATE_EXT_COLS = 64` in game.js: the plate is
-  the sheet (554 wide) plus 201 units of plain ground **on the right
-  only**, the sheet sitting at x = 0. That asymmetry is also why
-  `Survey.boundary()` is centred at `G.W * 0.55` rather than the middle.
-
-  Eden asked to "extend the left and right cut off for the screen as
-  boundary edge". Extending LEFT means moving the sheet right, which
-  shifts every world coordinate, so it needs a migration of `hq.shapes`
-  (x, pts, ctrl), `hq.markers`, `hq.basemap*`, `hq.rooms.*`, `hq.marks.*`
-  and `hq.shapes.region` — on Eden's live Myrtleford. And filling a 16:9
-  window wants ~120 extra columns PER SIDE, taking the plate from 755 to
-  ~1300 wide: about **73% more lattice cells** to stamp and draw every
-  frame, unmeasured. Both the width and whether to migrate are Eden's
-  call; nothing has been changed. The cheap half — extending only
-  rightward — fills the screen but leaves the town off-centre inside a
-  wider plate, with a symmetric boundary's left fade cutting through it.
+- **The plate is the screen now (build 256), and any town from before
+  it is off-centre.** Decided by Eden 2026-09-05: 16:9, the columns
+  added on the right only, no migration — the profile had just been
+  wiped, so there was no live town to move. What that leaves: a town
+  from before 256 — Eden's Myrtleford as saved in
+  `snapshots/live-2026-09-05-before-wipe.json`, and every `snapshots/v*.json`
+  — restores at its old coordinates in the left three fifths of the
+  plate, with its old oversized boundary shape centred at x = 415. If one
+  is ever wanted back centred, that is the coordinate migration the old
+  thread described (`hq.shapes` x/pts/ctrl, `hq.markers`, the
+  `hq.basemap*` place, `hq.shapes.region`, and whatever in `hq.rooms.*` /
+  `hq.marks.*` carries plate coordinates), shifting everything right by
+  half the added width — 363 units — as a `store.js` ladder step. Not
+  started. The cell pitch also moved by a twentieth of a percent with the
+  rounding of the added columns (3.1458 → 3.1474), which an old shape
+  absorbs the first time it is edited.
 
 - **Seven `buildings` glyphs are solid blocks, and that is the ART.**
   a21, a22, a23, a25, a28, a29, a30 come out as filled rectangles of lit

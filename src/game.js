@@ -901,21 +901,35 @@ function refit(){
 }
 
 /* ── boot ── */
-/* ── the plate is wider than the sheet ─────────────────────────────────
-   The printed map is taller than it is wide and the window is the other
-   way round, so a plate the sheet's exact size leaves a margin down the
-   right that looks like map and is not. The plate is the sheet plus this
-   many lattice cells of plain ground on the right — measured in cells,
-   not pixels, so the cell pitch the whole town is built at does not
-   move: the lattice gets the same extra columns the picture gets. The
-   sheet itself is untouched; the strip is the plate's own ground colour,
-   which the classifier reads as open ground and Blank zeroes anyway. */
-const PLATE_EXT_COLS = 64;
+/* ── the plate is the screen ───────────────────────────────────────────
+   The printed sheet is taller than it is wide and the window is the other
+   way round. Until build 255 the plate was the sheet plus 64 lattice cells
+   of plain ground on the right — 755 × 720, aspect 1.05 — and in a 16:9
+   window it stood in the middle with a third of the screen empty either
+   side, while the survey's boundary, drawn larger than the plate so its
+   fade crossed every edge, was cut off hardest on the right (Eden,
+   2026-09-05: "the boundary is cut off on the right side — set the frame
+   to full screen"). The plate is now the sheet's height at 16:9: the
+   sheet at x = 0 and as many lattice cells of plain ground on the right
+   as make the width — measured in cells, not pixels, so the cell pitch
+   the whole town is built at does not move. At fit-all the plate IS the
+   window, which is what the founding frame relies on. The sheet itself is
+   untouched (it is never drawn — see BLANK); the strip is the plate's own
+   ground colour, which the classifier reads as open ground and Blank
+   zeroes anyway.
+
+   Rightward only, on purpose: a town written before this sits at the
+   same coordinates on the wider plate, in its left three fifths, with no
+   migration. Nothing is anchored to the sheet any more — the basemap,
+   the door, the boundary and the town's name all measure off the plate. */
+const PLATE_ASPECT = 16 / 9;
+let PLATE_EXT_COLS = 0;
 const plateCols = () => T.cols + PLATE_EXT_COLS;
 function boot(img){
-  const ext = Math.round(img.naturalWidth / T.cols * PLATE_EXT_COLS);
+  const pitch = img.naturalWidth / T.cols;
+  PLATE_EXT_COLS = Math.max(0, Math.round((img.naturalHeight * PLATE_ASPECT - img.naturalWidth) / pitch));
+  const ext = Math.round(pitch * PLATE_EXT_COLS);
   G.W = img.naturalWidth + ext; G.H = img.naturalHeight;
-  G.sheetW = img.naturalWidth;      // the printed sheet's own width, for what is anchored to it
   const c = document.createElement('canvas');
   c.width = G.W; c.height = G.H;
   const cx = c.getContext('2d', {willReadFrequently: true});

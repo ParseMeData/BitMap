@@ -152,7 +152,11 @@ const Basemap = (() => {
 
     if (waiting || !G.A || !G.terr) return;
     const m0 = merc(lat, lon, z);
-    const C = [(G.sheetW || G.W) / 2, G.H / 2]   /* the sheet, not the plate: the plate carries a margin the trace was never over */;
+    /* the plate's centre: the point the search landed on is the middle of
+       the screen at fit-all, since the plate became the screen (build 256
+       — before that it was the printed sheet's centre, and the plate's
+       right margin was ground the trace was never over) */
+    const C = [G.W / 2, G.H / 2];
     const k = scale * Zc;
     lay(m0, C);                       // may move the origin the tiles hang off
     /* Written relative to that origin, never in absolute mercator pixels:
@@ -386,7 +390,7 @@ const Basemap = (() => {
     catch (e){ note('could not bake: ' + e.name + ' — the tiles are tainted'); return; }
 
     /* where that rectangle sits on the plate, in the game's own world units */
-    const m0 = merc(lat, lon, z), C = [(G.sheetW || G.W) / 2, G.H / 2];
+    const m0 = merc(lat, lon, z), C = [G.W / 2, G.H / 2];   // the same centre sync() hangs the tiles off
     const cx = (origin[0] + minL + sw / 2 - m0[0]) * scale + C[0];
     const cy = (origin[1] + minT + sh / 2 - m0[1]) * scale + C[1];
     /* the picture's centre in mercator px at this zoom: what lets a place
@@ -453,7 +457,7 @@ const Basemap = (() => {
     fr.onload = async () => {
       const im = new Image();
       im.onload = async () => {
-        const s0 = (G.sheetW || G.W ? (G.sheetW || G.W) * 0.8 : 2000) / im.naturalWidth;
+        const s0 = (G.W ? G.W * 0.8 : 2000) / im.naturalWidth;
         await adopt(fr.result, {x: G.cam[0], y: G.cam[1], s0, mult: 1, rot: 0});
         setShown(true);
         note(file.name.slice(0, 40) + ' · drag to place');

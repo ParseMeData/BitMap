@@ -326,15 +326,17 @@ const Survey = (() => {
           out.push({kind, type: 'line', pts: thin(run, cell * 3), width: cell * (kind === 'river' ? 3 : 1.5), exact: true});
       }
     }
-    /* the ground, and the rim. The ground is four rects, not one: a shape
+    /* the ground, and the rim. The ground is six rects, not one: a shape
        is generated in one pass of at most MAX_CELLS (26 000) cells and the
-       plate is 55 000, so a plate-sized field came out half drawn. Each
-       quarter is under the ceiling; no feather, so they meet edge to edge. */
+       plate is 93 000 (55 000 when it was four quarters), so a plate-sized
+       field came out half drawn. Three across and two down keeps each
+       under the ceiling with room; no feather, so they meet edge to edge.
+       The whole plate, not just the rim's inside: what the boundary is
+       pulled out over later has to already be there. */
     const seed = (Math.random() * 1e6) | 0;
-    for (let qy = 0; qy < 2; qy++) for (let qx = 0; qx < 2; qx++)
-      out.unshift({kind: 'grass', type: 'rect', x: G.W * (qx + 0.5) / 2, y: G.H * (qy + 0.5) / 2,
-                   w: G.W / 2 + cell, h: G.H / 2 + cell, exact: true, variant: 'mixed', feather: 0, seed});
-    const sw = G.sheetW || G.W;
+    for (let qy = 0; qy < 2; qy++) for (let qx = 0; qx < 3; qx++)
+      out.unshift({kind: 'grass', type: 'rect', x: G.W * (qx + 0.5) / 3, y: G.H * (qy + 0.5) / 2,
+                   w: G.W / 3 + cell, h: G.H / 2 + cell, exact: true, variant: 'mixed', feather: 0, seed});
     const B = boundary();
     out.push({kind: 'boundary', type: 'ellipse', x: B.x, y: B.y, w: B.w, h: B.h, core: B.core, exact: true});
     return {out, turned, roads: keep.length, water: out.filter(s => s.kind === 'water').length};
@@ -393,14 +395,20 @@ const Survey = (() => {
   }
 
   /* ── the rim ─────────────────────────────────────────────────────────
-     An ellipse set so every edge of the plate lies inside its dithered
-     fade and none inside its core: the top and bottom edges about four
-     fifths of the way through the fade, the left edge past halfway, the
-     right — where the plate carries its spare margin — only a quarter in,
-     so the ground goes slowly there (Eden, 2026-08-28). Centred a little
-     right of the plate's middle, which is what makes the two sides differ. */
+     An ellipse in the middle of the plate, half the plate's width and
+     seven tenths of its height, with the door at its centre: a town
+     starts small, and the boundary is the one shape you are meant to pull
+     out as it grows (Eden, 2026-09-05: "the feathered grass border much
+     smaller so it can be expanded later"). Its whole fade lies on the
+     plate, so no edge cuts it — from 2026-08-28 to build 255 it was drawn
+     larger than the plate, every edge inside the fade and the right edge
+     least so, and on a plate narrower than the screen that read as the
+     border cut off. The heart the fade holds off (`core`) is unchanged:
+     the house and the roads at the door sit in it untouched. The survey
+     lays the ground under the whole plate, so pulling the rim out finds
+     grass, roads and water already there. */
   function boundary(){
-    return {x: G.W * 0.55, y: G.H / 2, w: G.W * 1.35, h: G.H * 1.1, core: 0.55};
+    return {x: G.W / 2, y: G.H / 2, w: G.W * 0.5, h: G.H * 0.7, core: 0.55};
   }
 
   return {run, bbox, aside, boundary};

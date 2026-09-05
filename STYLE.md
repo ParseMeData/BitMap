@@ -43,12 +43,15 @@ or bitmapped — the plate, a title, a card's picture, the compass, the towns
 map, and whatever comes next — is the same material, and the material is
 these three numbers. Measured on the live town at v7.8, not chosen:
 
-    cell        3.1458 world units — the plate is 240 × 228 of them, and a
+    cell        3.1474 world units — the plate is 407 × 228 of them, and a
                 walk tile is four. `G.A.cell`, from `Lattice.analyse`,
                 built once at boot and shared by the town and every plan
-                inside it. There is no second lattice.
-    on screen   3.17 CSS px a cell at fit-all, 5.33 at the town's reset zoom
-                (DPR 1). A lattice drawn in chrome takes the plate's cell at
+                inside it. There is no second lattice. (240 × 228 at
+                3.1458 until build 255, when the plate went to 16:9; the
+                pitch moved by a twentieth of a percent with the rounding
+                of the added columns.)
+    on screen   3.93 CSS px a cell at fit-all, 4.13 at the town's reset zoom
+                (a 1600 × 944 window, DPR 1). A lattice drawn in chrome takes the plate's cell at
                 the zoom the town is read at: about three pixels a diamond.
     diamond     half-size = 0.75 × cell, times a weight that rests at 1.
                 `0.75` in the shader (`render.js`), `PLATE = 0.75` in

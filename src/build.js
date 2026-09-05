@@ -117,7 +117,12 @@ const Build = (() => {
     return Math.min(RMAX * c, Math.max(c, Math.round(v / c) * c));
   };
   const snap = snapC;
-  const MAXSPAN = () => grid() * 60;
+  /* sixty tiles, or the plate's long side and half again — whichever is
+     more. Sixty tiles was the old plate's width; the plate is wider now
+     (game.js PLATE_ASPECT), and a boundary is born small so it can be
+     pulled out over the town as it grows, up to and past the plate's edge
+     the way the survey once laid it. */
+  const MAXSPAN = () => Math.max(grid() * 60, Math.ceil(Math.max(G.W || 0, G.H || 0) * 1.5 / grid()) * grid());
   const layerOf = s => (Kinds.by[s.kind] || {layer: 'ground'}).layer;
   /* ── minimal ──────────────────────────────────────────────────────────
      A plan taken down to its walls (src/trace.js): the floor and the

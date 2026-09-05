@@ -32,7 +32,7 @@
 const Region = (() => {
   const SKEY = 'hq.shapes.region', MKEY = 'hq.markers.region', PKEY = 'hq.region';
   const REACH = 1.6;                   // walk tiles: how close counts as "by the town"
-  const SPAN = 0.6;                    // degrees of longitude across the plate, by default
+  const SPAN = 0.6;                    // degrees of longitude across the plate's shorter side, by default
   const STEP = 0.0125;                 // one atlas step, as src/atlas.js has it
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
   const GROUND = [0.106, 0.106, 0.129];
@@ -78,7 +78,10 @@ const Region = (() => {
     if (P) return P;
     const g = Atlas.geo('home') || (towns().find(t => t.geo) || {}).geo;
     if (!g || !G.W) return null;
-    P = {lat0: g.lat, lon0: g.lon, scale: SPAN / G.W};
+    /* off the shorter side, so the wider plate (build 256) shows the same
+       reach north to south it always did and more east to west, rather
+       than the same east to west and less of the rest */
+    P = {lat0: g.lat, lon0: g.lon, scale: SPAN / Math.min(G.W, G.H)};
     Store.save(PKEY, P, 'the region');
     return P;
   }

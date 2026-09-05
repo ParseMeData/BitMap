@@ -693,10 +693,12 @@ const Palace = (() => {
        hand-placed offset is measured from this corner now. */
     const tw = (face ? w : Type.width(name, px, treat)), th = (face ? h : Type.height(px));
     /* four tiles down from the top — under the strip of meters on a
-       phone — and set to the right so most of it runs off the sheet: the
-       name can extend off screen, the walker goes to it if a road does
-       (Eden, 2026-08-28) */
-    const cx = (G.sheetW || G.W) + tw * 0.2, cy = th / 2 + t * 4;
+       phone — and two in from the plate's right edge. Until build 255 it
+       was set past the printed sheet's edge so most of it ran off the
+       sheet into the plate's spare margin (Eden, 2026-08-28); the plate
+       is the screen now and has no margin, so the name stands whole in
+       its corner, clear of the town in the middle. */
+    const cx = G.W - tw / 2 - t * 2, cy = th / 2 + t * 4;
     /* Wherever it was put, it stays (Eden, 2026-08-29) — with one rescue:
        an offset saved against an older default that carries the name
        clean off the plate, where no hand can reach it, is dropped once. */

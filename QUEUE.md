@@ -35,6 +35,17 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The plate is the screen; the rim is born small** — 2026-09-05,
+  build 256. Eden: *"make it so the border or boundary is not cut off on
+  the right side … set frame to full screen but actual feathered grass
+  border much smaller so can be expanded later"*. Plate to 16:9 (1281 ×
+  720, 231 columns added on the right, no migration); basemap, door, name
+  and frame off the plate's centre and corners; `Survey.boundary()` an
+  oval at the centre, half the width and seven tenths the height; grass
+  in six rects; `MAXSPAN` the plate's long side and half again; region
+  scale off the shorter side. HANDOFF *Where we are* has the
+  measurements.
+
 - [x] **The `Inside · Esc leaves` banner only while paused** —
   2026-09-02. Eden: *"only show the inside ESC leaves prompt when in
   pause view"*. `togglePause` puts `paused` on the body; the banner is

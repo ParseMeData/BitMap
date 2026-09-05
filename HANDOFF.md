@@ -76,7 +76,23 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 274 (tag **v8.7** at 273; **v8.8 open**)
+## Where we are — 5 Sep 2026, build 275 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 275 (5 Sep 2026) — the region's towns sized for the screen,
+  and the home town named by its title.** Eden: *"review the zoomed out
+  map when we check towns view as the icons and text was too small"*. A
+  town's diamond was `max(0.42 tile, 7 px)` — 14 units across — and its
+  name half that tall, 3.5 px at the working zoom. `radius()` in
+  region.js is `max(1.4 tiles, 18 px)` now, the name's glyph half-size
+  `max(0.4 r, 7 px)` (a 14 px name), a town's plates spaced 2.3 r so a
+  grown town's two never touch, and the hit box reads the same radius.
+  The name is centred on its glyphs' centres, half a glyph right of
+  where the full width had put it; the letter a lettered plate carries
+  is centred on its diamond. And the home town is named by `hq.town`
+  when the town has a title — the atlas area stays 'Home', which is what
+  stood under Barwidgee's diamond. Verified on Eden's window: a 36 px
+  diamond and BARWIDGEE beneath it, the same at home zoom and fit-all;
+  Enter's hint reads "back to Barwidgee".
 
 - **Build 274 (5 Sep 2026) — marks on the three diamonds at rest; v8.8
   opened.** Eden: *"place icons on our bottom left diamonds"*. Three

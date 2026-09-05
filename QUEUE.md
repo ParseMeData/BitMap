@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The region's towns sized for the screen** — 2026-09-05, build
+  275. A 36 px diamond and a 14 px name at any zoom; the home town
+  named by its title.
 - [x] **Marks on the three diamonds at rest** — 2026-09-05, build 274.
   Three dots, lines of writing, a mallet; the HUD's pitch held at the
   working zoom so they cut at any zoom. v8.8 opened.

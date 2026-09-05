@@ -63,7 +63,11 @@ const Region = (() => {
       const plates = [root].concat(comp.filter(x => x !== root));
       let lat = 0, lon = 0, n = 0;
       for (const pid of plates){ const g = Atlas.geo(pid); if (g){ lat += g.lat; lon += g.lon; n++; } }
-      out.push({root, name: areas[root].name, plates, geo: n ? {lat: lat / n, lon: lon / n} : null,
+      /* the home town is named by its title (`hq.town`, what the plate's
+         lettering says) when it has one: the atlas area stays 'Home',
+         which is what the region showed under Barwidgee's diamond */
+      const title = root === 'home' && typeof Store !== 'undefined' ? String(Store.get('hq.town') || '').trim() : '';
+      out.push({root, name: title || areas[root].name, plates, geo: n ? {lat: lat / n, lon: lon / n} : null,
                 here: plates.indexOf(Atlas.current()) >= 0});
     }
     return out;
@@ -107,7 +111,7 @@ const Region = (() => {
       const anchored = !!xy;
       if (!xy) xy = [ts * 3 + (k++) * ts * 6, (G.terr.th - 2.5) * ts];
       if (held && held.town.root === t.root) xy = [held.x, held.y];
-      const pitch = ts * 1.1, w = (t.plates.length - 1) * pitch;
+      const pitch = radius() * 2.3, w = (t.plates.length - 1) * pitch;
       out.push({town: t, x: xy[0], y: xy[1], x0: xy[0] - w / 2, pitch, anchored});
     }
     return out;
@@ -116,10 +120,21 @@ const Region = (() => {
   /* ── drawn ─────────────────────────────────────────────────────────────
      Bone diamonds with a halo, flare for the town you came from, dim for
      one with no anchor; the name beneath out of the marker sheet. */
+  /* ── how big a town is ─────────────────────────────────────────────────
+     A town's diamond was two fifths of a walk tile with a seven-pixel
+     floor — 14 units across, and its name half that tall — which on the
+     region, where a town is the smallest thing on an otherwise empty
+     plate, read as a speck with a smudge under it (Eden, 2026-09-05:
+     "the icons and text were too small"). Sized for the screen now: the
+     diamond 36 px across at the working zoom and never under that, the
+     name 14 px tall, and a town's plates spaced to the diamond so a
+     grown town's two never touch. Hit-testing and spacing read the same
+     number, so what you can press is what you can see. */
+  const radius = () => Math.max(G.terr.tsz * 1.4, 18 / (G.cam[2] || 1));
   function overlay(a, m, cap){
     if (!frame || !G.terr) return m;
-    const z = G.cam[2], px = 1 / z, ts = G.terr.tsz;
-    const r = Math.max(ts * 0.42, 7 * px);
+    const z = G.cam[2], px = 1 / z;
+    const r = radius(), ls = Math.max(r * 0.4, 7 * px);   // the name's glyph half-size
     for (const sp of spots()){
       if (m > cap - 8 - sp.town.plates.length * 2) break;
       const c = sp.town.here ? FLARE : sp.anchored ? BONE : DIM;
@@ -132,14 +147,18 @@ const Region = (() => {
         const cc = L ? L.tone : c;
         m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], 0.3, r * 2.0, 0, 0, 0, 2);
         m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], sp.anchored ? 1 : 0.7, r, 0, 0, 0, 1);
-        if (L) m = Markers.text(a, m, L.ch, x - r * 0.28, sp.y, r * 0.55, GROUND, 1, cap);
+        if (L) m = Markers.text(a, m, L.ch, x, sp.y, r * 0.55, GROUND, 1, cap);
         if (sp.town.here && L) m = put(a, m, x, sp.y, FLARE[0], FLARE[1], FLARE[2], 0.9, r * 1.4, 1, 0, 0, 1);
         if (Q && Q.targetPlate() === pid)
           m = put(a, m, x, sp.y, 0.95, 0.76, 0.31, 0.7 + 0.3 * Math.sin(performance.now() / 300), r * 1.9, 1, 0, 0, 1);
       }
       const name = String(sp.town.name || '').toUpperCase();
-      if (name) m = Markers.text(a, m, name, sp.x - Markers.textWidth(name, r * 0.5) / 2,
-                                 sp.y + r * 2.1, r * 0.5, c, 0.85, cap);
+      /* each glyph is put at its own centre, so a run is centred on the
+         first glyph's x plus half of the gaps between them — the way
+         `Markers.number` lays digits, and half a glyph right of where
+         the full width put it before */
+      if (name) m = Markers.text(a, m, name, sp.x - (name.length - 1) * ls * 1.06 / 2,
+                                 sp.y + r * 2 + ls * 1.3, ls, c, 0.9, cap);
     }
     return m;
   }
@@ -249,8 +268,8 @@ const Region = (() => {
     if (!frame || !G.terr) return false;
     const ts = G.terr.tsz;
     for (const sp of spots()){
-      const half = (sp.town.plates.length - 1) * sp.pitch / 2 + ts * 0.6;
-      if (Math.abs(x - sp.x) <= half && Math.abs(y - sp.y) <= ts * 0.6){
+      const half = (sp.town.plates.length - 1) * sp.pitch / 2 + radius();
+      if (Math.abs(x - sp.x) <= half && Math.abs(y - sp.y) <= radius()){
         held = {town: sp.town, x: sp.x, y: sp.y}; return true;
       }
     }

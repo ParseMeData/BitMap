@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Every link bows; the arrows hop between towns** — 2026-09-05,
+  build 278. One bow rule for drawn and sample links; arrows on the
+  region take the walker to the nearest town that way, with the hint.
 - [x] **The region's links, drag, and off-map clusters** — 2026-09-05,
   build 277. A thin bone line with a subtle gradient; the region
   dragged when zoomed in; far towns gathered into a diamond of

@@ -251,7 +251,11 @@ it is zoomed in (`+`), and held where the hand left it until the walker
 steps; and a town beyond the plate stands at its edge in its true
 direction — towns beyond it together, a city and its suburbs, gathered
 into one diamond of small diamonds under one name and a count. Two such
-groups, Melbourne and Mildura, are among the samples.
+groups, Melbourne and Mildura, are among the samples. Every link bows
+a little, a twelfth of its length to one side, a drawn one as a
+sample's; and on the region the **arrows** hop the walker to the
+nearest town in that direction — a town, a sample or a cluster, the
+hint saying which — while `WASD` still walks the links.
 
 ## Controls
 

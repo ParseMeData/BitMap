@@ -862,10 +862,25 @@ const Build = (() => {
       s.x = clamp(s.x, hw, W - hw); s.y = clamp(s.y, hh, H - hh);
     }
   }
+  /* ── a link bows ─────────────────────────────────────────────────────
+     A link between two towns is a slight curve, not a rule (Eden,
+     2026-09-05: "give all lines in between towns a slight curve"): every
+     straight segment of one is given a bend a twelfth of its length to
+     one side, the side `Region.bow` picks so a sample's link and a drawn
+     one curve alike. A bend you have set stays — only a segment with
+     none is bowed, which is what a new link and a newly added point
+     have. */
+  function bowLink(s){
+    if (s.kind !== 'link' || s.type !== 'line' || !s.pts || s.pts.length < 2) return;
+    if (!s.ctrl) s.ctrl = [];
+    for (let i = 0; i + 1 < s.pts.length; i++)
+      if (!s.ctrl[i] && typeof Region !== 'undefined' && Region.bow) s.ctrl[i] = Region.bow(s.pts[i], s.pts[i + 1]);
+  }
   function changed(s){
     if (s){
       keepOnPlate(s);
       alignFine(s);
+      bowLink(s);
       s._flat = null;                       // the curve may have moved
       s._span = null;                       // and so may the corners
       const nb = reachBox(s), ob = s._bb || nb;

@@ -251,15 +251,27 @@ const Region = (() => {
      towns and quieter along the way — the same line `Kinds` draws for a
      link laid by hand, so a sample's link and a real one look alike.
      Trimmed a diamond and a half short of either town. */
+  /* the bend a link takes between two points: a twelfth of the way
+     across, to the side that is clockwise of the run — one rule for a
+     sample's link here and a drawn one in build.js */
+  function bow(A, B){
+    const dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy) || 1;
+    return [(A[0] + B[0]) / 2 - dy / L * L / 12, (A[1] + B[1]) / 2 + dx / L * L / 12];
+  }
   function line(a, m, A, B, r, cap){
-    const cell = G.A.cell, dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy);
+    const cell = G.A.cell, L = Math.hypot(B[0] - A[0], B[1] - A[1]);
     const trim = r * 1.5;
     if (L <= trim * 2 + cell) return m;
+    const Cp = bow(A, B);
+    /* along the curve, a diamond every three fifths of a cell — the
+       bow is slight, so the chord's length serves for the spacing */
     const n = Math.max(2, Math.round((L - trim * 2) / (cell * 0.6)));
     if (m > cap - n - 1) return m;
+    const t0 = trim / L, t1 = 1 - trim / L;
     for (let i = 0; i <= n; i++){
-      const t = (trim + (L - trim * 2) * i / n) / L, al = 0.32 + 0.4 * Math.abs(2 * t - 1);
-      m = put(a, m, A[0] + dx * t, A[1] + dy * t, BONE[0], BONE[1], BONE[2], al, cell * 0.5, 0, 0, 0, 1);
+      const t = t0 + (t1 - t0) * i / n, u = 1 - t, al = 0.32 + 0.4 * Math.abs(2 * t - 1);
+      const x = u * u * A[0] + 2 * u * t * Cp[0] + t * t * B[0], y = u * u * A[1] + 2 * u * t * Cp[1] + t * t * B[1];
+      m = put(a, m, x, y, BONE[0], BONE[1], BONE[2], al, cell * 0.5, 0, 0, 0, 1);
     }
     return m;
   }
@@ -330,6 +342,56 @@ const Region = (() => {
     return m;
   }
 
+  /* ── the arrows hop between towns ──────────────────────────────────────
+     On the region an arrow takes the walker to the nearest town in that
+     direction — a real one, a sample, or a cluster at the edge — and
+     WASD still walks the links (Eden, 2026-09-05: "allow navigation
+     within each town using the arrow keys"). Nearest by distance among
+     those within sixty degrees of the arrow; the walker is stood on the
+     town's tile, the camera follows, and Enter is Enter. Taken in the
+     capture phase, as build mode takes its arrows, so the walk never
+     sees the key. */
+  let stood = null;                         // the sample or cluster the walker was last put by
+  function places(){
+    const L = layout(radius());
+    const out = [];
+    for (const e of L.on) out.push(e.sample ? {x: e.x, y: e.y, name: e.name, sample: true}
+                                            : {x: e.sp.x, y: e.sp.y, name: e.name, town: e.sp.town});
+    for (const cl of L.clusters) out.push({x: cl.x, y: cl.y, name: cl.name, cluster: cl});
+    return out;
+  }
+  function hop(dx, dy){
+    if (!frame || !G.terr) return false;
+    const w = toWorld(G.x, G.y), ts = G.terr.tsz;
+    let best = null, bd = Infinity;
+    for (const p of places()){
+      const vx = p.x - w[0], vy = p.y - w[1], d = Math.hypot(vx, vy);
+      if (d <= ts * REACH) continue;                                // the one we stand by
+      if ((vx * dx + vy * dy) / d < 0.5) continue;                  // not that way
+      if (d < bd){ bd = d; best = p; }
+    }
+    if (!best){ note('no town that way'); return false; }
+    G.x = G.tx = Math.max(0, Math.min(G.terr.tw - 1, Math.round(best.x / ts - 0.5)));
+    G.y = G.ty = Math.max(0, Math.min(G.terr.th - 1, Math.round(best.y / ts - 0.5)));
+    const at = toWorld(G.x, G.y);
+    G.fx = at[0]; G.fy = at[1]; G.moving = false; G.stepT = 1;
+    G.hold = null;                                                  // the camera comes along
+    stood = best.town ? null : best;
+    shown = null;                                                   // the hint reads the new place
+    return true;
+  }
+  function wireKeys(){
+    addEventListener('keydown', e => {
+      if (!frame || G.paused || !/^Arrow(Up|Down|Left|Right)$/.test(e.code)) return;
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      if (typeof Build !== 'undefined' && Build.active && Build.active()) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.repeat) return;
+      hop(e.code === 'ArrowRight' ? 1 : e.code === 'ArrowLeft' ? -1 : 0, e.code === 'ArrowDown' ? 1 : e.code === 'ArrowUp' ? -1 : 0);
+    }, true);
+  }
+
   /* ── dragged ───────────────────────────────────────────────────────────
      The region is a map, and a map is dragged: a press on the plate that
      is not the builder's and not the HUD's carries the camera with the
@@ -372,12 +434,25 @@ const Region = (() => {
     const el = $('#enterhint');
     if (!el || !frame || WALL) return;
     const t = G.paused ? null : target();
-    const key = t ? t.root + '|' + t.name : '';
+    /* by a sample or a cluster instead: said, with nothing to press */
+    let by = null;
+    if (!t && stood && !G.paused){
+      const w = toWorld(G.x, G.y);
+      if (Math.hypot(w[0] - stood.x, w[1] - stood.y) <= G.terr.tsz * REACH) by = stood;
+    }
+    const key = t ? t.root + '|' + t.name : by ? 'by|' + by.name : '';
     if (key === shown) return;
     shown = key;
-    el.hidden = !t;
-    if (!t) return;
+    el.hidden = !t && !by;
+    if (!t && !by) return;
     el.innerHTML = '';
+    if (by){
+      const n = document.createElement('span');
+      n.textContent = by.cluster ? by.name + ' · ' + by.cluster.members.length + ' towns beyond the plate'
+                                 : by.name + ' · a sample, not a town yet';
+      el.append(n);
+      return;
+    }
     const e = document.createElement('em'); e.textContent = 'Enter';
     const n = document.createElement('span');
     n.textContent = (t.here ? 'back to ' : 'go to ') + (t.name || t.root) +
@@ -494,9 +569,9 @@ const Region = (() => {
     const s = el.querySelector('span');
     if (s) s.textContent = f ? f.tab + ' · ' + f.sub + ' · ' + f.letters.join('') + ' · north is up' : 'north is up';
   }
-  function init(){ banner(); wireDrag(); }
+  function init(){ banner(); wireDrag(); wireKeys(); }
 
-  const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns,
+  const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns, bow, hop,
                grab, dragTo, drop, on, gate: null,
                held: () => !!held};
   return api;

@@ -76,7 +76,33 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 277 (tag **v8.7** at 273; **v8.8 open**)
+## Where we are — 5 Sep 2026, build 278 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 278 (5 Sep 2026) — every link bows; the arrows hop between
+  towns.** Eden: *"give all lines in between towns a slight curve and
+  also allow navigation within each town using the arrow keys"*.
+  `Region.bow(A, B)` is the one rule — the midpoint moved a twelfth of
+  the run to the side clockwise of it — and `line()` draws a sample's
+  link as a quadratic along it; `bowLink(s)` in build.js's `changed()`
+  gives every straight segment of a drawn link (`ctrl` null) that
+  bend, and leaves a bend that has been set. **Arrows:** a capture-phase
+  keydown in region.js (`wireKeys`, like build mode's) takes the four
+  arrows on the region outside build mode; `hop(dx, dy)` — exported —
+  picks the nearest of `places()` (the real towns on the plate, the
+  samples, the clusters) within sixty degrees of the arrow and beyond
+  REACH of where the walker stands, stands the walker on its tile,
+  drops `G.hold` so the camera follows, and remembers a sample or a
+  cluster in `stood` so `prompt()` can say "Beechworth · a sample, not
+  a town yet" or "Mildura · 4 towns beyond the plate" with nothing to
+  press. WASD still walks the links. Verified on Eden's window with
+  direct hops: up Beechworth, left Mildura, down Wangaratta, right
+  Beechworth, down Barwidgee, down Myrtleford, right Barwidgee — and
+  the keys through the capture handler. Two slips on the way, both
+  fixed before the commit: the export patch had landed `bow` on
+  `layout()`'s return rather than the API, and a hop from a cluster
+  found the cluster itself nearest because the walker's tile centre is
+  a few units off its point (the REACH exclusion). Not tested: a drawn
+  link's bow (needs a link laid on the region); a hop on a phone.
 
 - **Build 277 (5 Sep 2026) — the region's links drawn thin, the region
   dragged, and what is off the map gathered at the edge.** Eden: *"a

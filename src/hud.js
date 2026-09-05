@@ -91,7 +91,20 @@ const Hud = (() => {
      a finer material than the map beside it). The tables are rebuilt when
      the pitch moves and kept while it holds. */
   const THIN = 0.42;                       // dot size at the edge, as a fraction of the centre's
-  const pitchOf = g => Math.max(1.5, (G.A && G.A.cell ? G.A.cell : 3.15) * g.z / g.dpr);
+  /* the plate's cell on screen — but no coarser than it is at the working
+     zoom (STYLE.md: chrome takes the plate's cell "at the zoom the town is
+     read at", about three pixels a diamond). Zoomed in past that the
+     fields used to grow to a handful of big dots, and since build 274 the
+     three at rest carry marks that a field of five dots cannot cut. */
+  const pitchOf = g => {
+    const cell = G.A && G.A.cell ? G.A.cell : 3.15;
+    /* the working zoom is the plate covering the window (game.js `cover`,
+       which `home()` there answers with on a desk) — worked out here from
+       the same two numbers, because `home` in this file is the HUD's own
+       ring, the one that flies the camera to the whole town */
+    const zh = (VW && G.W && VH && G.H) ? Math.max(VH / G.H, VW / G.W) : g.z;
+    return Math.max(1.5, cell * Math.min(g.z, zh) / g.dpr);
+  };
   let T = null;
   function tables(pitch){
     const P = Math.round(pitch * 20) / 20;
@@ -146,6 +159,38 @@ const Hud = (() => {
                  '0011100',
                  '0001000',
                  '0001000'];
+  /* ── the marks on the three at rest ──────────────────────────────────
+     Eden, 2026-09-05: "place icons on our bottom left diamonds". Three
+     more grids, drawn as the ring labels are and cut into the field of
+     each diamond in the ground's colour — so a diamond says what it opens
+     without a word, and the mark is a hole in the field rather than a
+     thing laid on it. The hub, which opens the four ways in, wears three
+     dots — the sign for "more" everywhere; the journal, three lines of
+     writing and the start of a fourth; build, a mallet. On the build
+     diamond while building is on the field is only its rim, so the mallet
+     goes down in bone instead, over the plate. */
+  const MORE  = ['0000000',
+                 '0000000',
+                 '0000000',
+                 '1101011',
+                 '0000000',
+                 '0000000',
+                 '0000000'];
+  const LINES = ['0111110',
+                 '0000000',
+                 '0111110',
+                 '0000000',
+                 '0111110',
+                 '0000000',
+                 '0111000'];
+  const MALLET = ['0011100',
+                  '0111110',
+                  '0111110',
+                  '0001000',
+                  '0001000',
+                  '0001000',
+                  '0001000'];
+  const MARKS = [MORE, LINES, MALLET];
 
   /* A diamond a shade wider than its own square, so a stroke reads as a
      stroke rather than as a row of separate dots — `type.js` fattens its
@@ -246,6 +291,8 @@ const Hud = (() => {
       else for (const row of r.art)
         for (let c = 0; c < row.length; c++) if (row[c] === '1') n++;
     }
+    for (const art of MARKS)
+      for (const row of art) for (let c = 0; c < row.length; c++) if (row[c] === '1') n++;
     return (budget = n);
   }
 
@@ -276,6 +323,11 @@ const Hud = (() => {
          two things and not as a hub and its shadow */
       field(g.x + JX * g.u, g.y, AQUA, hov === 'journal' ? 1 : 0.9, false);
       field(g.x + BX * g.u, g.y + BY * g.u, BONE, hov === 'build' ? 1 : 0.9, on);
+      /* the marks, a little fatter than a letter's diamond so each covers
+         the field's dot under it and the mark reads as one cut shape */
+      m = stamp(a, m, MORE, g.x, g.y, ART * g.u, GROUND, 0.95, cap, 1.05);
+      m = stamp(a, m, LINES, g.x + JX * g.u, g.y, ART * g.u, GROUND, 0.95, cap, 1.05);
+      m = stamp(a, m, MALLET, g.x + BX * g.u, g.y + BY * g.u, ART * g.u, on ? BONE : GROUND, on ? 0.9 : 0.95, cap, 1.05);
       return m;
     }
 
@@ -316,10 +368,10 @@ const Hud = (() => {
   /* one diamond per lit square, centred on a point, which is what `type.js`
      does for a letter — the grid is square and odd-sided, so the middle of
      the middle square is the middle of the symbol */
-  function stamp(a, m, art, cx, cy, px, col, al, cap){
+  function stamp(a, m, art, cx, cy, px, col, al, cap, fat){
     const h = art.length, w = art[0].length;
     const x0 = cx - (w - 1) * px / 2, y0 = cy - (h - 1) * px / 2;
-    const hs = px * FAT;
+    const hs = px * (fat || FAT);
     for (let r = 0; r < h; r++)
       for (let c = 0; c < w; c++){
         if (art[r][c] !== '1') continue;

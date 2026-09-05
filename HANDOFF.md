@@ -76,7 +76,27 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 273 (tag **v8.7** at 273)
+## Where we are — 5 Sep 2026, build 274 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 274 (5 Sep 2026) — marks on the three diamonds at rest; v8.8
+  opened.** Eden: *"place icons on our bottom left diamonds"*. Three
+  7 × 7 grids in hud.js beside HOUSE and ROSE — `MORE` (three dots) on
+  the hub, `LINES` (writing) on the journal, `MALLET` on build — drawn
+  by the rings' own `stamp` in the ground's colour over each field, a
+  little fatter than a letter's diamond (`fat` 1.05) so each covers the
+  field dot under it; on the build diamond while building is on the
+  field is only its rim, so the mallet goes down in bone. `cost()`
+  counts them. The name moves up to V8.8 with the first change of the
+  version, as the rule from 271 has it. Found on the way: the HUD's
+  fields took the plate's pitch AS ZOOMED, so past the working zoom a
+  diamond was five big dots and no mark could be cut in it; `pitchOf`
+  now holds the pitch at the working zoom's (STYLE.md: chrome takes the
+  plate's cell at the zoom the town is read at), worked out from
+  `VW/G.W` and `VH/G.H` — not from `home()`, which inside hud.js is the
+  HUD's own ring and flew the camera to the whole town every frame for
+  the minute that mistake was live. Verified on Eden's window at home,
+  3× and fit-all: the same three diamonds and marks at each.
+
 
 - **Build 273 (5 Sep 2026) — tag v8.7.** Cut on Eden's word after 272:
   `snapshots/v8.7.json` beside the tag (the second Barwidgee as it

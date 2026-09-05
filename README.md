@@ -1,4 +1,4 @@
-# Loci Bitmap V8.7
+# Loci Bitmap V8.8
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -237,6 +237,10 @@ v8.1–v8.3. The version itself: the walk grid restamps in a millisecond
 — a shape's stamped tiles kept on it under a key of its geometry, where
 every edit had rescanned every shape's whole box — and a blank plate is
 not re-read for a tone. `snapshots/v8.7.json` is the town as it stood.
+
+**v8.8** — opened 2026-09-05, in progress. The three diamonds at the
+bottom left wear marks: three dots on the hub that opens the four ways
+in, lines of writing on the journal, a mallet on build.
 
 ## Controls
 

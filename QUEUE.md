@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Marks on the three diamonds at rest** — 2026-09-05, build 274.
+  Three dots, lines of writing, a mallet; the HUD's pitch held at the
+  working zoom so they cut at any zoom. v8.8 opened.
 - [x] **Tag v8.7** — 2026-09-05, build 273. The town beside it in
   `snapshots/v8.7.json`, the clone frozen.
 - [x] **The walk grid restamps in a millisecond** — 2026-09-05, build

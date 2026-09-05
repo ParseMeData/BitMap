@@ -32,6 +32,22 @@
 const Region = (() => {
   const SKEY = 'hq.shapes.region', MKEY = 'hq.markers.region', PKEY = 'hq.region';
   const REACH = 1.6;                   // walk tiles: how close counts as "by the town"
+  /* ── the samples ──────────────────────────────────────────────────────
+     Five real neighbours of Barwidgee, drawn dim on the region under
+     their names so the plate can be looked at as it will look with towns
+     on it (Eden, 2026-09-05: "add some placeholder towns so we can test
+     this and view what it will look like when working"). Drawn only —
+     not plates, not in the atlas, not entered, not walked to; and
+     switched off with the Samples chip under Towns in the Tune panel
+     (`hq.region.demo`), or left on until the real ones arrive. */
+  const DEMO = [
+    {name: 'Myrtleford',   lat: -36.5533, lon: 146.7233},
+    {name: 'Yackandandah', lat: -36.3136, lon: 146.8386},
+    {name: 'Beechworth',   lat: -36.3597, lon: 146.6867},
+    {name: 'Bright',       lat: -36.7297, lon: 146.9598},
+    {name: 'Wangaratta',   lat: -36.3575, lon: 146.3125}];
+  const DKEY = 'hq.region.demo';
+  const demo = () => { try { return Store.get(DKEY) !== '0'; } catch (e){ return true; } };
   const SPAN = 0.6;                    // degrees of longitude across the plate's shorter side, by default
   const STEP = 0.0125;                 // one atlas step, as src/atlas.js has it
   const BONE = [0.93, 0.92, 0.89], FLARE = [1, 0.373, 0.635], DIM = [0.353, 0.353, 0.4];
@@ -159,6 +175,20 @@ const Region = (() => {
          the full width put it before */
       if (name) m = Markers.text(a, m, name, sp.x - (name.length - 1) * ls * 1.06 / 2,
                                  sp.y + r * 2 + ls * 1.3, ls, c, 0.9, cap);
+    }
+    /* the samples: one dim diamond each, no halo, the name dimmer still,
+       and nothing the walker can reach */
+    if (demo()){
+      const taken = new Set(spots().map(sp => String(sp.town.name || '').toLowerCase()));
+      for (const d of DEMO){
+        if (taken.has(d.name.toLowerCase())) continue;     // a real town of that name stands here
+        const xy = toXY(d);
+        if (!xy || xy[0] < r || xy[0] > G.W - r || xy[1] < r || xy[1] > G.H - r * 3) continue;
+        if (m > cap - 2 - d.name.length) break;
+        m = put(a, m, xy[0], xy[1], DIM[0], DIM[1], DIM[2], 0.8, r, 0, 0, 0, 1);
+        const name = d.name.toUpperCase();
+        m = Markers.text(a, m, name, xy[0] - (name.length - 1) * ls * 1.06 / 2, xy[1] + r * 2 + ls * 1.3, ls, DIM, 0.75, cap);
+      }
     }
     return m;
   }

@@ -76,7 +76,27 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 275 (tag **v8.7** at 273; **v8.8 open**)
+## Where we are — 5 Sep 2026, build 276 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 276 (5 Sep 2026) — the compass in the region's corner, and
+  sample towns.** Eden: *"move the compass to the very top left of the
+  zoomed out town view — add some placeholder towns so we can test this
+  and view what it will look like when working"*. `Compass.where()`
+  answers `corner()` while `Region.on()`: the largest cut's half-size
+  plus two tiles in from either edge, so the whole rose stands in the
+  corner and no spike runs off the top, wherever it was put on the town;
+  it is not draggable there (`may()`). `DEMO` in region.js is five real
+  neighbours of Barwidgee — Myrtleford, Yackandandah, Beechworth,
+  Bright, Wangaratta — drawn dim with their names by the same radius
+  and label as a town, no halo, skipped when a real town of that name
+  stands, kept on the plate, and nothing the walker can reach or enter;
+  `hq.region.demo` = '0' hides them, and the **Samples** chip beside
+  Region and Country in the Tune panel toggles that. Verified on Eden's
+  window at home zoom and fit-all: the rose whole in the corner, the
+  five dim towns spread round Barwidgee, Bright under the keys panel at
+  the bottom right, Enter's hint still "back to Barwidgee". The stored
+  compass `at` read (132, 131) afterwards — Eden had moved it there;
+  the corner does not write it.
 
 - **Build 275 (5 Sep 2026) — the region's towns sized for the screen,
   and the home town named by its title.** Eden: *"review the zoomed out

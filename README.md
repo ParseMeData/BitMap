@@ -240,7 +240,12 @@ not re-read for a tone. `snapshots/v8.7.json` is the town as it stood.
 
 **v8.8** — opened 2026-09-05, in progress. The three diamonds at the
 bottom left wear marks: three dots on the hub that opens the four ways
-in, lines of writing on the journal, a mallet on build.
+in, lines of writing on the journal, a mallet on build. The region's
+towns are sized for the screen and the home town named by its title;
+on the region the compass stands whole in the top-left corner, and five
+real neighbours of Barwidgee are drawn dim as samples until the real
+towns arrive — the Samples chip under Towns in the Tune panel turns
+them off.
 
 ## Controls
 

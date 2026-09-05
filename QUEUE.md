@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The compass in the region's corner, and sample towns** —
+  2026-09-05, build 276. Five dim neighbours of Barwidgee drawn on the
+  region, a Samples chip to hide them; the rose whole in the top-left.
 - [x] **The region's towns sized for the screen** — 2026-09-05, build
   275. A 36 px diamond and a 14 px name at any zoom; the home town
   named by its title.

@@ -81,13 +81,18 @@ function buildPanel(){
   th.className = 'plabel'; th.textContent = 'Towns';
   body.appendChild(th);
   const tw = document.createElement('div');
-  tw.className = 'chips two';
+  tw.className = 'chips three';
   for (const [name, v] of [['Region', 'region'], ['Country', 'country']]){
     const c = document.createElement('div');
     c.className = 'chip'; c.textContent = name; c.dataset.towns = v;
     c.onclick = () => { setTowns(v); syncPanel(); };
     tw.appendChild(c);
   }
+  /* the region's sample towns, on or off (src/region.js DEMO) */
+  const sc = document.createElement('div');
+  sc.className = 'chip'; sc.textContent = 'Samples'; sc.dataset.demo = '1';
+  sc.onclick = () => { const on = Store.get('hq.region.demo') !== '0'; Store.set('hq.region.demo', on ? '0' : '1'); syncPanel(); };
+  tw.appendChild(sc);
   body.appendChild(tw);
 
   /* the round, on or off. It is the game this started as and it is in the
@@ -196,6 +201,8 @@ function syncPanel(){
     c.classList.toggle('sel', (c.dataset.spark === '1') === SPARKS));
   document.querySelectorAll('.chip[data-towns]').forEach(c =>
     c.classList.toggle('sel', c.dataset.towns === TOWNS));
+  document.querySelectorAll('.chip[data-demo]').forEach(c =>
+    c.classList.toggle('sel', Store.get('hq.region.demo') !== '0'));
 }
 function setPanel(open){
   panelOpen = open;

@@ -344,7 +344,19 @@ const Compass = (() => {
   /* where it stands, moved by hand and kept: `at` in hq.compass, world
      units; nothing when it has never been moved */
   let at = null, drag = null;
-  const where = () => (at ? at : [G.terr.tsz * AT, G.terr.tsz * AT]);
+  /* on the region the rose stands in the plate's very top-left corner,
+     whole — two tiles in from either edge by its own cut's half-size, so
+     no spike runs off the top — wherever it was put on the town (Eden,
+     2026-09-05: "move the compass to the very top left of the zoomed
+     out town view"); it is not dragged there */
+  function corner(){
+    const cell = G.A ? G.A.cell : 3, t = G.terr.tsz;
+    let cols = 0, rows = 0;
+    for (const l of LAYERS){ const f = facePlates[l.k]; if (f){ cols = Math.max(cols, f.cols); rows = Math.max(rows, f.rows); } }
+    return [cols * cell / 2 + t * 2, rows * cell / 2 + t * 2];
+  }
+  const onRegion = () => typeof Region !== 'undefined' && Region.on && Region.on();
+  const where = () => onRegion() ? corner() : (at ? at : [G.terr.tsz * AT, G.terr.tsz * AT]);
   /* ── the rose, cut in the title's own layer ────────────────────────────
      Until 2026-08-30 this was `Title.picture` — the PHOTOGRAPHIC read,
      through `Lattice.analyse`/`compose`: a dense field with a cell for
@@ -555,7 +567,7 @@ const Compass = (() => {
   const toWorld = ev => { const b = canvas.getBoundingClientRect(), k = VW / (b.width || 1);
     return [((ev.clientX - b.left) * k - VW / 2) / G.cam[2] + G.cam[0], ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]]; };
   function may(){
-    if (!ON_PLATE || !G.terr || !hitFace() || G.paused || WALL) return false;
+    if (!ON_PLATE || !G.terr || !hitFace() || G.paused || WALL || onRegion()) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
     if (typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) return false;
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return false;

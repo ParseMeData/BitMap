@@ -76,7 +76,12 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 280 (tag **v8.8** at 280)
+## Where we are — 5 Sep 2026, build 281 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 281 (5 Sep 2026) — v8.9 opened.** Eden: *"now clone for
+  version 8.9"* — the next version opened on the working line, the
+  title and the README's name moved up to V8.9; the frozen clone comes
+  with the v8.9 tag, as it did for 8.7 and 8.8.
 
 - **Build 280 (5 Sep 2026) — tag v8.8.** Cut on Eden's word after 279:
   `snapshots/v8.8.json` beside the tag (the second Barwidgee as it

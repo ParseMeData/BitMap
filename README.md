@@ -1,4 +1,4 @@
-# Loci Bitmap V8.8
+# Loci Bitmap V8.9
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -266,6 +266,8 @@ bowed by an amount of its own and now and then swinging back, with a
 slow wave along it; each diamond is a shade brighter or dimmer and a
 touch warmer or cooler than its colour, with a lit facet, seeded by its
 name so nothing flickers. `snapshots/v8.8.json` is the town as it stood.
+
+**v8.9** — opened 2026-09-05, in progress.
 
 ## Controls
 

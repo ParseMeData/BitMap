@@ -908,6 +908,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Freeze</td><td>bake the tiles to one picture &nbsp;·&nbsp; or drop an image on the window</td></tr>
     <tr><td>Drag</td><td>move the picture &nbsp;·&nbsp; Shift turns it, Ctrl holds 15°</td></tr>
     <tr><td>[ ]</td><td>size or width of the selection &nbsp;·&nbsp; Del removes it</td></tr>
+    <tr><td>arrows</td><td>move the selection a step &nbsp;·&nbsp; Shift ↑↓ taller or shorter, Shift ←→ wider or narrower</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
     <tr><td>O</td><td>the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it</td></tr>
     <tr><td>Rooms / Fit-out</td><td>move rooms and the furniture follows &nbsp;·&nbsp; or arrange what is inside them</td></tr>
@@ -1086,7 +1087,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 266, cb = '?cb=' + BUILD +
+  var BUILD = 267, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

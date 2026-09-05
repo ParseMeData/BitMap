@@ -76,7 +76,38 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 266 (tag **v8.5** at 266)
+## Where we are — 5 Sep 2026, build 267 (tag **v8.5** at 266)
+
+- **Build 267 (5 Sep 2026) — the arrows nudge and size the selection in
+  build mode.** Eden: *"in build mode I can use the arrow keys to move
+  assets around — if holding shift it increases the size (shift up down
+  makes it taller/shorter, shift left right makes it wider/narrower)"*.
+  A capture-phase keydown in `Build.wire()` (the walk's own listener was
+  registered first, at load, so bubbling would have walked first) takes
+  the four arrows when build mode is on and something is selected, and
+  stops them there: `nudge()` moves by the shape's quantum (`quant()` —
+  a cell for a fine shape, a tile for the rest, what a drag snaps to)
+  through `moveBy` + `changed`; `grow()` with Shift steps `w`/`h` by
+  that quantum (a warp's blob scaled with it, as `scaleSel` does), a
+  print's `mult` by a half (any arrow — a print keeps its proportions),
+  a line's or ring's width by a cell. A selected marker moves a tile via
+  `Markers.moveTo`. Pages that own the screen (bag, journal, missions,
+  towns, locus, the focus column, the minimal view) are left alone, so
+  are Ctrl/Alt/Meta chords. `Build.selected()` is exposed for tests.
+  The pause screen's key list and the README carry the keys. Verified
+  on a throwaway with the v8.5 town: house →,↓,↓ moved (613,360) →
+  (626,385) with the walker still; Shift+→ took its multiple 1 → 1.5 and
+  Shift+↓ back; the clearing's Shift+↑×3 / Shift+←×2 went 59.8 × 59.8 →
+  53.5 × 69.2 and ←,←,↑ moved it two cells and one; the marker moved a
+  tile.
+
+  **Found on the way, not changed:** a restored snapshot comes up with
+  the picture still *placing* (`adopt()` sets it, `st.placing` saves it),
+  and while it is, the picture's layer takes every pointer press — so
+  nothing on the plate can be selected until Pin is pressed. Eden's live
+  window was in that state too (`body.placing`), which may be why the
+  arrows were asked for. A plate in build mode with its picture in hand
+  is worth a decision: pin it on entering build mode, or say so.
 
 - **Build 266 (5 Sep 2026) — tag v8.5.** Cut on Eden's word straight
   after 265: `snapshots/v8.5.json` beside the tag (the second Barwidgee,

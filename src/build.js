@@ -1806,6 +1806,70 @@ const Build = (() => {
         setLayer(Kinds.layers[(i + 1) % Kinds.layers.length].id);
       }
     });
+    /* ── the arrows, with something selected ───────────────────────────
+       Move it a step; with Shift, make it taller or shorter (up, down)
+       and wider or narrower (left, right) — Eden, 2026-09-05. The step
+       is the shape's own quantum, a cell for a fine one and a tile for
+       the rest, which is exactly what a drag snaps to, so a nudge lands
+       where a drag would. A print keeps its proportions (whole and half
+       multiples of its own pixels), so Shift with any arrow steps its
+       multiple; a route or a ring has no height, so Shift steps its
+       width. A selected marker moves a tile.
+
+       Taken in the CAPTURE phase, before the walk reads the key (the
+       walk's own listener was registered first, at load), and stopped
+       there, so the walker stands still while a shape is nudged — and
+       walks as ever when nothing is selected, or a page owns the screen.
+       Repeats are welcome: holding an arrow keeps nudging. */
+    addEventListener('keydown', e => {
+      if (!on || !/^Arrow(Up|Down|Left|Right)$/.test(e.code)) return;
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const b = document.body.classList;
+      if (b.contains('bag') || b.contains('journal') || b.contains('missions') || b.contains('towns') || b.contains('locus')) return;
+      if (typeof Focus !== 'undefined' && Focus.active && Focus.active()) return;
+      if (typeof Trace !== 'undefined' && Trace.on()) return;       // the minimal view has the arrows
+      const mk = Markers.selected();
+      if (!sel && !mk) return;
+      const dx = e.code === 'ArrowRight' ? 1 : e.code === 'ArrowLeft' ? -1 : 0;
+      const dy = e.code === 'ArrowDown' ? 1 : e.code === 'ArrowUp' ? -1 : 0;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (!sel){
+        if (!e.shiftKey){ const g = grid(); Markers.moveTo(mk, mk.x + dx * g, mk.y + dy * g); syncUI(); }
+        return;
+      }
+      if (e.shiftKey) grow(sel, dx, -dy);       // up is taller
+      else nudge(sel, dx, dy);
+    }, true);
+  }
+  function nudge(s, dx, dy){
+    const q = quant(s);
+    moveBy(s, dx * q, dy * q);
+    if (s.label && mode === 'rooms') carry(s, dx * q, dy * q);
+    changed(s);
+  }
+  /* `dw` and `dh` are each −1, 0 or 1: wider or narrower, taller or shorter */
+  function grow(s, dw, dh){
+    const up = (dw || dh) > 0;
+    if (isPrint(s)){
+      s.mult = Math.max(1, Math.min(4, (s.mult || 1) + (up ? 0.5 : -0.5)));
+      glyphSize(s, Kinds.by[s.kind]);
+      changed(s); return;
+    }
+    if (s.type === 'line' || s.type === 'ring'){
+      const c = cellSize();
+      s.width = snapW((s.width || c) + (up ? c : -c));
+      changed(s); return;
+    }
+    const q = quant(s), w0 = s.w, h0 = s.h;
+    if (dw) s.w = clamp(snapQS(s.w + dw * q, q), q, MAXSPAN());
+    if (dh) s.h = clamp(snapQS(s.h + dh * q, q), q, MAXSPAN());
+    if (s.blob){
+      const fx = s.w / Math.max(w0, 1), fy = s.h / Math.max(h0, 1);
+      for (const p of s.blob){ p[0] *= fx; p[1] *= fy; }
+    }
+    changed(s);
+    if (s.label && mode === 'rooms' && typeof Palace !== 'undefined') Palace.refit(s);
   }
 
   /* ── palette ── */
@@ -2850,5 +2914,6 @@ const Build = (() => {
           aiming: () => !!(band || (armed && armed.band)),
           sync: syncUI, head: syncHead,
           commit: save, key: () => KEY, count: () => G.shapes.length,
-          setMinimal: v => { minimal = !!v; rebuild(); }, minimal: () => minimal};
+          setMinimal: v => { minimal = !!v; rebuild(); }, minimal: () => minimal,
+          selected: () => sel};
 })();

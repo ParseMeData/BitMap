@@ -235,6 +235,7 @@ that town.
 | `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at (a pinch on a phone) |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
+| arrows (build mode, something selected) | move it a step &nbsp;·&nbsp; `Shift` `↑` `↓` taller or shorter, `Shift` `←` `→` wider or narrower &nbsp;·&nbsp; a print steps its multiple, a road its width, a marker moves a tile |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and every room's eight places (inside) |
 | `[` `]` | turn the room you are standing in one step round its ring (minimal view) |
@@ -475,7 +476,14 @@ gets arranged around, and it is the layer you land on when build mode opens:
 Pick a layer, then drag a kind onto the map and it lands as a shape that
 generates that terrain. Only the active layer takes the pointer, so dragging
 a lawn can never pick up the road running across it. The dot on each layer
-row hides it. `Shift+Tab` steps through the layers.
+row hides it. `Shift+Tab` steps through the layers. With a shape
+selected the **arrows** move it a step — its own quantum, a cell for a
+clearing or a boundary and a tile for the rest, exactly what a drag
+snaps to — and with `Shift` held `↑` `↓` make it taller or shorter and
+`←` `→` wider or narrower; a print keeps its proportions, so `Shift`
+with any arrow steps its multiple, and a road or a ring steps its width.
+The walker stands still while a shape is nudged, and walks as ever when
+nothing is selected. Holding an arrow keeps nudging (build 267).
 
 Everything lands on one grid — the walk tiles the walker steps between.
 That grid is a whole number of lattice cells wide, so snapping to the tile

@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Arrows nudge and size the selection in build mode** —
+  2026-09-05, build 267. A step is the shape's own quantum; Shift ↑↓
+  taller/shorter, Shift ←→ wider/narrower; a print steps its multiple.
 - [x] **Tag v8.5** — 2026-09-05, build 266. The second Barwidgee beside
   it in `snapshots/v8.5.json`, the name moved up, the clone frozen.
 - [x] **Eden's compass tune as the default** — 2026-09-05, build 265.

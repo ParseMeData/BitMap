@@ -76,7 +76,18 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 263 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 264 (tag **v8.4** at 264)
+
+- **Build 264 (5 Sep 2026) — tag v8.4.** The version cut on Eden's word
+  after a restart had shown every setting come back: `snapshots/v8.4.json`
+  beside the tag (15 shapes, 1 marker, no interiors, no locus pictures,
+  the baked picture 494 KB — the Barwidgee founded that morning on the
+  fresh profile, with the compass tune as Eden left it), the title and
+  the README's name moved up to V8.4, the README's history given v8.2–v8.4,
+  and a frozen clone at `~/Projects/Loci Bitmap V8.4`. Builds 256–263
+  are the version: the 16:9 plate and the small rim, the founding
+  frame's return, the covering zoom, and the compass in four sheets with
+  its per-layer tune.
 
 - **Build 263 (5 Sep 2026) — a Sheen per compass layer, down its ink.**
   Eden: *"add the same gradient effect to the top layer that matches the
@@ -1024,9 +1035,9 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 `origin` = https://github.com/ParseMeData/BitMap (`main`). GitHub Pages
 serves `main` at **https://parsemedata.github.io/BitMap/** — a push shows
 there within about a minute; `until curl … | grep "var BUILD = N"` is how
-the session waited for it. Tag **v8.3** (31 Aug, build 241) is the last
-tag, with `snapshots/v8.3.json` beside it and a frozen clone at
-`~/Projects/Loci Bitmap V8.3`. v8.2 (30 Aug, build 233) is the one
+the session waited for it. Tag **v8.4** (5 Sep, build 264) is the last
+tag, with `snapshots/v8.4.json` beside it and a frozen clone at
+`~/Projects/Loci Bitmap V8.4`. v8.3 (31 Aug, build 241) is the one
 before. `gh` is installed and
 logged in as ParseMeData. Commits are made as Eden through the env vars in
 `QUEUE.md`'s working rules; every one bumps `BUILD` in index.html and

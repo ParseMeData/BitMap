@@ -1,4 +1,4 @@
-# Loci Bitmap V8.3
+# Loci Bitmap V8.4
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -200,6 +200,22 @@ the acronym is the region, a letter a plate, an item a palace. The
 printed sheet never shown; Esri's dark canvas; the map dialog top
 right; the star compass locked to the map; the strip of three meters;
 and the phone: the keys drawn on the screen, every panel a sheet.
+
+**v8.2** — 2026-08-30 — and **v8.3** — 2026-08-31: the compass cut in
+the lettering's own screen, a print and its clearing as two shapes, the
+clearing a warp you can mould, the Backdrop kind; then the floor plan's
+grid edited by hand, and the v8.4 polish run measured before it was
+believed.
+
+**v8.4** — 2026-09-05. The plate is the screen: 16:9, the rim born
+small at the centre and pulled out as the town grows, the resting zoom
+covering the window, the founding frame back after a reload. The
+compass in four of Eden's own sheets — burst, burst, hatched spike,
+ring — each cut and inked on its own, centred on the ring so it turns
+inside it, the ring still; and per layer its Ink, Grain, Bright,
+Screen, Tone, Weight, Scale, Sheen, Fine, Fill, Scatter and Jitter, the
+ring nudged in whole cells. Eden's profile started fresh that morning
+and Barwidgee founded on it; `snapshots/v8.4.json` is that town.
 
 ## Controls
 

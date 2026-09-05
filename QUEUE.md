@@ -35,6 +35,8 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Tag v8.4** — 2026-09-05, build 264. The town beside it in
+  `snapshots/v8.4.json`, the name moved up, the clone frozen.
 - [x] **A Sheen per compass layer, down its ink** — 2026-09-05, build
   263. Faces trimmed to their ink's rows so the fade spans the drawing
   as a title's spans the word; Sheen ×0–2 on the shared one per layer.

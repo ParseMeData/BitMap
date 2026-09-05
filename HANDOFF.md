@@ -76,7 +76,33 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 268 (tag **v8.5** at 266)
+## Where we are — 5 Sep 2026, build 269 (tag **v8.5** at 266)
+
+- **Build 269 (5 Sep 2026) — clearings and the boundary on layers of
+  their own.** Eden: *"when I click asset then place within the boundary
+  it selects the boundary instead — make it so the boundary is its own
+  layer and can't be clicked unless we are within that section, same as
+  other categories — we cannot move a structure unless the category is
+  highlighted — also have a category for clearings (demolished) so we
+  can move the backdrop without the structure layer getting in the
+  way"*. `Kinds.layers` gains `clearings` (Demolish, Clear — Clear had
+  been on Structures) and `boundary` (Boundary), the Modify row is gone
+  from the palette and its two lines of guidance sit under the chips of
+  those layers (`LAYER_NOTE`), and `editable()` no longer lets a
+  modifier through from every layer: only the active layer takes the
+  pointer, for everything. Backdrop keeps the layer it had. The layer
+  order in the palette is Roads · Ground · Water · Trees · Terrain ·
+  Structures · Clearings · Backdrop · Boundary; `z` on the two new rows
+  is nothing to a modifier and only places the rows. A town written
+  before this needs no migration — `layerOf` reads the kind. Hiding a
+  layer with its dot drops its shapes from the rebuild as it always did,
+  which for Clearings means the ground comes back while it is hidden.
+  Verified on a throwaway restored from v8.5: on Structures a click
+  inside the boundary and a click on the clearing select nothing, and
+  an armed Trees chip placed a tree inside the boundary; on Clearings
+  the clearing selects and the arrows nudge it; on Boundary the boundary
+  selects. `Found.generate` lays the same shapes and they land on their
+  layers by kind.
 
 - **Build 268 (5 Sep 2026) — the builder pins the picture.** Eden:
   *"having issues placing the assets down — clicking on an asset then

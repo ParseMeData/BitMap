@@ -273,9 +273,14 @@ const Build = (() => {
      saying one thing and the plate another. They stay tied to their
      layer's eye, because that is the switch that says whether they are in
      the picture at all. */
+  /* only the active layer takes the pointer — the modifiers too, since
+     build 269: a clearing is on Clearings and the boundary on Boundary,
+     and neither is grabbed from any other layer (before that a modifier
+     was editable from every layer, and a click inside the boundary to
+     place a house picked the boundary) */
   const editable = s => mode === 'rooms'
     ? isPlan(s)
-    : (!isPlan(s) && vis[layerOf(s)] && (isMod(s) || layerOf(s) === layer));
+    : (!isPlan(s) && vis[layerOf(s)] && layerOf(s) === layer);
 
   /* ── model ── */
   function defaults(s, type){
@@ -1893,12 +1898,12 @@ const Build = (() => {
          above the layer rows, outside them, and stay there whatever you
          are working on — and Modify is the third verb this editor has,
          beside placing a thing and shaping it. */
-      '<div class="plabel fitonly" id="kmodlabel">Modify</div>' +
-      '<div id="kmods" class="kgrid fitonly"></div>' +
-      '<div class="knote fitonly" id="kmodnote">a boundary lands as the plate &middot; ' +
-      'pull it in to where the town stops &middot; clear takes the terrain under it and nothing built</div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
+      /* a word under the chips on the two layers whose tools take rather
+         than lay (the Modify row they hung on until build 269 is gone —
+         they are chips of their layers now, like everything else) */
+      '<div class="knote fitonly" id="kmodnote" hidden></div>' +
       /* the patterns: on the structures layer for the same reason the
          buildings are, but for looks rather than for living in */
       '<div class="plabel fitonly" id="kpatlabel">Patterns &middot; aesthetics</div>' +
@@ -2451,27 +2456,24 @@ const Build = (() => {
      The floor registry has no modifiers at all — a wall gap is a cut, and
      it is a button rather than a chip — so indoors the row would be an
      empty heading, and it takes itself down. */
+  const LAYER_NOTE = {
+    clearings: 'demolish takes the ground under it and nothing built &middot; clear takes the terrain and the walk with it &middot; the dot gives a clearing\u2019s ground back',
+    boundary: 'a boundary lands as the plate &middot; pull it in to where the town stops, out as it grows &middot; the fade past its heart is the town going'
+  };
   function syncKinds(){
-    const box = $('#kkinds'), mbox = $('#kmods'), pbox = $('#kpats');
+    const box = $('#kkinds'), pbox = $('#kpats'), note = $('#kmodnote');
     if (!box) return;
     box.innerHTML = '';
-    if (mbox) mbox.innerHTML = '';
     if (pbox) pbox.innerHTML = '';
     for (const p of Kinds.palette){
       const k = Kinds.by[p.kind];
-      if (!k) continue;
-      if (k.modifies || k.tool){ if (mbox) mbox.appendChild(kindChip(p, k)); continue; }
-      if (k.layer !== layer) continue;
+      if (!k || k.layer !== layer) continue;
       if (k.aesthetic && pbox){ pbox.appendChild(kindChip(p, k)); continue; }
       box.appendChild(kindChip(p, k));
     }
     const nopat = !pbox || !pbox.childElementCount;
     for (const id of ['#kpatlabel', '#kpats']){ const el = $(id); if (el) el.hidden = nopat; }
-    const none = !mbox || !mbox.childElementCount;
-    for (const id of ['#kmodlabel', '#kmods', '#kmodnote']){
-      const el = $(id);
-      if (el) el.hidden = none;
-    }
+    if (note){ note.innerHTML = LAYER_NOTE[layer] || ''; note.hidden = !LAYER_NOTE[layer]; }
   }
 
   /* ── the route ──────────────────────────────────────────────────────────

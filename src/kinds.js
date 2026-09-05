@@ -1700,6 +1700,16 @@ const Kinds = (() => {
        saying "built": one is ground cover and one is a thing on it */
     {id: 'terrain', label: 'Terrain',  z: 2},
     {id: 'built',  label: 'Structures', z: 2},
+    /* the clearings — what takes ground away — and the boundary, on layers
+       of their own since build 269: they were modifiers hung above the
+       layers and in reach from every one, and a click inside the boundary
+       to place a house picked the boundary instead (Eden, 2026-09-05).
+       Now a clearing or the boundary takes the pointer only while its
+       layer is the one you are on, as everything else does. Their `z` is
+       nothing to them — a modifier draws nothing — and is set so the
+       rows fall where they read: clearings with the things they clear
+       under, the boundary last of all. */
+    {id: 'clearings', label: 'Clearings', z: 2.5},
     /* ── the backdrop ──────────────────────────────────────────────────
        Above everything, roads included, because that is where the mat
        behind the town's name has always been drawn: it went into the
@@ -1708,7 +1718,8 @@ const Kinds = (() => {
        it is a shape of its own (2026-08-30) the only way to keep that is
        a layer of its own, at the top. It is a row like any other, so the
        eye beside it hides every backdrop at once. */
-    {id: 'mat',    label: 'Backdrop',  z: 4}
+    {id: 'mat',    label: 'Backdrop',  z: 4},
+    {id: 'boundary', label: 'Boundary', z: 5}
   ];
 
   /* 'warpbox' is not a fourth kind of shape: it is a second way to SEED a
@@ -1892,7 +1903,7 @@ const Kinds = (() => {
        forever. The swatch is the one the floor
        registry's demolisher already carries — the palette gains a chip and
        not a colour, and the two tools that draw nothing look alike. */
-    {id: 'demolish',  label: 'Demolish',  layer: 'roads',  types: AREA,
+    {id: 'demolish',  label: 'Demolish',  layer: 'clearings', types: AREA,
      /* never read: a modifier is skipped where the walk grid is stamped,
         because opening or blocking a tile is the one thing it must not do */
      walk: 1, stamp: 9, gen: nothing,   swatch: '#3A3A44',
@@ -1925,7 +1936,7 @@ const Kinds = (() => {
        a step. The swatch is the aqua both other drawing-nothing tools are
        already outlined in, so the tools that take rather than lay look
        alike in the palette as well as on the plate. */
-    {id: 'boundary', label: 'Boundary', layer: 'roads',  types: AREA,
+    {id: 'boundary', label: 'Boundary', layer: 'boundary', types: AREA,
      /* never read: a modifier is skipped where the walk grid is stamped —
         the town outside a boundary is gone from the picture, not from the
         route, and deciding otherwise would strand the walker */
@@ -1952,7 +1963,7 @@ const Kinds = (() => {
      walk: 1, stamp: 9, gen: backdrop,  swatch: '#2A2A33', tool: true,
      feather0: 8, jitter0: 0, scatter0: 0, fall0: 0, out0: 0,
      pad0: 0, padFade0: 0, padBreak0: 0},
-    {id: 'clear',    label: 'Clear',    layer: 'built',  types: AREA,
+    {id: 'clear',    label: 'Clear',    layer: 'clearings', types: AREA,
      walk: 1, stamp: 9, gen: nothing,   swatch: '#5FBFC4', tool: true,
      feather0: 0, jitter0: 0, scatter0: 0, fall0: 0, out0: 0,
      pad0: 0, padFade0: 0, padBreak0: 0, clears: []}

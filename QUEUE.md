@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Clearings and the boundary on layers of their own** —
+  2026-09-05, build 269. Only the active layer takes the pointer, for
+  modifiers too; the Modify row is gone.
 - [x] **The builder pins the picture** — 2026-09-05, build 268. An
   unpinned picture took every press, so nothing could be placed or
   selected; opening build mode pins it.

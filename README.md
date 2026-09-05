@@ -472,6 +472,9 @@ gets arranged around, and it is the layer you land on when build mode opens:
     Ground      grass · water · creek
     Trees       trees · park
     Buildings   buildings · houses
+    Clearings   demolish · clear
+    Backdrop    backdrop
+    Boundary    boundary
 
 Pick a layer, then drag a kind onto the map and it lands as a shape that
 generates that terrain. Only the active layer takes the pointer, so dragging
@@ -1760,7 +1763,7 @@ finer than the 32-cell grid (up to 64 cells) keeps that finer drawing as
 its **detail** (`Glyphs.detail`), and from Size × 2 the print is drawn
 from it — bigger shows more, not bigger pixels. The **Asset** picker sits under the
 Place chips, so the asset is chosen before the plate is clicked. Beside
-Demolish in Modify is **Clear**: a rect or oval (corners drag) with a hard
+Demolish on the Clearings layer is **Clear**: a rect or oval (corners drag) with a hard
 edge that takes the terrain under it and nothing built — a print inside a
 clearing stands, and roads run through.
 
@@ -1858,7 +1861,7 @@ texture meant to lie *on* the ground.
 
 **A print placed before this build has no clearing under it** and will
 show the terrain through its windows until one is put there — Clear or
-Demolish, in Modify, is that shape.
+Demolish, on the Clearings layer, is that shape.
 
 ## The route, and playing it
 
@@ -2439,9 +2442,21 @@ reading; `ON_PLATE` in `src/compass.js` is the switch.
 The plate's own colour laid over whatever is there, solid in the middle
 and dithered away to nothing at the rim — so anything standing on one
 reads on the plate and not through the trees. It is a **kind**, `mat`,
-offered as **Backdrop** in the Modify row, on a **layer of its own** at
+offered as **Backdrop** on a **layer of its own** at
 the top of the stack, above roads. The eye beside the *Backdrop* row
 hides every one of them at once.
+
+**Clearings and the boundary are layers of their own** since build 269
+(Eden, 2026-09-05: a click inside the boundary to place a house picked
+the boundary). They were modifiers hung above the layer rows and in
+reach from every one; now Demolish and Clear are the chips of the
+*Clearings* layer and Boundary the chip of *Boundary*, and — as with
+everything else — only the layer you are on takes the pointer, so a
+clearing or the boundary is grabbed only from its own row, and a
+structure only from *Structures*. The Modify row is gone; the word it
+carried sits under the chips of those two layers. Hiding either with its
+dot takes its shapes out of the picture as it does on any layer: a
+hidden clearing gives its ground back until it is shown again.
 
 Being a shape, it **moves, warps and deletes** like anything else: place
 one, retype it to Warp box and pull a corner, throw it away.

@@ -76,7 +76,35 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 258 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 259 (tag **v8.3** at 241)
+
+- **Build 259 (5 Sep 2026) — the compass in four layers, four inks.**
+  Eden drew the rose as four sheets (`~/Desktop/compass layers`, 317 ×
+  280, in register: Bottom, Middle, Top, Outer Circle) and asked: *"wire
+  them in, each layer its own ink, ring stays still — allow for tuning of
+  each layer to make sure each layer's visible"*. They are
+  `assets/compass/{bottom,middle,top,ring}.png`; `assets/compass.png` is
+  gone (the Desktop copy is byte-identical; git has it). `tools/compass.py`
+  cuts each on its own to the one box the cross fills (224 × 268 at
+  +47+4 — the old sheet's size, so Size means what it did), keying
+  white out of the top layer only (its hatching is the drawing; the ring
+  is white and keying would delete it), and flattens the four to `rose`
+  for the chrome canvas the tune panel reads. `src/compass.js`: `LAYERS`
+  in drawing order, `INKS` (bone, gold, flare, aqua, dim, grass, water,
+  sand — the game's own numbers), a stencil per layer (`wantPlates`),
+  the ring cut at 0° whatever the heading, and `composed()` — rebuilt
+  only when a cut or a tune changes — which drops a turning layer's
+  cells where a layer above it has ink (same Size, same heading, same
+  sheet size → one grid, cell for cell; faces on different grids never
+  mask). Defaults: bottom dim, middle gold, top bone, ring aqua. The
+  Tune panel's Compass block is the shared rows (Size, Weight, Tone,
+  Sheen, Detail — `bri` dropped from view, it only ever fed the hidden
+  chrome canvas) then a heading, an ink chip row and Bright/Screen per
+  layer; kept as `layers` in `hq.compass`. Verified on a throwaway:
+  founded, no errors, 13 rows and 32 chips in the block; clicking Flare
+  on the top layer and Bright 0 on the bottom took effect and saved;
+  with the map turned 34° the ring's diamonds did not move while the
+  rest turned. Not tested: a phone's tune panel with the longer block.
 
 - **Build 258 (5 Sep 2026) — the resting zoom covers the screen.** Seen
   on Eden's window after 256: the app window is 1280 × 670 inside (the

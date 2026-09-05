@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The compass in four layers, four inks** — 2026-09-05, build 259.
+  Eden's four sheets in `assets/compass/`; each cut and inked on its
+  own, the ring still, per-layer Ink/Bright/Screen in the Tune panel.
 - [x] **The resting zoom covers the screen** — 2026-09-05, build 258. On
   a window wider than 16:9 the plate stood with a thin bar either side;
   `home()` now fills the tighter axis and overflows the other.

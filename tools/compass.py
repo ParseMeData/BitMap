@@ -1,48 +1,78 @@
 #!/usr/bin/env python3
-"""── the compass, cut into a rose and four letters ───────────────────────
+"""── the compass, cut layer by layer ──────────────────────────────────────
 
-`assets/compass.png` is a compass rose — since 2026-08-28 a star with a
-long north spike and no letters, so there is one cut, the rose, and it
-turns with the map. (Before that a lettered rose was cut into five, the
-letters kept upright; the machinery for more cuts is still here.)
-They ship as CSS masks, and for the reason `tools/frame.py` gives, as
-data: URIs in a generated file rather than as files: a file:// image
-cannot be a mask.
+`assets/compass/` holds the rose as four sheets Eden drew on 2026-09-05,
+all 317 × 280 and in register with one another: `bottom` (the large
+burst), `middle` (the small burst over it), `top` (the hatched spike cross
+with the long north spike) and `ring` (a thin circle round the whole).
+Each becomes a mask of its own, so each is cut through the lettering's
+screen on its own, drawn in its own ink and tuned on its own
+(src/compass.js): the three drawn layers turn with the map, the ring
+stays still. Before this the rose was one sheet, `assets/compass.png`
+(2026-08-28 to build 258), and one cut in one ink.
 
-The art is grey on white. White is keyed to nothing, what is left is made
-white with its alpha kept, and each cut is halved.
+Ink is alpha (`Title.stencil`). The top layer is a white spike with dark
+hatching, and the hatching is the drawing: white is keyed out of it
+first, exactly as the whole sheet's white was before, so the lines are
+the ink and the body is nothing. The bursts and the ring are shapes on a
+clear ground and are taken as they are — the ring is white, and keying
+would delete it.
 
-    tools/compass.py          # assets/compass.png → src/compass-art.js
+All four are cropped to the same box, the one the cross fills (224 × 268
+at +47+4 on the 317 × 280 sheet), which is the old single sheet's size,
+so Size in the tune panel means what it always meant. Halved, like every
+mask. A fifth, `rose`, is the four flattened into one, for the chrome
+canvas the tune panel reads. They ship as CSS masks, and for the reason
+`tools/frame.py` gives, as data: URIs in a generated file rather than as
+files: a file:// image cannot be a mask.
 
-The crops are the art's own: measured once on the sheet, and written
-here, so a new sheet is a new set of numbers.
+    tools/compass.py          # assets/compass/*.png → src/compass-art.js
 """
-import base64, pathlib, subprocess, sys
+import base64, pathlib, subprocess, sys, tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-SRC = ROOT / 'assets' / 'compass.png'
+SRC = ROOT / 'assets' / 'compass'
 OUT = ROOT / 'src' / 'compass-art.js'
-CUTS = {                     # name: WxH+X+Y on the 225×268 sheet (2026-08-28: the star rose, no letters)
-    'rose': '225x268+0+0',
-}
+BOX = '224x268+47+4'         # the crop every sheet gets, measured once on the top layer
+LAYERS = [                   # in drawing order, bottom first; `key` keys the sheet's white out
+    ('bottom', 'bottom.png', False),
+    ('middle', 'middle.png', False),
+    ('top',    'top.png',    True),
+    ('ring',   'ring.png',   False),
+]
 
-def cut(geom):
-    return subprocess.run(
-        ['magick', str(SRC), '-crop', geom, '+repage', '-fuzz', '18%', '-transparent', 'white',
-         '-fill', 'white', '-colorize', '100%', '-resize', '50%',
-         '-define', 'png:color-type=4', '-strip', 'PNG:-'],
-        check=True, capture_output=True).stdout
+def cut(path, key):
+    args = ['magick', str(path), '-crop', BOX, '+repage']
+    if key:
+        args += ['-fuzz', '18%', '-transparent', 'white']
+    args += ['-fill', 'white', '-colorize', '100%', '-resize', '50%',
+             '-define', 'png:color-type=4', '-strip', 'PNG:-']
+    return subprocess.run(args, check=True, capture_output=True).stdout
+
+def flatten(pngs):
+    with tempfile.TemporaryDirectory() as d:
+        files = []
+        for i, b in enumerate(pngs):
+            p = pathlib.Path(d) / f'{i}.png'
+            p.write_bytes(b); files.append(str(p))
+        return subprocess.run(['magick'] + files + ['-background', 'none', '-layers', 'flatten',
+                               '-define', 'png:color-type=4', '-strip', 'PNG:-'],
+                              check=True, capture_output=True).stdout
 
 def main():
-    if not SRC.exists():
-        sys.exit(f'no compass at {SRC}')
-    parts = {k: base64.b64encode(cut(g)).decode() for k, g in CUTS.items()}
+    missing = [f for _, f, _ in LAYERS if not (SRC / f).exists()]
+    if missing:
+        sys.exit(f'no compass sheet at {SRC}: ' + ', '.join(missing))
+    cuts = {k: cut(SRC / f, key) for k, f, key in LAYERS}
+    cuts['rose'] = flatten([cuts[k] for k, _, _ in LAYERS])
+    parts = {k: base64.b64encode(v).decode() for k, v in cuts.items()}
     body = ",\n".join(f"  {k}: 'url(\"data:image/png;base64,{v}\")'" for k, v in parts.items())
     OUT.write_text(
         "'use strict';\n"
-        "/* GENERATED by tools/compass.py from assets/compass.png — do not edit.\n"
-        "   The compass as CSS masks: the rose, which turns with the map.\n"
-        "   Data: URIs because a file:// image cannot be a mask. */\n"
+        "/* GENERATED by tools/compass.py from assets/compass/ — do not edit.\n"
+        "   The compass as CSS masks: four layers, bottom to top, that are each\n"
+        "   cut and inked on their own, and `rose`, the four flattened, for the\n"
+        "   chrome canvas. Data: URIs because a file:// image cannot be a mask. */\n"
         "const COMPASS_ART = {\n" + body + "\n};\n")
     print(f'wrote {OUT.relative_to(ROOT)}: ' + ', '.join(f'{k} {len(v) * 3 // 4} B' for k, v in parts.items()))
 

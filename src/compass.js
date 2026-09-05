@@ -1,21 +1,26 @@
 'use strict';
 /* ── the compass ────────────────────────────────────────────────────────
-   Top-left: a star rose with a long north spike, and nothing else. It
-   follows the map — the traced underlay's own rotation, which is the one
-   number in this game that says which way north is — and turns with it
-   exactly as the picture is turned (the Turn arrows, shift-drag), so
-   the spike points where north is on the plate. On the region north is
-   up and it reads 0. It is never turned by hand: since 2026-08-28 there
-   is no drag and no double-click, and `hq.compass` keeps only the tune.
+   Top-left: a star rose with a long north spike, a burst behind it, a
+   larger burst behind that, and a ring round the whole. The three drawn
+   layers follow the map — the traced underlay's own rotation, which is
+   the one number in this game that says which way north is — and turn
+   with it exactly as the picture is turned (the Turn arrows, shift-drag),
+   so the spike points where north is on the plate. The ring stays still.
+   On the region north is up and it reads 0. It is never turned by hand:
+   since 2026-08-28 there is no drag and no double-click, and `hq.compass`
+   keeps only the tune and where it was put.
 
-   One cut out of the drawing (`tools/compass.py`), through the SAME
-   SCREEN THE LETTERING GOES THROUGH (`Title.stencil` → `Title.screen`)
-   and drawn by the call the town's name makes (`Title.emit`), in bone
-   with the titles' sheen down it — so the compass is made of what the
-   plate is made of, at the plate's pitch and on the plate's grain, and
-   never a picture laid on it. The heading turns the drawing before it
-   is screened, never the cells after; see *the rose, cut in the title's
-   own layer* below for why that is the whole difference. */
+   Four sheets (`assets/compass/`, Eden, 2026-09-05), each cut on its own
+   (`tools/compass.py`) through the SAME SCREEN THE LETTERING GOES THROUGH
+   (`Title.stencil` → `Title.screen`) and drawn by the call the town's
+   name makes (`Title.emit`), each in an ink of its own with the titles'
+   sheen down it — so the compass is made of what the plate is made of,
+   at the plate's pitch and on the plate's grain, and never a picture laid
+   on it. The heading turns each drawing before it is screened, never the
+   cells after; see *the rose, cut in the title's own layer* below for
+   why that is the whole difference, and *four cuts, four inks* for how
+   the layers sit on one another. Until build 258 it was one sheet, one
+   cut, one ink. */
 
 const Compass = (() => {
   const KEY = 'hq.compass';                    // {tune}
@@ -48,7 +53,6 @@ const Compass = (() => {
        way a name at rest is cut (Eden, 2026-08-30) */
     size:    {lo: 16,  hi: 72,  dflt: 40,  step: 100, label: 'Size',   fmt: v => Math.round(v) + ' cells'},
     weight:  {lo: 0.5, hi: 2.0, dflt: 1,   label: 'Weight', fmt: v => v.toFixed(2) + '\u00d7'},
-    dither:  {lo: 0,   hi: 1,   dflt: 1,   label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'},
     tone:    {lo: 0,   hi: 1,   dflt: 0,   label: 'Tone',   fmt: v => v ? v.toFixed(2) : 'even'},
     shade:   {lo: 0,   hi: 0.7, dflt: 0.25, label: 'Sheen', fmt: v => v.toFixed(2)},
     bri:     {lo: -0.4, hi: 0.4, dflt: -0.12, label: 'Ink', fmt: v => (v > 0 ? '+' : '') + Math.round(v * 100)},
@@ -58,7 +62,39 @@ const Compass = (() => {
   };
   let tune = {};
   const tuned = k => { const v = isFinite(tune[k]) ? +tune[k] : TUNE[k].dflt; return Math.min(TUNE[k].hi, Math.max(TUNE[k].lo, v)); };
+  /* the rows the panel shows of those: `bri` is the chrome canvas's own
+     read and does nothing on the plate, so it is not offered */
+  const SHARED = ['size', 'weight', 'tone', 'shade', 'pitch'];
   const url = k => COMPASS_ART[k].replace(/^url\("(.*)"\)$/, '$1');
+
+  /* ── the layers, and the inks ──────────────────────────────────────────
+     Four sheets in drawing order, bottom first. Each has an ink of its
+     own — named, and the game's own colours: the chrome's bone, the
+     sparks' gold, the flare, the trace's aqua, the dim, and three off the
+     terrain — and its own Bright (0 hides it) and Screen, kept per layer
+     in `hq.compass`, so any one can be brought up until it reads (Eden,
+     2026-09-05: "each layer its own ink … allow for tuning of each layer
+     to make sure each layer's visible"). The defaults put the four apart:
+     the spike in bone, the small burst in gold, the large in dim, the
+     ring in aqua. */
+  const INKS = {bone: [0.93, 0.92, 0.89], gold: [0.95, 0.76, 0.31], flare: [1, 0.373, 0.635], aqua: [0.47, 0.88, 0.85],
+                dim: [0.353, 0.353, 0.4], grass: [0.50, 0.70, 0.36], water: [0.56, 0.84, 0.93], sand: [0.84, 0.72, 0.48]};
+  const INK_LABEL = {bone: 'Bone', gold: 'Gold', flare: 'Flare', aqua: 'Aqua', dim: 'Dim', grass: 'Grass', water: 'Water', sand: 'Sand'};
+  const LAYERS = [
+    {k: 'bottom', label: 'Bottom layer', turns: true,  ink: 'dim'},
+    {k: 'middle', label: 'Middle layer', turns: true,  ink: 'gold'},
+    {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone'},
+    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua'}];
+  const LTUNE = {
+    lit:    {lo: 0, hi: 1.5, dflt: 1, label: 'Bright', fmt: v => v ? Math.round(v * 100) + '%' : 'off'},
+    dither: {lo: 0, hi: 1,   dflt: 1, label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'}};
+  let layers = {};                             // {bottom: {ink, lit, dither}, …}
+  const ltuned = (k, key) => {
+    const v = layers[k] && isFinite(layers[k][key]) ? +layers[k][key] : LTUNE[key].dflt;
+    return Math.min(LTUNE[key].hi, Math.max(LTUNE[key].lo, v));
+  };
+  const inkOf = k => (layers[k] && INKS[layers[k].ink]) ? layers[k].ink : ((LAYERS.find(l => l.k === k) || {}).ink || 'bone');
+  const setLayer = (k, key, v) => { layers[k] = layers[k] || {}; layers[k][key] = v; };
 
   function load(){
     try {
@@ -73,12 +109,14 @@ const Compass = (() => {
            you put it is still where you put it. */
         const old = v.tune && (('szv' in v.tune) || ('scatter' in v.tune));
         if (v.tune && typeof v.tune === 'object' && !old) tune = Object.assign({}, v.tune);
+        if (v.layers && typeof v.layers === 'object')
+          for (const l of LAYERS) if (v.layers[l.k] && typeof v.layers[l.k] === 'object') layers[l.k] = Object.assign({}, v.layers[l.k]);
         if (Array.isArray(v.at) && isFinite(v.at[0]) && isFinite(v.at[1])) at = [+v.at[0], +v.at[1]];
       }
     } catch (e){}
   }
   function store(){
-    try { Store.set(KEY, JSON.stringify({tune, at})); } catch (e){}
+    try { Store.set(KEY, JSON.stringify({tune, layers, at})); } catch (e){}
   }
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
@@ -163,25 +201,53 @@ const Compass = (() => {
     const el = document.createElement('div');
     el.id = 'ctune';
     el.innerHTML = '<div class="plabel">Compass</div>';
-    for (const k in TUNE){
-      const r = TUNE[k];
+    const slider = (label, get, set, r, after) => {
       const row = document.createElement('div');
-      row.className = 'prow'; row.dataset.key = k;
-      row.innerHTML = '<label>' + r.label + '</label><input type="range" min="' + Math.round(r.lo * 100) +
+      row.className = 'prow';
+      row.innerHTML = '<label>' + label + '</label><input type="range" min="' + Math.round(r.lo * 100) +
         '" max="' + Math.round(r.hi * 100) + '" step="' + (r.step || 5) + '"><span class="pv"></span>';
       const inp = row.querySelector('input'), out = row.querySelector('.pv');
-      const sync = () => { inp.value = Math.round(tuned(k) * 100); out.textContent = r.fmt(tuned(k)); };
+      const sync = () => { inp.value = Math.round(get() * 100); out.textContent = r.fmt(get()); };
       sync();
-      inp.addEventListener('input', () => {
-        tune[k] = +inp.value / 100; sync();
-        /* the rose on the plate needs no poking: `overlay` reads its own
-           key every frame and asks for a new cut when one of these moves.
-           These two are the chrome canvas's, which does not. */
-        if (k === 'weight'){ painted = null; paint(); }
-        else if (k === 'pitch' || k === 'bri') read();
-      });
+      inp.addEventListener('input', () => { set(+inp.value / 100); sync(); if (after) after(); });
       inp.addEventListener('change', store);
-      el.append(row);
+      return row;
+    };
+    /* the rose on the plate needs no poking: `overlay` reads its own keys
+       every frame and asks for a new cut when one of these moves. Weight
+       and Detail are the chrome canvas's as well, which does not. */
+    for (const k of SHARED)
+      el.append(slider(TUNE[k].label, () => tuned(k), v => { tune[k] = v; }, TUNE[k],
+                       k === 'weight' ? () => { painted = null; paint(); } : k === 'pitch' ? read : null));
+    /* then each layer: its ink as a row of chips in that ink, and its two
+       sliders. A selected chip goes bone with the ground's text, as every
+       chip does, so its own colour comes off it while it is chosen. */
+    for (const l of LAYERS){
+      const h = document.createElement('div');
+      h.className = 'plabel';
+      h.textContent = l.label + (l.turns ? ' \u00b7 turns with the map' : ' \u00b7 stays still');
+      el.append(h);
+      const chips = document.createElement('div');
+      chips.className = 'chips';
+      chips.style.gridTemplateColumns = 'repeat(4,1fr)';
+      const tint = (c, id, sel) => {
+        c.classList.toggle('sel', sel);
+        c.style.color = sel ? '' : 'rgb(' + INKS[id].map(v => Math.round(v * 255)).join(',') + ')';
+      };
+      for (const id in INKS){
+        const c = document.createElement('div');
+        c.className = 'chip'; c.textContent = INK_LABEL[id]; c.dataset.ink = id;
+        tint(c, id, inkOf(l.k) === id);
+        c.addEventListener('click', () => {
+          setLayer(l.k, 'ink', id);
+          for (const o of chips.children) tint(o, o.dataset.ink, o === c);
+          store();
+        });
+        chips.append(c);
+      }
+      el.append(chips);
+      for (const key in LTUNE)
+        el.append(slider(LTUNE[key].label, () => ltuned(l.k, key), v => setLayer(l.k, key, v), LTUNE[key], null));
     }
     body.append(el);
   }
@@ -249,20 +315,82 @@ const Compass = (() => {
      cell at every heading. It is then drawn by `Title.emit`, the call
      the town's name makes in `palace.js`: same origin, same pitch, same
      sheen, same diamond, same instance cap. One layer, one material. */
-  let facePlate = null, faceKey = null, asking = null;
-  /* what the cut depends on — the heading and the four numbers that
-     shape it. `overlay` compares this every frame and asks for a new one
-     when it moves, so a slider or a turn of the map needs no callback. */
-  const plateKey = deg => deg + '|' + Math.round(tuned('size')) + '|' +
-                          tuned('dither').toFixed(2) + '|' + tuned('bri').toFixed(3);
-  function wantPlate(deg){
-    const k = plateKey(deg);
-    if (faceKey === k || asking === k) return;
-    asking = k;
-    Title.stencil(url('rose'), Math.round(tuned('size')),
-                  {deg, dither: tuned('dither'), bri: tuned('bri')})
-      .then(f => { if (asking === k){ facePlate = f; faceKey = k; asking = null; } })
-      .catch(() => { if (asking === k) asking = null; });
+  /* ── four cuts, four inks ──────────────────────────────────────────────
+     Since build 259 the rose is four sheets (assets/compass/, Eden,
+     2026-09-05), each cut through that screen on its own and drawn in
+     its own ink, bottom to top: the large burst, the small burst over
+     it, the hatched spike cross, and a ring round the whole. The three
+     drawn layers turn with the map; the ring stays still (Eden: "ring
+     stays still"), so it is cut at 0° whatever the heading — a circle
+     turned is the same circle, and cutting it once means its diamonds
+     never shuffle as the map is dragged.
+
+     Every sheet is the same size and in register, so at one Size and one
+     heading the three turning cuts land on one grid, cell for cell, and
+     a layer's cells are dropped where a layer above it has ink: the
+     bursts do not show through the spike, nor the large burst through
+     the small, and each ink stays its own colour rather than the two
+     mixing in the gaps. The ring is cut in a box of its own (0° is a
+     different diagonal) and is drawn last over everything, unmasked. */
+  const facePlates = {}, faceKeys = {}, asking = {};
+  /* what a cut depends on — the heading (0 for the ring) and the two
+     numbers that shape it. `overlay` compares this every frame and asks
+     for a new one when it moves, so a slider or a turn of the map needs
+     no callback. */
+  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size')) + '|' + ltuned(l.k, 'dither').toFixed(2);
+  function wantPlates(deg){
+    for (const l of LAYERS){
+      const k = layerKey(l, deg);
+      if (faceKeys[l.k] === k || asking[l.k] === k) continue;
+      asking[l.k] = k;
+      Title.stencil(url(l.k), Math.round(tuned('size')), {deg: l.turns ? deg : 0, dither: ltuned(l.k, 'dither')})
+        .then(f => { if (asking[l.k] === k){ facePlates[l.k] = f; faceKeys[l.k] = k; asking[l.k] = null; } })
+        .catch(() => { if (asking[l.k] === k) asking[l.k] = null; });
+    }
+  }
+  /* the faces as they are drawn — masked, inked, in order — rebuilt only
+     when a cut or a layer's tune changes, never per frame */
+  let comp = [], compKey = '';
+  function composed(){
+    const key = LAYERS.map(l => faceKeys[l.k] + '|' + inkOf(l.k) + '|' + ltuned(l.k, 'lit')).join('\n');
+    if (compKey === key) return comp;
+    /* what stands above each turning layer, as a set of its cells; only
+       faces on one grid can mask one another, so a cut still on its way
+       at the old heading is left out rather than misapplied */
+    const masks = {};
+    let above = null, grid = '';
+    for (let i = LAYERS.length - 1; i >= 0; i--){
+      const l = LAYERS[i];
+      if (!l.turns) continue;
+      masks[l.k] = above;
+      const f = facePlates[l.k];
+      if (!f || !f.cells.length || ltuned(l.k, 'lit') <= 0) continue;
+      const g = f.cols + 'x' + f.rows;
+      if (grid && g !== grid) continue;
+      grid = g;
+      const set = new Set(above || []);
+      for (const c of f.cells) set.add(c.x + ',' + c.y);
+      above = set;
+    }
+    const list = [];
+    for (const l of LAYERS){
+      const f = facePlates[l.k], lit = ltuned(l.k, 'lit');
+      if (!f || !f.cells.length || lit <= 0) continue;
+      const mask = masks[l.k], same = !grid || (f.cols + 'x' + f.rows) === grid;
+      const cells = mask && mask.size && same ? f.cells.filter(c => !mask.has(c.x + ',' + c.y)) : f.cells;
+      /* Bright past 1 lifts the ink itself toward white, since the alpha
+         has nowhere further to go */
+      const ink = INKS[inkOf(l.k)] || BONE, k = Math.max(1, lit);
+      list.push({f: {cols: f.cols, rows: f.rows, cells}, col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit)});
+    }
+    comp = list; compKey = key;
+    return comp;
+  }
+  /* the largest cut standing, for the hit box of a drag */
+  function hitFace(){
+    let b = null;
+    for (const l of LAYERS){ const f = facePlates[l.k]; if (f && (!b || f.cols > b.cols)) b = f; }
+    return b;
   }
   function overlay(a, m, cap){
     if (!ON_PLATE || !G.terr || !G.A) return m;
@@ -274,25 +402,25 @@ const Compass = (() => {
     /* a whole degree is finer than the plate can show at this size, and it
        keeps a shift-drag of the map from cutting a rose a frame */
     const deg = Math.round(((heading() % 360) + 360) % 360);
-    wantPlate(deg);
-    const f = facePlate;
-    if (!f || !f.cells.length) return m;
-    /* the title's own placement: the face's ink is (cols − 1) × (rows − 1)
-       cells across from centre to centre, and the pitch is the plate's */
+    wantPlates(deg);
+    const list = composed();
+    if (!list.length) return m;
+    /* the title's own placement: a face's ink is (cols − 1) × (rows − 1)
+       cells across from centre to centre, and the pitch is the plate's;
+       every cut is centred on the one point, which is what keeps the
+       ring round the rose whatever box each was cut in */
     const px = G.A.cell, [cx, cy] = where();
-    const iw = f.cols - 1, ih = f.rows - 1;
-    const x0 = cx - iw * px / 2, y0 = cy - ih * px / 2;
-    /* the mat first and dropped first, as a name's is: a rose without its
-       mat is still a rose, and the cap is shared with the whole town */
-    /* the mat is no longer drawn here: since 2026-08-30 it is a shape of
-       its own on the Backdrop layer for build 232 and 233, and then taken
-       away again on Eden's word — the rose is cut in the lettering's own
-       screen now and reads on the plate without one. Nothing is drawn
-       under it. A Backdrop can still be placed by hand from the Modify
-       row if one is ever wanted here again. */
-    if (m + Title.cost(f) > cap) return m;
+    /* all or nothing against the cap, as a name is: half a compass is
+       worse than none, and the cap is shared with the whole town */
+    let need = 0;
+    for (const e of list) need += Title.cost(e.f);
+    if (m + need > cap) return m;
     const t = {weight: tuned('weight'), tone: tuned('tone'), shade: tuned('shade')};
-    return Title.emit(a, m, f, x0, y0, px, BONE, 1, cap, 0, 0, t);
+    for (const e of list){
+      const iw = e.f.cols - 1, ih = e.f.rows - 1;
+      m = Title.emit(a, m, e.f, cx - iw * px / 2, cy - ih * px / 2, px, e.col, e.al, cap, 0, 0, t);
+    }
+    return m;
   }
 
   /* ── moved by hand ────────────────────────────────────────────────────
@@ -304,7 +432,7 @@ const Compass = (() => {
   const toWorld = ev => { const b = canvas.getBoundingClientRect(), k = VW / (b.width || 1);
     return [((ev.clientX - b.left) * k - VW / 2) / G.cam[2] + G.cam[0], ((ev.clientY - b.top) * k - VH / 2) / G.cam[2] + G.cam[1]]; };
   function may(){
-    if (!ON_PLATE || !G.terr || !facePlate || G.paused || WALL) return false;
+    if (!ON_PLATE || !G.terr || !hitFace() || G.paused || WALL) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
     if (typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) return false;
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return false;
@@ -313,7 +441,7 @@ const Compass = (() => {
   function wireDrag(){
     addEventListener('pointerdown', e => {
       if (e.button !== 0 || e.target !== canvas || !may()) return;
-      const p = toWorld(e), [cx, cy] = where(), half = facePlate.cols * G.A.cell / 2;
+      const p = toWorld(e), [cx, cy] = where(), half = hitFace().cols * G.A.cell / 2;
       if (Math.abs(p[0] - cx) > half || Math.abs(p[1] - cy) > half) return;
       drag = {ox: p[0] - cx, oy: p[1] - cy};
       e.stopPropagation(); e.preventDefault();

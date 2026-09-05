@@ -658,15 +658,22 @@ function zoomBy(f){ G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5
    still holds the whole plate. What changes is only where you start and
    where you land — nobody has to zoom to be looking at the right thing. */
 const ZSTEP = 1.25;
-/* Never further out than the plate's height filling the screen, since
+/* Never further out than the plate covering the screen, since
    2026-08-28: at the working zoom the ground reaches the top of the
-   screen and the bottom (Eden asked for exactly that). On a desk that is
-   fit-all; on a phone, held portrait, it is closer than fit-all — the
-   plate is wider than the screen there and the camera carries you along
-   it — which is what puts the ground under the compass and past the hub
-   instead of a band across the middle. */
+   screen and the bottom (Eden asked for exactly that). On a phone, held
+   portrait, that is the plate's height filling the screen, closer than
+   fit-all — the plate is wider than the screen there and the camera
+   carries you along it — which is what puts the ground under the compass
+   and past the hub instead of a band across the middle. Since the plate
+   went to 16:9 (build 256) the same rule runs the other way on a window
+   wider than that — an app window whose title bar has taken some height
+   is one: the plate fills the width and the camera carries you up and
+   down the little it overflows, rather than standing a thin bar of
+   nothing either side (build 258). TAB is still fit-all, the whole plate
+   with bars if the window's shape leaves them. */
 const fitH = () => (VH && G.H ? VH / G.H : G.fitAll);
-const home = () => Math.max(fitH(), clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5));
+const cover = () => Math.max(fitH(), VW && G.W ? VW / G.W : 0);
+const home = () => Math.max(cover(), clamp(G.fitW / Math.pow(ZSTEP, 4), G.fitAll * 0.85, G.fitW * 5));
 function toggleFull(){
   if (document.fullscreenElement) document.exitFullscreen();
   else document.documentElement.requestFullscreen().catch(() => {});

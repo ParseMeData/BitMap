@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The resting zoom covers the screen** — 2026-09-05, build 258. On
+  a window wider than 16:9 the plate stood with a thin bar either side;
+  `home()` now fills the tighter axis and overflows the other.
 - [x] **The founding frame comes back after a reload** — 2026-09-05,
   build 257. Found on the way to 256: a new profile closed at the frame
   booted to tiles and no panel. `Found.check()` asks for a picture, not

@@ -76,7 +76,21 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 257 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 258 (tag **v8.3** at 241)
+
+- **Build 258 (5 Sep 2026) — the resting zoom covers the screen.** Seen
+  on Eden's window after 256: the app window is 1280 × 670 inside (the
+  title bar has the rest of a 1280 × 720 screen), wider than 16:9, and
+  the resting zoom — the plate's height filling the screen — stood the
+  plate with a 44 px bar of nothing either side. `home()` now takes the
+  larger of the two fits (`cover()` in game.js): the plate fills
+  whichever axis is tighter and the camera carries you along the little
+  it overflows on the other — 49 units top to bottom here — so the ground
+  reaches all four edges on a desk, and a phone held portrait is
+  unchanged (height fills, plate wider than the screen). TAB is still
+  fit-all. Verified on Eden's window: the plate's left edge at 0 px and
+  its right at 1280, and the founding frame back up after the reload —
+  257 doing its job live.
 
 - **Build 257 (5 Sep 2026) — the founding frame comes back after a
   reload.** Found on the way to 256, on the profile that had just been

@@ -35,6 +35,8 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Tag v8.8** — 2026-09-05, build 280. The town beside it in
+  `snapshots/v8.8.json`, the clone frozen.
 - [x] **A cluster opens with a blend and a glide; organic links; shaded
   diamonds** — 2026-09-05, build 279. The region as a keyed scene from
   an eye, two scenes blended when a cluster is opened, the walker's hop

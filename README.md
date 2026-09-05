@@ -238,7 +238,7 @@ v8.1–v8.3. The version itself: the walk grid restamps in a millisecond
 every edit had rescanned every shape's whole box — and a blank plate is
 not re-read for a tone. `snapshots/v8.7.json` is the town as it stood.
 
-**v8.8** — opened 2026-09-05, in progress. The three diamonds at the
+**v8.8** — 2026-09-05, the last of the day. The three diamonds at the
 bottom left wear marks: three dots on the hub that opens the four ways
 in, lines of writing on the journal, a mallet on build. The region's
 towns are sized for the screen and the home town named by its title;
@@ -265,7 +265,7 @@ the home town's cluster is the way back. Each link curves its own way,
 bowed by an amount of its own and now and then swinging back, with a
 slow wave along it; each diamond is a shade brighter or dimmer and a
 touch warmer or cooler than its colour, with a lit facet, seeded by its
-name so nothing flickers.
+name so nothing flickers. `snapshots/v8.8.json` is the town as it stood.
 
 ## Controls
 

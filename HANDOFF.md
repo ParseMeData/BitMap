@@ -110,7 +110,11 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   build 271's on the same town (660191511; 5 811 walk, 164 path);
   restamp 90 ms cold (every cache empty) then 0.1–0.8 ms, 0.2 ms after
   a house is moved; Tone moved → no analyse; Detail changed → one.
-  Confirmed on Eden's window after the reload (numbers below).
+  **Confirmed on Eden's window** after the reload: the same checksum,
+  restamp 0.2–0.4 ms warm, the JS inside a build-mode frame 0.9 ms
+  (from 4.7), the frame 13–15 ms. What is left to feel: the first
+  restamp after a load is the cold one (~90 ms, every cache empty), and
+  the virtual GL device sets the floor at one vsync of a 75 Hz display.
 
 - **Build 271 (5 Sep 2026) — v8.7 opened.** Eden: *"now clone for
   version 8.7"*. Read as opening the next version on the working line:

@@ -35,6 +35,8 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Tag v8.7** — 2026-09-05, build 273. The town beside it in
+  `snapshots/v8.7.json`, the clone frozen.
 - [x] **The walk grid restamps in a millisecond** — 2026-09-05, build
   272. A shape's stamped tiles are kept on it under a geometry key;
   `stranded` reads the same; a blank plate is not re-read for a tone.

@@ -231,10 +231,12 @@ clearings and the boundary are layers of their own, with only the layer
 you are on taking the pointer, for everything. `snapshots/v8.6.json` is
 the town as it stood.
 
-**v8.7** — opened 2026-09-05, in progress. The name moves up when a
-version is opened, since v8.7, so the title never lags the work as it
-did through v8.1–v8.3; the tag, the town beside it and the frozen clone
-come when the version is done.
+**v8.7** — 2026-09-05, late. The name moves up when a version is
+opened, since v8.7, so the title never lags the work as it did through
+v8.1–v8.3. The version itself: the walk grid restamps in a millisecond
+— a shape's stamped tiles kept on it under a key of its geometry, where
+every edit had rescanned every shape's whole box — and a blank plate is
+not re-read for a tone. `snapshots/v8.7.json` is the town as it stood.
 
 ## Controls
 

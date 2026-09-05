@@ -1,4 +1,4 @@
-# Loci Bitmap V8.6
+# Loci Bitmap V8.7
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -230,6 +230,11 @@ when it opens, so a chip and a click place what they say; and the
 clearings and the boundary are layers of their own, with only the layer
 you are on taking the pointer, for everything. `snapshots/v8.6.json` is
 the town as it stood.
+
+**v8.7** — opened 2026-09-05, in progress. The name moves up when a
+version is opened, since v8.7, so the title never lags the work as it
+did through v8.1–v8.3; the tag, the town beside it and the frozen clone
+come when the version is done.
 
 ## Controls
 

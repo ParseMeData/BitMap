@@ -76,7 +76,17 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 270 (tag **v8.6** at 270)
+## Where we are — 5 Sep 2026, build 271 (tag **v8.6** at 270; **v8.7 open**)
+
+- **Build 271 (5 Sep 2026) — v8.7 opened.** Eden: *"now clone for
+  version 8.7"*. Read as opening the next version on the working line:
+  the title and the README's name say V8.7 from here, with a history
+  line marking it in progress. No clone folder yet — the `~/Projects/Loci
+  Bitmap V*` folders are frozen copies made AT a tag, and a working
+  clone is how v7.0's work went astray (a stale clone launched, its
+  commits cherry-picked back). The v8.7 clone comes with the v8.7 tag.
+  If Eden meant a separate working folder, that is a different thing
+  and a decision to make on purpose.
 
 - **Build 270 (5 Sep 2026) — tag v8.6.** Cut on Eden's word after 269:
   `snapshots/v8.6.json` beside the tag (the second Barwidgee as it

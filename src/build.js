@@ -2699,6 +2699,17 @@ const Build = (() => {
     on = v;
     if (!on) sel = null;
     document.body.classList.toggle('building', on);
+    /* ── the picture is pinned when the builder opens ───────────────────
+       A picture still in hand takes every press on the plate in the
+       capture phase (src/basemap.js wirePlace), so with one unpinned a
+       chip could be armed and the plate clicked and nothing placed, and
+       no shape could be selected. The state is saved and survives a
+       reload, and a restored snapshot comes up in it. The builder is
+       about the plate, not the picture under it: opening it pins the
+       picture (Eden, 2026-09-05: "clicking on an asset then clicking on
+       screen nothing happens"). The map dialog's Pin still unpins it for
+       a move, on purpose, while the builder is closed. */
+    if (on && typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) Basemap.setPlacing(false);
     const el = $('#palette');
     if (el) el.hidden = !on;
     /* Opening the builder is what "before we opened the builder" means, so

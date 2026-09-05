@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The builder pins the picture** — 2026-09-05, build 268. An
+  unpinned picture took every press, so nothing could be placed or
+  selected; opening build mode pins it.
 - [x] **Arrows nudge and size the selection in build mode** —
   2026-09-05, build 267. A step is the shape's own quantum; Shift ↑↓
   taller/shorter, Shift ←→ wider/narrower; a print steps its multiple.

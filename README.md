@@ -484,6 +484,11 @@ snaps to — and with `Shift` held `↑` `↓` make it taller or shorter and
 with any arrow steps its multiple, and a road or a ring steps its width.
 The walker stands still while a shape is nudged, and walks as ever when
 nothing is selected. Holding an arrow keeps nudging (build 267).
+Opening the builder **pins the picture**: a picture still in hand takes
+every press on the plate, so with one unpinned a chip could be armed
+and the plate clicked and nothing placed — the builder is about the
+plate, and the map dialog's Pin is for moving the picture while the
+builder is closed (build 268).
 
 Everything lands on one grid — the walk tiles the walker steps between.
 That grid is a whole number of lattice cells wide, so snapping to the tile

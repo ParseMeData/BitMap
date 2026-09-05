@@ -76,7 +76,22 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 267 (tag **v8.5** at 266)
+## Where we are — 5 Sep 2026, build 268 (tag **v8.5** at 266)
+
+- **Build 268 (5 Sep 2026) — the builder pins the picture.** Eden:
+  *"having issues placing the assets down — clicking on an asset then
+  clicking on screen nothing happens"*. The cause was the one 267 had
+  found and left: the plate's picture was still *placing*, and
+  `wirePlace` takes every pointer press in the capture phase while it
+  is, so an armed chip's click never reached `Build.wire()`. The state
+  is saved (`st.placing`) and survives a reload, and a restored snapshot
+  comes up in it. `Build.setOn(true)` now calls `Basemap.setPlacing(false)`
+  if the picture is in hand: the builder is about the plate, and the map
+  dialog's Pin still unpins for a move while the builder is closed.
+  Verified on a throwaway restored from v8.5: placing on arrival, B
+  pinned it, the Trees chip armed and a click on the plate placed a
+  tree and selected it. Eden's live window was refreshed and opened in
+  build mode, pinned.
 
 - **Build 267 (5 Sep 2026) — the arrows nudge and size the selection in
   build mode.** Eden: *"in build mode I can use the arrow keys to move

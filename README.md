@@ -1,4 +1,4 @@
-# Loci Bitmap V8.5
+# Loci Bitmap V8.6
 
 Build a town out of diamond glyphs, over a real one.
 
@@ -222,6 +222,14 @@ default: a fresh profile comes up on the compass Eden settled, not the
 plain cut. The profile was started from scratch a second time to watch
 the first boot, and Barwidgee founded again; `snapshots/v8.5.json` is
 that town.
+
+**v8.6** — 2026-09-05, the same evening. Building by keyboard and by
+layer: the arrows move the selection a step and, with Shift, make it
+taller or shorter and wider or narrower; the builder pins the picture
+when it opens, so a chip and a click place what they say; and the
+clearings and the boundary are layers of their own, with only the layer
+you are on taking the pointer, for everything. `snapshots/v8.6.json` is
+the town as it stood.
 
 ## Controls
 

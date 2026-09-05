@@ -35,6 +35,8 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Tag v8.6** — 2026-09-05, build 270. The town beside it in
+  `snapshots/v8.6.json`, the name moved up, the clone frozen.
 - [x] **Clearings and the boundary on layers of their own** —
   2026-09-05, build 269. Only the active layer takes the pointer, for
   modifiers too; the Modify row is gone.

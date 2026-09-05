@@ -76,7 +76,23 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 256 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 257 (tag **v8.3** at 241)
+
+- **Build 257 (5 Sep 2026) — the founding frame comes back after a
+  reload.** Found on the way to 256, on the profile that had just been
+  wiped: the search writes the place it found before anything is
+  printed, and `Found.check()` read a saved place as "founded" and stood
+  down — so a window closed at the frame (the very first thing a new
+  profile shows) booted to the live tiles, the compass and no panel, and
+  the only way on was `M` and the map bar's own Freeze. `check()` asks
+  `Basemap.placed()` instead: an empty home plate with a place but no
+  picture is a frame that was never printed, and it goes back up at that
+  place, as dragged and zoomed, without searching again. Verified on a
+  throwaway: reload at the frame, the panel is back with the address.
+  What this changes for *Later*: on an empty home plate it dismisses the
+  frame for the session only, and the next boot puts it up again —
+  an empty plate has nothing else to offer (the first-run-note thread
+  below).
 
 - **Build 256 (5 Sep 2026) — the plate is the screen; the rim is born
   small.** Eden, on a profile wiped that morning to start clean (the live
@@ -1846,6 +1862,8 @@ The older threads, still true:
 - **A first-run note was proposed and left undecided.** Nothing writes one, so
   a brand-new profile boots to the printed sheet with no word about what to do
   with it. Left here so the next session can tell that from a decision against.
+  Since build 257 an empty home plate boots to the founding frame every time
+  until it is printed, which is most of what the note would have said.
 - **`docs/LATTICE-CONTRACT.md`** in the halftone project pairs the platformer
   with **Memory Atlas** at commit `b8abd14`, not with this project — it was
   written before Memory Quest existed and has not been touched since, so

@@ -140,9 +140,9 @@ const Found = (() => {
     const f = frameEl(); f.hidden = false;
     f.style.left = sx(0) + 'px'; f.style.top = sy(0) + 'px';
     f.style.width = (sx(G.W) - sx(0)) + 'px'; f.style.height = (sy(G.H) - sy(0)) + 'px';
-    const sw = G.sheetW || G.W, i = f.firstChild;
+    const i = f.firstChild;
     /* the boundary as the survey will lay it (src/survey.js boundary) */
-    const B = typeof Survey !== 'undefined' ? Survey.boundary() : {x: sw / 2, y: G.H / 2, w: sw, h: G.H};
+    const B = typeof Survey !== 'undefined' ? Survey.boundary() : {x: G.W / 2, y: G.H / 2, w: G.W, h: G.H};
     i.style.width = (sx(B.w) - sx(0)) + 'px'; i.style.height = (sy(B.h) - sy(0)) + 'px';
     i.style.left = (sx(B.x) - sx(0) - (sx(B.w) - sx(0)) / 2) + 'px'; i.style.top = (sy(B.y) - sy(0) - (sy(B.h) - sy(0)) / 2) + 'px';
     i.style.transform = 'none';
@@ -273,7 +273,7 @@ const Found = (() => {
       const parts = q.split(',').map(x => x.trim()).filter(Boolean);
       const name = parts[0].slice(0, 28);
       const town = (parts[1] || '').replace(/\b(VIC|NSW|QLD|SA|WA|TAS|NT|ACT)\b|\d+/g, '').trim().slice(0, 28) || name;
-      const C = at || [(G.sheetW || G.W) / 2, G.H / 2];
+      const C = at || [G.W / 2, G.H / 2];
       const mk = Markers.plant(C[0], C[1], name);
       if (mk && Atlas.current() !== 'home') Atlas.rename(town);
       if (Atlas.current() === 'home' && !(Store.get('hq.town') || '').trim()) Palace.rename(town);
@@ -305,10 +305,31 @@ const Found = (() => {
        itself, and a plate that has only that is still an empty plate
        (2026-08-30 — otherwise an auto-laid mat stops the founding dead) */
     if (G.markers.length || G.shapes.some(s => s.kind !== 'mat')) return false;
+    /* a picture on the plate is a plate that was printed: founded, or
+       traced by hand before founding existed — either way not this */
+    if (Basemap.placed()) return false;
     const [lat, lon] = Basemap.at();
-    if (lat || lon) return false;
-    pending = null; pendingMade = false; turnedByHand = false; q = DEFAULT; state = 'ask';
+    pending = null; pendingMade = false; turnedByHand = false; q = DEFAULT;
     panel();
+    /* ── the frame comes back where it was left ─────────────────────────
+       The search writes the place it found before anything is printed, so
+       a window closed at the frame — the very first thing a new profile
+       shows — used to boot to the live tiles, the compass and no panel:
+       the check above read the saved place as "founded" and stood down,
+       and the only way on was M and the map bar's own Freeze (found
+       2026-09-05, on a profile that had just been wiped). An empty home
+       plate with a place but no picture is a frame that was never
+       printed, so it is put back up at that place, as dragged and zoomed,
+       without searching again. */
+    if (lat || lon){
+      state = 'framing';
+      Basemap.setBar(false);
+      frameFace();
+      say('waiting for the map…');
+      Basemap.ready(20000).then(() => { if (state === 'framing') say('drag the map under the frame · print when it sits right'); });
+      return true;
+    }
+    state = 'ask';
     find();
     return true;
   }

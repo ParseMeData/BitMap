@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The founding frame comes back after a reload** — 2026-09-05,
+  build 257. Found on the way to 256: a new profile closed at the frame
+  booted to tiles and no panel. `Found.check()` asks for a picture, not
+  a place.
 - [x] **The plate is the screen; the rim is born small** — 2026-09-05,
   build 256. Eden: *"make it so the border or boundary is not cut off on
   the right side … set frame to full screen but actual feathered grass

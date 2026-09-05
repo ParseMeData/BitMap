@@ -2169,7 +2169,10 @@ own colour; Plain, Checker, Lines or Diagonal for the grain, a pattern
 of the lattice its ink is put through, square to the plate whatever the
 heading — and Bright (0 hides it), Screen, Tone, Weight, Scale (on the
 shared Size, about the same centre, so the spike can stand a little
-larger than the bursts), Fine, Fill, Scatter and Jitter in the Tune
+larger than the bursts), Sheen (on the shared one — the fade down a
+layer's ink, bone at its top to grey at its foot, running down the
+drawing and not the box it was cut in, exactly as a name's runs down
+the word), Fine, Fill, Scatter and Jitter in the Tune
 panel's Compass block, under the shared
 Size (16 to 120 cells), Weight, Tone, Sheen and Detail; the ring has a
 nudge either way in whole cells; the tune lives in `hq.compass`. Fill

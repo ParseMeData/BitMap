@@ -76,7 +76,25 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 262 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 263 (tag **v8.3** at 241)
+
+- **Build 263 (5 Sep 2026) — a Sheen per compass layer, down its ink.**
+  Eden: *"add the same gradient effect to the top layer that matches the
+  existing town title"* (and the lattice `T` pasted again as the wanted
+  default: it is `defTune()`, the DIALLED preset and what the panel's
+  Reset restores, value for value — nothing to set). The title's
+  gradient is `Title.emit`'s sheen: alpha falling by `shade` (0.25)
+  from the top row of the face to its foot, and a word's face is its
+  line box. The compass passed the same shade but its faces are the
+  cut's box — for the top layer 57 rows of which the spike is most, for
+  a burst a box twice its height — so the fade was thin on the spike and
+  half missing on a burst. `composed()` now trims each face to its
+  ink's rows (`top`, `rows0` carry the placement), so the sheen runs
+  down the drawing as it runs down the word; and per layer **Sheen**
+  (0–2× on the shared one, capped at 0.7) so the spike can carry more or
+  less of it than the rest. Verified on a throwaway at Size 64: ×0 flat,
+  ×1 bone-to-grey down the spike as on "Barwidgee" beside it, ×2
+  stronger. 47 rows in the block.
 
 - **Build 262 (5 Sep 2026) — a Scale per compass layer.** Eden: *"allow
   setting for top layer scale to make it slightly larger"* (and, in the

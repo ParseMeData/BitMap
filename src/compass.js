@@ -101,6 +101,12 @@ const Compass = (() => {
        than the rest, about the same centre — the spike a little larger
        than the bursts it stands on (Eden, 2026-09-05) */
     scale:   {lo: 0.5, hi: 2,   dflt: 1, label: 'Scale',   fmt: v => v.toFixed(2) + '\u00d7'},
+    /* Sheen, on the shared one: the fade down a layer's ink, bone at its
+       top to grey at its foot, the way a name's runs down the word — and
+       it runs down the layer's INK, not its box, since build 263, so it
+       reads on the spike as it reads on the title (Eden, 2026-09-05:
+       "the same gradient effect that matches the existing town title") */
+    shade:   {lo: 0,   hi: 2,   dflt: 1, label: 'Sheen',   fmt: v => v.toFixed(2) + '\u00d7'},
     fine:    {lo: 0,   hi: 0.9, dflt: 0, label: 'Fine',    fmt: v => v ? v.toFixed(2) : 'as read'},
     /* Fill paints the layer's whole silhouette in the ground's own colour
        under its ink, so what is beneath it — the layers below, the
@@ -464,7 +470,15 @@ const Compass = (() => {
         if (mask && mask.size) fc = fc.filter(c => !mask.has(at(ft, c)));
         foot = {cols: ft.cols, rows: ft.rows, cells: fc};
       }
-      list.push({k: l.k, i, shift: !!l.shift, f: {cols: f.cols, rows: f.rows, cells},
+      /* the face trimmed to its ink's rows, so the sheen `Title.emit`
+         runs down a face spans the drawing and not the box it was cut
+         in — a word's face is its line box, and this is the same thing
+         for a drawing. `top` is where the ink starts in the box, for
+         placing it; `rows0` the box, for centring it. */
+      let y0 = Infinity, y1 = -Infinity;
+      for (const c of cells){ if (c.y < y0) y0 = c.y; if (c.y > y1) y1 = c.y; }
+      const trimmed = cells.map(c => Object.assign({}, c, {y: c.y - y0}));
+      list.push({k: l.k, i, shift: !!l.shift, f: {cols: f.cols, rows: y1 - y0 + 1, cells: trimmed}, top: y0, rows0: f.rows,
                  col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit), foot, fill});
     });
     comp = list; compKey = key;
@@ -515,9 +529,10 @@ const Compass = (() => {
         m = Title.emit(a, m, e.foot, cx - fw * px / 2 + ox, cy - fh * px / 2 + oy, px, GROUND, e.fill, cap, 0, 0,
                        {weight: w * 1.2, tone: 0, shade: 0});
       }
-      const iw = e.f.cols - 1, ih = e.f.rows - 1;
-      const t = {weight: w, tone: Math.min(1, tuned('tone') + ltuned(e.k, 'tone')), shade: tuned('shade')};
-      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + oy, px, e.col, e.al, cap,
+      const iw = e.f.cols - 1, ih = e.rows0 - 1;
+      const t = {weight: w, tone: Math.min(1, tuned('tone') + ltuned(e.k, 'tone')),
+                 shade: Math.min(0.7, tuned('shade') * ltuned(e.k, 'shade'))};
+      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + e.top * px + oy, px, e.col, e.al, cap,
                      ltuned(e.k, 'jitter') * 0.5, 771 + e.i * 53, t);
     }
     return m;

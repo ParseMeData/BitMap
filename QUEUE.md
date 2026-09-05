@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **A Sheen per compass layer, down its ink** — 2026-09-05, build
+  263. Faces trimmed to their ink's rows so the fade spans the drawing
+  as a title's spans the word; Sheen ×0–2 on the shared one per layer.
 - [x] **A Scale per compass layer** — 2026-09-05, build 262. On the
   shared Size, about the one centre; masking between layers by place
   rather than grid index so a scaled layer still hides what is under it.

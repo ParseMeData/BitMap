@@ -2167,8 +2167,10 @@ box centred on the ring, so the rose turns inside the ring at every
 heading. Each layer has its own Ink and Grain as chips — the ink in its
 own colour; Plain, Checker, Lines or Diagonal for the grain, a pattern
 of the lattice its ink is put through, square to the plate whatever the
-heading — and Bright (0 hides it), Screen, Tone, Weight, Fine, Fill,
-Scatter and Jitter in the Tune panel's Compass block, under the shared
+heading — and Bright (0 hides it), Screen, Tone, Weight, Scale (on the
+shared Size, about the same centre, so the spike can stand a little
+larger than the bursts), Fine, Fill, Scatter and Jitter in the Tune
+panel's Compass block, under the shared
 Size (16 to 120 cells), Weight, Tone, Sheen and Detail; the ring has a
 nudge either way in whole cells; the tune lives in `hq.compass`. Fill
 paints the layer's whole silhouette in the ground's own colour under its

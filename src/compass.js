@@ -97,6 +97,10 @@ const Compass = (() => {
     dither:  {lo: 0,   hi: 1,   dflt: 1, label: 'Screen',  fmt: v => v ? v.toFixed(2) : 'flat cut'},
     tone:    {lo: 0,   hi: 1,   dflt: 0, label: 'Tone',    fmt: v => v ? v.toFixed(2) : 'even'},
     weight:  {lo: 0.4, hi: 1.6, dflt: 1, label: 'Weight',  fmt: v => v.toFixed(2) + '\u00d7'},
+    /* Scale is on the shared Size: a layer read at more or fewer cells
+       than the rest, about the same centre — the spike a little larger
+       than the bursts it stands on (Eden, 2026-09-05) */
+    scale:   {lo: 0.5, hi: 2,   dflt: 1, label: 'Scale',   fmt: v => v.toFixed(2) + '\u00d7'},
     fine:    {lo: 0,   hi: 0.9, dflt: 0, label: 'Fine',    fmt: v => v ? v.toFixed(2) : 'as read'},
     /* Fill paints the layer's whole silhouette in the ground's own colour
        under its ink, so what is beneath it — the layers below, the
@@ -376,12 +380,13 @@ const Compass = (() => {
      numbers that shape it. `overlay` compares this every frame and asks
      for a new one when it moves, so a slider or a turn of the map needs
      no callback. */
-  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size')) + '|' +
+  const colsOf = l => Math.round(tuned('size') * ltuned(l.k, 'scale'));
+  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + colsOf(l) + '|' +
                                ltuned(l.k, 'dither').toFixed(2) + '|' + ltuned(l.k, 'fine').toFixed(2);
-  const footKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size'));
+  const footKey = (l, deg) => (l.turns ? deg : 0) + '|' + colsOf(l);
   function wantPlates(deg){
     for (const l of LAYERS){
-      const d = l.turns ? deg : 0, size = Math.round(tuned('size'));
+      const d = l.turns ? deg : 0, size = colsOf(l);
       const k = layerKey(l, deg);
       if (faceKeys[l.k] !== k && asking[l.k] !== k){
         asking[l.k] = k;
@@ -417,35 +422,37 @@ const Compass = (() => {
     const key = LAYERS.map(l => faceKeys[l.k] + '|' + footKeys[l.k] + '|' + inkOf(l.k) + '|' + ltuned(l.k, 'lit') + '|' +
                                 grainOf(l.k) + '|' + ltuned(l.k, 'scatter') + '|' + ltuned(l.k, 'fill')).join('\n');
     if (compKey === key) return comp;
-    const gridOf = f => f.cols + 'x' + f.rows;
-    /* what stands above each turning layer, as a set of cells; only
-       faces on one grid can mask one another, so a cut still on its way
-       at the old heading is left out rather than misapplied. A filled
-       layer's whole silhouette is in the set, not only what it draws. */
+    /* a cell's place, in cells from the one centre every cut is drawn
+       about — so faces on different grids (a layer scaled, or cut at
+       another heading) can still mask one another, to the nearest cell.
+       Until build 261 the mask was by grid index and only between faces
+       on one grid; Scale made that the wrong question. */
+    const at = (f, c) => Math.round(c.x - (f.cols - 1) / 2) + ',' + Math.round(c.y - (f.rows - 1) / 2);
+    /* what stands above each turning layer, as a set of places. A
+       filled layer's whole silhouette is in the set, not only what it
+       draws. */
     const masks = {};
-    let above = null, grid = '';
+    let above = null;
     for (let i = LAYERS.length - 1; i >= 0; i--){
       const l = LAYERS[i];
       if (!l.turns) continue;
       masks[l.k] = above;
       const f = facePlates[l.k];
       if (!f || !f.cells.length || ltuned(l.k, 'lit') <= 0) continue;
-      if (grid && gridOf(f) !== grid) continue;
-      grid = gridOf(f);
       const set = new Set(above || []);
-      for (const c of f.cells) set.add(c.x + ',' + c.y);
+      for (const c of f.cells) set.add(at(f, c));
       const ft = foots[l.k];
-      if (ltuned(l.k, 'fill') > 0 && ft && gridOf(ft) === grid) for (const c of ft.cells) set.add(c.x + ',' + c.y);
+      if (ltuned(l.k, 'fill') > 0 && ft) for (const c of ft.cells) set.add(at(ft, c));
       above = set;
     }
     const list = [];
     LAYERS.forEach((l, i) => {
       const f = facePlates[l.k], lit = ltuned(l.k, 'lit');
       if (!f || !f.cells.length || lit <= 0) return;
-      const mask = masks[l.k], same = !grid || gridOf(f) === grid;
+      const mask = masks[l.k];
       const grain = grainOf(l.k), scatter = ltuned(l.k, 'scatter'), seed = 331 + i * 97;
       let cells = f.cells;
-      if (mask && mask.size && same) cells = cells.filter(c => !mask.has(c.x + ',' + c.y));
+      if (mask && mask.size) cells = cells.filter(c => !mask.has(at(f, c)));
       if (grain !== 'plain' || scatter > 0) cells = cells.filter(c => keep(c, grain, scatter, seed));
       /* Bright past 1 lifts the ink itself toward white, since the alpha
          has nowhere further to go */
@@ -454,7 +461,7 @@ const Compass = (() => {
       let foot = null;
       if (fill > 0 && ft && ft.cells.length){
         let fc = ft.cells;
-        if (mask && mask.size && gridOf(ft) === grid) fc = fc.filter(c => !mask.has(c.x + ',' + c.y));
+        if (mask && mask.size) fc = fc.filter(c => !mask.has(at(ft, c)));
         foot = {cols: ft.cols, rows: ft.rows, cells: fc};
       }
       list.push({k: l.k, i, shift: !!l.shift, f: {cols: f.cols, rows: f.rows, cells},

@@ -76,7 +76,24 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 261 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 262 (tag **v8.3** at 241)
+
+- **Build 262 (5 Sep 2026) — a Scale per compass layer.** Eden: *"allow
+  setting for top layer scale to make it slightly larger"* (and, in the
+  same message, the lattice tune `T` pasted as the wanted default — it
+  is `defTune()` value for value, and the live plate runs it with no
+  tune saved, so nothing changed there). Per layer **Scale**
+  (0.5–2×) on the shared Size: `colsOf(l)` is what a layer's stencils
+  are cut at, in both keys. A scaled layer is on another grid, so
+  `composed()` masks by PLACE now — a cell's position in cells from the
+  one centre every cut is drawn about, to the nearest cell — instead of
+  by grid index between faces on one grid; the "same grid" guard is
+  gone with it, so a cut still on its way at the old heading masks at
+  the old angle for a frame or two rather than not at all. Verified on
+  a throwaway over the grass: top Scale 1.3 stands larger about the
+  ring's centre with the bursts still hidden under it (fill on), 0.8
+  smaller, 1.3 with Fill clear lets them through, turned 34° it stays
+  centred. 43 rows in the block. No errors.
 
 - **Build 261 (5 Sep 2026) — a Fill under each compass layer, and more
   texture per layer.** Eden: *"more variation for styling like dithering

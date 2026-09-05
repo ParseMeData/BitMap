@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **A Scale per compass layer** — 2026-09-05, build 262. On the
+  shared Size, about the one centre; masking between layers by place
+  rather than grid index so a scaled layer still hides what is under it.
 - [x] **A Fill under each compass layer; Grain, Tone, Scatter, Jitter
   per layer** — 2026-09-05, build 261. The top layer's silhouette in the
   ground's colour under its ink by default; four grains as chips.

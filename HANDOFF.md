@@ -114,7 +114,11 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   to Mildura, Melbourne's cluster south-east, Barwidgee's six at the
   edge; hop right, Enter — home again, "back to Barwidgee". No errors.
   Not tested: a real town off the eye (only samples were), a drawn
-  link's bow, the blend's look on a phone.
+  link's bow, the blend's look on a phone. Seen and left: for a second
+  or two after the region opens the compass stands off its corner —
+  `corner()` reads the cuts on hand, which are still the town's turned
+  ones until the 0° cuts arrive — and settles when they do.
+  `Region.scene()` is exposed for tests.
 
 - **Build 278 (5 Sep 2026) — every link bows; the arrows hop between
   towns.** Eden: *"give all lines in between towns a slight curve and

@@ -719,7 +719,7 @@ const Region = (() => {
   }
   function init(){ banner(); wireDrag(); wireKeys(); }
 
-  const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns, bow, hop, open,
+  const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns, bow, hop, open, scene,
                grab, dragTo, drop, on, gate: null,
                held: () => !!held};
   return api;

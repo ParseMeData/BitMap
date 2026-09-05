@@ -166,9 +166,35 @@ const Build = (() => {
     const k = Kinds.by[s.kind];
     if (!k || k.walk !== 2 || !G.terr || !G.reach || Kinds.scope() !== 'map') return false;
     let any = false, hit = false;
-    tiles(s, G.terr, i => { if (!G.terr.path[i]) return; any = true; if (G.reach[i]) hit = true; },
-          banded(s) ? G.terr.tsz * (k.walkTol || 0.62) : 0);
+    const list = tileList(s, G.terr, banded(s) ? G.terr.tsz * (k.walkTol || 0.62) : 0);
+    for (let j = 0; j < list.length; j++){
+      const i = list[j];
+      if (!G.terr.path[i]) continue;
+      any = true;
+      if (G.reach[i]){ hit = true; break; }
+    }
     return any && !hit;
+  }
+  /* ── the tiles a shape stamps, remembered ─────────────────────────────
+     Restamping the walk grid asked every shape for its tiles every time:
+     the whole box of every shape, tile by tile, a long road's box being
+     most of the plate and its test a distance to every one of its
+     segments — 62 ms a call on the v8.6 town, and it ran on every arrow
+     press, every slider and every edit, and `stranded` ran the same scan
+     for every road on every frame of build mode (Eden, 2026-09-05: "the
+     interface feels laggy and slow"). A shape's tiles depend on its
+     geometry and its tolerance alone, so they are kept on it under a key
+     of exactly that and asked for again only when it has moved. The
+     demolished test stays outside the cache: which tiles a clearing has
+     knocked through depends on the clearing, not on this shape. */
+  const tileKey = (s, tol) => JSON.stringify([s.type, s.x, s.y, s.w, s.h, s.rot, s.width, s.r, s.mult, s.pts, s.ctrl, s.blob, tol]);
+  function tileList(s, t, tol){
+    const key = tileKey(s, tol);
+    if (s._tiles && s._tilesKey === key && s._tilesT === t) return s._tiles;
+    const list = [];
+    tiles(s, t, i => list.push(i), tol);
+    s._tiles = Int32Array.from(list); s._tilesKey = key; s._tilesT = t;
+    return s._tiles;
   }
   function syncStrand(){
     const el = $('#kstrand');
@@ -1031,11 +1057,13 @@ const Build = (() => {
            tolerance. An area-shaped route is already wider than that, and
            the same tolerance on one would lay a walkable ring right through
            the wall around it — so it stamps exactly what it covers. */
-        tiles(s, t, i => {
-          if (cut.length && demolished(cut, i, t)) return;
+        const list = tileList(s, t, k.walk === 2 && banded(s) ? t.tsz * (k.walkTol || 0.62) : 0);
+        for (let j = 0; j < list.length; j++){
+          const i = list[j];
+          if (cut.length && demolished(cut, i, t)) continue;
           if (k.walk === 0){ t.walk[i] = 0; t.path[i] = 0; }
           else { t.walk[i] = 1; if (k.walk === 2) t.path[i] = 1; }
-        }, k.walk === 2 && banded(s) ? t.tsz * (k.walkTol || 0.62) : 0);
+        }
       }
   }
   /* is this tile inside something that has been knocked through? */

@@ -129,8 +129,13 @@ function setSparks(v){
 }
 
 /* ── build ── */
+/* the columns the plate was last read at: the one number in the tune
+   that changes the lattice itself — the cell pitch — and so the one that
+   still needs the plate read again while it is blank (see queueRebuild) */
+let ANALYSED_COLS = 0;
 function analyse(){
   G.A = Lattice.analyse(G.px, G.W, G.H, plateCols(), T);
+  ANALYSED_COLS = T.cols;
 }
 function compose(upload){
   const buf = BLANK ? new Float32Array(0) : Lattice.compose(G.A, T);

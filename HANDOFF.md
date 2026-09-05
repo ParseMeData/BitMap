@@ -76,7 +76,41 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 271 (tag **v8.6** at 270; **v8.7 open**)
+## Where we are — 5 Sep 2026, build 272 (tag **v8.6** at 270; **v8.7 open**)
+
+- **Build 272 (5 Sep 2026) — the walk grid restamps in a millisecond;
+  a blank plate is not re-read for a tone.** Eden: *"the interface feels
+  laggy and slow — please run and test yourself to see where we can
+  improve user experience, increase smoothness and frame rate"*.
+  **Measured on Eden's window** (1280 × 726, DPR 1, a virtualised GL
+  device — `ANGLE (Mesa, virgl …)` — on a 75 Hz display): idle at the
+  working zoom the frame is one vsync, 13–15 ms, build mode on or off,
+  fit-all or 3×, tune panel up or down, and hiding the grass (12 000
+  instances) or the picture changed nothing — the GPU is not the cost.
+  One earlier sample read 44 ms a frame for two minutes and never
+  again; unexplained, likely something else on the box. The JS inside a
+  frame was 0.6 ms with build mode off and 4.7 ms on. The lag is in the
+  edits: `restampTerrain()` cost **62–72 ms** and runs on every arrow
+  press, every changed(), every slider — `Build.stamp` asked every
+  shape for its tiles every time, the whole box of every shape tile by
+  tile (`tiles()` → `Kinds.geo.depth`, 77 % of the restamp's time), a
+  long road's box being most of the plate and its test a distance to
+  every segment; and `stranded()` ran that same scan for every road on
+  every frame of build mode. The tune's sliders cost **42–116 ms** each
+  in `analyse()`, re-reading a plate that is never drawn.
+
+  Done: `tileList(s, t, tol)` in build.js keeps a shape's tile indices
+  on it (`_tiles`) under `tileKey` — type, x, y, w, h, rot, width, r,
+  mult, pts, ctrl, blob, tol — and both `stamp` and `stranded` read it;
+  the demolished test stays outside the cache, since it is about the
+  clearing and not the shape. `queueRebuild` skips `analyse()` while
+  the plate is blank unless Detail (`T.cols`, the pitch) has changed
+  (`ANALYSED_COLS` in game.js). **Verified** on a throwaway restored
+  from v8.6: the walk grid's checksum after a restamp is identical to
+  build 271's on the same town (660191511; 5 811 walk, 164 path);
+  restamp 90 ms cold (every cache empty) then 0.1–0.8 ms, 0.2 ms after
+  a house is moved; Tone moved → no analyse; Detail changed → one.
+  Confirmed on Eden's window after the reload (numbers below).
 
 - **Build 271 (5 Sep 2026) — v8.7 opened.** Eden: *"now clone for
   version 8.7"*. Read as opening the next version on the working line:

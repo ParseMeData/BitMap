@@ -30,7 +30,10 @@ function queueRebuild(heavy){
   heavyPending = heavyPending || heavy;
   clearTimeout(rebuildT);
   rebuildT = setTimeout(() => {
-    if (heavyPending) analyse();
+    /* the plate is never drawn (BLANK, since 2026-08-28), so reading it
+       again for a tone or a contrast is 40–120 ms for nothing — only
+       Detail, which is the cell pitch, still needs the read */
+    if (heavyPending && (!BLANK || T.cols !== ANALYSED_COLS)) analyse();
     heavyPending = false;
     compose();
   }, 160);

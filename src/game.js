@@ -54,7 +54,10 @@ const G = {
   stepT: 0, stepDur: 0.14, stepScale: 1, moving: false, bump: false, cool: 0,
   reach: null, sparks: [], rings: [], total: 12, got: 0, round: 1, steps: 0,
   paused: false, over: false, burst: -1, pending: null, msg: '',
-  wake: !WALL, idleFor: 0, drift: null, nextBurst: 0
+  wake: !WALL, idleFor: 0, drift: null, nextBurst: 0,
+  /* a camera held where a drag put it (the region, src/region.js), until
+     the walker takes a step or the region is left */
+  hold: null
 };
 
 const canvas = $('#gl');
@@ -398,6 +401,7 @@ function tryStep(dx, dy){
     }
   }
   G.stepT = 0; G.moving = true;
+  G.hold = null;                                  // a step brings the camera back to the walker
   G.stepScale = (sx && sy) ? 1.414 : 1;      // a diagonal is a longer stride
   /* a step on foot starts from wherever the walker is standing — on a
      place, if the wheel put them there — and ends the perch */
@@ -807,6 +811,7 @@ function frame(now){
     else { G.camT[0] += dx / d * step; G.camT[1] += dy / d * step; }
     G.camT[2] = lerp(G.camT[2], G.drift.z, 1 - Math.pow(0.45, dt));
   }
+  else if (G.hold){ G.camT[0] = G.hold[0]; G.camT[1] = G.hold[1]; }
   else { G.camT[0] = pxw; G.camT[1] = pyw; }
   const z = G.cam[2] = lerp(G.cam[2], G.camT[2], 1 - Math.pow(0.001, dt));
   const hw = VW / (2 * z), hh = VH / (2 * z);

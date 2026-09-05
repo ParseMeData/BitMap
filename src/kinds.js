@@ -977,11 +977,20 @@ const Kinds = (() => {
      it is the fact that a road exists, drawn at a scale where the road
      itself would be thinner than a diamond. Walkable, so the walker can
      cross the region on it; a link is the only route the region has. */
+  /* a thin clean line in bone, a little brighter where it meets a town
+     and quieter along the way — the gradient is `u`, the distance along
+     the link, against the link's own length (Eden, 2026-09-05: "a simple
+     clean minimal thin white line with very subtle gradient that links
+     the connections between the towns"); it was a kerb-grey band with
+     three cells in a hundred dropped */
+  const LINK_INK = [0.93, 0.92, 0.89];
   function link(s, cell, buf){
+    let L = 0;
+    if (s.pts) for (let i = 1; i < s.pts.length; i++) L += Math.hypot(s.pts[i][0] - s.pts[i - 1][0], s.pts[i][1] - s.pts[i - 1][1]);
+    L = Math.max(1, L / cell);
     scan(s, cell, (x, y, u, v, d, fade) => {
-      if (hash(u, v, s.seed) > 0.97) return;
-      buf.cell(x, y, C.kerb, 0.9 * fade, 0.92, 0, 0.72 * fade, 0.98, 0,
-               0.02, hash(u, v, s.seed + 7));
+      const t = clamp(u / L, 0, 1), al = 0.32 + 0.4 * Math.abs(2 * t - 1);
+      buf.cell(x, y, LINK_INK, al * fade, 0.6, 0, 0.3 * fade, 0.98, 0, 0, 0);
     });
   }
 

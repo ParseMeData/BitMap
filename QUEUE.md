@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The region's links, drag, and off-map clusters** — 2026-09-05,
+  build 277. A thin bone line with a subtle gradient; the region
+  dragged when zoomed in; far towns gathered into a diamond of
+  diamonds at the edge under a name and a count.
 - [x] **The compass in the region's corner, and sample towns** —
   2026-09-05, build 276. Five dim neighbours of Barwidgee drawn on the
   region, a Samples chip to hide them; the rose whole in the top-left.

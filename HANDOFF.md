@@ -76,7 +76,45 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 276 (tag **v8.7** at 273; **v8.8 open**)
+## Where we are — 5 Sep 2026, build 277 (tag **v8.7** at 273; **v8.8 open**)
+
+- **Build 277 (5 Sep 2026) — the region's links drawn thin, the region
+  dragged, and what is off the map gathered at the edge.** Eden: *"a
+  simple clean minimal thin white line with very subtle gradient that
+  links the connections between the towns … make it so we can drag the
+  zoomed out map … a way we can still see towns that are off the map —
+  maybe make the diamonds lock together in a clean geometric shape with
+  gap in between that shows groups of towns linked together (Melbourne
+  and a few suburbs, or Mildura and regional towns in the Mallee)"*.
+  **Links:** the `link` kind's gen (kinds.js) is a thin run in bone,
+  size 0.6, alpha 0.32 at the middle rising to 0.72 at either town by
+  `u` against the link's own length — it was a kerb-grey band with cells
+  dropped — and `line()` in region.js draws a sample's link the same way
+  in the entity stream, trimmed a diamond and a half short of each town.
+  **Drag:** `G.hold` (game.js) is a camera target a drag on the region
+  writes (`wireDrag` in region.js, bubble phase on the canvas, not in
+  build mode, the HUD's presses already stopped); the frame takes it
+  over following the walker; a step clears it, so WASD brings the camera
+  back, and `Region.leave` clears it. At the working zoom the plate
+  fills the window and there is nothing to pan to — the drag matters
+  once zoomed in with `+`. **Off the map:** `layout()` places every
+  town: inside an inset (three radii at the sides, three and a half at
+  the top, seven at the foot for the chrome) it stands where it falls;
+  beyond it, `edge()` puts it at the inset's edge on the ray from the
+  plate's middle, and towns are gathered by group (a sample's `group`;
+  a real town its own) with groups whose edge places fall within six
+  radii merged, into a cluster: a diamond of small diamonds (`CELLS`,
+  thirteen places in taxicab order, pitch 2.3 of a 0.55 r diamond), its
+  name and the count of towns beneath — above, at the foot of the plate
+  — and a cluster that would land in the compass's corner moved along
+  the edge it came to. Links to an off-map town go to its cluster. The
+  samples gain Melbourne with four suburbs and Mildura with three Mallee
+  towns, and `DEMO_LINKS`. The marker sheet has no '+', so the count is
+  the number of towns. Verified on Eden's window: the lines between
+  the neighbours, MILDURA 4 top-left beside the compass, MELBOURNE 5
+  above the meters, the Wangaratta and Myrtleford links running to
+  them; a drag at 2× carried the camera and held it, at 1× it had
+  nowhere to go.
 
 - **Build 276 (5 Sep 2026) — the compass in the region's corner, and
   sample towns.** Eden: *"move the compass to the very top left of the

@@ -245,7 +245,13 @@ towns are sized for the screen and the home town named by its title;
 on the region the compass stands whole in the top-left corner, and five
 real neighbours of Barwidgee are drawn dim as samples until the real
 towns arrive — the Samples chip under Towns in the Tune panel turns
-them off.
+them off. A link is a thin clean line in bone, brighter at the two
+towns and quieter along the way; the region is dragged like a map once
+it is zoomed in (`+`), and held where the hand left it until the walker
+steps; and a town beyond the plate stands at its edge in its true
+direction — towns beyond it together, a city and its suburbs, gathered
+into one diamond of small diamonds under one name and a count. Two such
+groups, Melbourne and Mildura, are among the samples.
 
 ## Controls
 

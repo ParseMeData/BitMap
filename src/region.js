@@ -45,7 +45,23 @@ const Region = (() => {
     {name: 'Yackandandah', lat: -36.3136, lon: 146.8386},
     {name: 'Beechworth',   lat: -36.3597, lon: 146.6867},
     {name: 'Bright',       lat: -36.7297, lon: 146.9598},
-    {name: 'Wangaratta',   lat: -36.3575, lon: 146.3125}];
+    {name: 'Wangaratta',   lat: -36.3575, lon: 146.3125},
+    /* and two groups far beyond the plate, to see how what is off the
+       map is shown: a city and its suburbs, a river town and the Mallee
+       towns round it (Eden's own examples) */
+    {name: 'Melbourne',  lat: -37.8136, lon: 144.9631, group: 'Melbourne'},
+    {name: 'Footscray',  lat: -37.7996, lon: 144.9005, group: 'Melbourne'},
+    {name: 'Brunswick',  lat: -37.7667, lon: 144.9603, group: 'Melbourne'},
+    {name: 'Richmond',   lat: -37.8230, lon: 145.0000, group: 'Melbourne'},
+    {name: 'St Kilda',   lat: -37.8678, lon: 144.9740, group: 'Melbourne'},
+    {name: 'Mildura',    lat: -34.1855, lon: 142.1625, group: 'Mildura'},
+    {name: 'Red Cliffs', lat: -34.3097, lon: 142.1880, group: 'Mildura'},
+    {name: 'Merbein',    lat: -34.1697, lon: 142.0669, group: 'Mildura'},
+    {name: 'Irymple',    lat: -34.2320, lon: 142.1720, group: 'Mildura'}];
+  /* the samples' links — where a road would leave one plate for another */
+  const DEMO_LINKS = [['Barwidgee', 'Myrtleford'], ['Myrtleford', 'Bright'], ['Myrtleford', 'Beechworth'],
+                      ['Beechworth', 'Yackandandah'], ['Beechworth', 'Wangaratta'],
+                      ['Myrtleford', 'Melbourne'], ['Wangaratta', 'Mildura']];
   const DKEY = 'hq.region.demo';
   const demo = () => { try { return Store.get(DKEY) !== '0'; } catch (e){ return true; } };
   const SPAN = 0.6;                    // degrees of longitude across the plate's shorter side, by default
@@ -147,11 +163,124 @@ const Region = (() => {
      grown town's two never touch. Hit-testing and spacing read the same
      number, so what you can press is what you can see. */
   const radius = () => Math.max(G.terr.tsz * 1.4, 18 / (G.cam[2] || 1));
+  /* ── off the map ──────────────────────────────────────────────────────
+     A town whose place falls beyond the plate cannot stand where it is,
+     and the region is not the country: Melbourne is not going to fit at
+     this scale. So it stands at the plate's edge, in its true direction
+     from the middle, and towns beyond the edge in the one direction — a
+     city and its suburbs, a river town and the towns round it — gather
+     into one cluster there: their diamonds locked together in a diamond
+     of diamonds with a gap between, the way the hub is made, under one
+     name and a count (Eden, 2026-09-05: "a way we can still see towns
+     that are off the map — maybe make the diamonds lock together in a
+     clean geometric shape with gap in between that shows groups of towns
+     linked together"). A sample carries its group; a real town is its
+     own until its edge place lands within six radii of another's. The
+     compass's corner is kept clear: a cluster that would land in it is
+     moved on along the edge it came to. */
+  const CELLS = (() => {
+    const pts = [];
+    for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (Math.abs(i) + Math.abs(j) <= 2) pts.push([i, j]);
+    return pts.sort((a, b) => (Math.abs(a[0]) + Math.abs(a[1])) - (Math.abs(b[0]) + Math.abs(b[1])) || Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
+  })();
+  function edge(P, C, mx, my, mb){
+    const dx = P[0] - C[0], dy = P[1] - C[1];
+    let t = Infinity, side = null;
+    if (dx > 0){ const k = (G.W - mx - C[0]) / dx; if (k < t){ t = k; side = 'x'; } }
+    else if (dx < 0){ const k = (mx - C[0]) / dx; if (k < t){ t = k; side = 'x'; } }
+    if (dy > 0){ const k = (G.H - (mb || my) - C[1]) / dy; if (k < t){ t = k; side = 'y'; } }
+    else if (dy < 0){ const k = (my - C[1]) / dy; if (k < t){ t = k; side = 'y'; } }
+    if (!isFinite(t)) return {x: C[0], y: C[1], side: null};
+    return {x: C[0] + dx * t, y: C[1] + dy * t, side};
+  }
+  /* every town's place for this frame: the real ones on the plate as
+     `spots()` has them, the samples, and the clusters at the edge —
+     with `where`, a name → place map the links are drawn from */
+  function layout(r){
+    /* the margins: a diamond and its name clear of the edge, and at the
+       foot of the plate clear of the chrome that stands there — the hub,
+       the meters, the keys */
+    const C = [G.W / 2, G.H / 2], mx = r * 3, my = r * 3.5, mb = r * 7;
+    const inside = xy => xy[0] >= mx && xy[0] <= G.W - mx && xy[1] >= my && xy[1] <= G.H - mb;
+    const where = new Map(), on = [], off = [];
+    for (const sp of spots()){
+      const name = String(sp.town.name || '');
+      if (inside([sp.x, sp.y])){ on.push({sp, name}); where.set(name.toLowerCase(), [sp.x, sp.y]); }
+      else off.push({name, group: name, sample: false, xy: [sp.x, sp.y]});
+    }
+    if (demo()){
+      for (const d of DEMO){
+        if (where.has(d.name.toLowerCase())) continue;
+        const xy = toXY(d);
+        if (!xy) continue;
+        if (inside(xy)){ on.push({name: d.name, x: xy[0], y: xy[1], sample: true}); where.set(d.name.toLowerCase(), xy); }
+        else off.push({name: d.name, group: d.group || d.name, sample: true, xy});
+      }
+    }
+    /* the clusters: by group, then groups whose edge places fall together */
+    const groups = new Map();
+    for (const o of off){
+      const at = edge(o.xy, C, mx, my, mb);
+      const g = groups.get(o.group) || {name: o.group, members: [], sx: 0, sy: 0, sample: o.sample, side: at.side};
+      g.members.push(o); g.sx += at.x; g.sy += at.y;
+      groups.set(o.group, g);
+    }
+    let clusters = [...groups.values()].map(g => ({name: g.name, members: g.members, sample: g.sample, side: g.side,
+                                                   x: g.sx / g.members.length, y: g.sy / g.members.length}));
+    for (let a = 0; a < clusters.length; a++)
+      for (let b = clusters.length - 1; b > a; b--){
+        const A = clusters[a], B = clusters[b];
+        if (Math.hypot(A.x - B.x, A.y - B.y) > r * 6) continue;
+        const n = A.members.length, k = B.members.length;
+        A.x = (A.x * n + B.x * k) / (n + k); A.y = (A.y * n + B.y * k) / (n + k);
+        A.members = A.members.concat(B.members); A.sample = A.sample && B.sample;
+        clusters.splice(b, 1);
+      }
+    /* the compass has the top-left corner */
+    const cx = typeof Compass !== 'undefined' && Compass.at ? Compass.at() : [0, 0];
+    const cw = cx[0] * 2 + r * 1.5, ch = cx[1] * 2 + r * 1.5;
+    for (const cl of clusters){
+      if (cl.x < cw && cl.y < ch){ if (cl.side === 'y') cl.x = cw; else cl.y = ch; }
+      where.set(cl.name.toLowerCase(), [cl.x, cl.y]);
+      for (const o of cl.members) where.set(o.name.toLowerCase(), [cl.x, cl.y]);
+    }
+    return {on, clusters, where};
+  }
+  /* ── a link, drawn ─────────────────────────────────────────────────────
+     A thin run of the plate's own diamonds in bone, brighter at the two
+     towns and quieter along the way — the same line `Kinds` draws for a
+     link laid by hand, so a sample's link and a real one look alike.
+     Trimmed a diamond and a half short of either town. */
+  function line(a, m, A, B, r, cap){
+    const cell = G.A.cell, dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy);
+    const trim = r * 1.5;
+    if (L <= trim * 2 + cell) return m;
+    const n = Math.max(2, Math.round((L - trim * 2) / (cell * 0.6)));
+    if (m > cap - n - 1) return m;
+    for (let i = 0; i <= n; i++){
+      const t = (trim + (L - trim * 2) * i / n) / L, al = 0.32 + 0.4 * Math.abs(2 * t - 1);
+      m = put(a, m, A[0] + dx * t, A[1] + dy * t, BONE[0], BONE[1], BONE[2], al, cell * 0.5, 0, 0, 0, 1);
+    }
+    return m;
+  }
+
+  /* ── drawn ─────────────────────────────────────────────────────────────
+     Bone diamonds with a halo, flare for the town you came from, dim for
+     one with no anchor; the name beneath out of the marker sheet. */
   function overlay(a, m, cap){
     if (!frame || !G.terr) return m;
     const z = G.cam[2], px = 1 / z;
     const r = radius(), ls = Math.max(r * 0.4, 7 * px);   // the name's glyph half-size
-    for (const sp of spots()){
+    const L = layout(r);
+    const label = (name, x, y, col, al, size) => Markers.text(a, m, name, x - (name.length - 1) * size * 1.06 / 2, y, size, col, al, cap);
+    for (const e of L.on){
+      if (e.sample){
+        if (m > cap - 2 - e.name.length) break;
+        m = put(a, m, e.x, e.y, DIM[0], DIM[1], DIM[2], 0.8, r, 0, 0, 0, 1);
+        m = label(e.name.toUpperCase(), e.x, e.y + r * 2 + ls * 1.3, DIM, 0.75, ls);
+        continue;
+      }
+      const sp = e.sp;
       if (m > cap - 8 - sp.town.plates.length * 2) break;
       const c = sp.town.here ? FLARE : sp.anchored ? BONE : DIM;
       const Q = typeof Quest !== 'undefined' ? Quest : null;
@@ -159,12 +288,12 @@ const Region = (() => {
         const x = sp.x0 + i * sp.pitch, pid = sp.town.plates[i];
         /* a plate that is a letter of the region wears its letter's tone,
            and the letter itself, in the plate's own ground colour */
-        const L = Q ? Q.letter(pid) : null;
-        const cc = L ? L.tone : c;
+        const Lq = Q ? Q.letter(pid) : null;
+        const cc = Lq ? Lq.tone : c;
         m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], 0.3, r * 2.0, 0, 0, 0, 2);
         m = put(a, m, x, sp.y, cc[0], cc[1], cc[2], sp.anchored ? 1 : 0.7, r, 0, 0, 0, 1);
-        if (L) m = Markers.text(a, m, L.ch, x, sp.y, r * 0.55, GROUND, 1, cap);
-        if (sp.town.here && L) m = put(a, m, x, sp.y, FLARE[0], FLARE[1], FLARE[2], 0.9, r * 1.4, 1, 0, 0, 1);
+        if (Lq) m = Markers.text(a, m, Lq.ch, x, sp.y, r * 0.55, GROUND, 1, cap);
+        if (sp.town.here && Lq) m = put(a, m, x, sp.y, FLARE[0], FLARE[1], FLARE[2], 0.9, r * 1.4, 1, 0, 0, 1);
         if (Q && Q.targetPlate() === pid)
           m = put(a, m, x, sp.y, 0.95, 0.76, 0.31, 0.7 + 0.3 * Math.sin(performance.now() / 300), r * 1.9, 1, 0, 0, 1);
       }
@@ -173,24 +302,58 @@ const Region = (() => {
          first glyph's x plus half of the gaps between them — the way
          `Markers.number` lays digits, and half a glyph right of where
          the full width put it before */
-      if (name) m = Markers.text(a, m, name, sp.x - (name.length - 1) * ls * 1.06 / 2,
-                                 sp.y + r * 2 + ls * 1.3, ls, c, 0.9, cap);
+      if (name) m = label(name, sp.x, sp.y + r * 2 + ls * 1.3, c, 0.9, ls);
     }
-    /* the samples: one dim diamond each, no halo, the name dimmer still,
-       and nothing the walker can reach */
-    if (demo()){
-      const taken = new Set(spots().map(sp => String(sp.town.name || '').toLowerCase()));
-      for (const d of DEMO){
-        if (taken.has(d.name.toLowerCase())) continue;     // a real town of that name stands here
-        const xy = toXY(d);
-        if (!xy || xy[0] < r || xy[0] > G.W - r || xy[1] < r || xy[1] > G.H - r * 3) continue;
-        if (m > cap - 2 - d.name.length) break;
-        m = put(a, m, xy[0], xy[1], DIM[0], DIM[1], DIM[2], 0.8, r, 0, 0, 0, 1);
-        const name = d.name.toUpperCase();
-        m = Markers.text(a, m, name, xy[0] - (name.length - 1) * ls * 1.06 / 2, xy[1] + r * 2 + ls * 1.3, ls, DIM, 0.75, cap);
+    /* the clusters at the edge: a diamond of small diamonds, the count
+       beside the name when there is more than one, the name above when
+       the cluster stands at the foot of the plate */
+    for (const cl of L.clusters){
+      const rm = r * 0.55, g = rm * 2.3, col = cl.sample ? DIM : BONE;
+      const n = Math.min(cl.members.length, CELLS.length);
+      if (m > cap - n - 2 - cl.name.length) break;
+      for (let k = 0; k < n; k++)
+        m = put(a, m, cl.x + CELLS[k][0] * g, cl.y + CELLS[k][1] * g, col[0], col[1], col[2], cl.sample ? 0.8 : 1, rm, 0, 0, 0, 1);
+      const ext = (n > 5 ? 2 : n > 1 ? 1 : 0) * g + rm;
+      /* the marker sheet has no '+', so the count is how many towns the
+         cluster holds, after a space */
+      const name = cl.name.toUpperCase() + (cl.members.length > 1 ? ' ' + cl.members.length : '');
+      const below = cl.y + ext + ls * 1.6, y = below + ls > G.H - r ? cl.y - ext - ls * 1.6 : below;
+      m = label(name, cl.x, y, col, cl.sample ? 0.75 : 0.9, ls * 0.9);
+    }
+    /* the samples' links, between the places the towns stand at — an
+       off-map town's is its cluster */
+    if (demo())
+      for (const [p, q] of DEMO_LINKS){
+        const A = L.where.get(p.toLowerCase()), B = L.where.get(q.toLowerCase());
+        if (A && B) m = line(a, m, A, B, r, cap);
       }
-    }
     return m;
+  }
+
+  /* ── dragged ───────────────────────────────────────────────────────────
+     The region is a map, and a map is dragged: a press on the plate that
+     is not the builder's and not the HUD's carries the camera with the
+     hand, and holds it there (`G.hold`, game.js) until the walker takes
+     a step or the region is left (Eden, 2026-09-05: "make it so we can
+     drag the zoomed out map"). */
+  let pan = null;
+  function wireDrag(){
+    canvas.addEventListener('pointerdown', e => {
+      if (!frame || e.button !== 0 || G.paused) return;
+      if (typeof Build !== 'undefined' && Build.active && Build.active()) return;
+      pan = {x: e.clientX, y: e.clientY, cx: G.cam[0], cy: G.cam[1], moved: false, id: e.pointerId};
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!pan || !frame) return;
+      const b = canvas.getBoundingClientRect(), dpr = VW / (b.width || 1), z = G.cam[2] / dpr;
+      const sx = e.clientX - pan.x, sy = e.clientY - pan.y;
+      if (!pan.moved){ if (Math.hypot(sx, sy) < 3) return; pan.moved = true; try { canvas.setPointerCapture(pan.id); } catch (err){} }
+      G.hold = [pan.cx - sx / z, pan.cy - sy / z];
+      G.cam[0] = G.camT[0] = G.hold[0]; G.cam[1] = G.camT[1] = G.hold[1];   // no easing under the hand
+    });
+    const up = () => { pan = null; };
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
   }
 
   /* the town the walker is standing by */
@@ -249,6 +412,7 @@ const Region = (() => {
   }
   /* ── out ── */
   function leave(){
+    G.hold = null;
     if (!frame) return false;
     Build.commit(); Markers.commit();
     const f = frame; frame = null; held = null;
@@ -330,7 +494,7 @@ const Region = (() => {
     const s = el.querySelector('span');
     if (s) s.textContent = f ? f.tab + ' · ' + f.sub + ' · ' + f.letters.join('') + ' · north is up' : 'north is up';
   }
-  function init(){ banner(); }
+  function init(){ banner(); wireDrag(); }
 
   const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns,
                grab, dragTo, drop, on, gate: null,

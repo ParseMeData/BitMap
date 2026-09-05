@@ -83,7 +83,7 @@ const Compass = (() => {
   const LAYERS = [
     {k: 'bottom', label: 'Bottom layer', turns: true,  ink: 'dim'},
     {k: 'middle', label: 'Middle layer', turns: true,  ink: 'gold'},
-    {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone'},
+    {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone', fill0: 1},
     {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true}];
   /* per layer: Bright (0 hides it), Screen, Weight (on the shared one —
      smaller diamonds read as a finer line), Fine (ink thinner than this
@@ -93,12 +93,29 @@ const Compass = (() => {
      thickness of circle pixels … move the circle left right up or down
      to align better … the top layer's detail visible"). */
   const LTUNE = {
-    lit:    {lo: 0,   hi: 1.5, dflt: 1, label: 'Bright', fmt: v => v ? Math.round(v * 100) + '%' : 'off'},
-    dither: {lo: 0,   hi: 1,   dflt: 1, label: 'Screen', fmt: v => v ? v.toFixed(2) : 'flat cut'},
-    weight: {lo: 0.4, hi: 1.6, dflt: 1, label: 'Weight', fmt: v => v.toFixed(2) + '\u00d7'},
-    fine:   {lo: 0,   hi: 0.9, dflt: 0, label: 'Fine',   fmt: v => v ? v.toFixed(2) : 'as read'},
-    dx:     {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Left \u2013 right', shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'},
-    dy:     {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Up \u2013 down',    shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'}};
+    lit:     {lo: 0,   hi: 1.5, dflt: 1, label: 'Bright',  fmt: v => v ? Math.round(v * 100) + '%' : 'off'},
+    dither:  {lo: 0,   hi: 1,   dflt: 1, label: 'Screen',  fmt: v => v ? v.toFixed(2) : 'flat cut'},
+    tone:    {lo: 0,   hi: 1,   dflt: 0, label: 'Tone',    fmt: v => v ? v.toFixed(2) : 'even'},
+    weight:  {lo: 0.4, hi: 1.6, dflt: 1, label: 'Weight',  fmt: v => v.toFixed(2) + '\u00d7'},
+    fine:    {lo: 0,   hi: 0.9, dflt: 0, label: 'Fine',    fmt: v => v ? v.toFixed(2) : 'as read'},
+    /* Fill paints the layer's whole silhouette in the ground's own colour
+       under its ink, so what is beneath it — the layers below, the
+       terrain the compass stands on — is put out, and its lines and
+       textures are its inside (Eden, 2026-09-05: "the top layer's inside
+       not transparent, still keeping matching background colour, as it's
+       internal background detail"). On by default for the top layer,
+       clear for the rest. */
+    fill:    {lo: 0,   hi: 1,   dflt: 0, label: 'Fill',    fmt: v => v ? Math.round(v * 100) + '%' : 'clear'},
+    /* and two textures the terrain kinds have (src/kinds.js): a share of
+       the cells thrown away, and a shake on where each one sits */
+    scatter: {lo: 0,   hi: 0.9, dflt: 0, label: 'Scatter', fmt: v => v ? Math.round(v * 100) + '%' : 'none'},
+    jitter:  {lo: 0,   hi: 1,   dflt: 0, label: 'Jitter',  fmt: v => v ? v.toFixed(2) : 'still'},
+    dx:      {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Left \u2013 right', shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'},
+    dy:      {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Up \u2013 down',    shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'}};
+  /* a grain: a pattern of the lattice a layer's ink is put through, on
+     the face's own grid — which is the plate's, so it stays square as
+     the map turns under it */
+  const GRAINS = {plain: 'Plain', checker: 'Checker', lines: 'Lines', diagonal: 'Diagonal'};
   /* the screen's recipe, for a drawing rather than a letter: the type's
      recipe stretches what it reads between its 4th and 96th percentile,
      which is right for a word — every stroke comes up to full ink — and
@@ -108,10 +125,12 @@ const Compass = (() => {
      from there. */
   const RECIPE = {lo: 0, hi: 0.999};
   let layers = {};                             // {bottom: {ink, lit, dither}, …}
+  const layerDef = (k, key) => { const l = LAYERS.find(x => x.k === k); return l && isFinite(l[key + '0']) ? l[key + '0'] : LTUNE[key].dflt; };
   const ltuned = (k, key) => {
-    const v = layers[k] && isFinite(layers[k][key]) ? +layers[k][key] : LTUNE[key].dflt;
+    const v = layers[k] && isFinite(layers[k][key]) ? +layers[k][key] : layerDef(k, key);
     return Math.min(LTUNE[key].hi, Math.max(LTUNE[key].lo, v));
   };
+  const grainOf = k => (layers[k] && GRAINS[layers[k].grain]) ? layers[k].grain : 'plain';
   const inkOf = k => (layers[k] && INKS[layers[k].ink]) ? layers[k].ink : ((LAYERS.find(l => l.k === k) || {}).ink || 'bone');
   const setLayer = (k, key, v) => { layers[k] = layers[k] || {}; layers[k][key] = v; };
 
@@ -246,25 +265,23 @@ const Compass = (() => {
       h.className = 'plabel';
       h.textContent = l.label + (l.turns ? ' \u00b7 turns with the map' : ' \u00b7 stays still');
       el.append(h);
-      const chips = document.createElement('div');
-      chips.className = 'chips';
-      chips.style.gridTemplateColumns = 'repeat(4,1fr)';
-      const tint = (c, id, sel) => {
-        c.classList.toggle('sel', sel);
-        c.style.color = sel ? '' : 'rgb(' + INKS[id].map(v => Math.round(v * 255)).join(',') + ')';
+      const chipRow = (opts, sel, pick, colour) => {
+        const chips = document.createElement('div');
+        chips.className = 'chips';
+        chips.style.gridTemplateColumns = 'repeat(4,1fr)';
+        const tint = (c, id, on) => { c.classList.toggle('sel', on); c.style.color = on || !colour ? '' : colour(id); };
+        for (const id in opts){
+          const c = document.createElement('div');
+          c.className = 'chip'; c.textContent = opts[id]; c.dataset.id = id;
+          tint(c, id, sel() === id);
+          c.addEventListener('click', () => { pick(id); for (const o of chips.children) tint(o, o.dataset.id, o === c); store(); });
+          chips.append(c);
+        }
+        return chips;
       };
-      for (const id in INKS){
-        const c = document.createElement('div');
-        c.className = 'chip'; c.textContent = INK_LABEL[id]; c.dataset.ink = id;
-        tint(c, id, inkOf(l.k) === id);
-        c.addEventListener('click', () => {
-          setLayer(l.k, 'ink', id);
-          for (const o of chips.children) tint(o, o.dataset.ink, o === c);
-          store();
-        });
-        chips.append(c);
-      }
-      el.append(chips);
+      el.append(chipRow(INK_LABEL, () => inkOf(l.k), id => setLayer(l.k, 'ink', id),
+                        id => 'rgb(' + INKS[id].map(v => Math.round(v * 255)).join(',') + ')'));
+      el.append(chipRow(GRAINS, () => grainOf(l.k), id => setLayer(l.k, 'grain', id), null));
       for (const key in LTUNE){
         if (LTUNE[key].shift && !l.shift) continue;      // the nudge is the ring's alone
         el.append(slider(LTUNE[key].label, () => ltuned(l.k, key), v => setLayer(l.k, key, v), LTUNE[key], null));
@@ -354,32 +371,57 @@ const Compass = (() => {
      mixing in the gaps. The ring is cut in a box of its own (0° is a
      different diagonal) and is drawn last over everything, unmasked. */
   const facePlates = {}, faceKeys = {}, asking = {};
+  const foots = {}, footKeys = {}, askingFoot = {};
   /* what a cut depends on — the heading (0 for the ring) and the two
      numbers that shape it. `overlay` compares this every frame and asks
      for a new one when it moves, so a slider or a turn of the map needs
      no callback. */
   const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size')) + '|' +
                                ltuned(l.k, 'dither').toFixed(2) + '|' + ltuned(l.k, 'fine').toFixed(2);
+  const footKey = (l, deg) => (l.turns ? deg : 0) + '|' + Math.round(tuned('size'));
   function wantPlates(deg){
     for (const l of LAYERS){
+      const d = l.turns ? deg : 0, size = Math.round(tuned('size'));
       const k = layerKey(l, deg);
-      if (faceKeys[l.k] === k || asking[l.k] === k) continue;
-      asking[l.k] = k;
-      Title.stencil(url(l.k), Math.round(tuned('size')),
-                    {deg: l.turns ? deg : 0, dither: ltuned(l.k, 'dither'), cut: ltuned(l.k, 'fine'), recipe: RECIPE})
-        .then(f => { if (asking[l.k] === k){ facePlates[l.k] = f; faceKeys[l.k] = k; asking[l.k] = null; } })
-        .catch(() => { if (asking[l.k] === k) asking[l.k] = null; });
+      if (faceKeys[l.k] !== k && asking[l.k] !== k){
+        asking[l.k] = k;
+        Title.stencil(url(l.k), size, {deg: d, dither: ltuned(l.k, 'dither'), cut: ltuned(l.k, 'fine'), recipe: RECIPE})
+          .then(f => { if (asking[l.k] === k){ facePlates[l.k] = f; faceKeys[l.k] = k; asking[l.k] = null; } })
+          .catch(() => { if (asking[l.k] === k) asking[l.k] = null; });
+      }
+      /* and the footprint: the same drawing flat-cut with no floor,
+         which is its whole silhouette — what a Fill paints in the
+         ground's colour, and what the layers beneath a filled layer give
+         way to, whatever its own ink is doing */
+      const fk = footKey(l, deg);
+      if (footKeys[l.k] !== fk && askingFoot[l.k] !== fk){
+        askingFoot[l.k] = fk;
+        Title.stencil(url(l.k), size, {deg: d, dither: 0, cut: 0, recipe: RECIPE})
+          .then(f => { if (askingFoot[l.k] === fk){ foots[l.k] = f; footKeys[l.k] = fk; askingFoot[l.k] = null; } })
+          .catch(() => { if (askingFoot[l.k] === fk) askingFoot[l.k] = null; });
+      }
     }
   }
-  /* the faces as they are drawn — masked, inked, in order — rebuilt only
-     when a cut or a layer's tune changes, never per frame */
+  /* whether a cell of a face stands under a grain and a scatter */
+  const keep = (c, grain, scatter, seed) => {
+    if (grain === 'checker' && ((c.x + c.y) & 1)) return false;
+    if (grain === 'lines' && (c.y & 1)) return false;
+    if (grain === 'diagonal' && (((c.x - c.y) % 3) + 3) % 3) return false;
+    return !(scatter > 0 && roll(c.x, c.y, seed) < scatter);
+  };
+  /* the faces as they are drawn — masked, grained, inked, in order, each
+     with its fill — rebuilt only when a cut or a layer's tune changes,
+     never per frame */
   let comp = [], compKey = '';
   function composed(){
-    const key = LAYERS.map(l => faceKeys[l.k] + '|' + inkOf(l.k) + '|' + ltuned(l.k, 'lit')).join('\n');
+    const key = LAYERS.map(l => faceKeys[l.k] + '|' + footKeys[l.k] + '|' + inkOf(l.k) + '|' + ltuned(l.k, 'lit') + '|' +
+                                grainOf(l.k) + '|' + ltuned(l.k, 'scatter') + '|' + ltuned(l.k, 'fill')).join('\n');
     if (compKey === key) return comp;
-    /* what stands above each turning layer, as a set of its cells; only
+    const gridOf = f => f.cols + 'x' + f.rows;
+    /* what stands above each turning layer, as a set of cells; only
        faces on one grid can mask one another, so a cut still on its way
-       at the old heading is left out rather than misapplied */
+       at the old heading is left out rather than misapplied. A filled
+       layer's whole silhouette is in the set, not only what it draws. */
     const masks = {};
     let above = null, grid = '';
     for (let i = LAYERS.length - 1; i >= 0; i--){
@@ -388,24 +430,36 @@ const Compass = (() => {
       masks[l.k] = above;
       const f = facePlates[l.k];
       if (!f || !f.cells.length || ltuned(l.k, 'lit') <= 0) continue;
-      const g = f.cols + 'x' + f.rows;
-      if (grid && g !== grid) continue;
-      grid = g;
+      if (grid && gridOf(f) !== grid) continue;
+      grid = gridOf(f);
       const set = new Set(above || []);
       for (const c of f.cells) set.add(c.x + ',' + c.y);
+      const ft = foots[l.k];
+      if (ltuned(l.k, 'fill') > 0 && ft && gridOf(ft) === grid) for (const c of ft.cells) set.add(c.x + ',' + c.y);
       above = set;
     }
     const list = [];
-    for (const l of LAYERS){
+    LAYERS.forEach((l, i) => {
       const f = facePlates[l.k], lit = ltuned(l.k, 'lit');
-      if (!f || !f.cells.length || lit <= 0) continue;
-      const mask = masks[l.k], same = !grid || (f.cols + 'x' + f.rows) === grid;
-      const cells = mask && mask.size && same ? f.cells.filter(c => !mask.has(c.x + ',' + c.y)) : f.cells;
+      if (!f || !f.cells.length || lit <= 0) return;
+      const mask = masks[l.k], same = !grid || gridOf(f) === grid;
+      const grain = grainOf(l.k), scatter = ltuned(l.k, 'scatter'), seed = 331 + i * 97;
+      let cells = f.cells;
+      if (mask && mask.size && same) cells = cells.filter(c => !mask.has(c.x + ',' + c.y));
+      if (grain !== 'plain' || scatter > 0) cells = cells.filter(c => keep(c, grain, scatter, seed));
       /* Bright past 1 lifts the ink itself toward white, since the alpha
          has nowhere further to go */
       const ink = INKS[inkOf(l.k)] || BONE, k = Math.max(1, lit);
-      list.push({k: l.k, shift: !!l.shift, f: {cols: f.cols, rows: f.rows, cells}, col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit)});
-    }
+      const fill = ltuned(l.k, 'fill'), ft = foots[l.k];
+      let foot = null;
+      if (fill > 0 && ft && ft.cells.length){
+        let fc = ft.cells;
+        if (mask && mask.size && gridOf(ft) === grid) fc = fc.filter(c => !mask.has(c.x + ',' + c.y));
+        foot = {cols: ft.cols, rows: ft.rows, cells: fc};
+      }
+      list.push({k: l.k, i, shift: !!l.shift, f: {cols: f.cols, rows: f.rows, cells},
+                 col: ink.map(v => Math.min(1, v * k)), al: Math.min(1, lit), foot, fill});
+    });
     comp = list; compKey = key;
     return comp;
   }
@@ -436,16 +490,28 @@ const Compass = (() => {
     /* all or nothing against the cap, as a name is: half a compass is
        worse than none, and the cap is shared with the whole town */
     let need = 0;
-    for (const e of list) need += Title.cost(e.f);
+    for (const e of list) need += Title.cost(e.f) + (e.foot ? e.foot.cells.length : 0);
     if (m + need > cap) return m;
-    /* Weight, and the ring's nudge, are read here rather than composed
-       in: they change nothing about which cells stand, only how big and
-       where, so a slider on them costs no cut */
+    /* Weight, Tone, Jitter and the ring's nudge are read here rather
+       than composed in: they change nothing about which cells stand,
+       only how big, how bright and where, so a slider on them costs no
+       cut */
     for (const e of list){
-      const t = {weight: tuned('weight') * ltuned(e.k, 'weight'), tone: tuned('tone'), shade: tuned('shade')};
-      const iw = e.f.cols - 1, ih = e.f.rows - 1;
       const ox = e.shift ? Math.round(ltuned(e.k, 'dx')) * px : 0, oy = e.shift ? Math.round(ltuned(e.k, 'dy')) * px : 0;
-      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + oy, px, e.col, e.al, cap, 0, 0, t);
+      const w = tuned('weight') * ltuned(e.k, 'weight');
+      /* the fill first: the silhouette in the ground's own colour, a
+         fifth heavier than the ink so the diamonds close, flat and with
+         no sheen — what stood under the layer is put out, and its ink
+         goes down on plate */
+      if (e.foot){
+        const fw = e.foot.cols - 1, fh = e.foot.rows - 1;
+        m = Title.emit(a, m, e.foot, cx - fw * px / 2 + ox, cy - fh * px / 2 + oy, px, GROUND, e.fill, cap, 0, 0,
+                       {weight: w * 1.2, tone: 0, shade: 0});
+      }
+      const iw = e.f.cols - 1, ih = e.f.rows - 1;
+      const t = {weight: w, tone: Math.min(1, tuned('tone') + ltuned(e.k, 'tone')), shade: tuned('shade')};
+      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + oy, px, e.col, e.al, cap,
+                     ltuned(e.k, 'jitter') * 0.5, 771 + e.i * 53, t);
     }
     return m;
   }

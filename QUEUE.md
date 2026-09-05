@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **A Fill under each compass layer; Grain, Tone, Scatter, Jitter
+  per layer** — 2026-09-05, build 261. The top layer's silhouette in the
+  ground's colour under its ink by default; four grains as chips.
 - [x] **The compass centred on its ring; Weight, Fine and the ring's
   nudge per layer** — 2026-09-05, build 260. Every sheet cut in a box
   centred on the ring so the rose turns inside it; `Title.stencil` gets

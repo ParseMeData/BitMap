@@ -76,7 +76,34 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 260 (tag **v8.3** at 241)
+## Where we are — 5 Sep 2026, build 261 (tag **v8.3** at 241)
+
+- **Build 261 (5 Sep 2026) — a Fill under each compass layer, and more
+  texture per layer.** Eden: *"more variation for styling like dithering
+  scattering, and I want the top layer's inside to not be transparent,
+  still keeping matching background colour as it's internal background
+  detail"*. Per layer now: **Fill** (the layer's whole silhouette
+  painted in the ground's colour under its ink, a fifth heavier than
+  the ink so the diamonds close, flat, no sheen — the layers beneath
+  give way to the whole silhouette rather than only the drawn cells,
+  and the terrain under the compass is put out; on for the top layer by
+  default via `fill0`, clear for the rest), a **Grain** chip row (Plain,
+  Checker, Lines, Diagonal — patterns on the face's own grid, which is
+  the plate's, so they stay square as the map turns), **Tone** (added
+  to the shared one), **Scatter** (cells thrown away by `Kinds.hash`,
+  seeded per layer) and **Jitter** (`Title.emit`'s shake, up to half a
+  cell). The fill needs the silhouette, so `wantPlates` asks a second
+  stencil per layer — the same drawing flat-cut with no floor
+  (`foots`) — and `composed()` carries a `foot` per entry and keys on
+  grain, scatter and fill as well; Weight, Tone, Jitter and the nudge
+  are still read at draw time. The block is 39 rows and 48 chips now
+  (five shared, then per layer two chip rows and eight sliders, and the
+  ring's two nudges). Verified on a throwaway with the compass moved
+  onto the grass (`at: [520, 300]`): Fill on hides the gold and the
+  grass inside the spike; Fill off lets them through; Diagonal grain +
+  Scatter 30% + Jitter 0.6 reads as a dark hatched cross; Lines + Tone 1
+  as ruled; the ring takes Checker. No errors. Not tested: the block on
+  a phone — it is long now.
 
 - **Build 260 (5 Sep 2026) — the compass centred on its ring, and each
   layer's Weight, Fine and (the ring's) nudge.** Eden: *"an option in

@@ -361,6 +361,10 @@ body.region #msg{top:98px}
 body.wall #region{display:none}
 /* no markers on the region: the palette's strip for them is not shown there */
 body.region #kmlabel,body.region #kmarkers,body.region #kmname{display:none!important}
+/* the region's view block in the palette — zoom, lock, saved zoom — is only for the region */
+body:not(.region) .regiononly{display:none!important}
+.kfoot .btn.off{opacity:.35;pointer-events:none}
+.knote b{color:var(--bone);font-weight:400}
 /* the region lays its own map — where it looks, and how close — so the bar's
    Find, sources, Freeze and Zoom are not offered there; ✕ and M still take
    the map away and bring it back */
@@ -369,6 +373,13 @@ body.region #mapq,body.region #mapgo,body.region .mapsrc,body.region #mapfreeze,
   padding:7px 12px;display:flex;gap:9px;align-items:center;font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
 #enterhint em{color:var(--gold);font-style:normal}
+/* the next town's name, popping up beside the walker at a road end that
+   leads to it (src/region.js nextLabel) */
+#nextplate{position:fixed;left:0;top:0;z-index:6;pointer-events:none;padding:6px 10px 7px;
+  font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);white-space:nowrap;
+  opacity:0;transform:translateY(6px);transition:opacity .35s ease,transform .35s ease}
+#nextplate.on{opacity:1;transform:translateY(0)}
+#nextplate b{display:block;font-size:12px;letter-spacing:.24em;color:var(--gold);font-weight:normal;margin-bottom:2px}
 body.inside.paused #msg{top:98px}
 body.wall #inside,body.wall #enterhint{display:none}
 #kmname{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
@@ -1091,7 +1102,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 283, cb = '?cb=' + BUILD +
+  var BUILD = 296, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
@@ -1143,7 +1154,7 @@ var Users = (function(){
 
   function start(){
   ['src/store.js','src/stock.js','assets/map.js','src/render.js','src/lattice.js','src/glyphs.js','src/kinds.js',
-   'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/markers.js','src/history.js',
+   'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/morph.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
    'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/survey.js','src/found.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/touch.js','src/game.js']

@@ -1549,6 +1549,12 @@ const Build = (() => {
       /* A marker is pinned to a spot, not to a layer, so it answers the
          pointer wherever it sits and whatever you are working on. */
       if (Markers.armed()){ Markers.place(p[0], p[1]); Markers.disarm(); syncUI(); return; }
+      /* on the region's Links layer a click is a link being made or
+         picked (src/region.js linkClick); the towns are not dragged
+         from there — any other layer still takes them */
+      if (typeof Region !== 'undefined' && Region.on() && layer === 'links' && Region.linkClick(p[0], p[1])){
+        sel = null; syncUI(); return;
+      }
       /* on the region a town's diamonds can be taken and put where the
          town is; the drop pins every plate in it (src/region.js) */
       if (typeof Region !== 'undefined' && Region.on() && Region.grab(p[0], p[1])){
@@ -1829,7 +1835,8 @@ const Build = (() => {
       if (e.code === 'Delete' || e.code === 'Backspace'){
         e.preventDefault();
         const mk = Markers.selected();
-        if (mk) Markers.remove(mk); else remove(sel);
+        if (typeof Region !== 'undefined' && Region.on() && Region.removeLink()){}
+        else if (mk) Markers.remove(mk); else remove(sel);
         syncUI();
         /* a deletion is the edit people reach for undo after, so it lands
            on the stack now rather than when the room goes quiet */
@@ -1941,6 +1948,18 @@ const Build = (() => {
          above the layer rows, outside them, and stay there whatever you
          are working on — and Modify is the third verb this editor has,
          beside placing a thing and shaping it. */
+      /* ── the region's view ────────────────────────────────────────────
+         Only on the region (index.html: regiononly): the zoom in and
+         out, the lock that holds it, and the zoom saved for the eye you
+         are on — home's, or an opened cluster's — put back whenever you
+         stand on it again (src/region.js, build 282). */
+      '<div class="plabel regiononly">View</div>' +
+      '<div class="kfoot regiononly"><button class="btn" id="kzoomout">Zoom &minus;</button>' +
+      '<button class="btn" id="kzoomin">Zoom +</button></div>' +
+      '<div class="kfoot regiononly"><button class="btn" id="kzoomlock">Lock zoom</button>' +
+      '<button class="btn" id="kzoomsave">Save zoom</button></div>' +
+      '<div class="kfoot one regiononly"><button class="btn" id="kzoomforget">Forget saved zoom</button></div>' +
+      '<div class="knote regiononly" id="kviewnote"></div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
       /* a word under the chips on the two layers whose tools take rather
@@ -2011,6 +2030,15 @@ const Build = (() => {
       c.onclick = () => setMode(id);
       $('#kmode').appendChild(c);
     }
+    /* the view block's switches all go to the region; the zoom ones
+       through the game's own notch, so a chip is a keypress */
+    const onRegion = () => typeof Region !== 'undefined' && Region.on();
+    const vb = (id, fn) => { const b = $(id); if (b) b.onclick = () => { if (onRegion()) fn(); syncUI(); }; };
+    vb('#kzoomout', () => { if (typeof zoomBy === 'function') zoomBy(1 / ZSTEP); });
+    vb('#kzoomin', () => { if (typeof zoomBy === 'function') zoomBy(ZSTEP); });
+    vb('#kzoomlock', () => Region.setLock(!Region.zoomLocked()));
+    vb('#kzoomsave', () => Region.saveZoom());
+    vb('#kzoomforget', () => Region.forgetZoom());
     for (const L of Kinds.layers){
       const row = document.createElement('div');
       row.className = 'krow';
@@ -2500,9 +2528,33 @@ const Build = (() => {
      it is a button rather than a chip — so indoors the row would be an
      empty heading, and it takes itself down. */
   const LAYER_NOTE = {
+    /* the region's links are made, not drawn (src/region.js, build 282) */
+    links: 'click a town, then another, and they are linked &middot; click a link and <b>Delete</b> removes it &middot; <b>Esc</b> lets go',
     clearings: 'demolish takes the ground under it and nothing built &middot; clear takes the terrain and the walk with it &middot; the dot gives a clearing\u2019s ground back',
     boundary: 'a boundary lands as the plate &middot; pull it in to where the town stops, out as it grows &middot; the fade past its heart is the town going'
   };
+  /* ── the region's view block ───────────────────────────────────────────
+     The lock chip carries its state as its label, as the heading's two
+     do; Forget is dimmed when there is nothing to forget; and the word
+     under them says which eye this is, where the zoom stands against
+     the working zoom, what is saved, and on the Links layer what the
+     next click will do. The region calls this itself whenever any of
+     that changes (src/region.js syncView), so the number keeps up with
+     the keys as well as with the chips. */
+  const esc = s => String(s).replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'})[c]);
+  function syncView(v){
+    const el = $('#kviewnote');
+    if (!el || typeof Region === 'undefined' || !Region.on()) return;
+    v = v || Region.viewState();
+    const lock = $('#kzoomlock'), fg = $('#kzoomforget');
+    if (lock){ lock.textContent = v.lock ? 'Zoom locked' : 'Lock zoom'; lock.classList.toggle('sel', v.lock); }
+    if (fg) fg.classList.toggle('off', !v.saved);
+    el.innerHTML = '<b>' + esc(v.eye) + '</b> &middot; zoom ' + v.now + '&times;' +
+      (v.saved ? ' &middot; saved ' + (+v.saved).toFixed(2) + '&times;' : ' &middot; none saved') + (v.lock ? ' &middot; locked' : '') +
+      (layer !== 'links' ? '' : '<br>' + (v.linking ? 'linking from <b>' + esc(v.linking) + '</b> &middot; click another town'
+                                         : v.selected ? 'a link is selected &middot; <b>Delete</b> removes it'
+                                         : v.links + (v.links === 1 ? ' link' : ' links') + ' by hand'));
+  }
   function syncKinds(){
     const box = $('#kkinds'), pbox = $('#kpats'), note = $('#kmodnote');
     if (!box) return;
@@ -2678,6 +2730,7 @@ const Build = (() => {
       r.classList.toggle('off', !vis[r.dataset.layer]);
     });
     syncKinds();
+    syncView();
     syncVariants();
     syncTones();
     syncStrand();
@@ -2927,6 +2980,30 @@ const Build = (() => {
 
   const startLayer = () => (Kinds.layers.find(L => L.start) || Kinds.layers[0]).id;
 
+  /* ── the plate's cells, as points ──────────────────────────────────────
+     Every composed cell of every shape that is drawn — the same set
+     rebuild() batches — as {x, y, rgb, alpha, size, glyph}: world units,
+     colours 0..1, the diamond's half-size in world units, `glyph` for a
+     ring. For the morph between plates (src/morph.js). Sampled down to
+     `cap` by stride when a plate has more, so a big town still moves. */
+  function cells(cap){
+    const out = [], cell = G.A ? G.A.cell : 3;
+    const list = G.shapes.filter(s => s._buf && vis[layerOf(s)] && !hidden(s));
+    let total = 0; for (const s of list) total += s._buf.length / 17;
+    const stride = cap && total > cap ? Math.ceil(total / cap) : 1;
+    let k = 0;
+    for (const s of list){
+      const b = s._buf, n = b.length / 17;
+      for (let i = 0; i < n; i++, k++){
+        if (k % stride) continue;
+        const o = i * 17;
+        if (b[o + 6] <= 0.01) continue;
+        out.push({x: b[o], y: b[o + 1], rgb: [b[o + 2], b[o + 3], b[o + 4]], alpha: b[o + 6], size: Math.abs(b[o + 7]) * cell, glyph: b[o + 7] < 0});
+      }
+    }
+    return out;
+  }
+
   /* ── mounting a different set of shapes ────────────────────────────────
      One call swaps what is being edited: the registry the palette is built
      from, and the key the shapes are saved under. Commit first — whatever
@@ -2968,7 +3045,7 @@ const Build = (() => {
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),
-          sync: syncUI, head: syncHead,
+          sync: syncUI, head: syncHead, syncView, cells,
           commit: save, key: () => KEY, count: () => G.shapes.length,
           setMinimal: v => { minimal = !!v; rebuild(); }, minimal: () => minimal,
           selected: () => sel};

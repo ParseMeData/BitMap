@@ -556,9 +556,36 @@ const Palace = (() => {
       }
     }
 
-    /* and the name of the whole thing, over the top of it */
-    m = title(a, m, cap, box);
+    /* and the name of the whole thing, over the top of it — held back
+       while the cells are travelling between plates, since the name is
+       in the morph's figure and travels with them (src/morph.js) */
+    if (!(typeof Morph !== 'undefined' && Morph.active && Morph.active())) m = title(a, m, cap, box);
     return m;
+  }
+
+  /* ── the name's cells, for the morph ───────────────────────────────────
+     The title drawn into a scratch stream and read back — world units,
+     colours, the diamond's half-size, a ring flag — so the lettering
+     travels between plates as the built cells do (Eden, 2026-09-06:
+     "make the title give the same pixel transition effect as the plate
+     detail"). Nothing on the region or the wallpaper, where the name is
+     not drawn. */
+  let scratch = null;
+  function titleCells(){
+    if (!G.terr || !G.A || !G.shapes || typeof STRIDE_F === 'undefined') return [];
+    if ((typeof Region !== 'undefined' && Region.on()) || (typeof WALL !== 'undefined' && WALL)) return [];
+    const N = 8000;
+    if (!scratch) scratch = new Float32Array(STRIDE_F * N);
+    let n = 0;
+    try { n = title(scratch, 0, N - 1, null); } catch (e){ return []; }
+    const out = [];
+    for (let i = 0; i < n; i++){
+      const o = i * STRIDE_F, sz = scratch[o + 7];
+      if (scratch[o + 6] <= 0.01) continue;
+      out.push({x: scratch[o] + scratch[o + 8], y: scratch[o + 1] + scratch[o + 9],
+                rgb: [scratch[o + 2], scratch[o + 3], scratch[o + 4]], alpha: scratch[o + 6], size: Math.abs(sz), glyph: sz < 0});
+    }
+    return out;
   }
 
   /* The palace's name inside one, the town's name outside — the same word in
@@ -626,7 +653,7 @@ const Palace = (() => {
   function titleAt(box){
     if (!G.terr || !G.shapes) return null;
     const inside = typeof Interior !== 'undefined' && Interior.inside();
-    const name = (inside ? (Interior.at() || '') : townName()).trim();
+    const name = (inside ? (Interior.at() || '') : plateTown()).trim();
     if (!name) return null;
     /* `overlay` hands in the box round every room it has labelled; out on
        the town nothing carries a label, so this is `built()` — which is
@@ -1061,6 +1088,17 @@ const Palace = (() => {
   }
   const named = () => (typeof Interior !== 'undefined' && Interior.inside())
     ? (Interior.at() || '') : townName();
+  /* the name lettered over a plate: the home town's (`hq.town`) on home
+     and on any plate joined to it by road; another town's own on its
+     plates — a demo town's plate says Footscray, not Barwidgee (build
+     291). A town is a run of plates joined by roads, as the region reads
+     it (src/region.js towns). */
+  function plateTown(){
+    const cur = typeof Atlas !== 'undefined' ? Atlas.current() : 'home';
+    if (cur === 'home' || typeof Region === 'undefined' || !Region.towns) return townName();
+    const t = Region.towns().find(t => t.plates.indexOf(cur) >= 0);
+    return (!t || t.root === 'home') ? townName() : (t.name || townName());
+  }
 
   function init(){
     const ta = $('#porder'), btn = $('#pgen'), x = $('#pclosep');
@@ -1089,7 +1127,7 @@ const Palace = (() => {
     wireTitle();
   }
 
-  return {init, show, close, sync, overlay, build, rename, named, refit, titleAt: () => titleAt(),
+  return {init, show, close, sync, overlay, build, rename, named, refit, titleAt: () => titleAt(), titleCells,
           caption,
           cycleTreatment, cycleBorder, setTreatment, setBorder, setFont, resetTitle,
           setBright, setJitter, setTune, storeHeading: storeStyle,

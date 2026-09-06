@@ -35,6 +35,59 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The label on screen, above or below the sprite; the morph
+  sweeps against the way walked** — 2026-09-06, build 296.
+- [x] **Demo towns turned, filled and roaded toward their links; the
+  next town's name at the road end** — 2026-09-06, build 295. A plate's
+  `turn` in the underlay's record; roads laid at the linked towns' true
+  bearings with one-tile cardinal ends; roundabout, houses, park, trees,
+  lake by the seed; a Re-lay demo chip; a label fading in beside the
+  walker at a road end.
+- [x] **The needle bounces; the ring only while it swings; the bursts
+  quieter** — 2026-09-06, build 294. The spring underdamped (ζ ≈ 0.28),
+  the ring's lean driven by the needle's motion and settling square at
+  rest, Life halved on the grey bursts.
+- [x] **The compass swings, breathes and leans; the name travels** —
+  2026-09-06, build 293. The rose swings to a new heading on a spring;
+  the middle burst re-rolls its shake and winks cells each seventh of a
+  second (Life); the ring leans a few degrees at random; the title's
+  cells join the morph between plates.
+- [x] **The end of the road leads to the next town** — 2026-09-06,
+  build 292. A road end crosses to the town that lies that way on the
+  region, the way read true by the compass; linked towns at once, others
+  offered and linked on the way; landing on the road end that points
+  back.
+- [x] **Infinite stock, and the samples made towns** — 2026-09-06,
+  build 291. The stock is infinite unless the Stock chips say Counted;
+  the Demo towns chip founds a linked placeholder plate for every sample;
+  a plate is lettered with its own town's name.
+- [x] **The cells travel: the morph between plates** — 2026-09-06,
+  build 290. `src/morph.js`, Eden's scatter-morph on the plate; the
+  static batch held while it runs; hooked at every plate change.
+- [x] **An opening opens nothing further; a cluster opens on its lead**
+  — 2026-09-06, build 289. The landing glide's rest starts no dwell, so
+  two clusters cannot hand the eye back and forth; the eye is the town
+  the cluster is named for, inside the boundary.
+- [x] **The map under every eye, and warmed on the way** — 2026-09-06,
+  build 288. `lay()`'s ceiling counts tiles at their on-screen size, so
+  the region zoomed right out is tiled in a small window too; the
+  destination's tiles are asked for the moment a cluster opens.
+- [x] **The boundary drawn, for now** — 2026-09-06, build 287. A dotted
+  bone rectangle along it, and a Boundary chip under Towns to put it
+  away; temporary, on Eden's word.
+- [x] **The boundary** — 2026-09-06, build 286. An invisible rectangle
+  centred on the plate, a fifth in from each side: the open group inside,
+  every other town and cluster on its line, in bone.
+- [x] **The region rests zoomed out; the compass in the very corner** —
+  2026-09-06, build 285. `far()` is the region's resting zoom and the
+  unit of a saved one; `0` is `Region.rest()` there; the compass's box
+  in the window's corner at any zoom.
+- [x] **The region built on: zoom per eye, links by hand, structures
+  and terrain** — 2026-09-06, build 284. A region is an eye with its own
+  plate and saved zoom (View block: Zoom −/+, Lock, Save, Forget); links
+  made town to town on the Links layer, Delete removes one; the town's
+  districts, structures and clearings on the region's plate. Joined over
+  the worktree's 282–283.
 - [x] **The ground under the region** — 2026-09-06, build 283. The
   tracing underlay's live tiles laid at the eye, the towns projected by
   the same mercator so each diamond is on its town; the map slides with

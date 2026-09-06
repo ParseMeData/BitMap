@@ -304,6 +304,8 @@ function restampTerrain(){
   Build.stamp(G.terr);
   /* and then what has eaten the road (src/distract.js) */
   if (typeof Distract !== 'undefined') Distract.stamp(G.terr);
+  /* and the region's links, town to town (src/region.js) */
+  if (typeof Region !== 'undefined' && Region.stamp) Region.stamp(G.terr);
   if (G.reach) revalidate();
 }
 
@@ -395,9 +397,17 @@ function tryStep(dx, dy){
     /* onward is away: the press must point mostly along the road's own
        outward heading, so a perpendicular bump at the end never asks */
     const len = Math.hypot(vx, vy) || 1;
-    if (nb === 0 || (nb === 1 && -(sx * vx + sy * vy) / len > 0.5)){
+    /* a tile eaten by a distraction is a cut, not the end of the road: the
+       road goes on past it once it is cleared (src/distract.js), so the
+       cut never leads to the next town */
+    const cut = typeof Distract !== 'undefined' && Distract.list && Distract.list().some(d => d.x === nx && d.y === ny);
+    if (!cut && (nb === 0 || (nb === 1 && -(sx * vx + sy * vy) / len > 0.5))){
       const dir = sx < 0 ? 'w' : sx > 0 ? 'e' : sy < 0 ? 'n' : 's';
-      if (Atlas.end(dir, [G.x, G.y])) return;
+      /* over the end: the key that carried the walker across is let go
+         of, so a held key does not walk straight on from the road end it
+         landed on — which, with an end there, would be the next plate
+         again (build 292) */
+      if (Atlas.end(dir, [G.x, G.y])){ keys.clear(); return; }
     }
   }
   G.stepT = 0; G.moving = true;
@@ -591,9 +601,11 @@ addEventListener('keydown', e => {
       break;
     case 'KeyF': case 'F11': e.preventDefault(); toggleFull(); break;
     case 'Tab': e.preventDefault(); break;
-    case 'Equal': case 'NumpadAdd': zoomBy(ZSTEP); break;
-    case 'Minus': case 'NumpadSubtract': zoomBy(1 / ZSTEP); break;
-    case 'Digit0': G.camT[2] = home(); break;
+    case 'Equal': case 'NumpadAdd': if (!zoomHeld()) zoomBy(ZSTEP); break;
+    case 'Minus': case 'NumpadSubtract': if (!zoomHeld()) zoomBy(1 / ZSTEP); break;
+    /* on the region 0 is the region's own rest — zoomed right out, or
+       the zoom saved for that eye (src/region.js) */
+    case 'Digit0': if (!zoomHeld()){ if (typeof Region !== 'undefined' && Region.on() && Region.rest) Region.rest(); else G.camT[2] = home(); } break;
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
@@ -650,7 +662,16 @@ function drowse(){
   G.wake = false; G.drift = null;
   document.body.classList.add('drifting');
 }
-function zoomBy(f){ G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5); }
+/* the region's zoom lock (src/region.js, build 282) holds the zoom
+   against the keys, the chips and the pinch while the region is up; the
+   keys say so once, the pinch is simply held */
+const zoomLocked = () => typeof Region !== 'undefined' && Region.on() && Region.zoomLocked && Region.zoomLocked();
+function zoomHeld(){
+  if (!zoomLocked()) return false;
+  if (typeof hqNote === 'function') hqNote('the zoom is locked · Lock zoom in the builder frees it', false);
+  return true;
+}
+function zoomBy(f){ if (zoomLocked()) return; G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5); }
 /* ── the distance the town is worked at ─────────────────────────────────
    `fitW` puts the plate's width across the viewport, which is close enough
    that a district fills the screen and you cannot see what you are drawing
@@ -834,6 +855,9 @@ function frame(now){
     R.stream('ent', ENT, 0);
     return;
   }
+  /* the built cells on their way between plates, first in the stream so
+     everything else draws over them as it draws over the shapes */
+  if (typeof Morph !== 'undefined') m = Morph.overlay(ENT, m, ENTMAX);
   for (const s of G.sparks){
     const c = toWorld(s.x, s.y);
     const pul = 0.72 + 0.22 * Math.sin(t * 6 + s.ph);
@@ -883,14 +907,16 @@ function frame(now){
   m = Hud.overlay(ENT, m, ENTMAX);
   m = Markers.draw(ENT, m, ENTMAX);
   Interior.prompt();
-  if (typeof Region !== 'undefined') Region.prompt();
+  if (typeof Region !== 'undefined'){ Region.prompt(); if (Region.nextLabel) Region.nextLabel(); }
   if (typeof Distract !== 'undefined') Distract.prompt();
   if (typeof Quest !== 'undefined') Quest.line();
   Basemap.sync();
 
   R.begin(w, h, t);
   R.draw('lattice', G.cam, G.A.cell, G.burst >= 0 ? G.burst : 0);
-  R.draw('build', G.cam, G.A.cell, G.burst >= 0 ? G.burst : 0);
+  /* while the cells are travelling (src/morph.js) the batch they are
+     travelling to is not drawn — they are it */
+  if (!(typeof Morph !== 'undefined' && Morph.active())) R.draw('build', G.cam, G.A.cell, G.burst >= 0 ? G.burst : 0);
   R.stream('ent', ENT, m);
   R.draw('ent', G.cam, 1, 0);
   hud();

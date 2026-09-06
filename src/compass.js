@@ -91,8 +91,14 @@ const Compass = (() => {
      lit0: 0.7, dither0: 0, weight0: 1.1, fine0: 0.75, fill0: 0.6, scatter0: 0.1, jitter0: 0.6},
     {k: 'top',    label: 'Top layer',    turns: true,  ink: 'bone',
      lit0: 1.5, dither0: 0.35, weight0: 1.2, scale0: 1.2, fine0: 0.55, fill0: 1},
-    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true,
-     lit0: 1.5, weight0: 0.85, tone0: 1, fill0: 0.25, scatter0: 0.25, dx0: -1, dy0: 1}];
+    {k: 'ring',   label: 'Ring',         turns: false, ink: 'aqua', shift: true, wanders: true,
+     lit0: 1.5, weight0: 0.85, tone0: 1, fill0: 0.25, scatter0: 0.25, dx0: -1, dy0: 1, life0: 0.5}];
+  /* the two grey bursts are alive by default, quietly — see *life* under
+     LTUNE. Eden asked for the middle; at the default tune most of the
+     middle burst stands under the top layer's fill, so on its own its
+     life hardly showed (six pixels a third of a second on the rig), and
+     the grey the eye reads in the middle of the ring is both bursts */
+  LAYERS[0].life0 = 0.25; LAYERS[1].life0 = 0.35;
   /* per layer: Bright (0 hides it), Screen, Weight (on the shared one —
      smaller diamonds read as a finer line), Fine (ink thinner than this
      is not cut at all: the sides of the ring's line, the top layer's
@@ -128,6 +134,16 @@ const Compass = (() => {
        the cells thrown away, and a shake on where each one sits */
     scatter: {lo: 0,   hi: 0.9, dflt: 0, label: 'Scatter', fmt: v => v ? Math.round(v * 100) + '%' : 'none'},
     jitter:  {lo: 0,   hi: 1,   dflt: 0, label: 'Jitter',  fmt: v => v ? v.toFixed(2) : 'still'},
+    /* Life: a layer that is never quite still (Eden, 2026-09-06: "give
+       layer 2 of the compass (grey middle) a subtle jitter/dither change
+       so it's always changing subtly — make the ring spin slightly one
+       way to another at random"; then "make the layer 2 dither more
+       subtle"). On a drawn layer it winks a few cells out and wobbles the
+       rest a little, different ones every fifth of a second, by this much;
+       on the ring it is how far the ring is jostled while the needle
+       swings, up to eight degrees either way. The two grey bursts and
+       the ring have it by default. */
+    life:    {lo: 0,   hi: 1,   dflt: 0, label: 'Life',    fmt: v => v ? v.toFixed(2) : 'still'},
     dx:      {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Left \u2013 right', shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'},
     dy:      {lo: -10, hi: 10,  dflt: 0, step: 100, label: 'Up \u2013 down',    shift: true, fmt: v => v ? (v > 0 ? '+' : '') + Math.round(v) + ' cells' : 'centred'}};
   /* a grain: a pattern of the lattice a layer's ink is put through, on
@@ -281,7 +297,7 @@ const Compass = (() => {
     for (const l of LAYERS){
       const h = document.createElement('div');
       h.className = 'plabel';
-      h.textContent = l.label + (l.turns ? ' \u00b7 turns with the map' : ' \u00b7 stays still');
+      h.textContent = l.label + (l.turns ? ' \u00b7 turns with the map' : l.wanders ? ' \u00b7 jostled by the needle' : ' \u00b7 stays still');
       el.append(h);
       const chipRow = (opts, sel, pick, colour) => {
         const chips = document.createElement('div');
@@ -344,17 +360,32 @@ const Compass = (() => {
   /* where it stands, moved by hand and kept: `at` in hq.compass, world
      units; nothing when it has never been moved */
   let at = null, drag = null;
-  /* on the region the rose stands in the plate's very top-left corner,
-     whole — two tiles in from either edge by its own cut's half-size, so
-     no spike runs off the top — wherever it was put on the town (Eden,
-     2026-09-05: "move the compass to the very top left of the zoomed
-     out town view"); it is not dragged there */
-  function corner(){
-    const cell = G.A ? G.A.cell : 3, t = G.terr.tsz;
+  /* on the region the rose stands in the WINDOW's very top-left corner,
+     whole — its own cut's box a few pixels in from the two edges, read
+     off the camera each frame, so it stays in the corner at any zoom and
+     under a drag, where at the plate's corner it was inset by the margin
+     the zoomed-out view leaves round the plate and scrolled away when
+     zoomed in — wherever it was put on the town (Eden, 2026-09-05: "move
+     the compass to the very top left of the zoomed out town view"; two
+     tiles in from the plate's corner until 2026-09-06: "move the compass
+     to the very top left"); it is not dragged there. The region's map
+     runs past the plate, so the corner is still on the map. */
+  const PAD = 6;                     // CSS px in from the window's edges
+  function half(){
+    const cell = G.A ? G.A.cell : 3;
     let cols = 0, rows = 0;
     for (const l of LAYERS){ const f = facePlates[l.k]; if (f){ cols = Math.max(cols, f.cols); rows = Math.max(rows, f.rows); } }
-    return [cols * cell / 2 + t * 2, rows * cell / 2 + t * 2];
+    return [cols * cell / 2, rows * cell / 2];
   }
+  function corner(){
+    const [hw, hh] = half(), z = G.cam[2] || 1;
+    const dpr = (typeof VW === 'number' && typeof canvas !== 'undefined' && canvas.clientWidth) ? VW / canvas.clientWidth : 1;
+    const pad = PAD * dpr / z;
+    return [G.cam[0] - (VW / 2) / z + pad + hw, G.cam[1] - (VH / 2) / z + pad + hh];
+  }
+  /* the box the rose stands in, world units — what the region keeps its
+     clusters clear of */
+  function box(){ const [cx, cy] = where(), [hw, hh] = half(); return [cx - hw, cy - hh, cx + hw, cy + hh]; }
   const onRegion = () => typeof Region !== 'undefined' && Region.on && Region.on();
   const where = () => onRegion() ? corner() : (at ? at : [G.terr.tsz * AT, G.terr.tsz * AT]);
   /* ── the rose, cut in the title's own layer ────────────────────────────
@@ -407,13 +438,16 @@ const Compass = (() => {
      for a new one when it moves, so a slider or a turn of the map needs
      no callback. */
   const colsOf = l => Math.round(tuned('size') * ltuned(l.k, 'scale'));
-  const layerKey = (l, deg) => (l.turns ? deg : 0) + '|' + colsOf(l) + '|' +
-                               ltuned(l.k, 'dither').toFixed(2) + '|' + ltuned(l.k, 'fine').toFixed(2);
-  const footKey = (l, deg) => (l.turns ? deg : 0) + '|' + colsOf(l);
-  function wantPlates(deg){
+  /* the heading a layer is cut at: the rose's for one that turns, the
+     ring's own lean for the ring, 0 for anything else */
+  const degOf = (l, deg, lean) => l.turns ? deg : l.wanders ? lean : 0;
+  const layerKey = (l, deg, lean) => degOf(l, deg, lean) + '|' + colsOf(l) + '|' +
+                                     ltuned(l.k, 'dither').toFixed(2) + '|' + ltuned(l.k, 'fine').toFixed(2);
+  const footKey = (l, deg, lean) => degOf(l, deg, lean) + '|' + colsOf(l);
+  function wantPlates(deg, lean){
     for (const l of LAYERS){
-      const d = l.turns ? deg : 0, size = colsOf(l);
-      const k = layerKey(l, deg);
+      const d = degOf(l, deg, lean), size = colsOf(l);
+      const k = layerKey(l, deg, lean);
       if (faceKeys[l.k] !== k && asking[l.k] !== k){
         asking[l.k] = k;
         Title.stencil(url(l.k), size, {deg: d, dither: ltuned(l.k, 'dither'), cut: ltuned(l.k, 'fine'), recipe: RECIPE})
@@ -424,7 +458,7 @@ const Compass = (() => {
          which is its whole silhouette — what a Fill paints in the
          ground's colour, and what the layers beneath a filled layer give
          way to, whatever its own ink is doing */
-      const fk = footKey(l, deg);
+      const fk = footKey(l, deg, lean);
       if (footKeys[l.k] !== fk && askingFoot[l.k] !== fk){
         askingFoot[l.k] = fk;
         Title.stencil(url(l.k), size, {deg: d, dither: 0, cut: 0, recipe: RECIPE})
@@ -510,6 +544,94 @@ const Compass = (() => {
     for (const l of LAYERS){ const f = facePlates[l.k]; if (f && (!b || f.cols > b.cols)) b = f; }
     return b;
   }
+  /* ── the swing to north ────────────────────────────────────────────────
+     The rose does not jump to a new heading, it swings there (Eden,
+     2026-09-06: "when we change the direction of the map the compass will
+     animate, smoothly spinning to the correct direction"): the heading
+     the rose SHOWS follows the map's by a damped spring — a needle's
+     motion, a little past the mark and back, settled in about a second —
+     and the turning layers are cut at the shown heading, a degree at a
+     time as it goes (each cut is kept, so a way once swung is free the
+     next time). While the swing is fast the top layer is cut every
+     second degree and the two bursts every third, which is under what
+     the eye can tell at this pitch; at rest all three are cut at the one
+     exact degree, in register, as before. The shortest way round. */
+  /* the spring is UNDERDAMPED, as a needle on a pivot is (Eden,
+     2026-09-06: "a natural bounce wobble like a real compass"): ζ ≈ 0.28
+     — it swings past the mark by a good third of the turn, back past it
+     by a little, and wobbles to rest in about two seconds; a small turn
+     is a small wobble, since the spring is linear */
+  const K = 40, C = 3.5;                      // the spring: stiffness, damping
+  const swing = {x: null, v: 0, t: 0, tgt: 0};
+  const shortest = d => ((d % 360) + 540) % 360 - 180;
+  function spin(target, now){
+    swing.tgt = target;
+    if (swing.x === null){ swing.x = target; swing.t = now; return; }
+    const dt = Math.min(0.05, Math.max(0, (now - swing.t) / 1000)); swing.t = now;
+    const d = shortest(target - swing.x);
+    if (Math.abs(d) < 0.03 && Math.abs(swing.v) < 0.5){ swing.x = target; swing.v = 0; return; }
+    swing.v += (d * K - swing.v * C) * dt;
+    swing.x = ((swing.x + swing.v * dt) % 360 + 360) % 360;
+  }
+  /* the needle is on the move: turning, or still short of its mark */
+  const moving = () => Math.abs(swing.v) > 0.5 || Math.abs(shortest(swing.tgt - (swing.x || 0))) > 0.5;
+  /* ── the ring's lean ───────────────────────────────────────────────────
+     The ring is jostled by the needle and by nothing else (Eden,
+     2026-09-06: "only apply ring spin when layer one pointer is
+     moving"): while the needle swings the ring leans a few degrees one
+     way, then the other — a new lean every half second or so, as far as
+     the swing is quick, up to eight degrees either way by its Life — and
+     when the needle comes to rest the ring settles back to square with
+     it, on a spring of its own. At rest it is still. */
+  const lean = {x: 0, v: 0, tgt: 0, next: 0, t: 0};
+  function wander(now){
+    const life = ltuned('ring', 'life');
+    const dt = Math.min(0.05, Math.max(0, (now - lean.t) / 1000)); lean.t = now;
+    if (life <= 0){ lean.x = 0; lean.v = 0; lean.tgt = 0; return 0; }
+    if (moving()){
+      if (now >= lean.next){
+        const q = Math.min(1, Math.abs(swing.v) / 90);
+        lean.tgt = (Math.random() * 2 - 1) * 8 * life * (0.4 + 0.6 * q);
+        lean.next = now + 400 + Math.random() * 500;
+      }
+    } else { lean.tgt = 0; lean.next = 0; }
+    lean.v += ((lean.tgt - lean.x) * 25 - lean.v * 6) * dt;
+    lean.x += lean.v * dt;
+    if (!moving() && Math.abs(lean.x) < 0.05 && Math.abs(lean.v) < 0.1){ lean.x = 0; lean.v = 0; }
+    return lean.x;
+  }
+  /* ── a layer alive ─────────────────────────────────────────────────────
+     Every fifth of a second a few of a live layer's cells — a tenth at
+     full Life — are winked out, different ones each time, and the rest
+     wobble a little on top of the layer's own shake: the burst is never
+     quite the same twice, and never much different. Done at draw time on
+     the composed face, so no cut and no recomposing; the face for the
+     current step is kept. */
+  const PHASE = 180;                          // ms between steps
+  const lives = {};                           // k → {ph, f}
+  function liveFace(e, ph){
+    const life = ltuned(e.k, 'life');
+    if (life <= 0 || e.k === 'ring') return e.f;
+    const L = lives[e.k];
+    if (L && L.ph === ph) return L.f;
+    const drop = life / 10, seed = 511 + e.i * 37 + ph * 13;
+    /* the layer's own shake is baked in, still — the very roll
+       `Title.emit` would make from the layer's seed — so what changes
+       from step to step is the wink and a small wobble on top, not every
+       cell's place (Eden, 2026-09-06: "make the layer 2 dither more
+       subtle") */
+    const jit = ltuned(e.k, 'jitter') * 0.5, sd = 771 + e.i * 53;
+    const cells = [];
+    for (const c of e.f.cells){
+      if (roll(c.x, c.y, seed) < drop) continue;
+      cells.push(jit ? Object.assign({}, c, {x: c.x + (roll(c.x, c.y, sd + 771) - 0.5) * jit,
+                                             y: c.y + (roll(c.x, c.y, sd + 772) - 0.5) * jit}) : c);
+    }
+    const f = {cols: e.f.cols, rows: e.f.rows, cells};
+    lives[e.k] = {ph, f};
+    return f;
+  }
+
   function overlay(a, m, cap){
     if (!ON_PLATE || !G.terr || !G.A) return m;
     if (typeof Title === 'undefined' || !Title.stencil || !Title.emit) return m;
@@ -519,9 +641,25 @@ const Compass = (() => {
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return m;
     /* a whole degree is finer than the plate can show at this size, and it
        keeps a shift-drag of the map from cutting a rose a frame */
-    const deg = Math.round(((heading() % 360) + 360) % 360);
-    wantPlates(deg);
+    const now = performance.now();
+    spin(((heading() % 360) + 360) % 360, now);
+    const fast = Math.abs(swing.v) > 30, q = fast ? 2 : 1;
+    const deg = (Math.round(swing.x / q) * q) % 360;
+    const ring = Math.round(wander(now));
+    wantPlates(deg, ring);
+    /* while the swing is fast the bursts are cut every third degree:
+       asked for on their own key so the top layer's cut is not held */
+    if (fast) for (const l of LAYERS) if (l.turns && l.k !== 'top'){
+      const d3 = (Math.round(swing.x / 3) * 3) % 360, k3 = layerKey(l, d3, ring);
+      if (faceKeys[l.k] !== k3 && asking[l.k] !== k3){
+        asking[l.k] = k3;
+        Title.stencil(url(l.k), colsOf(l), {deg: d3, dither: ltuned(l.k, 'dither'), cut: ltuned(l.k, 'fine'), recipe: RECIPE})
+          .then(f => { if (asking[l.k] === k3){ facePlates[l.k] = f; faceKeys[l.k] = k3; asking[l.k] = null; } })
+          .catch(() => { if (asking[l.k] === k3) asking[l.k] = null; });
+      }
+    }
     const list = composed();
+    const ph = Math.floor(now / PHASE);
     if (!list.length) return m;
     /* the title's own placement: a face's ink is (cols − 1) × (rows − 1)
        cells across from centre to centre, and the pitch is the plate's;
@@ -552,8 +690,13 @@ const Compass = (() => {
       const iw = e.f.cols - 1, ih = e.rows0 - 1;
       const t = {weight: w, tone: Math.min(1, tuned('tone') + ltuned(e.k, 'tone')),
                  shade: Math.min(0.7, tuned('shade') * ltuned(e.k, 'shade'))};
-      m = Title.emit(a, m, e.f, cx - iw * px / 2 + ox, cy - ih * px / 2 + e.top * px + oy, px, e.col, e.al, cap,
-                     ltuned(e.k, 'jitter') * 0.5, 771 + e.i * 53, t);
+      /* a live layer: its face for this step — its own shake already in
+         it — with a small wobble on top under a seed that moves */
+      const life = e.k === 'ring' ? 0 : ltuned(e.k, 'life');
+      const f = life > 0 ? liveFace(e, ph) : e.f;
+      const seed = 771 + e.i * 53 + (life > 0 ? 5000 + ph * 7 : 0);
+      m = Title.emit(a, m, f, cx - iw * px / 2 + ox, cy - ih * px / 2 + e.top * px + oy, px, e.col, e.al, cap,
+                     life > 0 ? life * 0.4 : ltuned(e.k, 'jitter') * 0.5, seed, t);
     }
     return m;
   }
@@ -599,5 +742,8 @@ const Compass = (() => {
     wireDrag();
     if (!raf) tick();
   }
-  return {init, heading, overlay, at: () => where().slice(), dragging: () => !!drag};
+  return {init, heading, overlay, at: () => where().slice(), box, dragging: () => !!drag,
+          /* for tests: the shown heading, its speed, the ring's lean */
+          swing: () => ({x: swing.x, v: swing.v, lean: lean.x, leanTo: lean.tgt,
+                         cells: comp.map(e => [e.k, e.f.cells.length, ltuned(e.k, 'life')])})};
 })();

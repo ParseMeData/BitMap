@@ -5,3 +5,6 @@ __pycache__/
 # town, not a version of it, and belongs to the machine it was taken on
 snapshots/.pre-restore-*.json
 snapshots/.pre-sweep-*.json
+
+# the session tooling's own directory: worktrees and scratch, never the game
+.claude/

@@ -18,7 +18,7 @@ const FILES = [
   './', './index.html', './platformer.html', './manifest.json', './assets/icon.png',
   './src/store.js', './src/stock.js', './assets/map.js', './src/render.js', './src/lattice.js',
   './src/glyphs.js', './src/kinds.js', './src/panel.js', './src/type.js', './src/title.js',
-  './src/frame.js', './src/build.js', './src/markers.js', './src/history.js', './src/loci.js',
+  './src/frame.js', './src/build.js', './src/morph.js', './src/markers.js', './src/history.js', './src/loci.js',
   './src/index.js', './src/palace.js', './src/doors.js', './src/interior.js', './src/trace.js',
   './src/basemap.js', './src/hud.js', './src/atlas.js', './src/survey.js', './src/found.js', './src/region.js', './src/distract.js',
   './src/country.js', './src/towns.js', './src/bag.js', './src/missions.js', './src/journal.js',

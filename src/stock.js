@@ -23,10 +23,19 @@
    Placing costs what COST says and is refused, with a note, when short;
    nothing that already stands is ever taken back. A profile that has no
    stock yet starts with a little of each, so the first road is not a
-   drill away. Kept under `hq.stock`, so a snapshot carries it.         */
+   drill away. Kept under `hq.stock`, so a snapshot carries it.
+
+   INFINITE, unless told otherwise. Since build 291 the stock is not
+   counted by default: every material reads as infinite, the bars are
+   full, placing takes nothing and is never refused (Eden, 2026-09-06:
+   "set an infinite limit on all my materials"). The levels are still
+   kept and still earned underneath, so the Stock chips in the tune
+   panel — Infinite, Counted (`hq.stock.mode`) — can put the counting
+   back with nothing lost.                                              */
 
 const Stock = (() => {
   const KEY = 'hq.stock';
+  const MKEY = 'hq.stock.mode';             // 'counted', or nothing: infinite
   const CAP = 100;
   const START = {sparks: 6, grains: 20, blocks: 10};
   const COST = {
@@ -55,6 +64,13 @@ const Stock = (() => {
   const note = msg => { if (typeof hqNote === 'function') hqNote(msg, false); };
 
   const clamp = v => Math.max(0, Math.min(CAP, Math.round(+v || 0)));
+  /* infinite: nothing is counted against you */
+  const free = () => { try { return Store.get(MKEY) !== 'counted'; } catch (e){ return true; } };
+  function setFree(v){
+    try { if (v) Store.del(MKEY); else Store.set(MKEY, 'counted'); } catch (e){}
+    ui();
+    note(v ? 'the stock is infinite' : 'the stock is counted');
+  }
   let S = load();
   function load(){
     const s = Store.json(KEY, null);
@@ -67,11 +83,12 @@ const Stock = (() => {
   /* the bars. Width is the level over the cap; the number beside it is
      the level itself. */
   function ui(){
+    const inf = free();
     for (const k of ['sparks', 'grains', 'blocks']){
       const bar = document.getElementById('h' + k + (k === 'sparks' ? 'bar' : '')),
             v = document.getElementById('h' + k + (k === 'sparks' ? '' : 'v'));
-      if (bar) bar.style.width = (S[k] / CAP * 100).toFixed(0) + '%';
-      if (v) v.textContent = String(S[k]);
+      if (bar) bar.style.width = inf ? '100%' : (S[k] / CAP * 100).toFixed(0) + '%';
+      if (v) v.textContent = inf ? '\u221e' : String(S[k]);
     }
   }
 
@@ -89,12 +106,14 @@ const Stock = (() => {
      for building on the home plate */
   const cost = kind => (FREE[kind] && onHome()) ? null : (COST[kind] || null);
   const afford = kind => {
+    if (free()) return true;
     const c = cost(kind); if (!c) return true;
     for (const m in c) if (S[m] < c[m]) return false;
     return true;
   };
   /* take the price, or say why not — the caller does not place */
   function pay(kind){
+    if (free()) return true;                  // infinite: placed, nothing taken
     const c = cost(kind); if (!c) return true;
     for (const m in c) if (S[m] < c[m]){
       note('not enough ' + SAY[m] + ' · ' + kind + ' costs ' + c[m] + ', you have ' + S[m]);
@@ -109,7 +128,7 @@ const Stock = (() => {
     const r = REWARD[name]; if (!r) return false;
     const said = [];
     for (const m in r){ earn(m, r[m]); said.push(r[m] + ' ' + m); }
-    note('+ ' + said.join(', '));
+    if (!free()) note('+ ' + said.join(', '));   // banked either way; said only when it is counted
     return true;
   }
   function earn(what, n){
@@ -127,6 +146,6 @@ const Stock = (() => {
     addEventListener('focus', () => { S = load(); ui(); });
   }
 
-  return {init, pay, earn, reward, afford, cost, ui,
+  return {init, pay, earn, reward, afford, cost, ui, free, setFree,
           get: () => Object.assign({}, S), CAP, COST, REWARD};
 })();

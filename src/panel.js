@@ -93,7 +93,42 @@ function buildPanel(){
   sc.className = 'chip'; sc.textContent = 'Samples'; sc.dataset.demo = '1';
   sc.onclick = () => { const on = Store.get('hq.region.demo') !== '0'; Store.set('hq.region.demo', on ? '0' : '1'); syncPanel(); };
   tw.appendChild(sc);
+  /* the region's boundary, drawn or not (src/region.js frameLine) — a
+     guide while it is being placed */
+  const bc = document.createElement('div');
+  bc.className = 'chip'; bc.textContent = 'Boundary'; bc.dataset.bounds = '1';
+  bc.onclick = () => { const on = Store.get('hq.region.bounds') !== '0'; Store.set('hq.region.bounds', on ? '0' : '1'); syncPanel(); };
+  tw.appendChild(bc);
+  /* the samples made towns — a plate each, linked (src/region.js
+     foundSamples); an action, not a switch */
+  const dc = document.createElement('div');
+  dc.className = 'chip'; dc.textContent = 'Demo towns';
+  dc.onclick = () => { if (typeof Region !== 'undefined' && Region.foundSamples) Region.foundSamples(); };
+  tw.appendChild(dc);
+  /* and laid again from scratch, with the links as they stand — asks,
+     since anything built on a demo plate goes with it */
+  const rc = document.createElement('div');
+  rc.className = 'chip'; rc.textContent = 'Re-lay demo';
+  rc.onclick = () => {
+    if (typeof Region === 'undefined' || !Region.relayDemo) return;
+    if (window.confirm('Lay every demo town again from scratch? Anything built on one is lost.')) Region.relayDemo();
+  };
+  tw.appendChild(rc);
   body.appendChild(tw);
+
+  /* the stock: infinite, or counted (src/stock.js) */
+  const stl = document.createElement('div');
+  stl.className = 'plabel'; stl.textContent = 'Stock';
+  body.appendChild(stl);
+  const st = document.createElement('div');
+  st.className = 'chips two';
+  for (const [name, v] of [['Infinite', true], ['Counted', false]]){
+    const c = document.createElement('div');
+    c.className = 'chip'; c.textContent = name; c.dataset.stock = v ? '1' : '0';
+    c.onclick = () => { if (typeof Stock !== 'undefined') Stock.setFree(v); syncPanel(); };
+    st.appendChild(c);
+  }
+  body.appendChild(st);
 
   /* the round, on or off. It is the game this started as and it is in the
      way of the one it is becoming, so it is a switch rather than a removal */
@@ -203,6 +238,10 @@ function syncPanel(){
     c.classList.toggle('sel', c.dataset.towns === TOWNS));
   document.querySelectorAll('.chip[data-demo]').forEach(c =>
     c.classList.toggle('sel', Store.get('hq.region.demo') !== '0'));
+  document.querySelectorAll('.chip[data-bounds]').forEach(c =>
+    c.classList.toggle('sel', Store.get('hq.region.bounds') !== '0'));
+  document.querySelectorAll('.chip[data-stock]').forEach(c =>
+    c.classList.toggle('sel', (c.dataset.stock === '1') === (typeof Stock === 'undefined' || Stock.free())));
 }
 function setPanel(open){
   panelOpen = open;

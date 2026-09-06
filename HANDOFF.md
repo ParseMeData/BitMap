@@ -76,7 +76,635 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 6 Sep 2026, build 283 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 6 Sep 2026, build 296 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Handoff, 6 Sep 2026, night — read this first.** Eden: *"create
+  handoff and commit so we can close this conversation"*. Where things
+  stand:
+  - **The tree.** `work` is at the peer worktree's build 283 commit
+    (`76fe2c0`, fast-forwarded there at 284) plus ONE commit made at the
+    close of 6 Sep: **builds 284–296**, seventeen files and `src/morph.js`
+    new, committed as Eden (`git log -1`). `.claude/` was put in
+    `.gitignore` at the same time (the peer session's worktree lives
+    there). Not pushed: `git push` (work → main) puts it on the live site
+    at parsemedata.github.io/BitMap; Eden's word first. Every entry
+    below from 284 down says what each build did and how it was
+    verified; every one is Eden's word quoted. The worktree
+    `.claude/worktrees/region-cluster-lines` (branch
+    `worktree-region-cluster-lines`, locked, pushed) still stands; if it
+    commits again, merge, do not fast-forward. v8.9 is still open;
+    index.html says 296.
+  - **What the day built**, newest first: 296 the road-end label kept
+    on screen above or below the sprite, and the morph sweeping against
+    the way walked; 295 demo towns each turned (`hq.basemap.<id>.turn`,
+    `Basemap.rot()` falls back to it), filled by the seed, their roads
+    laid toward their linked towns with one-tile cardinal ends, the
+    Re-lay demo chip, the next town's name fading in at a road end; 294
+    the compass needle underdamped, the ring jostled only while it
+    swings, the bursts' Life quieter; 293 the compass swinging to a
+    heading on a spring, Life per layer, the ring's lean, the title's
+    cells in the morph; 292 a road end crosses to the town that lies
+    that way on the region by the compass's true heading, a linked town
+    at once, another offered and linked, landing on the end that points
+    back; 291 the stock infinite by default (Stock chips) and the Demo
+    towns chip founding a linked plate per sample, a plate lettered with
+    its own town's name; 290 the cells travel between plates
+    (src/morph.js); 289 an opening opens nothing further, a cluster
+    opens on its lead; 288 the map under every eye, warmed on the way;
+    287 the boundary drawn, for now; 286 the boundary; 285 the region
+    rests zoomed out, the compass in the window's corner; 284 zoom per
+    eye, links by hand, structures and terrain on the region, joined
+    over the worktree's 282–283.
+  - **The live town was never touched** — nothing attached to port 9222
+    all day (it was not running); its profile has none of this until it
+    is next launched, when it gets the code (infinite stock at once; the
+    demo towns on the Demo towns chip).
+  - **The rig.** A throwaway on port **9224**, profile
+    `~/.cache/mq-rig/cache`, launched with
+    `XDG_CACHE_HOME=$HOME/.cache/mq-rig/cache ./play.sh --remote-debugging-port=9224 --window-size=1600,1000`;
+    driver `~/.cache/mq-rig/rig.py` (PORT 9224: `js EXPR`, `shot FILE`,
+    `key CODE…`, `wait EXPR`; `rig.click(p, x, y)` from Python; a held
+    key is two `Input.dispatchKeyEvent`s 250 ms apart — game.js reads a
+    held set each frame, a tap is missed). 9223 is the worktree's. Its
+    town is saved in `snapshots/rig-2026-09-06-demo.json` (untracked,
+    0.6 MB): Barwidgee from v8.8, the rig's own Wodonga/Ouyen/Geelong
+    plates, the fourteen demo towns as laid at 295, sixteen links, the
+    home eye's seven region shapes — restore it into a fresh throwaway
+    to pick the testing up. `snapshots/rig-2026-09-06-region.json` is
+    the same rig before the demo towns. Every capture named in the
+    entries is in `~/.cache/mq-rig/`. The rig's window is on Eden's
+    desk and Eden plays in it between runs (it had walked to Merbein
+    once), so read its state before assuming it.
+  - **Two traps for the next session.** A new top-level name in a
+    module must be grepped first: region.js already had `landing` (a
+    flag) and basemap.js `turn` (a function), and each clash cost a
+    build that would not parse, with only "Script error" to show for it
+    on file:// — capture `Runtime.exceptionThrown` over a reload to see
+    the real message (the snippet is in the 292/295 entries' spirit;
+    `~/.claude/jobs/…/t*.py` are gone with the job). And rapid plate
+    hopping in one evaluate races `Basemap.mount`; guarded at 295.
+  - **Decisions parked on Eden.** (1) The boundary line and its chip
+    are temporary by Eden's word (287) — take `frameLine` and the chip
+    out together when the rectangle is placed. (2) The merge within six
+    radii bites harder on the smaller rectangle: from Geelong's eye all
+    else is one cluster of eleven; the distance is `r * 6` in
+    `layout()`. (3) The drift field the morph leaves stays on the town
+    as well as the region; `Morph.clear()` on `leave` if unwanted. (4)
+    The six findings of the morning's test, in *Open threads*, still
+    stand except the stale hint. (5) The morph is 1.8 s (`DUR`). (6)
+    The stock is infinite by CODE default — a fresh web player gets it
+    too; flip the default in stock.js `free()` if that is wrong. (7)
+    The road-end cone is 60° and the return is not always symmetric
+    (from Bright, west is Myrtleford at 43° rather than Barwidgee at
+    59°). (8) The name field (`Palace.rename`) still writes `hq.town`
+    from any plate, so renaming while standing in a demo town renames
+    the home town. (9) Eden's own roads end wherever they end: an end
+    two tiles wide, or one running into walkable ground, is not noticed
+    by the walker (game.js's rule); the demo roads were made one tile
+    wide at the end for this. (10) Melbourne's suburbs overlap at the
+    region's scale; Save zoom on that eye is the answer. (11) A first
+    compass swing over new degrees drops a frame or two while the cuts
+    are made.
+  - **Not tested:** a phone; the desktop plate; two hand links sharing
+    an end in a cluster; the title's morph into a town never visited
+    (its face is built async, so the first morph lands on the 5×7 type
+    and the face pops in after); the Turn arrows on a pictureless plate
+    (they now write `turn`).
+
+- **Build 296 (6 Sep 2026) — the label on screen; the morph sweeps
+  against the way walked.** Eden: *"happy with the label - just make
+  sure we can see it on the screen (not half on half off so it floats
+  above or below the sprite) also give the animation transitions a
+  sweep depending on which way our sprite walks in through - so if
+  walking into a road off to the right then sweep is from right to left
+  - if moving up then sweep is up to down - then mirror the other 2
+  options"*. **The label** (region.js `nextLabel`): measured once as
+  its words are set (`nl.w/h`); each frame centred on the sprite's
+  screen point and lifted 20 px above it, put 20 px below when above
+  would be off the top, and clamped six px inside the window both ways.
+  **The sweep** (morph.js): `Morph.sweep(dir)` sets a direction the
+  next `plan()` takes and clears; `sweepParts` projects each particle's
+  mid-flight point on the way walked and gives the far side first —
+  `dl = k × 0.5 + dl × 0.5`, spans halved — so walking east the new
+  plate lands from right to left, north from the top down, and the
+  mirrors; `Region.cross` and a joined plate's crossing in `Atlas.end`
+  call it; a jump from the region or the map does not. `Morph.plan()`
+  exposes [mid x, mid y, delay] per particle for tests. **Verified** on
+  the rig (window 1169 × 662): on Myrtleford's north end, sprite at
+  y 55, the label sat BELOW it (top 75, bottom 123) and fully on screen;
+  on the east end, sprite at y 123, ABOVE it (55–103) and centred
+  (900–1072 about x 986); landing on Beechworth, above. D held off the
+  east end: 14,753 particles, correlation of delay with mid-x −0.90
+  (right first), with mid-y −0.26; W held off the north end: 7,711
+  particles, delay with mid-y +0.96 (top first), with mid-x +0.36. No
+  errors; `b296-1..4.png`. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 295 (6 Sep 2026) — demo towns turned, filled and roaded
+  toward their links; the next town's name at the road end.** Eden:
+  *"add some more variation to the existing towns - give the towns some
+  random turning (rotate plate) so we can test the compass and the
+  direction of the roads - fill all of them and make sure the roads that
+  lead to the next plate make sense - also make the next town title fade
+  in with a small label popping up when we are about to enter that
+  plate"*. **The turn:** basemap.js keeps `plateTurn` (radians) in the
+  record as `turn`; `rot()` is the placed picture's turn, else that;
+  `load()` sets it and lays the live tiles at it (`liveRot`), `mount()`
+  resets it, `turnLive()` writes it (so the Turn arrows on a pictureless
+  plate turn the compass too), `Basemap.turn()` reads it; region.js
+  `storedRot()` reads `turn` after `place.rot`. The variable was first
+  called `turn` and basemap.js has a `function turn(dir, big)` — the
+  same clash as 292's `landing`; renamed. Also a guard in `boot()`: a
+  mount that lands while the picture is being fetched makes the earlier
+  boot stale (`plate !== mine` → return), found when the audit hopped
+  fourteen plates in one evaluate and home's picture and −30° landed on
+  Myrtleford. **The layout** (`demoPlate(name, i, {rot, ways})`,
+  region.js): `TURNS` = [−60 −45 −30 −15 0 0 15 30 45 60 90 −90 180],
+  `turnOf(name)` seeded; `waysOf(id, geo)` = the linked towns with true
+  bearings; one road per way (max five, else east+west): screen heading
+  = bearing + turn, run to 70–84 % of the reach to a 2.5-tile margin,
+  a perpendicular wander at its middle, then a four-tile stub along the
+  nearest cardinal at tile centres (pulled back until the stub fits), so
+  the end is one tile wide; half the towns a roundabout (`road`/`ring`,
+  r = one tile = RMAX); two houses per road on alternate sides at 36 %
+  and 64 %, ×1 or ×1.5, the first the palace's; the gaps between roads
+  sorted by size — grass 12×9 + park 8×5 in the widest at 13 tiles, one
+  or two `trees` 6×5 in the next at 17–26 tiles, a `water` warp 10×7
+  (oval blob) in the third for 35 % of towns. `foundSamples` now founds
+  every area, writes the links, THEN lays the plates (`layPlate`) so the
+  roads know their links; `relayDemo()` lays every `demo` plate again
+  (walker sent home first if on one), on the **Re-lay demo** chip under
+  Towns, behind a confirm. **The label:** `endHere()` (game.js tryStep's
+  rule with `wAt`: one walkable neighbour, behind) and `nextLabel()`
+  each frame from game.js after `Region.prompt()`: a `#nextplate` glass
+  div beside the walker (16 px right, 44 up, from the walker's world
+  point through the camera) — the joined plate's name at an atlas link,
+  else `wayOut(dir)`'s town with word and km — fading in by CSS (opacity
+  and a 6 px rise over 0.35 s, `.on`), keyed by plate + tile + dir so
+  the lookup runs once per tile stood on; nothing while moving, paused,
+  inside, on the region or the wallpaper. **Verified** on the rig (the
+  fourteen re-laid): turns Myrtleford 15°, Yackandandah −30°, Beechworth
+  60°, Bright 180°, Wangaratta 60°, Melbourne 90°, Footscray −90°,
+  Brunswick 0°, Richmond 180°, St Kilda 90°, Mildura 45°, Red Cliffs
+  90°, Merbein −45°, Irymple 15°; 7–19 shapes each (Mildura: roads,
+  roundabout, grass, park, trees, lake, houses). The audit — every
+  walkable dead end on every demo plate, pressed outward through
+  `wayOut` — leads to a linked town in every case but one (St Kilda's
+  road start at the centre faces west onto the rig's own unlinked
+  Geelong at 60°): Myrtleford n→Beechworth 6°, e→Barwidgee 31°,
+  w→Melbourne 27°, s→Bright 32°; Melbourne n→Footscray, e→Brunswick,
+  w→St Kilda, s→Richmond; Mildura n→Merbein, s→Wangaratta; and so on.
+  Then one plate at a time: Myrtleford mounted with `Basemap.rot()` 15°
+  and the compass swung to 15.1; on its north end the label read
+  BEECHWORTH · NORTH · 22 KM · PRESS ON; W held crossed to Beechworth
+  (turned 60°, the compass swinging to 59.9), landing on a road end at
+  (22, 48) with one neighbour, where the label read MYRTLEFORD ·
+  SOUTH-WEST · 22 KM · PRESS ON — the road back; screenshots
+  `b295-1..5`; no errors. **Noted:** the label sits over the controls
+  panel when the road end is in the bottom-right corner; the lake can
+  lie against a road (Mildura). Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 294 (6 Sep 2026) — the needle bounces; the ring only while
+  it swings; the bursts quieter.** Eden: *"make the layer 2 dither more
+  subtle - and only apply ring spin when layer one pointer is moving -
+  make sure the layer one pointer turns with a natural bounce wobble
+  like a real compass"*. compass.js: the spring is K 40, C 3.5 (ζ ≈
+  0.28) — past the mark by about a third of the turn, back past it by a
+  little, at rest in about two seconds; `swing.tgt` kept so `moving()`
+  is "turning, or short of the mark"; the coarse cuts (2°/3°) now only
+  above 30°/s, so the wobble's tail is cut at every degree. `wander()`:
+  while `moving()` the ring takes a new lean every 400–900 ms, `(0.35 +
+  0.65 × min(1, |v|/90)) × 8° × life` either way, on a spring (6, 3);
+  at rest its target is 0 and it snaps square under 0.05°. The panel
+  header reads "jostled by the needle". Life: PHASE 180 ms, and the
+  layer's own shake is now BAKED into the live face (`liveFace` makes
+  the very roll `Title.emit` would, from the layer's seed) so it no
+  longer re-rolls every cell's place each step — what changes is a wink
+  of life/10 of the cells and a wobble of `life × 0.4` cells on top
+  under a moving seed; defaults bottom 0.25, middle 0.35. The first cut
+  of 294 (drop life/16, shake re-rolled at `jitter × 0.5 + life × 0.12`)
+  still read as every cell jumping a pixel each step, which was the
+  "dither" that was too much. **Verified** on the rig, Barwidgee's
+  picture turned −30° → +20° and the shown heading read off the page's
+  own frames: 331, 11.7, 39.9 (past the mark by twenty of the fifty),
+  26.5, 12.2, 16.9, 23.0, 21.5, 18.9, 19.3, 20.4, 20.4 — at rest in
+  about 2.7 s; the ring's lean 0 before, −0.7 → −2.6 → +1.8 during, back
+  to 0.09 and then 0 after; frames on the cached way back median 14 ms,
+  p90 26; the compass box at rest changes 34 pixels over three
+  third-second gaps at a 40-level threshold and 495 at 12, where 293's
+  life changed 191 and 1,997 (and the first cut of 294 the same); no
+  errors. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 293 (6 Sep 2026) — the compass swings, breathes and leans;
+  the name travels.** Eden: *"add an animation to the compass so when
+  we change the direction of the map (spin in a certain degrees) the
+  compass will animate top layer by smoothly spinning it to the correct
+  direction - also give layer 2 of the compass (grey middle) a subtle
+  jitter/dither change so its always changing subtly - make the ring
+  spin slightly one way to another at random - also make the title give
+  the same pixel transition effect as the plate detail"*. In compass.js:
+  **the swing** — `spin()` runs a damped spring (K 60, C 11, ζ ≈ 0.7)
+  from the heading the rose shows toward the map's, the shortest way
+  round; the turning layers are cut at the SHOWN heading, so the rose
+  turns a degree at a time as the spring moves (each cut is cached by
+  `Title.stencil`, so a way once swung is free after); while the spring
+  is fast (`moving()`, > 0.5°/s) the top layer is cut every second
+  degree and the two bursts every third (asked on their own key), at
+  rest all three at the one exact degree as before. On the region the
+  heading is 0, so entering it swings the rose to north and Esc swings
+  it back. **Life** — a new per-layer tune row (`life`, 0..1; bottom
+  0.4, middle 0.6 and ring 0.5 by default via `life0`): on a drawn
+  layer, every 140 ms (`PHASE`) `liveFace()` winks out life/8 of the
+  composed cells under a fresh seed and the shake seed advances (`+ ph
+  * 7`, amplitude `jitter × 0.5 + life × 0.3`) — done on the composed
+  face at draw time, no cut and no recompose. Eden asked for the middle
+  ("layer 2, grey middle"); measured on the rig with the ring held
+  still, the middle alone (88 composed cells, dim ink at 0.7 over the
+  ground) changes about a thousand pixels a third of a second at a
+  12-level threshold and five at a 40-level one — it lives, faintly, as
+  dim ink does — so the bottom burst, the other grey and the speckled
+  one, has Life too (about three hundred pixels at the 40 threshold),
+  since the grey the eye reads in the ring is both; either is one
+  slider from still; **the lean** — `wander()`: the ring
+  drifts to a new lean every 2–5 s, up to 8° × life either way, on a
+  slow spring, and is cut at that lean (`degOf`: turning layers at the
+  rose's heading, the ring at its lean; `layerKey`/`footKey`/
+  `wantPlates` take both). The ring's panel header says "wanders a
+  little". `Compass.swing()` exposes {x, v, lean, leanTo} for tests.
+  **The title travels:** palace.js `titleCells()` draws the title into
+  a scratch Float32Array through the same `title()` and reads it back
+  as morph cells (x + jx, y + jy, rgb, alpha, |size|, ring flag);
+  nothing on the region or the wallpaper; `Palace.overlay` holds the
+  title back while `Morph.active()`; morph.js `figure()` =
+  `Build.cells` + `Palace.titleCells()` in both `begin` and `settle`.
+  **Verified** on the rig: turning Barwidgee's picture from −30° to
+  +20° the shown heading went 330 → 344 → 4 → 15 → 20.9 → 20.4 → 20 over
+  about a second (one small overshoot), mid-swing screenshot
+  `b293-1-midswing.png`; frame times during a fresh swing median 14 ms,
+  p90 27, max 45 (the first cuts of new degrees; a repeat swing is
+  cached); the ring's lean drifting 0 → 3.5 over four seconds then a
+  new target; `Palace.titleCells()` 1,243 cells for Barwidgee, the
+  morph to Myrtleford 15,101 particles with the letters mid-flight
+  (`b293-3-title-morph.png`), 1,543 cells for Myrtleford after; the
+  rig's `hq.compass` was written for the A/B and put back as it was; no
+  errors. `Compass.swing()` also lists the composed cells per layer.
+  **Noted:** a first swing over new degrees drops a frame or
+  two while the cuts are made; the title's face for a town never
+  visited is built async, so the first morph into it lands on the 5×7
+  type and the face pops in after (as the title always did on a first
+  draw). Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 292 (6 Sep 2026) — the end of the road leads to the next
+  town.** Eden: *"we want the end of the road within the plate to line
+  up with the next plate on the zoomed out map - so if the compass
+  direction matches the zoomed out map in terms of which way the end of
+  the road is pointing to the east then the next town over on the east
+  connects so we can travel between plates on the zoomed in zone"*.
+  In region.js: `wayOut(dir)` — the plate's screen direction turned back
+  by `Basemap.rot()` (the compass's heading) to a true heading, every
+  other town with a place bearing-tested from this plate's anchor
+  (`Atlas.geo(current)`, else the town's mean), within a sixty-degree
+  cone (`CONE`); a town linked to this one in `hq.region.links` first by
+  the closest bearing, else the nearest by distance; returns `{town,
+  linked, heading, word, bearing, off, km}`. `cross(w, dir)` links the
+  two if they were not, `Atlas.go(root, Atlas.entry(dir, at))` (entry
+  now exported), then `roadEnd(back, id)` stands the walker on the road
+  end of the new plate heading back the way we came — a road tile with
+  one to three road neighbours all behind it and nothing ahead (so a
+  road two tiles wide still ends), its stub's true heading within the
+  cone of `back`, the one furthest that way — reading the other plate's
+  turn off its `hq.basemap.<id>` record because its underlay mounts
+  after the walker has landed (`Basemap.rot()` is 0 at that moment).
+  In atlas.js `end()`: after the door, `Region.wayOut(dir)`; linked →
+  `Region.cross` at once; else the prompt offers the town (`go to
+  Bright` on Enter, a new `#edgeopen` button for the old `open a plate`
+  → `Found.ask`, `stay`). In game.js `tryStep`: a tile eaten by a
+  distraction ahead is not an end (`Distract.list()`), and a successful
+  `Atlas.end` clears the held `keys`, since a held key otherwise walked
+  straight on from the landing end — and with a distraction cut beside
+  it, straight over to a third town (seen: Bright → Myrtleford →
+  Melbourne in one held A). **Demo plates** (`demoPlate`) now lay every
+  road's last run along a row or column of tile centres, so the road is
+  one tile wide at its end and the walker's own end test fires there;
+  the rig's fourteen were re-laid (`Region.demoPlate` exported for it).
+  A name clash cost a round: the helper was first called `landing`,
+  which build 289 already has as a flag, and region.js would not parse.
+  **Verified** on the rig: from home (turned −30°) east is south-east
+  and the way is Bright (29° off, unlinked) where screen-east would
+  have been Yackandandah; the offer read *the road ends here heading
+  south-east — Bright lies that way, 30 km* with go/open/stay; Enter
+  crossed, linked home–Bright (16 links), and landed on Bright's west
+  end; from Bright west is Myrtleford (linked, 43°) at once, landing on
+  its east end (89, 28); the real key — D held at Myrtleford's east end
+  — crossed to Bright's west end (12, 28) and stopped; A held there
+  came back to Myrtleford's east end and stopped; A into the distraction
+  cut at (87, 28) did not cross; no errors. **Noted:** Eden's own roads
+  end wherever they end — an end two tiles wide, or one running into
+  walkable ground, is not noticed by the walker (game.js's rule, as
+  before); the cone is 60° and the return is not always symmetric
+  (from Bright, west is Myrtleford at 43° rather than Barwidgee at 59°);
+  the rig had wandered to Merbein between runs — the window is on
+  Eden's desk. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 291 (6 Sep 2026) — the stock infinite; the samples made
+  towns.** Eden: *"set an infinite limit on all my materials - also
+  create placeholder demo towns for each of the existing places so we
+  can go inside and have them link up with each other just to test how
+  it would feel when some more interactions added"*. **The stock**
+  (src/stock.js): infinite unless `hq.stock.mode` is `counted` —
+  `pay` takes nothing and refuses nothing, `afford` is yes, the HUD's
+  three bars are full and read `∞`; the levels are still kept and
+  still earned underneath (the "+ n" note is quiet), so the new
+  **Stock** chips in the tune panel, Infinite and Counted, put the
+  counting back with nothing lost. Infinite is the CODE default, so
+  Eden's live profile gets it on its next launch without being
+  touched; the platformer's own write of `hq.stock` is untouched and
+  harmless. **Demo towns:** `Region.foundSamples()`, on the **Demo
+  towns** chip under Towns beside Samples and Boundary. For every
+  sample (region.js DEMO) that is not a town yet: `Atlas.make(id, name,
+  geo, {demo, group})` (new — a plate made by hand, joined to nothing)
+  with id `a` + slug (`amyrtleford`, `ast-kilda`), and `demoPlate()`
+  writes the plate's storage before it is ever mounted, as `Atlas.add`
+  writes its stub: four roads (a main street and a cross street with a
+  seeded wander, two side streets ending in dead ends), a grass patch
+  and a park, three houses from `Glyphs.of('houses')` at ×1.5, one
+  palace marker on the first house named for the town, and
+  `hq.basemap.<id>` with the town's lat/lon (shown off) so `M` shows
+  the real town. `towns()` now carries the area's `group`, `layout()`
+  clusters a real town beyond the plate by it, and a sample whose name
+  is a real town's is skipped wherever that town stands. Links: every
+  DEMO_LINKS pair plus group lead → member, resolved to ids (the home
+  town by `HOME_NAME` 'Barwidgee' → `home`), and existing links that
+  named a sample by lower-case name are rewritten to the plate's id.
+  **Lettering:** palace.js `plateTown()` — a plate not joined to home
+  by road is lettered with its own town's name (Footscray's plate said
+  Barwidgee). **Verified** on the rig (9224, restored 290 state): 14
+  founded, 15 links, a second press founds 0; from home Myrtleford and
+  Beechworth inside the boundary with hand lines, Bright on the line;
+  Enter on Myrtleford mounts 9 shapes and its palace, the walker on a
+  road with 251 tiles reachable, `Stock.pay('road')` true with the
+  levels unchanged; Melbourne's eye (opened by a synthetic cluster of
+  the five, since the rig's own Geelong plate swallows them into
+  "Geelong 6" and from Geelong's eye into "Barwidgee 12" — the six-radii
+  merge, parked decision 2) shows the five suburbs spread inside with
+  lines between, all four suburbs on the walk grid, a hop west lands on
+  Footscray and Enter goes in; Footscray lettered Footscray, home still
+  Barwidgee; no errors. `snapshots/rig-2026-09-06-demo.json` is the rig
+  after. **Not done / noted:** Melbourne's suburbs are 5–8 km apart and
+  overlap at the region's scale (Save zoom on that eye is the answer);
+  the name field (`Palace.rename`) still writes `hq.town` from any
+  plate, so renaming while standing in a demo town renames the home
+  town — as before, now more visible; the rig's Wodonga/Ouyen/Geelong
+  hand plates are not on the live profile, so there Melbourne 5 and
+  Mildura 4 are clusters of their own. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 290 (6 Sep 2026) — the cells travel: the morph between
+  plates.** Eden: *"now implement this style into the animation of when
+  we move into a new region or town (this applies to the assets within
+  the map that have been added in build mode - structures & terrain"*,
+  with `scatter-morph.js` pasted — the A→B transition from the lattice
+  face-merge. **src/morph.js** is that, brought onto the plate: a
+  figure is the composed cells of the shapes drawn (`Build.cells(cap)`,
+  new — every cell of every shape `rebuild` batches, as {x, y, rgb,
+  alpha, size, glyph} in world units, sampled down by stride past 20,000);
+  `Morph.begin()` before the builder is put on the next plate takes the
+  figure it had (or a running morph frozen where it got to,
+  `snapshot`), `Morph.settle()` after takes the figure it has and plans
+  the morph between them — the six things stacked: the jitter kick,
+  pairing by angle round the middle, four overlapping waves (precursors,
+  the body, the surplus shedding, stragglers), the perpendicular bow, the
+  sine wobble, and the surplus becoming the drift field that stays. Two
+  things are the plate's own: the kick and the wobble ride the arc and
+  die into the landing (`sin(π·e)` and `1 − u²`), so a cell lands
+  exactly on its cell; and surplus past the field's twenty to eighty
+  posts scatters out and goes (`shed`), where the original simply
+  dropped it. While a morph is up the static `build` batch is not drawn
+  (game.js) — the particles are it — and it comes back on the frame
+  the morph ends, on the same cells at the same colour, so there is no
+  step. `Morph.overlay` is first in the entity stream, under everything,
+  as the batch is. **Hooked** at every plate change: `open()` on the
+  region round `remount()`, `enter()` round its mount, `leave()` round
+  its mount (unless the way out is to another plate, whose `Atlas.go`
+  settles it), and `Atlas.go` round its mount for any jump. A change
+  with no key change between begin and settle moves nothing. 1.8 s.
+  **Verified** on the throwaway at 60 fps: Barwidgee's 13,430 cells
+  travelled to the region's seven shapes on Enter (13,493 particles, 57
+  fps mid-flight), the seven shed into a field of twenty on Wodonga's
+  empty eye, a cold start flew them in from the ring on the way home,
+  and Esc carried them to the town (13,510 particles, 60 fps). No
+  errors; and a change in the middle of a change — home opened half a
+  second into Wodonga's opening — chained on through `snapshot` without
+  a mark. Committed 6 Sep 2026, in the one commit with 284–296. Not tested: the desktop plate; a
+  phone.
+
+- **Build 289 (6 Sep 2026) — an opening opens nothing further; a
+  cluster opens on its lead.** Eden: *"seems to be a bug when a sprite
+  lands on a cluster and animation expands it swaps to another cluster
+  or town on a border and infinitley toggles the animation between the
+  two and not until i move to another town within the boundry then the
+  animation stops"*. The glide that ends an opening (`open` → `glide`)
+  comes to rest too, and 282's `settle()` read every rest: on the town
+  the cluster was named for, which from the new eye — the mean of a
+  mixed cluster — could itself be a cluster on the boundary, so the
+  dwell opened it, whose lead was on the boundary from there in turn,
+  and the two handed the eye back and forth until a hop landed inside.
+  Two fixes. `landing`, set by `open` after its glide and cleared by
+  `hop`, `enter` and `leave`: the rest that ends a landing starts no
+  dwell (Enter still opens what the walker stands on). And the eye of
+  an opened cluster is its **lead** — the member the cluster is named
+  for, else the first with a place — rather than the group's mean, so
+  the lead stands in the middle and inside the boundary with the rest
+  round it; for a group that is one place (Mildura's four) the two are
+  a few hundred metres apart, and for a cluster gathered from far apart
+  on a corner (Ouyen with Mildura's four and Wangaratta) the mean was
+  empty ground that left every town of it on the line. The home
+  cluster's eye is home's anchor exactly, as at 284. Verified on the
+  throwaway: Ouyen's six opened on Ouyen — Ouyen alone inside, Mildura's
+  four, Barwidgee's seven and Geelong's six on the line — and the eye
+  held for five seconds with the walker at rest on it; a hop onto
+  Geelong's six opened it by the dwell once, Geelong inside, the eye
+  held; Wodonga's two the same. No errors. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 288 (6 Sep 2026) — the map under every eye, and warmed on the
+  way.** Eden: *"load the background maps relevent to the regions and
+  areas centered as we dont seem to have certain maps loading"*. Found
+  on the rig with Eden's window at 1245 × 704: on Ouyen's eye the sheet
+  held Barwidgee's seventy tiles, all loaded, translated 3,500 px off
+  screen — `lay()` had refused Ouyen's set. Its ceiling counted tiles at
+  one to one (`(VW/256 + 3)(VH/256 + 3) × 1.5` = 72 there), but the
+  region's tiles are finer than the screen — `ground()` picks the zoom
+  that puts a tile pixel on a screen pixel or finer, 143 CSS px a tile
+  in that window — so the zoomed-out view wanted 84, `lay` said
+  "zoomed out too far to tile" and returned, and `sync` went on sliding
+  the old set to where the new eye put it. **Fix:** the ceiling counts
+  tiles at the size they are on screen (`TILE × scale × cam / dpr`),
+  never smaller than half of one to one, so the town zoomed far out is
+  still refused rather than flooded. **And warmed:** `Basemap.warm(lat,
+  lon, z, k, zoom)` asks the browser for the tiles a view will want —
+  the same CORS mode as `lay`, nothing laid — and `open()` calls it the
+  moment a cluster opens, with the eye it is going to and the zoom it
+  will arrive at (`ground(G.camT[2])`, the zoom argument new), so the
+  map is in the cache when the slide lands. Verified in that window:
+  home, Ouyen, Geelong and home again each lay 96 tiles at z 11 covering
+  the whole window, all loaded within a second of the cluster opening.
+  No errors. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 287 (6 Sep 2026) — the boundary drawn, for now.** Eden: *"i
+  closed the window because i did not see the boundry - maybe add a
+  temporary rectangle shape showing the boundry so we can visably see
+  it"*. `frameLine()` in region.js, drawn from `overlay()` before the
+  scene: the rectangle as a thin dotted run of the plate's diamonds in
+  bone at half alpha, a diamond every cell and a half (about five
+  hundred a frame, under the cap). A **Boundary** chip under Towns in
+  the tune panel (T), beside Samples, puts it away (`hq.region.bounds`
+  '0'); on until then. Temporary by Eden's word — take the chip and
+  `frameLine` out together when the rectangle has been placed. Not
+  committed, with 284–286.
+
+- **Build 286 (6 Sep 2026) — the boundary.** Eden: *"now create an
+  invisible rectangle boundry that all the outside towns sit on -
+  including the clusters - so only the centered towns are in the middle
+  of the boundery - i like that all towns regions and clusters sitting
+  on this border being white - give the boundry a very wide large
+  padding so rectangle boundery is very much centered and many diamonds
+  can fir on the boundry"*. In region.js the plate's edge with its
+  three margins (a diamond and a name in from the sides and top, seven
+  radii at the foot for the chrome, and the lift from under the keys
+  panel) is replaced by `bounds()`: an invisible rectangle centred on
+  the plate, `PAD = 0.2` of the plate's width in from either side and of
+  its height from top and foot — 769 × 432 of the 1281 × 720. `inside`
+  is strictly within it; `edge(P, C, B)` puts every other town where
+  the line from the middle through it meets the rectangle. So the open
+  group stands in the middle and everything else — a town beyond the
+  rectangle, a town beyond the plate, a cluster — sits on the line;
+  from home that leaves Barwidgee, Myrtleford and Beechworth inside,
+  with Wangaratta, Yackandandah and Bright on the boundary beside the
+  clusters. The merge within six radii and the compass-corner clearing
+  are as they were. **Everything on the boundary is bone at full
+  alpha, sample or not** (`scene()`: the cluster colour and alphas no
+  longer read `cl.sample`); inside, a sample is still dim. A cluster
+  gathered across a corner had its mean just inside it (Ouyen's six at
+  273, 166 from home), so after the merge pass every cluster is put
+  back on the line where the middle looks through its mean. Verified
+  on the throwaway: from home Barwidgee, Myrtleford and Beechworth
+  inside, Wodonga 2 on the top line, Ouyen 6 on the left, Geelong 6
+  and Bright on the foot, all at full alpha; from Wodonga's eye
+  Barwidgee 3, Ouyen 5, Geelong 6 and Wangaratta on the line; from
+  Geelong's eye everything else is one cluster of eleven on the top
+  line, named Barwidgee — the merge within six radii bites harder on
+  the smaller rectangle, and a big group reads as one diamond of many.
+  No errors. Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 285 (6 Sep 2026) — the region rests zoomed out; the compass in
+  the very corner.** Eden: *"always use the map zoom out as default -
+  move the compass to the very top left"*. The region's own resting
+  zoom is now the far end of the zoom keys — `G.fitAll × 0.85`, the
+  whole plate with a margin round it, which is what the map looks like
+  zoomed right out — where it had been the town's working zoom carried
+  in; `far()` in region.js is the unit a saved zoom is a ratio to, so
+  the View block reads 1× at the default, `applyZoom()` lands on the
+  default when nothing is saved for the eye (on `enter`, on `open`, on
+  the way home), and `0` on the region is `Region.rest()` — the saved
+  zoom or the default — rather than the town's `home()` (game.js). The
+  town's own zoom is untouched, as before. **Compass:** on the region
+  its cut's box now sits in the WINDOW's top-left corner, six CSS px in,
+  read off the camera each frame (`corner()` in compass.js) — flush
+  with the plate's corner was tried first and still floated, because
+  the zoomed-out view leaves a margin round the plate, and it scrolled
+  away when zoomed in; the region's map runs past the plate, so the
+  corner is still on the map. `Compass.box()` is the box it stands in,
+  and the region keeps clusters clear of that rather than of twice
+  `Compass.at()`. Verified on the throwaway: the box's top-left at
+  6, 6 CSS px at the default and after + + +, and back on 0; no errors.
+  Committed 6 Sep 2026, in the one commit with 284–296.
+
+- **Build 284 (6 Sep 2026) — the region is built on: zoom per eye, links
+  by hand, structures and terrain.** Eden: *"give me some build options
+  to zoom in out lock and save settings of certain zoom levels for
+  specific regions - also alow me to place or delete lines between
+  certain areas or towns - also want to be able to add structures within
+  this view and terrain just like the zoomed in version"*. Made on
+  `work` while a peer session made 282–283 in the worktree
+  `.claude/worktrees/region-cluster-lines`; numbered 282 there while
+  apart, and joined here: `work` fast-forwarded onto
+  `worktree-region-cluster-lines` and the builder's region work re-laid
+  on the ground's region.js by hand (Eden, seeing the two windows:
+  *"build mode is now working - i dont see the map in the background
+  anymore"*). Three things, and one idea under them: **a region is an
+  eye.** The region seen from home and the region a cluster opens on are
+  two plates — each keeps its own shapes (`hq.shapes.region` for home's,
+  `hq.shapes.region.<slug>` for a cluster's; `open()` remounts the
+  builder on the eye's key through `remount()`, and a cluster with the
+  home town in it opens on home's eye exactly, so the way back lands
+  where you started) and its own zoom. **Zoom:** a View block at the
+  head of the builder's palette, on the region only (`regiononly`,
+  index.html): Zoom −/+ through the game's own notch; **Lock zoom**,
+  which holds + − 0, the chips and the pinch while the region is up
+  (game.js `zoomHeld` says so once on a key, `zoomBy` is simply held;
+  the town's zoom is never touched — the frame gives it back on Esc);
+  **Save zoom** and **Forget saved zoom**. `hq.region.zoom` is `{lock,
+  at: {eye: ratio}}`, the ratio against the working zoom (`home()`) so a
+  saved zoom means the same notches on a phone, and it is put back on
+  `enter`, on `open`, and on the way home — the ground's tiles follow,
+  since `ground()` picks its zoom off the camera. The word under the
+  chips names the eye, the zoom now, what is saved, the lock, and on the
+  Links layer what the next click will do; the region refreshes it
+  itself when any of that changes (`syncView` → `Build.syncView`), so
+  the number keeps up with the keys. **Links:** made, not drawn. On the
+  Links layer a click on a town starts one and a click on another
+  finishes it (a cluster stands for the town it is named for); a click
+  on a link selects it, in flare, and Delete removes it; Esc lets go (a
+  capture keydown in region.js, before Esc means anything else). Kept
+  as pairs of ids in `hq.region.links` — a real town's root plate, a
+  sample's lower-case name — so a link follows its towns wherever the
+  eye stands, shows from any eye that sees both ends, and is drawn to a
+  cluster's place when an end is in one (both ends in the one cluster
+  draw nothing); a sample's link stands aside for a hand-made one
+  between the same towns, on top of 282's rule that a sample's link
+  runs only between groups. Walkable: `Region.stamp(t)`, called from
+  `restampTerrain` after Distract's, bands the whole run town to town at
+  0.62 tile, so the walker by a town is on the path; `curve()` was split
+  into `curvePts()` — trimmed for drawing, whole for the stamp and for
+  hit-testing — and the drawing, keeping 282's calmer wave. The Link
+  line chip is gone from the region's palette (the kind stays, for any
+  link drawn before). Towns are not dragged from the Links layer; any
+  other layer still pins them. **Structures and terrain:** the region
+  registry (kinds.js `RLAYERS`/`RLIST`) takes the town's `terrain`,
+  `built` and `clearings` layers as well — districts, houses, landmarks,
+  buildings, flora, signs, creatures, patterns, mountains, demolish and
+  clear — under the same ids; not the backdrop or the boundary, and no
+  markers. Each eye's plate holds its own. **Verified** before the join
+  on a throwaway — v8.8 plus three unlinked plates beyond the plate
+  (Wodonga, Ouyen, Geelong), port 9224, since 9223 had been taken by the
+  peer's worktree: links by real clicks Barwidgee → Myrtleford and
+  Barwidgee → Wodonga's cluster; select by probe, Delete, Esc; W and S
+  held walk the link; + + then Save → 1.5625, Lock holds − and 0 and
+  `zoomBy`, Forget dims its chip; leaving gives the town its 1.311 back
+  and re-entering puts 1.56 back; Wodonga's eye opens on
+  `hq.shapes.region.wodonga` with 0 shapes and its own saved 0.81, and
+  home's cluster brings 1.56 and 7 shapes back; house, landmark,
+  housing, grass and trees placed by chip and click, drawn in the
+  plate's material. Verified again after the join, on the same throwaway
+  at 284 with the ground under it: the map at 0.45 under the region with
+  the region's handles, Barwidgee → Beechworth by clicks, one hop onto
+  Wodonga's cluster and 282's dwell opened it onto
+  `hq.shapes.region.wodonga` (0 shapes) with its saved 0.81 and the map
+  at -36.122, 146.888 z 11; home's cluster brought 1.56, 7 shapes and
+  the map at z 12 back; Esc gave the town its picture at 0.25, its
+  handles, its zoom, and the hint hidden. No errors. **Committed** 6 Sep 2026, in the one commit with 284–296 —
+  Eden's call. Not tested: on a phone; two hand links
+  sharing an end in a cluster; the blend when a cluster with shapes on
+  its plate opens.
+
+- **Tested 6 Sep 2026 — a real town off the eye** (the item 279 left).
+  Eden: *"open it up and let's test a real town off the eye"*. A
+  throwaway restored from `snapshots/v8.8.json` with three unlinked
+  plates added to `hq.atlas` beyond the plate. Works: each stands at the
+  edge in its true direction as its own bone cluster at full brightness;
+  two hops reach Wodonga's, the hint says "open Wodonga · 1 town beyond
+  the plate"; Enter opens it — eye moves, Wodonga to the centre as an
+  anchored town, walker glides, "BARWIDGEE 3" at the foot — and Enter
+  again goes to its plate through the gate; the region reopens from
+  there with the eye on home. What it showed is in *Open threads*.
 
 - **Build 283 (6 Sep 2026) — the ground: the map under the region, and
   the towns on it.** Eden: *"now we need to re align and place the
@@ -2361,6 +2989,28 @@ thing that was measured, and the mistake that was made on the way.
 ---
 
 ## Open threads
+
+- **Two lines touched the region on 6 Sep 2026.** The worktree
+  `.claude/worktrees/region-cluster-lines` (branch
+  `worktree-region-cluster-lines`, pushed) carried 282–283; `work` was
+  fast-forwarded onto it at 284 with the builder's region work re-laid
+  on top. If the worktree goes on, its next commit lands on a `work`
+  that has moved: merge it, do not fast-forward, and expect region.js
+  to need a hand.
+
+- **The region's edges, seen with real towns off the eye (6 Sep 2026).**
+  Left standing after the test: (1) two clusters lifted out of the
+  compass corner land on the same spot — Ouyen and Mildura both at
+  x 53 / y 291 from Wodonga's eye, because the corner-clearing runs
+  after the merge pass; (2) a cluster at the top centre sits under the
+  region banner (Wodonga's diamond, only its tip showing), and a click
+  there lands on the banner, not the plate; (3) a real town that merges
+  with a sample group names the cluster — "GEELONG 6" over five of
+  Melbourne — because real towns are listed first; (4) the town you
+  stand in, when off the eye, is a plain cluster with no flare, and its
+  hint says "opening", not "back"; (5) a side-edge label clips ("OUYEN");
+  (6) a lone group member at the edge wears the group's name
+  ("MELBOURNE" for St Kilda alone). All Eden's calls.
 
 - **The plate is the screen now (build 256), and any town from before
   it is off-centre.** Decided by Eden 2026-09-05: 16:9, the columns

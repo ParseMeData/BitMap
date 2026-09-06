@@ -2153,24 +2153,31 @@ const Kinds = (() => {
      The third scope, for src/region.js: our region drawn flat with north
      up. The same terrain as the town — every ground, the water, the
      trees — under the same ids, so the generators and the saved shapes
-     are the town's; nothing built, because a town on the region is a
-     plate, not a picture of one; and in place of roads, links. Modifiers
-     are left out with the built kinds: a demolisher on a map of towns
-     has nothing to weather. */
+     are the town's; and since build 282 the districts, the structures
+     and the clearings as well (Eden, 2026-09-06: "add structures within
+     this view and terrain just like the zoomed in version"). Not the
+     backdrop or the boundary, which are about a town's name and a town's
+     edge and mean nothing here; and no markers. In place of roads,
+     links — and since build 282 a link is not drawn but made, from one
+     town to another on the Links layer (src/region.js); the line kind
+     below only keeps any link drawn before that on its feet. */
   const RLAYERS = [
     {id: 'links',  label: 'Links',     z: 3, solo: true, start: true},
     {id: 'ground', label: 'Ground',    z: 0},
     {id: 'water',  label: 'Water',     z: 0.5},
-    {id: 'trees',  label: 'Trees',     z: 1}
+    {id: 'trees',  label: 'Trees',     z: 1},
+    {id: 'terrain', label: 'Terrain',  z: 2},
+    {id: 'built',  label: 'Structures', z: 2},
+    {id: 'clearings', label: 'Clearings', z: 2.5}
   ];
-  const RLIST = LIST.filter(k => k.layer === 'ground' || k.layer === 'water' || k.layer === 'trees').concat([
+  const RSHARED = new Set(['ground', 'water', 'trees', 'terrain', 'built', 'clearings']);
+  const RLIST = LIST.filter(k => RSHARED.has(k.layer)).concat([
     {id: 'link',      label: 'Link',      layer: 'links',  types: ['line'],
      walk: 2, stamp: 6, gen: link,      swatch: '#85858E', width0: 1,
      bright0: 1.2, feather0: 0, pad0: 0, padFade0: 0, padBreak0: 0,
      connects: true}
   ]);
-  const RPALETTE = [{label: 'Link', kind: 'link', type: 'line'}]
-    .concat(PALETTE.filter(p => RLIST.some(k => k.id === p.kind)));
+  const RPALETTE = PALETTE.filter(p => RLIST.some(k => k.id === p.kind));
 
   /* ── two registries, one editor ────────────────────────────────────────
      Everything downstream — the palette, the layer rows, the walk-grid

@@ -100,8 +100,10 @@ const Atlas = (() => {
     if (id === A.current && !at) return true;
     Build.commit(); Markers.commit();
     A.current = id; save();
+    if (typeof Morph !== 'undefined') Morph.begin();       // the cells travel (src/morph.js)
     Markers.mount(mkey(id));
     Build.mount('map', skey(id));               // restamps the walk grid
+    if (typeof Morph !== 'undefined') Morph.settle();
     if (typeof Basemap !== 'undefined' && Basemap.mount) Basemap.mount(id);
     if (at){
       G.x = G.tx = at[0]; G.y = G.ty = at[1];
@@ -151,6 +153,19 @@ const Atlas = (() => {
     return go(id, e);
   }
 
+  /* ── a plate made by hand ─────────────────────────────────────────────
+     Not opened from a road end: named, placed, and joined to nothing — a
+     town of its own on the region (src/region.js, the demo towns).
+     Anything else in `more` is kept on the area (a `group`, say).
+     Refused when the id is taken, so it is safe to ask twice. */
+  function make(id, name, geo, more){
+    if (!id || A.areas[id]) return false;
+    A.areas[id] = Object.assign({}, more || {}, {name: String(name || id).slice(0, 28), links: []});
+    if (geoOK(geo)) A.areas[id].geo = {lat: +geo.lat, lon: +geo.lon};
+    save();
+    return true;
+  }
+
   /* ── the end of the road ─────────────────────────────────────────────
      Called by the walker when it presses on from a dead end. Joined:
      cross. Not joined: ask, in a prompt that holds the keys until
@@ -180,14 +195,32 @@ const Atlas = (() => {
   function end(dir, at){
     const cur = A.areas[A.current];
     const l = linkAt(cur, at, dir) || linkAt(cur, at, null);
-    if (l) return go(l.to, l.land);
+    if (l){ if (typeof Morph !== 'undefined' && Morph.sweep) Morph.sweep(dir); return go(l.to, l.land); }
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
     const mk = doorAt();
-    asking = {dir, at, mk};
+    /* ── the next town over ──────────────────────────────────────────────
+       A road that ends heading a way leads to the town that lies that way
+       on the region — the plate's direction read true, by the compass
+       (src/region.js `wayOut`). A town linked to this one on the region
+       is crossed to at once, as a joined plate is; one that is merely
+       that way is offered here, with opening a plate as the other
+       answer, and linked on the way over. The door still comes first. */
+    const way = (!mk && typeof Region !== 'undefined' && Region.wayOut) ? Region.wayOut(dir) : null;
+    if (way && way.linked) return Region.cross(way, dir);
+    asking = {dir, at, mk, way};
     const el = prompt();
     const head = el.querySelector('.plabel'), line = el.querySelector('.eline');
-    const note = el.querySelector('.knote'), ok = el.querySelector('#edgeyes');
-    if (mk){
+    const note = el.querySelector('.knote'), ok = el.querySelector('#edgeyes'), open = el.querySelector('#edgeopen');
+    open.hidden = !way;
+    if (way){
+      head.textContent = 'The end of the road';
+      line.innerHTML = 'the road ends here heading <b></b> \u2014 <b></b> lies that way, <i></i>';
+      const bs = line.querySelectorAll('b');
+      bs[0].textContent = way.word; bs[1].textContent = way.town.name;
+      line.querySelector('i').textContent = Math.round(way.km) + ' km';
+      ok.textContent = 'go to ' + way.town.name;
+      note.innerHTML = 'enter goes &middot; esc stays';
+    } else if (mk){
       const nm = String(mk.name || '').trim();
       head.textContent = 'The door';
       line.textContent = nm ? 'the road ends at ' + nm + ', and that is a way in'
@@ -214,12 +247,20 @@ const Atlas = (() => {
        different questions — the plate next door, and the door right here */
     el.innerHTML = '<div class="plabel">The end of the road</div>' +
       '<div class="eline">the road ends here heading <b></b>, and leads nowhere yet</div>' +
-      '<div class="erow"><button id="edgeyes">open a plate</button><button id="edgeno">stay</button></div>' +
+      '<div class="erow"><button id="edgeyes">open a plate</button><button id="edgeopen" hidden>open a plate</button><button id="edgeno">stay</button></div>' +
       '<div class="knote">enter opens &middot; esc stays</div>';
     document.body.appendChild(el);
     el.querySelector('#edgeyes').onclick = yes;
+    el.querySelector('#edgeopen').onclick = openPlate;
     el.querySelector('#edgeno').onclick = no;
     return el;
+  }
+  /* a plate of this town beyond the edge, asked for when a town lay that
+     way but the answer was a plate of our own */
+  function openPlate(){
+    if (!asking) return; const q = asking; asking = null; prompt().hidden = true;
+    if (typeof Found !== 'undefined') Found.ask(q, 'the road ends here heading ' + NAME[q.dir] + ' \u2014 where does it lead?');
+    else add(q.dir, q.at);
   }
   /* yes is not the plate yet: a plate is founded on an address (src/found.js),
      and the plate is made when the address is found */
@@ -230,6 +271,8 @@ const Atlas = (() => {
        interior has gone — fall through to the plate question rather than
        leave the keypress doing nothing at all. */
     if (q.mk && typeof Interior !== 'undefined' && Interior.enter(q.mk)) return;
+    /* the town that way: over the road to it (linked on the way) */
+    if (q.way && typeof Region !== 'undefined' && Region.cross && Region.cross(q.way, q.dir)) return;
     if (typeof Found !== 'undefined') Found.ask(q, 'the road ends here heading ' + NAME[q.dir] + ' — where does it lead?');
     else add(q.dir, q.at);
   }
@@ -328,11 +371,11 @@ const Atlas = (() => {
     if (lid) a.letter = String(lid); else delete a.letter;
     save(); return true;
   }
-  return {init, go, add, end, openMap, closeMap, toggleMap,
+  return {init, go, add, make, end, openMap, closeMap, toggleMap,
           current: () => A.current, areas: () => A.areas,
           name: () => A.areas[A.current].name,
           rename: v => { A.areas[A.current].name = v; save(); },
           setLetter, letterOf: id => (A.areas[id || A.current] || {}).letter || null,
-          geo, setGeo, seed, layout: place,
+          geo, setGeo, seed, layout: place, entry,
           skey, mkey};
 })();

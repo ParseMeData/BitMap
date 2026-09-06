@@ -69,6 +69,12 @@ const Basemap = (() => {
   let place = null;          // {x, y, s0, mult, rot, w, h} — world anchor is the centre
   let placing = false, drag = null;
   let liveRot = 0;                          // radians the live tiles are turned before a print (src/found.js)
+  /* a plate's TURN with no picture on it: radians clockwise, kept in the
+     record as `turn` — the demo towns are laid at one so the compass and
+     the roads' headings can be tested (src/region.js demoPlate; Eden,
+     2026-09-06: "give the towns some random turning (rotate plate)"). A
+     placed picture's own turn takes over the moment there is one. */
+  let plateTurn = 0;
   /* a stored picture comes back out of storage asynchronously, and the frame
      loop is already calling sync() by then. Without this the tile path runs
      for those few frames and fetches a whole sheet that adopt() immediately
@@ -190,12 +196,22 @@ const Basemap = (() => {
     if (range === lastRange) return;
     lastRange = range;
     /* The ceiling is the screen's: as many tiles as the view can show at
-       one to one, with the margin, and half again for the zoom to move in.
-       A fixed 140 was right for one monitor and wrong for a 4K one, where
-       the working zoom alone wants more than that — and past the ceiling
-       nothing new is laid, so the map stopped at whatever corner had
-       already loaded. */
-    const most = Math.ceil((Math.ceil(VW / TILE) + 3) * (Math.ceil(VH / TILE) + 3) * 1.5);
+       the size they are on screen, with the margin, and half again for
+       the zoom to move in. A fixed 140 was right for one monitor and
+       wrong for a 4K one, where the working zoom alone wants more than
+       that — and past the ceiling nothing new is laid, so the map stopped
+       at whatever corner had already loaded. Counted at one to one until
+       2026-09-06, which refused the region zoomed right out in a small
+       window: its tiles are finer than the screen (the region picks the
+       zoom that puts a tile pixel on a screen pixel or finer, src/region.js
+       ground), so the view wants more of them than at one to one, and the
+       old set — another eye's — was left sliding off screen (Eden: "we
+       dont seem to have certain maps loading"). A tile is never counted
+       as smaller than half of one to one, so the town zoomed far out is
+       still refused rather than flooded. */
+    const dpr = VW / (canvas.clientWidth || 1);
+    const tcss = Math.max(TILE / 2, TILE * scale * G.cam[2] / dpr);
+    const most = Math.ceil((Math.ceil((VW / dpr) / tcss) + 2 * mg + 1) * (Math.ceil((VH / dpr) / tcss) + 2 * mg + 1) * 1.5);
     if ((x1 - x0 + 1) * (y1 - y0 + 1) > most){ note('zoomed out too far to tile'); return; }
 
     /* keep the tiles hanging off a nearby origin, and shuffle the ones
@@ -253,6 +269,34 @@ const Basemap = (() => {
   function clear(){
     for (const [, img] of live) img.remove();
     live.clear(); lastRange = ''; origin = [0, 0]; placed = 0; failed = 0;
+  }
+  /* ── warmed ───────────────────────────────────────────────────────────
+     The tiles a view will want, asked for now so they are in the browser's
+     cache when `lay` asks — for the region, the moment a cluster opens,
+     with the eye it is going to and the zoom it will arrive at, so the
+     map is there when the slide lands rather than a moment after (Eden,
+     2026-09-06: "load the background maps relevent to the regions and
+     areas centered"). Asked for with the same CORS mode `lay` uses, or
+     the cache would not give them back. Nothing is laid. */
+  const warmed = [];
+  function warm(la, lo, zz, k, zoom){
+    if (pic || ![la, lo, zz, k].every(isFinite)) return 0;
+    const cam = zoom || G.cam[2] || 1, hw = VW / (2 * cam), hh = VH / (2 * cam);
+    const m0 = merc(la, lo, zz), span = Math.pow(2, zz);
+    const x0 = Math.floor((m0[0] - hw / k) / TILE) - 1, x1 = Math.floor((m0[0] + hw / k) / TILE) + 1;
+    const y0 = Math.max(0, Math.floor((m0[1] - hh / k) / TILE) - 1), y1 = Math.min(span - 1, Math.floor((m0[1] + hh / k) / TILE) + 1);
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > 400) return 0;
+    let n = 0;
+    for (let ty = y0; ty <= y1; ty++)
+      for (let tx = x0; tx <= x1; tx++){
+        const wx = ((tx % span) + span) % span;
+        const im = new Image();
+        if (CORS[src]) im.crossOrigin = 'anonymous';
+        im.src = tileURL(zz, wx, ty);
+        warmed.push(im); n++;
+      }
+    while (warmed.length > 600) warmed.shift();
+    return n;
   }
 
   /* ── search ── */
@@ -315,6 +359,9 @@ const Basemap = (() => {
   function turnLive(deg){
     if (pic || !isFinite(deg)) return false;
     liveRot += deg * Math.PI / 180;
+    /* and the plate's turn is that, kept — so a plate with no picture
+       can be turned and the compass follows */
+    plateTurn = liveRot; save();
     sync(); return true;
   }
   function nudge(dx, dy){
@@ -731,7 +778,7 @@ const Basemap = (() => {
 
   function save(){
     try { Store.set(KEY, JSON.stringify({shown, lat, lon, z, dim, scale,
-      src, gkey, gtype, place, placing}));
+      src, gkey, gtype, place, placing, turn: plateTurn}));
       if (typeof hqStoreOK === 'function') hqStoreOK('the map settings'); }
     /* this try holds the settings blob, not the picture — stash() reports on
        the picture itself, and naming it here sent you to free the very thing
@@ -750,6 +797,8 @@ const Basemap = (() => {
          hidden in the bar, and a setting saved on one of them comes back
          as Dark — the key is kept in the record, unread */
       shown = !!j.shown; src = 'dark'; gkey = j.gkey || ''; gtype = j.gtype || 'roadmap';
+      plateTurn = isFinite(j.turn) ? +j.turn : 0;
+      if (!j.place) liveRot = plateTurn;      // the live tiles wear the plate's turn
       return j.place ? {p: j.place, placing: !!j.placing} : null;
     } catch (e){ return null; }
   }
@@ -767,13 +816,19 @@ const Basemap = (() => {
   /* read the mounted plate's underlay in: its settings, then its picture
      if it has one */
   async function boot(){
-    const st = load();
+    const st = load(), mine = plate;
     waiting = !!st;
     if (st){
       const url = await fetchStashed();
+      /* another plate was mounted while the picture was being fetched:
+         this boot is stale, and adopting now would lay the old plate's
+         picture and turn on the new one (seen on the rig, build 295,
+         hopping fourteen plates in one breath) */
+      if (plate !== mine) return;
       /* adopt() re-measures the picture, so a stored w/h is never trusted */
       if (url){ save._done = url; await adopt(url, st.p); setPlacing(st.placing); }
     }
+    if (plate !== mine) return;
     waiting = false;
     setShown(shown && !!(lat || lon || pic));
   }
@@ -788,6 +843,7 @@ const Basemap = (() => {
     picURL = ''; place = null; save._done = '';
     setPlacing(false); clear();
     lat = 0; lon = 0; z = 15; dim = 0.25; scale = 1; shown = false;   // the defaults, for a plate with no record yet
+    plateTurn = 0; liveRot = 0;
     handles(id);
     try { await boot(); } catch (e){ waiting = false; note('underlay failed to start: ' + e.message); }
     syncUI();
@@ -808,12 +864,12 @@ const Basemap = (() => {
 
   return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
           worldOf, geoOf, setRot, nudge, step, setPlacing, turnLive, liveRot: () => liveRot,
-          look, merc, unmerc,
+          look, warm, merc, unmerc,
           placed: () => (place ? Object.assign({}, place) : null),
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,
           at: () => [lat, lon, z], source: () => src, hasKey: () => !!gkey,
           /* which way the traced picture is turned, radians clockwise — the
              one number here that says where north is, read by the compass */
-          rot: () => (place ? place.rot : 0)};
+          rot: () => (place ? place.rot : plateTurn), turn: () => plateTurn};
 })();

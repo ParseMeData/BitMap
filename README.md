@@ -276,7 +276,42 @@ depth. **The ground:** under the region lies the map of where its eye
 is — the town's own tracing underlay, live Dark tiles — and the towns
 stand on it by the map's own mercator, so each diamond is on its town on
 the map; the map slides with the eye when a cluster opens, and comes at
-the zoom the screen wants.
+the zoom the screen wants. **And the region is built on** (build 284): a
+region is an eye with a plate and a saved zoom of its own — the View
+block in the builder has Zoom −/+, Lock, Save and Forget; links are made
+town to town on the Links layer and removed with `Delete`; and the town's
+districts, structures and clearings can be laid on the region's plate.
+The region rests zoomed right out — the whole plate with a margin — and
+`0` comes back to that, or to the zoom saved for the eye; the compass
+sits in the window's very top-left corner at any zoom (build 285). An
+invisible **boundary** — a rectangle centred on the plate with a fifth of
+the plate's width and height in from each side — holds the open group in
+the middle, and every other town and every cluster sits on its line,
+white, where the line from the middle through the town meets it
+(build 286). **The cells travel** (build 290): when a cluster opens,
+when the region is entered or left, and on any jump from plate to
+plate, the built cells — the structures and the terrain — do not cut
+from one plate's drawing to the next but morph: paired by angle round
+the middle so the cloud turns into place, in four overlapping waves with
+a bow to each path and a wobble the whole way, the surplus shedding off
+into a faint drift field that stays (`src/morph.js`); since build 293
+the town's name travels with them, its letters dissolving into the next
+plate's; and a crossing made on foot arrives in a **sweep** that runs
+against the way walked — off to the right and the new plate lands from
+right to left, up and it lands from the top down — the way the world
+flows past when you move (build 296; a jump from the region or the map
+has no way and no sweep). **The compass swings** to a new heading with a needle's bounce,
+its grey bursts are never quite still, and its ring is jostled while the
+needle moves (builds 293–294; *The compass*). **The stock is
+infinite** unless the Stock chips say Counted, and the samples can be
+made towns — the **Demo towns** chip founds a linked placeholder plate
+for every sample, to go inside and walk between (build 291; *The region*,
+*The drill, and the stock*). **The end of a road leads to the next town**
+(build 292): press on from a road end and you cross to the town that lies
+that way on the region — the way read true by the compass, a linked town
+first — and land on the road end that points back; the town's name pops
+up at the road end before you go (build 295), and the demo towns are
+each turned, filled, and roaded toward their links.
 
 ## Controls
 
@@ -2255,7 +2290,12 @@ a large burst, a small burst over it, the hatched spike cross, and a
 ring round the whole — each cut through the lettering's own screen on
 its own and drawn in its own ink, bottom to top, a layer's cells dropped
 where a layer above it has ink, so the inks stay apart. The three drawn
-layers turn with the map; the ring stays still. Every sheet is cut in a
+layers turn with the map; the ring does not turn with it — it is
+**jostled** by the needle and by nothing else (build 294): while the
+needle swings the ring leans a few degrees one way and then the other,
+a new lean every half second or so, as far as the swing is quick and up
+to eight degrees either way by its Life, and when the needle comes to
+rest the ring settles square with it and is still. Every sheet is cut in a
 box centred on the ring, so the rose turns inside the ring at every
 heading. Each layer has its own Ink and Grain as chips — the ink in its
 own colour; Plain, Checker, Lines or Diagonal for the grain, a pattern
@@ -2265,8 +2305,13 @@ shared Size, about the same centre, so the spike can stand a little
 larger than the bursts), Sheen (on the shared one — the fade down a
 layer's ink, bone at its top to grey at its foot, running down the
 drawing and not the box it was cut in, exactly as a name's runs down
-the word), Fine, Fill, Scatter and Jitter in the Tune
-panel's Compass block, under the shared
+the word), Fine, Fill, Scatter, Jitter and Life in the Tune
+panel's Compass block — Life (build 293) is a layer never quite still:
+every fifth of a second a few of its cells are winked out, different
+ones each time, and the rest wobble a little on top of the layer's own
+shake, on by default for the two grey bursts and quiet (build 294); on
+the ring, Life is how far it is jostled while the needle swings — under
+the shared
 Size (16 to 120 cells), Weight, Tone, Sheen and Detail; the ring has a
 nudge either way in whole cells; the tune lives in `hq.compass`, and
 what a profile with nothing saved gets is the tune Eden settled on the
@@ -2368,15 +2413,94 @@ plate until you **drag it into place in build mode**, which pins every
 plate in it — the home plate where you dropped it, each other plate one
 atlas step away the way its road went.
 
-Instead of roads there are **links** — the first chip on the palette, a
-line one cell wide in the kerb's grey — and a link is the only route the
-walker has here: draw one from town to town and walk it. The terrain
-tools are the town's own (grounds, water, creek, river, trees, park);
-nothing built and no markers, because a town on the region is a plate,
-and a plate is entered, not drawn. Stand by a town and press `Enter` to
-stand on its home plate. `Esc` leaves the region for wherever you were,
-walker and camera and all — it is a frame, as going inside a building is,
-never a plate of the atlas. The compass reads north while you are here.
+Instead of roads there are **links**, and a link is made rather than
+drawn: on the builder's **Links** layer click a town, then another, and
+they are linked; click a link and `Delete` removes it; `Esc` lets go. A
+link is kept by its two towns (`hq.region.links`), so it follows them
+wherever the eye stands and reaches a cluster at the edge when one end
+is beyond the plate; it is the only route the walker has here — walk it
+with `WASD`. The building tools are the town's own — grounds, water,
+trees, the districts, the structures and the clearings — on the region's
+plate; no markers, because a town on the region is a plate, and a plate
+is entered, not drawn. **A region is an eye:** the region seen from home
+and the region a cluster opens on each keep their own shapes
+(`hq.shapes.region`, `hq.shapes.region.<name>`) and their own zoom. The
+**View** block at the head of the palette, on the region only, has Zoom
+−/+, **Lock zoom** (holds `+` `−` `0` and the pinch while the region is
+up), **Save zoom** and **Forget saved zoom**; a saved zoom is put back
+whenever that eye is stood on again (`hq.region.zoom`), and the town's
+own zoom is never touched. Stand by a town and press `Enter` to stand on
+its home plate. `Esc` leaves the region for wherever you were, walker and
+camera and all — it is a frame, as going inside a building is, never a
+plate of the atlas. The compass reads north while you are here.
+
+**Demo towns** (build 291). The samples can be made towns: the **Demo
+towns** chip under Towns in the Tune panel founds a plate for every
+sample that is not a town yet — id `a` and the sample's slug in the
+atlas, placed where the sample stood, carrying the sample's group so a
+city and its suburbs still gather into one cluster — with a placeholder
+town written straight into its storage before it is ever mounted. Since
+build 295 each is laid from its place in the world: the plate has a
+**turn** — degrees clockwise, seeded by the name from a short list so no
+two neighbours turn alike, kept in the underlay's record as `turn` so
+the compass reads it and swings to it on arrival — and every road that
+leaves the town leaves **toward a town it is linked to** on the region,
+laid at that town's true bearing turned by the plate's turn with a
+little wander in the middle, ending in a run of four tiles along the
+nearest cardinal at tile centres so the road is one tile wide at its end
+and the walker notices the end; a town with no links has a road east and
+one west. Round the crossing, by the seed: a roundabout for half the
+towns, houses along each road on alternate sides (the first carries the
+palace, named for the town), a park in the widest gap between the roads,
+stands of trees in the next, and for a third of the towns a lake. The
+underlay's record is written with the town's place, so `M` there shows
+the real town's map under the placeholder, turned with it. And they are
+**linked**: a link by hand for every sample link, and from each group's
+lead to the rest of its group, so Melbourne opened is five towns with
+lines between them and the walker can walk the lines from one to the
+next; a link that named a sample by its lower-case name is rewritten to
+the new plate's id. The towns are founded first and their plates laid
+last, so every road knows its links. A founded sample is not drawn as a
+sample any more — a real town of its name stands aside for it. Pressed
+again the chip finds nothing left to found; **Re-lay demo** beside it
+lays every demo town again from scratch with the links as they stand,
+after asking, since anything built on one is lost. The lettering over a
+plate is its own town's name (a demo town's plate says Footscray, not
+the home town's); a plate joined to home by road still wears home's.
+
+**The next town's name, at the end of the road** (build 295). Standing
+on the last tile of a road that leads somewhere, a small label fades in
+beside the walker with the name of what is beyond — the plate joined
+there, or the town that lies that way on the region — and the way and
+the distance under it: *BEECHWORTH · north · 22 km · press on*. It
+floats centred above the sprite, below it when above would be off the
+top of the window, and never past an edge (build 296). It goes as you
+step off the end.
+
+**The end of the road leads to the next town** (build 292). Walk to the
+end of a road on any plate and press on, and if a town lies that way on
+the region, that is where you arrive. The way is read *true*: the plate's
+own east is turned back by the traced picture's heading — what the
+compass shows — so east along a road on a plate turned thirty degrees
+anticlockwise is east-south-east on the map. The town is the one whose
+bearing from this plate's anchor is within sixty degrees of that: a town
+**linked** to this one on the region first, by the closest bearing,
+since a link is where a road leaves one town for another; failing one,
+the nearest town that way at all. A linked town is crossed to at once,
+as a plate joined by road is. A town that merely lies that way is offered
+at the end of the road — *the road ends here heading south-east — Bright
+lies that way, 30 km* — with `go to Bright` on Enter, `open a plate` for
+a plate of this town beyond the edge as before, and `stay`; going links
+the two on the region, so the map grows the road that was walked. You
+arrive on the road end of the other plate that points back the way you
+came — the westmost end heading west after crossing eastward — so the two
+roads line up across the map; a plate with no such end lands you at its
+edge in the same row or column and then on the nearest road, as a plate
+joined by hand does. A road has to *end* for the walker to notice —
+one tile wide at its last tile, with nothing walkable ahead — and a tile
+eaten by a distraction is a cut, not an end. The key that carried you
+over is let go of on landing, so a held key does not walk straight on.
+(`Region.wayOut`, `Region.cross`, `Atlas.end`.)
 
 **The ground.** Under the region lies the map of where its eye is: the
 same tracing underlay the town has (*Tracing a real place*), live Dark
@@ -2459,7 +2583,17 @@ It follows the map — the traced underlay's own rotation (`Basemap.rot`),
 the one number in the game that says which way north is — and turns
 with it exactly as the picture is turned, by the Turn arrows or a
 shift-drag, so the spike points where north is on the plate; on the
-region it reads north-up. It is never turned by hand — but it can be
+region it reads north-up. Since build 293 it does not jump to a new
+heading, it **swings** there: the heading the rose shows follows the
+map's on a spring, underdamped as a needle on a pivot is (build 294) —
+past the mark by a good third of the turn, back past it by a little,
+and wobbling to rest in about two seconds; a small turn is a small
+wobble — and the turning layers are cut at the shown heading a degree
+at a time as it goes (each cut is kept, so a way once swung is free the
+next time; while the swing is quick the top layer is cut every second
+degree and the bursts every third). The same swing carries it to north
+when the region is entered and back when it is left. It is never turned
+by hand — but it can be
 **moved**: take the rose and put it where you like, and it stays there
 (`at` in `hq.compass`), as the town's name can be dragged and stays
 (`hq.title.off`). Neither stands on anything: the mat that used to be
@@ -2666,7 +2800,9 @@ snapshot carries both.
 
 The HUD strip — three meters stacked at the foot of the screen, to the
 right of the hub: **sparks** in gold, **grains** in bone and **blocks** in flare
-(`src/stock.js`, `hq.stock`, a hundred of each at most).
+(`src/stock.js`, `hq.stock`, a hundred of each at most when it is
+counted — and since build 291 it is not counted unless you ask; see
+*Infinite* below).
 
 Sparks are the PAO system's own material. Every card of the bag — a
 number's person, its action, its object; a letter's three — costs **one
@@ -2692,6 +2828,15 @@ lays one.
 from — roads, links, markers, houses, buildings and districts cost
 nothing, so the town can be laid out without grinding for it; every
 other plate pays. Cards still cost their spark wherever you are.
+
+**Infinite, unless told otherwise** (build 291). By default the stock is
+not counted at all: every material reads `∞`, the three bars are full,
+placing takes nothing and is never refused, a card costs no spark. The
+levels are still kept and still earned underneath — a drill still banks
+its grain, a run its blocks — so the **Stock** chips in the Tune panel,
+**Infinite** and **Counted** (`hq.stock.mode`), can put the counting back
+with nothing lost; only the "+ 2 grains" note is quiet while the stock is
+infinite.
 
 Grains are earned by **drilling**: the `drill` chip on the bag page asks
 five questions from the cards you have written a word on — a number or a

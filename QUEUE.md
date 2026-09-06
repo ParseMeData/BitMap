@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **Lines between groups only; a cluster opens under the walker;
+  the wave calmed** — 2026-09-06, build 282. A sample link drawn only
+  from a group to another; a cluster opens once the walker has sat on
+  it a third of a second; one slow wave at half the depth.
 - [x] **Tag v8.8** — 2026-09-05, build 280. The town beside it in
   `snapshots/v8.8.json`, the clone frozen.
 - [x] **A cluster opens with a blend and a glide; organic links; shaded

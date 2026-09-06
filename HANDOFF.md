@@ -76,7 +76,52 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 5 Sep 2026, build 281 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 6 Sep 2026, build 282 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 282 (6 Sep 2026) — lines between groups only; a cluster opens
+  under the walker; the wave calmed.** Eden: *"make it so the latest
+  changes of the zoomed out map makes it so when a cluster opens there
+  is no lines inbetween the cluster diamonds only lines to the next
+  cluster group — make it so when our sprite sits on a cluster it
+  expands (we dont need to press enter to open) — and make the styling
+  of the lines slightly less wavey"*. **Links:** `scene()` keeps `grp`,
+  a name → cluster-name map for every cluster's members and the cluster
+  itself (a town on the plate has none), and a sample link is drawn only
+  when its two ends' groups differ: from a town on the plate to a
+  cluster at the edge, or from one cluster to another. The towns of the
+  open group have no lines between them — at home, Barwidgee and its
+  neighbours; Mildura's four when Mildura is open — and since such a
+  link is in neither scene it never shrinks into or grows out of a
+  cluster during the blend. Link keys are lower-cased. **Opening:**
+  `settle()`, at the head of `overlay()`, watches `G.moving`: on the
+  frame the walker comes to rest — only then, and never while a scene
+  is blending or the game is paused — it looks in a fresh `layout()`
+  for a cluster within REACH of the walker's tile and, finding one,
+  starts a 350 ms dwell (`DWELL`, `sat`) after which `open()` runs.
+  A walker merely standing there — the spawn, a scene re-laid round it,
+  the glide that ends an opening — opens nothing, so one opening cannot
+  set off the next. The cluster hint reads "opening Mildura · 4 towns
+  beyond the plate" with no key; Enter still opens one at once
+  (`press`); `enter`/`leave` reset `sat` and `wasMoving`. **Curves:**
+  `curve()`'s wave is one cycle (`wf = 1`) at 0.6 % of the run (`wa`),
+  where it was one or two at 1.2 %; the second control point swings
+  back the other way one time in five (was three in ten) and by 2–7 %
+  (was 2–9 %). The first bend and `bow()` are untouched. Verified on a
+  throwaway (port 9223, a scratch profile with Barwidgee and three real
+  towns an earlier session had added — Wodonga, Ouyen, Geelong — on a
+  1600 × 1000 window): at home three lines, Wangaratta to MILDURA 4,
+  Myrtleford to GEELONG 6 and to Bright at the foot, none among the
+  five; hop up, hop left — the walker landed on the Mildura cluster and
+  it opened on its own, the four spread out with one line to BARWIDGEE
+  7 and one from there to MELBOURNE 5; hop right — landed on BARWIDGEE
+  7, the hint "opening Barwidgee · 7 towns beyond the plate", and home
+  again with the same three lines. No errors. Not tested: WASD walking
+  onto a cluster along a drawn link (there is none), the look on a
+  phone. Seen and left: the scratch window had been left portrait, and
+  in that shape the edge inset (`mx`/`my`/`mb` from `r = 18 / zoom`)
+  eats most of the plate — everything clusters in the middle and no
+  line is long enough to draw. Fine in the wide window the game is
+  played in; a phone is that shape.
 
 - **Build 281 (5 Sep 2026) — v8.9 opened.** Eden: *"now clone for
   version 8.9"* — the next version opened on the working line, the

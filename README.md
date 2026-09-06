@@ -267,7 +267,12 @@ slow wave along it; each diamond is a shade brighter or dimmer and a
 touch warmer or cooler than its colour, with a lit facet, seeded by its
 name so nothing flickers. `snapshots/v8.8.json` is the town as it stood.
 
-**v8.9** — opened 2026-09-05, in progress.
+**v8.9** — opened 2026-09-05, in progress. On the region a line runs
+only between groups — from a town on the plate to a cluster at the edge,
+or from one cluster to another — and never between the towns of the open
+group; a cluster opens on its own once the walker has come to rest on it,
+nothing pressed; and a link's wave is calmer, one slow swing at half the
+depth.
 
 ## Controls
 

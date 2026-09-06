@@ -273,7 +273,11 @@ const Region = (() => {
      rather than the one arc every pair got, which read as drawn by a
      rule (Eden, 2026-09-05: "the lines seem very clean and symmetrical
      which feels artificial … give the diamonds a subtle variation in
-     shading and colour"). */
+     shading and colour"). The wave was then calmed — one slow swing
+     along the run at half the depth, where it had been one or two at
+     1.2 %, and the second bend swinging back the other way one time in
+     five rather than three in ten, and by less (Eden, 2026-09-06: "make
+     the styling of the lines slightly less wavey"). */
   const rnd = (seed, k) => { const x = Math.sin(seed * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
   const seedOf = str => { let h = 2166136261; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return (h % 100000) / 100; };
   const mix = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
@@ -309,10 +313,10 @@ const Region = (() => {
     const nx = -dy / L, ny = dx / L;
     const side = rnd(seed, 1) < 0.5 ? -1 : 1;
     const a1 = side * L * (0.05 + 0.07 * rnd(seed, 2));
-    const a2 = (rnd(seed, 3) < 0.7 ? side : -side) * L * (0.02 + 0.07 * rnd(seed, 4));
+    const a2 = (rnd(seed, 3) < 0.8 ? side : -side) * L * (0.02 + 0.05 * rnd(seed, 4));
     const P1 = [A[0] + dx / 3 + nx * a1, A[1] + dy / 3 + ny * a1];
     const P2 = [A[0] + 2 * dx / 3 + nx * a2, A[1] + 2 * dy / 3 + ny * a2];
-    const wf = 1 + Math.round(rnd(seed, 5)), wp = rnd(seed, 6) * Math.PI * 2, wa = L * 0.012;
+    const wf = 1, wp = rnd(seed, 6) * Math.PI * 2, wa = L * 0.006;
     const n = Math.max(2, Math.round((L - trim * 2) / (cell * 0.6)));
     if (m > cap - n - 1) return m;
     const t0 = trim / L, t1 = 1 - trim / L;
@@ -337,7 +341,7 @@ const Region = (() => {
   function scene(){
     const z = G.cam[2], px = 1 / z, r = radius(), ls = Math.max(r * 0.4, 7 * px);
     const L = layout(r);
-    const gems = [], labels = [], links = [], pos = new Map();
+    const gems = [], labels = [], links = [], pos = new Map(), grp = new Map();
     const Q = typeof Quest !== 'undefined' ? Quest : null;
     for (const e of L.on){
       const lname = e.name.toLowerCase();
@@ -371,13 +375,22 @@ const Region = (() => {
       const text = cl.name.toUpperCase() + (cl.members.length > 1 ? ' ' + cl.members.length : '');
       const below = cl.y + ext + ls * 1.6, y = below + ls > G.H - r ? cl.y - ext - ls * 1.6 : below;
       labels.push({key: 'c:' + cl.name.toLowerCase(), text, x: cl.x, y, size: ls * 0.9, col, al: cl.sample ? 0.75 : 0.9});
-      pos.set(cl.name.toLowerCase(), [cl.x, cl.y]);
-      for (const o of cl.members) pos.set(o.name.toLowerCase(), [cl.x, cl.y]);
+      pos.set(cl.name.toLowerCase(), [cl.x, cl.y]); grp.set(cl.name.toLowerCase(), cl.name);
+      for (const o of cl.members){ pos.set(o.name.toLowerCase(), [cl.x, cl.y]); grp.set(o.name.toLowerCase(), cl.name); }
     }
+    /* a link is drawn only where it leaves a group: from a town on the
+       plate to a cluster at the edge, or from one cluster to another.
+       The towns of the open group — spread out on the plate together —
+       have no lines between them, and a cluster's members none within
+       it (Eden, 2026-09-06: "when a cluster opens there is no lines in
+       between the cluster diamonds, only lines to the next cluster
+       group"). A town on the plate has no group here; two of them are
+       the same group, the open one. */
     if (demo())
       for (const [p, q] of DEMO_LINKS){
-        const A = pos.get(p.toLowerCase()), B = pos.get(q.toLowerCase());
-        if (A && B) links.push({key: 'k:' + [p, q].map(t => t.toLowerCase()).sort().join('|'), A, B, seed: seedOf(p + '|' + q), al: 1});
+        const a = p.toLowerCase(), b = q.toLowerCase(), A = pos.get(a), B = pos.get(b);
+        if (!A || !B || grp.get(a) === grp.get(b)) continue;
+        links.push({key: 'k:' + [a, b].sort().join('|'), A, B, seed: seedOf(p + '|' + q), al: 1});
       }
     return {r, ls, gems, labels, links, pos, L};
   }
@@ -435,6 +448,7 @@ const Region = (() => {
   let trans = null;                         // {t0, dur, from: scene}
   function overlay(a, m, cap){
     if (!frame || !G.terr) return m;
+    settle();
     let S = scene();
     if (trans){
       const k = (performance.now() - trans.t0) / trans.dur;
@@ -445,12 +459,12 @@ const Region = (() => {
   }
 
   /* ── opened ────────────────────────────────────────────────────────────
-     Enter on a cluster: the eye moves to the middle of its towns, the
-     scene it leaves is kept and blended into the one it arrives at over
-     nine tenths of a second, and the walker glides to the town the
-     cluster was named for. What was on the plate is now beyond it and
-     gathers at the edge on its own — the home town's cluster is the way
-     back. */
+     A cluster opens — under the walker (`settle`), or on Enter (`press`):
+     the eye moves to the middle of its towns, the scene it leaves is
+     kept and blended into the one it arrives at over nine tenths of a
+     second, and the walker glides to the town the cluster was named
+     for. What was on the plate is now beyond it and gathers at the edge
+     on its own — the home town's cluster is the way back. */
   function open(cl){
     const geo = cl.members.map(o => o.geo).filter(g => g && isFinite(g.lat) && isFinite(g.lon));
     if (!geo.length){ note('nowhere to open — those towns have no place yet'); return false; }
@@ -464,6 +478,33 @@ const Region = (() => {
     shown = null;
     note(cl.name + ' opened · ' + cl.members.length + (cl.members.length === 1 ? ' town' : ' towns'));
     return true;
+  }
+  /* ── a cluster opens under the walker ─────────────────────────────────
+     Standing on a cluster is enough to open it. When the walker comes to
+     rest by one — a hop's glide ending there — it sits a third of a
+     second, so the landing is seen, and the cluster opens with nothing
+     pressed (Eden, 2026-09-06: "when our sprite sits on a cluster it
+     expands, we don't need to press enter to open"). Read at the moment
+     it comes to rest, so a cluster the walker is merely left beside —
+     by the spawn, or by the scene re-laying itself round it — does not
+     open on its own; and never while a scene is still blending. Enter
+     still opens one at once (`press`). */
+  const DWELL = 350;                        // ms at rest on a cluster before it opens
+  let wasMoving = false, sat = null;        // {cl, t0}: the cluster come to rest on, and when
+  function settle(){
+    const moving = !!G.moving;
+    if (moving) sat = null;
+    else if (wasMoving && !trans && !G.paused){
+      const w = toWorld(G.x, G.y);
+      let cl = null, bd = G.terr.tsz * REACH;
+      for (const c of layout(radius()).clusters){
+        const d = Math.hypot(w[0] - c.x, w[1] - c.y);
+        if (d <= bd){ bd = d; cl = c; }
+      }
+      sat = cl ? {cl, t0: performance.now()} : null;
+    }
+    wasMoving = moving;
+    if (sat && !trans && !G.paused && performance.now() - sat.t0 >= DWELL){ const cl = sat.cl; sat = null; open(cl); }
   }
   /* ── the walker glides ─────────────────────────────────────────────────
      A hop is one long step: the game's own stride, from where the walker
@@ -490,8 +531,9 @@ const Region = (() => {
      WASD still walks the links (Eden, 2026-09-05). Nearest by distance
      among those within sixty degrees of the arrow and beyond reach of
      where the walker stands; the walker glides there, the camera
-     follows, and Enter is Enter. Taken in the capture phase, as build
-     mode takes its arrows, so the walk never sees the key. */
+     follows, and Enter is Enter — a cluster opens on its own once the
+     walker has settled on it (`settle`). Taken in the capture phase, as
+     build mode takes its arrows, so the walk never sees the key. */
   let stood = null;                         // the sample or cluster the walker was last put by
   function places(){
     const L = layout(radius());
@@ -585,10 +627,10 @@ const Region = (() => {
     el.innerHTML = '';
     if (by){
       if (by.cluster){
-        const e = document.createElement('em'); e.textContent = 'Enter';
+        /* it opens on its own the moment the walker has settled */
         const n = document.createElement('span');
-        n.textContent = 'open ' + by.name + ' · ' + by.cluster.members.length + (by.cluster.members.length === 1 ? ' town' : ' towns') + ' beyond the plate';
-        el.append(e, n);
+        n.textContent = 'opening ' + by.name + ' · ' + by.cluster.members.length + (by.cluster.members.length === 1 ? ' town' : ' towns') + ' beyond the plate';
+        el.append(n);
       } else {
         const n = document.createElement('span');
         n.textContent = by.name + ' · a sample, not a town yet';
@@ -625,12 +667,13 @@ const Region = (() => {
     G.total = 12;
     scatterSparks();
     if (typeof Hud !== 'undefined' && Hud.fold) Hud.fold();
+    wasMoving = false; sat = null;
     banner();
     return true;
   }
   /* ── out ── */
   function leave(){
-    G.hold = null; view = null; trans = null; stood = null;
+    G.hold = null; view = null; trans = null; stood = null; sat = null; wasMoving = false;
     if (!frame) return false;
     Build.commit(); Markers.commit();
     const f = frame; frame = null; held = null;

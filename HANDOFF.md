@@ -86,8 +86,14 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
     close of 6 Sep: **builds 284–296**, seventeen files and `src/morph.js`
     new, committed as Eden (`git log -1`). `.claude/` was put in
     `.gitignore` at the same time (the peer session's worktree lives
-    there). Not pushed: `git push` (work → main) puts it on the live site
-    at parsemedata.github.io/BitMap; Eden's word first. Every entry
+    there). **Pushed** the same night on Eden's word (`git push origin
+    work:main`, 37eddff..24c0136 — 282, 283 and this commit together),
+    so the live site at parsemedata.github.io/BitMap serves build 296.
+    A plain `git push` had done nothing: `work` tracks origin/main but
+    the names differ, and git's default push mode (`simple`) refuses
+    that with a warning about `branch.autoSetupMerge`; `push.default`
+    is now `upstream` in this clone's config, so plain `git push` works
+    as the README says. Every entry
     below from 284 down says what each build did and how it was
     verified; every one is Eden's word quoted. The worktree
     `.claude/worktrees/region-cluster-lines` (branch

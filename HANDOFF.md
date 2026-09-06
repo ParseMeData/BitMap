@@ -76,7 +76,55 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 6 Sep 2026, build 282 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 6 Sep 2026, build 283 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 283 (6 Sep 2026) — the ground: the map under the region, and
+  the towns on it.** Eden: *"now we need to re align and place the
+  diamonds ontop of an overlay of the map of victoria using the same
+  inital map system"*. The map is the town's own tracing underlay
+  (src/basemap.js), live Dark tiles, wearing the region's own handles
+  (`hq.basemap.region`) while the region is up. **Basemap:**
+  `look(lat, lon, z, k, show, fade)` lays the live tiles with that point
+  at the plate's centre, at that zoom, each mercator pixel worth `k`
+  world units, at opacity `fade` when given; refused with a picture
+  frozen; saves nothing (the zoom changing drops the tiles, as `step`
+  does). `merc` and `unmerc` are on the API. **Region:** `ground()` is
+  the eye plus the zoom and `k`: `k = 360·cos(lat) / (scale·256·2^z)` —
+  `hq.region`'s scale keeps its meaning, degrees of latitude per world
+  unit at the eye — and `z` the smallest that puts a tile pixel on a
+  CSS pixel or finer at the camera's zoom, clamped 3–19, so the map is
+  never blurred and never more tiles than `lay()`'s ceiling. `toXY` and
+  `toGeo` project by that mercator whenever the underlay is there (the
+  flat projection stands in without it; the two agree at the centre
+  and drift under a percent across the plate). `lookAt(k, show)` runs
+  each frame from `overlay()`, only while `Basemap.plate()` is
+  'region'; while a cluster opens it slides the map's centre from
+  `trans.eye0` to the eye in mercator by the blend's eased fraction,
+  so a diamond stays on its town the whole way. `enter()` keeps
+  `frame.plate` and does `Basemap.mount('region').then(...)` →
+  `lookAt(1, true)`, guarded on the region still being up and the
+  handles still its own (a quick Esc must never have the eye written
+  on a plate's record); `leave(remount)` mounts the plate's own back
+  unless `go()` is on its way to another plate, whose `Atlas.go` mounts
+  it — two mounts must never race for one picture — and hides the
+  hint, which Interior's prompt would otherwise leave standing. `FADE
+  = 0.45`: the region's map is looked at, the town's is traced over at
+  a quarter. The bar on the region offers ✕ and the credit only (CSS
+  on `body.region`): Find, sources, Freeze and Zoom would fight the
+  region for where the map is. Verified on the throwaway: home at
+  fit-all, 80 tiles at z 11 and k 0.662, Wodonga at the foot of Lake
+  Hume, Wangaratta and Myrtleford on their junctions, Mildura's four on
+  the Murray's bend with the border's VICTORIA / NEW SOUTH WALES running
+  past; the slide to Mildura carried the map (its centre read -36.27,
+  146.30 midway); Esc brought the home plate's picture back with
+  `hq.basemap` byte-for-byte as it was; Enter on Wodonga from the
+  region left it, mounted Wodonga's own underlay (none) and hid the
+  hint; `Atlas.go('home')` restored home's. No errors. Seen and left:
+  the first slide to a new eye crosses blank ground — those tiles have
+  not been fetched yet and the old ones fall out of `lay()`'s range on
+  the way — so the map lands a moment after the diamonds; the second
+  time it is cached. Not tested: a phone (z falls to 9 there by the
+  maths, 28 tiles), the M key by hand, the wallpaper.
 
 - **Build 282 (6 Sep 2026) — lines between groups only; a cluster opens
   under the walker; the wave calmed.** Eden: *"make it so the latest

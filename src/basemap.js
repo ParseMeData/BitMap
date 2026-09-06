@@ -325,6 +325,25 @@ const Basemap = (() => {
     sync(); save();
     return true;
   }
+  /* ── looked at from above ─────────────────────────────────────────────
+     The live tiles laid with this latitude and longitude at the plate's
+     centre, at this zoom, each mercator pixel worth `k` world units —
+     for the region (src/region.js), which stands its towns by the same
+     mercator and lays the map of where its eye is under them. Called
+     every frame the region is up, so it costs nothing when nothing has
+     moved; the zoom changing drops the tiles, as a step does. Refused
+     while a picture is frozen: that has a place of its own. Nothing is
+     saved by it — the region says where to look every time. `fade`, when
+     given, is the sheet's opacity: the region's map is looked at, not
+     traced over, and stands further forward than the town's quarter. */
+  function look(la, lo, zz, k, show, fade){
+    if (pic || ![la, lo, zz, k].every(isFinite)) return false;
+    if (zz !== z){ z = zz; clear(); const el = $('#mapzv'); if (el) el.textContent = z; }
+    lat = la; lon = lo; scale = k;
+    if (isFinite(fade) && fade !== dim){ dim = fade; paint(); }
+    if (show && !shown) setShown(true);
+    return true;
+  }
   /* every tile that has been asked for has answered — for a caller that
      wants to freeze the moment it can (src/found.js) */
   function ready(ms){
@@ -768,7 +787,7 @@ const Basemap = (() => {
     if (pic){ pic.remove(); pic = null; }
     picURL = ''; place = null; save._done = '';
     setPlacing(false); clear();
-    lat = 0; lon = 0; z = 15; shown = false;
+    lat = 0; lon = 0; z = 15; dim = 0.25; scale = 1; shown = false;   // the defaults, for a plate with no record yet
     handles(id);
     try { await boot(); } catch (e){ waiting = false; note('underlay failed to start: ' + e.message); }
     syncUI();
@@ -789,6 +808,7 @@ const Basemap = (() => {
 
   return {init, mount, sync, find, setShown, setSrc, freeze, thaw, take, suspend, ready, setBar,
           worldOf, geoOf, setRot, nudge, step, setPlacing, turnLive, liveRot: () => liveRot,
+          look, merc, unmerc,
           placed: () => (place ? Object.assign({}, place) : null),
           plate: () => plate,
           active: () => shown, bar: () => barOpen, placing: () => placing,

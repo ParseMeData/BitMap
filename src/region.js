@@ -21,6 +21,11 @@
    plate is entered, not drawn. Stand by a town and press Enter and you are
    standing on its home plate. `gate` is where src/distract.js says no.
 
+   Under it all lies THE GROUND: the map of where the eye is, laid by the
+   town's own tracing underlay (src/basemap.js) — live tiles with the eye
+   at the plate's centre — and the towns stand on it by the map's own
+   mercator, so a diamond is on the town on the map. See `ground`.
+
    Reached from the rose diamond on the hub, in place of the country
    (src/towns.js), which is a chip away in the tune panel; Esc leaves.
    Going in is a frame, exactly as going inside a building is: the half of
@@ -136,16 +141,69 @@ const Region = (() => {
     if (!view) view = {lat: p.lat0, lon: p.lon0};
     return {lat: view.lat, lon: view.lon, scale: p.scale};
   }
+  /* ── the ground, and the projection that is the map's ───────────────
+     Under the diamonds lies the map of where the eye is: the town's own
+     tracing underlay (src/basemap.js), live Dark tiles with the eye at
+     the plate's centre. The region projects by the same mercator at the
+     same zoom, each tile pixel worth `k` world units, so a town's
+     diamond stands on the town on the map by construction, not by
+     adjustment (Eden, 2026-09-06: "re align and place the diamonds on
+     top of an overlay of the map of victoria using the same initial map
+     system"). `hq.region`'s scale keeps its meaning — degrees of
+     latitude per world unit at the eye — and `k` is what that comes to
+     per mercator pixel at the eye's latitude. The zoom is the one that
+     puts a tile pixel on a screen pixel, or finer, at the camera's zoom
+     as the screen has it: never blurred, and never more tiles than the
+     screen can show. The projection does not depend on the zoom, only
+     the tiles do. Without the underlay (a test page) the flat projection
+     stands in, a kilometre the same length either way. */
+  const mapper = () => (typeof Basemap !== 'undefined' && Basemap.merc ? Basemap : null);
+  const FADE = 0.45;                   // the map's opacity here: looked at, where the town's is traced over at a quarter
+  function ground(){
+    const p = eye(); if (!p) return null;
+    const cssW = (typeof canvas !== 'undefined' && canvas.clientWidth) || 1;
+    const dpr = (typeof VW === 'number' && VW ? VW : cssW) / cssW, cz = (G.cam[2] || 1) / dpr;
+    const c = Math.cos(p.lat * Math.PI / 180);
+    const z = Math.max(3, Math.min(19, Math.ceil(Math.log2(360 * c * cz / (256 * p.scale)))));
+    return {lat: p.lat, lon: p.lon, z, k: 360 * c / (p.scale * 256 * Math.pow(2, z))};
+  }
   const toXY = g => {
     const p = eye(); if (!p) return null;
+    const B = mapper();
+    if (B){
+      const t = ground(), a = B.merc(g.lat, g.lon, t.z), b = B.merc(p.lat, p.lon, t.z);
+      return [G.W / 2 + (a[0] - b[0]) * t.k, G.H / 2 + (a[1] - b[1]) * t.k];
+    }
     return [G.W / 2 + (g.lon - p.lon) * Math.cos(p.lat * Math.PI / 180) / p.scale,
             G.H / 2 - (g.lat - p.lat) / p.scale];
   };
   const toGeo = (x, y) => {
     const p = eye(); if (!p) return null;
+    const B = mapper();
+    if (B){
+      const t = ground(), b = B.merc(p.lat, p.lon, t.z);
+      const g = B.unmerc(b[0] + (x - G.W / 2) / t.k, b[1] + (y - G.H / 2) / t.k, t.z);
+      return {lat: g[0], lon: g[1]};
+    }
     return {lat: p.lat - (y - G.H / 2) * p.scale,
             lon: p.lon + (x - G.W / 2) * p.scale / Math.cos(p.lat * Math.PI / 180)};
   };
+  /* the map laid at the eye — or, while a cluster is opening, on its way
+     from the eye it left to the one it is arriving at by the fraction the
+     scene is blended by, so a diamond stays on its town the whole slide.
+     Only while the underlay wears the region's handles: never a word to
+     a plate's own. */
+  function lookAt(k, show){
+    const B = mapper(); if (!B || !B.look || !B.plate || B.plate() !== 'region') return false;
+    const t = ground(); if (!t) return false;
+    let la = t.lat, lo = t.lon;
+    if (trans && trans.eye0 && k < 1){
+      const a = B.merc(trans.eye0.lat, trans.eye0.lon, t.z), b = B.merc(la, lo, t.z);
+      const g = B.unmerc(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, t.z);
+      la = g[0]; lo = g[1];
+    }
+    return B.look(la, lo, t.z, t.k, show, FADE);
+  }
 
   /* every town with a spot on the plate: anchored ones where they fall,
      the rest in a row along the foot; a town being dragged is where the
@@ -449,12 +507,13 @@ const Region = (() => {
   function overlay(a, m, cap){
     if (!frame || !G.terr) return m;
     settle();
-    let S = scene();
+    let S = scene(), k = 1;
     if (trans){
-      const k = (performance.now() - trans.t0) / trans.dur;
-      if (k >= 1) trans = null;
-      else S = blend(trans.from, S, ease(Math.max(0, k)));
+      k = (performance.now() - trans.t0) / trans.dur;
+      if (k >= 1){ trans = null; k = 1; }
+      else { k = ease(Math.max(0, k)); S = blend(trans.from, S, k); }
     }
+    lookAt(k);
     return emit(a, m, S, cap);
   }
 
@@ -468,7 +527,8 @@ const Region = (() => {
   function open(cl){
     const geo = cl.members.map(o => o.geo).filter(g => g && isFinite(g.lat) && isFinite(g.lon));
     if (!geo.length){ note('nowhere to open — those towns have no place yet'); return false; }
-    trans = {t0: performance.now(), dur: 900, from: scene()};
+    const e0 = eye();
+    trans = {t0: performance.now(), dur: 900, from: scene(), eye0: e0 ? {lat: e0.lat, lon: e0.lon} : null};
     view = {lat: geo.reduce((s, g) => s + g.lat, 0) / geo.length, lon: geo.reduce((s, g) => s + g.lon, 0) / geo.length};
     const S = scene(), name = cl.name.toLowerCase();
     const at = S.pos.get(name) || [G.W / 2, G.H / 2];
@@ -657,7 +717,14 @@ const Region = (() => {
       sparks: G.sparks, got: G.got, total: G.total, round: G.round,
       clock: G.clock, steps: G.steps, over: G.over, msg: G.msg
     };
-    Basemap.suspend(true);
+    /* the ground: the underlay takes the region's own handles and lays
+       the map at the eye — once its mount has settled, and only if the
+       region is still up and the handles still its own, so a quick Esc
+       can never have the eye written on a plate's record */
+    if (typeof Basemap !== 'undefined' && Basemap.mount){
+      frame.plate = Basemap.plate ? Basemap.plate() : Atlas.current();
+      Basemap.mount('region').then(() => { if (frame && Basemap.plate() === 'region') lookAt(1, true); });
+    }
     document.body.classList.add('region');
     Markers.mount(MKEY);
     Build.mount('region', SKEY);
@@ -671,13 +738,18 @@ const Region = (() => {
     banner();
     return true;
   }
-  /* ── out ── */
-  function leave(){
+  /* ── out ──
+     The plate's own underlay comes back — unless the way out is on to
+     another plate, whose own `Atlas.go` mounts (remount false), so two
+     mounts never race for the one picture. */
+  function leave(remount){
     G.hold = null; view = null; trans = null; stood = null; sat = null; wasMoving = false;
     if (!frame) return false;
     Build.commit(); Markers.commit();
     const f = frame; frame = null; held = null;
     document.body.classList.remove('region');
+    const hint = $('#enterhint'); if (hint && shown){ hint.hidden = true; shown = null; }
+    if (typeof Basemap !== 'undefined' && Basemap.mount && remount !== false) Basemap.mount(f.plate || 'home');
     Markers.mount(f.mkey);
     Build.mount(f.scope, f.skey);
     setBlank(f.blank, false);
@@ -702,7 +774,7 @@ const Region = (() => {
   function go(t){
     if (!t) return false;
     if (api.gate && !api.gate(t)) return false;
-    leave();
+    leave(t.root === Atlas.current());
     if (t.root !== Atlas.current()) Atlas.go(t.root, null);
     else note(t.name);
     return true;

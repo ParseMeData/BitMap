@@ -272,7 +272,11 @@ only between groups — from a town on the plate to a cluster at the edge,
 or from one cluster to another — and never between the towns of the open
 group; a cluster opens on its own once the walker has come to rest on it,
 nothing pressed; and a link's wave is calmer, one slow swing at half the
-depth.
+depth. **The ground:** under the region lies the map of where its eye
+is — the town's own tracing underlay, live Dark tiles — and the towns
+stand on it by the map's own mercator, so each diamond is on its town on
+the map; the map slides with the eye when a cluster opens, and comes at
+the zoom the screen wants.
 
 ## Controls
 
@@ -2373,6 +2377,17 @@ and a plate is entered, not drawn. Stand by a town and press `Enter` to
 stand on its home plate. `Esc` leaves the region for wherever you were,
 walker and camera and all — it is a frame, as going inside a building is,
 never a plate of the atlas. The compass reads north while you are here.
+
+**The ground.** Under the region lies the map of where its eye is: the
+same tracing underlay the town has (*Tracing a real place*), live Dark
+tiles with the eye at the plate's centre, and the towns stand on it by the
+map's own mercator — so a diamond is on the town on the map, by
+construction rather than by adjustment. When a cluster opens the map
+slides with the eye, and the tiles come at whatever zoom puts one tile
+pixel on one screen pixel. `M` opens the map bar here as on the town, but
+on the region it offers only ✕ — where the map is, and how close, is the
+region's to say — and `M` again brings the map back. The town's own
+underlay is untouched by any of it and comes back the moment you leave.
 
 ### The towns
 

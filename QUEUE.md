@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The ground under the region** — 2026-09-06, build 283. The
+  tracing underlay's live tiles laid at the eye, the towns projected by
+  the same mercator so each diamond is on its town; the map slides with
+  a cluster opening; the plate's own underlay back on leaving.
 - [x] **Lines between groups only; a cluster opens under the walker;
   the wave calmed** — 2026-09-06, build 282. A sample link drawn only
   from a group to another; a cluster opens once the walker has sat on

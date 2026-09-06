@@ -361,6 +361,10 @@ body.region #msg{top:98px}
 body.wall #region{display:none}
 /* no markers on the region: the palette's strip for them is not shown there */
 body.region #kmlabel,body.region #kmarkers,body.region #kmname{display:none!important}
+/* the region lays its own map — where it looks, and how close — so the bar's
+   Find, sources, Freeze and Zoom are not offered there; ✕ and M still take
+   the map away and bring it back */
+body.region #mapq,body.region #mapgo,body.region .mapsrc,body.region #mapfreeze,body.region #mapzwrap{display:none!important}
 #enterhint{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;
   padding:7px 12px;display:flex;gap:9px;align-items:center;font-size:9.5px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
@@ -1087,7 +1091,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 282, cb = '?cb=' + BUILD +
+  var BUILD = 283, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

@@ -78,6 +78,10 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ## Where we are — 7 Sep 2026, build 311 (tag **v8.8** at 280; **v8.9 open**)
 
+- **Builds 297–311 committed on `work` as one commit, cce87bd, 7 Sep
+  2026** (Eden: "much better lock it in commit") — not pushed; `git push`
+  (push.default upstream) takes it to origin/main and the live site.
+
 - **Build 311, 7 Sep 2026 — a print is its drawing, filled.** Eden, on
   the stilled bench: "i think its the transparency in some of the darker
   greys — example on the roof of the houses i see a grey in the roof
@@ -168,7 +172,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   stay on the plate, stopping at the foot with "N of M laid out". One restamp for the lot. Every set fits at 1× (patterns, the
   biggest, 84 glyphs ≤ 30 cells, in four rows). `clearingOf` now matches
   by centre and ×1.5 width, not `blobSeed`, which `make` does not keep.
-  Uncommitted, with 297–307.
+  Committed with 297–311 on 7 Sep 2026.
 
 - **Build 307, 7 Sep 2026 — the bench's tabs.** Eden: "in the grid view
   at the top give a category tabs so if we place the asset in this
@@ -189,7 +193,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   clearUnder, exported with `remove` and `select` = sel2), selected and
   filed. The Group chips of 304 are gone (markup and `.benchonly` CSS).
   The single sheet of 303–306 (`hq.shapes.bench`) is orphaned, empty on
-  Eden's profile. Uncommitted, with 297–306.
+  Eden's profile. Committed with 297–311 on 7 Sep 2026.
 
 - **Build 306, 7 Sep 2026 — the grid seen.** Eden, on 305 live: "reload
   as i dont see the grid view". It was drawn: at the bench's opening zoom
@@ -227,7 +231,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   selected print's glyph: `regroup(set)` writes the record (a glyph put
   back in its own sheet's set is deleted), turns the print into that
   group's kind, and `Build.touch` (the `changed` path, newly exported)
-  restamps it. Uncommitted, with 297–303.
+  restamps it. Committed with 297–311 on 7 Sep 2026.
 - **Build 303, 7 Sep 2026 — the glyph bench.** Eden: "create a plate
   outside of our gameplay that lets me place an asset within a grid so
   we can set each assets default size". `src/bench.js` is a frame like
@@ -254,7 +258,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   `Build.create` for the tools (`Build.add` takes a descriptor).
   Verified on the rig: a21 placed at 1×, Shift+↑ to 1.5× and 2× wrote
   `hq.sizes`, Esc, and a21 created on the town came at 1.5× (66 wide
-  against 44). Uncommitted, with 297–302.
+  against 44). Committed with 297–311 on 7 Sep 2026.
 - **Build 302, 7 Sep 2026 — the region's zoom is the map's scale, not
   the camera's.** Eden, on seeing 299–301: "this is not what we want —
   the zoom is only moving the boundry not everything else — the boundry
@@ -280,14 +284,14 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   factor: a little closer than meant, rewritten by a press of Lock;
   Eden's live profile has no record). Lock/unlock/forget as at 300. A
   locked eye's `zoomBy` says so at most every 1.5 s, so a pinch does not
-  spam. Uncommitted, with 297–301.
+  spam. Committed with 297–311 on 7 Sep 2026.
 - **Build 301, 7 Sep 2026 — the zoom bar only in the builder.** Eden:
   "make the scroll zoom only show in build mode". One rule in
   index.html: `#rzoom` shows on `body.region.building` rather than
   `body.region`, the same gate as the boundary; `syncSlider` still runs
   each frame so the bar is right the moment the builder opens. The lock
   itself is unchanged — a locked eye still holds `+ − 0` and the pinch
-  with the builder closed. Uncommitted, with 297–300.
+  with the builder closed. Committed with 297–311 on 7 Sep 2026.
 - **Build 300, 7 Sep 2026 — unlocking keeps the zoom remembered.**
   Eden, on 299's parked decision: "keep the zoom remembered when
   unlocked". `hq.region.zoom` is now `{at: {eye: ratio}, held: {eye:
@@ -298,7 +302,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   Lock in the View block, `off` while nothing is remembered) and clears
   both, so the eye rests zoomed out again. A 299 record has no `held`
   and reads as every remembered eye held. The View note says `locked at
-  2.52×`, `free, remembers 2.52×`, or `free`. Uncommitted, with 297–299.
+  2.52×`, `free, remembers 2.52×`, or `free`. Committed with 297–311 on 7 Sep 2026.
 - **Build 299, 7 Sep 2026 — the boundary only in the builder; a zoom
   bar at the right, with a lock per region.** Eden: "make the rectangle
   boundry only show in the build mode — and give it a scroll bar on the
@@ -322,8 +326,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   `+ − 0`, the pinch and the bar are held on a locked eye and free on
   the others. Save/Forget zoom are gone from the View block and the API
   (`saveZoom`/`forgetZoom` removed; `zoomTo` added). The bar hides under
-  the tune panel (`body.tuning`) and on the wall. Uncommitted, with 297
-  and 298. **Decision Eden may want to flip:** unlocking forgets the
+  the tune panel (`body.tuning`) and on the wall. Committed with 297–311 on 7 Sep 2026. **Decision Eden may want to flip:** unlocking forgets the
   zoom (the eye rests at the default again) rather than keeping it free
   but remembered — one switch, as asked; a "remembered but free" state
   would want Save back.
@@ -343,7 +346,7 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   lands that row unseen and fades it in as a set. The town's own tracing
   tiles behave the same, since it is one sheet either way. Baking
   (Freeze) is untouched — it draws the images, not their style.
-  Uncommitted, with 297.
+  Committed with 297–311 on 7 Sep 2026.
 - **Build 297, later that night — the town sealed and kept in Google
   Drive.** Eden asked for the safest way to keep the game on an online
   drive and open it from a web link anywhere, with nothing inside it
@@ -403,10 +406,8 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   as Eden, a tab on localhost:8000 holding the demo town and a console
   tab. `.gitignore` now refuses `snapshots/live-*.json` and
   `snapshots/rig-*.json`, because the repo is public and a capture is a
-  town. **Uncommitted at the close** — Eden asked for the log ("log
-  everything we have done this session ready to clear context"), not a
-  commit; `git status` shows the eight files, and the commit as Eden with
-  BUILD 297 waits on the word.
+  town. Left uncommitted at the close of the night on Eden's word ("log
+  everything", not a commit), and committed with 298–311 on 7 Sep 2026.
 - **Handoff, 6 Sep 2026, night — read this first.** Eden: *"create
   handoff and commit so we can close this conversation"*. Where things
   stand:

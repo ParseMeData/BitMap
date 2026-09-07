@@ -91,6 +91,7 @@ const Atlas = (() => {
   function go(id, at){
     if (!A.areas[id] || !G.terr) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    if (typeof Bench !== 'undefined' && Bench.on()) return false;
     /* from the region, a jump is a jump home first: the frame it holds
        is the plate being left, and mounting over it would lose it */
     /* a jump is refused across a plate with a distraction on it
@@ -197,6 +198,7 @@ const Atlas = (() => {
     const l = linkAt(cur, at, dir) || linkAt(cur, at, null);
     if (l){ if (typeof Morph !== 'undefined' && Morph.sweep) Morph.sweep(dir); return go(l.to, l.land); }
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    if (typeof Bench !== 'undefined' && Bench.on()) return false;
     const mk = doorAt();
     /* ── the next town over ──────────────────────────────────────────────
        A road that ends heading a way leads to the town that lies that way

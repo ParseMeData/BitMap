@@ -25,6 +25,7 @@ uniform vec2  u_res;
 uniform vec3  u_cam;    // centre xy, zoom
 uniform float u_time;
 uniform float u_burst;  // 0..1 recrystallisation sweep
+uniform float u_still;  // 1: the lattice stands still, every cell on its first face (the bench, src/bench.js)
 uniform float u_unit;   // world size of one lattice cell
 uniform vec2  u_atlas;  // marker atlas, in glyph cells
 
@@ -41,9 +42,11 @@ void main(){
   float glyph = a_v0.y < 0.0 ? 1.0 : 0.0;
   vec2  pos   = a_pos;
 
-  if (mode < 0.5){
+  if (mode < 0.5 && u_still < 0.5){
     /* living lattice: each cell crosses between its two faces on its own
-       clock, so the map is never twice the same and never in lockstep */
+       clock, so the map is never twice the same and never in lockstep —
+       unless it is told to stand still, when a cell is its first face,
+       where it was drawn, and nothing sways or bursts */
     float t   = u_time * a_meta.y + a_meta.x * 7.13;
     float f   = ease(fract(t));
     bool  flip = mod(floor(t), 2.0) >= 1.0;
@@ -152,7 +155,7 @@ class Renderer {
       throw new Error('link: ' + (gl.getProgramInfoLog(p) || '(no log)'));
     gl.useProgram(p);
     this.u = {};
-    for (const n of ['u_res', 'u_cam', 'u_time', 'u_burst', 'u_unit', 'u_atlas', 'u_tex', 'u_glow'])
+    for (const n of ['u_res', 'u_cam', 'u_time', 'u_burst', 'u_unit', 'u_atlas', 'u_tex', 'u_glow', 'u_still'])
       this.u[n] = gl.getUniformLocation(p, n);
     gl.uniform1i(this.u.u_tex, 0);
     gl.uniform2f(this.u.u_atlas, 1, 1);
@@ -255,6 +258,7 @@ class Renderer {
     gl.uniform2f(this.u.u_res, w, h);
     gl.uniform1f(this.u.u_time, time);
     gl.uniform1f(this.u.u_glow, this.glow === undefined ? 1 : this.glow);
+    gl.uniform1f(this.u.u_still, this.still ? 1 : 0);
     /* --ground #1B1B21. A transparent clear must be black: the canvas is
        composited premultiplied, and a colour cleared at alpha 0 is ADDED
        to the page behind it — the plate showed twice its ground while the

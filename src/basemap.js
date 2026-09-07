@@ -241,12 +241,14 @@ const Basemap = (() => {
         img.decoding = 'async';
         img.style.cssText = 'position:absolute;width:' + TILE + 'px;height:' + TILE +
           'px;left:' + (tx * TILE - origin[0]) + 'px;top:' + (ty * TILE - origin[1]) + 'px';
+        img.className = 'tile';                    // born unseen — see `reveal`
         img.onload = () => { placed++; tally(); };
         img.onerror = () => {
           img.style.visibility = 'hidden'; failed++; tally();
         };
         layer.appendChild(img);
         live.set(at, img);
+        born();
       }
     for (const [at, img] of live)
       if (!want.has(at)){ img.remove(); live.delete(at); }
@@ -254,6 +256,7 @@ const Basemap = (() => {
   /* a whole sheet that fails is worth saying out loud: with Google it means
      the key was refused, which otherwise just looks like an empty map */
   function tally(){
+    reveal();
     if (failed && !placed)
       note(src === 'google'
         ? 'google refused every tile — check the key and its billing'
@@ -269,6 +272,43 @@ const Basemap = (() => {
   function clear(){
     for (const [, img] of live) img.remove();
     live.clear(); lastRange = ''; origin = [0, 0]; placed = 0; failed = 0;
+    clearTimeout(revealTimer); revealTimer = 0; late = false;
+  }
+  /* ── the sheet shown whole ─────────────────────────────────────────────
+     A tile used to show the moment it landed, so a sheet filled in from
+     the corner it was laid from, one tile at a time — plain on the
+     region, whose ground is a screenful of tiles asked for as it opens
+     (Eden, 2026-09-07: "there is a delay in the map loading in the
+     background of the zoomed out map — have it fully load in the
+     background then it fades in once its completely loaded"). Now a tile
+     is born unseen (`.tile`, index.html) and stays so until every tile
+     the view asked for has answered; then the lot are shown in one
+     breath and fade in together, as a sheet (`.in`). A sheet that will
+     not finish — one tile hung on a slow link — is shown as far as it
+     got once REVEAL_MS have passed, and from then each late tile fades
+     in on its own as it lands, until the sheet is whole again and the
+     next tiles laid wait as a set. A pan that adds a row does the same:
+     the row lands unseen and fades in together. */
+  const REVEAL_MS = 6000;
+  let revealTimer = 0, late = false;
+  function born(){
+    if (revealTimer || late) return;
+    revealTimer = setTimeout(() => { revealTimer = 0; reveal(); }, REVEAL_MS);
+  }
+  function reveal(){
+    if (!layer) return;
+    const imgs = [...live.values()], hidden = imgs.filter(i => !i.classList.contains('in'));
+    const whole = imgs.every(i => i.complete);
+    if (whole){ clearTimeout(revealTimer); revealTimer = 0; late = false; }
+    else if (revealTimer) return;                 // the cap still runs: wait for the rest
+    else late = true;                             // the cap has passed
+    const show = whole ? hidden : hidden.filter(i => i.complete);
+    if (!show.length) return;
+    /* the born-unseen style has to have been laid before the class turns,
+       or a tile that answered from the cache in the same breath it was
+       made simply appears, with no fade */
+    void layer.offsetWidth;
+    for (const i of show) i.classList.add('in');
   }
   /* ── warmed ───────────────────────────────────────────────────────────
      The tiles a view will want, asked for now so they are in the browser's

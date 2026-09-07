@@ -146,7 +146,7 @@ const Quest = (() => {
   function syncLetter(){
     const sel = $('#kletter'); if (!sel) return;
     const f = F();
-    const on = !!f && typeof Region !== 'undefined' && !Region.on() && !(typeof Interior !== 'undefined' && Interior.inside());
+    const on = !!f && typeof Region !== 'undefined' && !Region.on() && !(typeof Interior !== 'undefined' && Interior.inside()) && !(typeof Bench !== 'undefined' && Bench.on());
     sel.hidden = !on; const lab = $('#kletterlab'); if (lab) lab.hidden = !on;
     if (!on) return;
     const list = [['', '— not a letter']].concat(f.ids.map((lid, k) => [lid, f.letters[k] + (f.words[k] ? ' · ' + f.words[k] : '')]));

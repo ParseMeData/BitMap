@@ -502,8 +502,9 @@ const Palace = (() => {
   function overlay(a, m, cap){
     metrics();
     const c = sheet();                          // cleared, so an early return leaves nothing behind
-    /* the heading names the town; the region is not the town */
+    /* the heading names the town; the region is not the town, nor the bench */
     if (typeof Region !== 'undefined' && Region.on()) return m;
+    if (typeof Bench !== 'undefined' && Bench.on()) return m;
     if (!G.shapes || !G.terr || WALL) return m;
     const z = G.cam[2], t = G.terr.tsz;
     const hw = VW / (2 * z), hh = VH / (2 * z);
@@ -573,7 +574,7 @@ const Palace = (() => {
   let scratch = null;
   function titleCells(){
     if (!G.terr || !G.A || !G.shapes || typeof STRIDE_F === 'undefined') return [];
-    if ((typeof Region !== 'undefined' && Region.on()) || (typeof WALL !== 'undefined' && WALL)) return [];
+    if ((typeof Region !== 'undefined' && Region.on()) || (typeof Bench !== 'undefined' && Bench.on()) || (typeof WALL !== 'undefined' && WALL)) return [];
     const N = 8000;
     if (!scratch) scratch = new Float32Array(STRIDE_F * N);
     let n = 0;

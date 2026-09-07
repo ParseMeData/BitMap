@@ -155,6 +155,10 @@ const Build = (() => {
   /* a drawn building: one size, the size it was drawn at, and no grips —
      it is placed like a print, moved whole, and that is the whole of it */
   const isPrint = s => !!(s && (Kinds.by[s.kind] || {}).glyphs);
+  /* the size a glyph is born at, set on the bench (src/bench.js) */
+  const sizeOf = v => (typeof Bench !== 'undefined' && Bench.sizeOf ? Bench.sizeOf(v) : 1);
+  /* and the clearing it stands on, as a proportion of it — matched to the asset unless the bench says wider (build 309; MATE only without the bench) */
+  const clearRatio = s => (typeof Bench !== 'undefined' && Bench.clearOf ? Bench.clearOf(s.variant) : [MATE, MATE]);
   /* ── a road that has not joined the network ─────────────────────────
      Only the route carries the walker, and the route is one flood from
      where the walker stands. A road laid somewhere that flood does not
@@ -254,7 +258,8 @@ const Build = (() => {
      one place they are drawn. `variant` is still just a string on the
      shape, which is what keeps a saved town readable either way. */
   const variantsOf = k => !k ? null
-    : (k.glyphs ? (typeof Glyphs === 'undefined' ? null : Glyphs.of(k.glyphs)) : k.variants) || null;
+    : (k.glyphs ? (typeof Bench !== 'undefined' && Bench.of ? Bench.of(k.glyphs)          // as moved on the bench (src/bench.js)
+                   : typeof Glyphs === 'undefined' ? null : Glyphs.of(k.glyphs)) : k.variants) || null;
   const firstVariant = k => { const l = variantsOf(k); return l ? l[0] : 'mixed'; };
   /* ── a line whose ends are anchors ──────────────────────────────────────
      A river is one line bent in many places with its two ends staying put,
@@ -420,13 +425,14 @@ const Build = (() => {
     const c = cellSize();
     const area = type !== 'line' && type !== 'ring';
     const g = grid();
+    const variant = defs.variant[kind] || firstVariant(k);
     const s = {id: nextId++, kind, type, seed: (Math.random() * 1e6) | 0, rot: 0,
                x: snapC(wx), y: snapC(wy), w: snapS(g * 6), h: snapS(g * 5),
                r: snapR(cellSize()), width: snapW(cellSize() * 2),
                pts: [[snapC(wx), snapC(wy)]],
                feather: k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                bright: defs.bright * (k.bright0 || 1),
-               grain: defs.grain, scale: defs.scale, mult: 1,
+               grain: defs.grain, scale: defs.scale, mult: sizeOf(variant),
                /* a kind that draws nothing has to be born already doing
                   something, or dropping it reads as a tool that is broken */
                jitter: k.jitter0 !== undefined ? k.jitter0 : defs.jitter,
@@ -438,7 +444,7 @@ const Build = (() => {
                padFade: k.padFade0 !== undefined ? k.padFade0 : defs.padFade,
                padBreak: k.padBreak0 !== undefined ? k.padBreak0 : defs.padBreak,
                mask: defs.mask,
-               variant: defs.variant[kind] || firstVariant(k),
+               variant,
                tone: defs.tone[kind] || 'stone'};
     defaults(s, type);
     born(s, k, type, wx, wy);
@@ -576,8 +582,10 @@ const Build = (() => {
   const MATE = 1.5;
   function clearUnder(s){
     if (!Kinds.by['demolish']) return null;
-    const c = make({kind: 'demolish', type: 'warp', exact: true,
-                    x: s.x, y: s.y, w: s.w * MATE, h: s.h * MATE,
+    const [kx, ky] = clearRatio(s);
+    /* the print's own seed, so the bench can tell which clearing is whose */
+    const c = make({kind: 'demolish', type: 'warp', exact: true, seed: s.seed,
+                    x: s.x, y: s.y, w: s.w * kx, h: s.h * ky,
                     fall: 0, out: 1, feather: 3, scatter: 0.7, jitter: 0.4});
     if (!c) return null;
     /* the box, sharply — seeded from the size `make` actually settled on,
@@ -690,7 +698,8 @@ const Build = (() => {
                  ctrl: Array.isArray(d.ctrl) ? d.ctrl.map(c => (c ? [c[0], c[1]] : null)) : null,
                  feather: d.feather !== undefined ? d.feather : k.feather0 !== undefined ? k.feather0 : (area ? defs.feather : 0),
                  bright: defs.bright * (k.bright0 || 1),
-                 grain: 1, scale: 1, mult: Math.max(1, Math.round((d.mult || 1) * 2) / 2),
+                 /* a descriptor with no size is born at the glyph's own (src/bench.js) */
+                 grain: 1, scale: 1, mult: d.mult !== undefined ? Math.max(1, Math.round((d.mult || 1) * 2) / 2) : sizeOf(d.variant || firstVariant(k)),
                  jitter: d.jitter !== undefined ? d.jitter : (k.jitter0 || 0),
                  scatter: d.scatter !== undefined ? d.scatter : (k.scatter0 || 0),
                  fall: d.fall !== undefined ? d.fall : (k.fall0 || 0),
@@ -1950,15 +1959,17 @@ const Build = (() => {
          beside placing a thing and shaping it. */
       /* ── the region's view ────────────────────────────────────────────
          Only on the region (index.html: regiononly): the zoom in and
-         out, the lock that holds it, and the zoom saved for the eye you
-         are on — home's, or an opened cluster's — put back whenever you
-         stand on it again (src/region.js, build 282). */
+         out, the lock that remembers the zoom for the eye you are on —
+         home's, or an opened cluster's — and holds it, and Forget, which
+         clears what is remembered so the eye rests zoomed out again
+         (src/region.js, build 282; one lock per eye since 299, the same
+         lock the slider at the right carries; unlocking keeps the zoom
+         remembered since 300). */
       '<div class="plabel regiononly">View</div>' +
       '<div class="kfoot regiononly"><button class="btn" id="kzoomout">Zoom &minus;</button>' +
       '<button class="btn" id="kzoomin">Zoom +</button></div>' +
       '<div class="kfoot regiononly"><button class="btn" id="kzoomlock">Lock zoom</button>' +
-      '<button class="btn" id="kzoomsave">Save zoom</button></div>' +
-      '<div class="kfoot one regiononly"><button class="btn" id="kzoomforget">Forget saved zoom</button></div>' +
+      '<button class="btn" id="kzoomforget">Forget zoom</button></div>' +
       '<div class="knote regiononly" id="kviewnote"></div>' +
       '<div class="plabel fitonly">Layer</div><div id="klayers" class="fitonly"></div>' +
       '<div class="plabel fitonly">Place</div><div id="kkinds" class="kgrid fitonly"></div>' +
@@ -2037,7 +2048,6 @@ const Build = (() => {
     vb('#kzoomout', () => { if (typeof zoomBy === 'function') zoomBy(1 / ZSTEP); });
     vb('#kzoomin', () => { if (typeof zoomBy === 'function') zoomBy(ZSTEP); });
     vb('#kzoomlock', () => Region.setLock(!Region.zoomLocked()));
-    vb('#kzoomsave', () => Region.saveZoom());
     vb('#kzoomforget', () => Region.forgetZoom());
     for (const L of Kinds.layers){
       const row = document.createElement('div');
@@ -2372,7 +2382,8 @@ const Build = (() => {
       } else c.textContent = v;
       c.onclick = () => {
         defs.variant[id] = v;
-        if (sel && sel.kind === id){ sel.variant = v; changed(sel); }
+        /* a print takes the glyph's own size with it (src/bench.js) */
+        if (sel && sel.kind === id){ sel.variant = v; if (isPrint(sel)){ sel.mult = sizeOf(v); glyphSize(sel, Kinds.by[id]); } changed(sel); }
         else syncUI();
       };
       box.appendChild(c);
@@ -2549,8 +2560,9 @@ const Build = (() => {
     const lock = $('#kzoomlock'), fg = $('#kzoomforget');
     if (lock){ lock.textContent = v.lock ? 'Zoom locked' : 'Lock zoom'; lock.classList.toggle('sel', v.lock); }
     if (fg) fg.classList.toggle('off', !v.saved);
-    el.innerHTML = '<b>' + esc(v.eye) + '</b> &middot; zoom ' + v.now + '&times;' +
-      (v.saved ? ' &middot; saved ' + (+v.saved).toFixed(2) + '&times;' : ' &middot; none saved') + (v.lock ? ' &middot; locked' : '') +
+    el.innerHTML = '<b>' + esc(v.eye) + '</b> &middot; zoom ' + v.now + '&times;' + (v.km ? ' &middot; ' + v.km + ' km across' : '') +
+      (v.lock ? ' &middot; locked at ' + (+v.saved).toFixed(2) + '&times;'
+       : v.saved ? ' &middot; free, remembers ' + (+v.saved).toFixed(2) + '&times;' : ' &middot; free') +
       (layer !== 'links' ? '' : '<br>' + (v.linking ? 'linking from <b>' + esc(v.linking) + '</b> &middot; click another town'
                                          : v.selected ? 'a link is selected &middot; <b>Delete</b> removes it'
                                          : v.links + (v.links === 1 ? ' link' : ' links') + ' by hand'));
@@ -3047,6 +3059,9 @@ const Build = (() => {
           aiming: () => !!(band || (armed && armed.band)),
           sync: syncUI, head: syncHead, syncView, cells,
           commit: save, key: () => KEY, count: () => G.shapes.length,
+          create,                                   // a shape born at a point, as a click with a kind armed births one (for tools)
+          touch: changed,                           // a shape altered by another hand: restamped, saved, remembered
+          remove, select: sel2, clear: clearUnder,  // for the bench, which carries a print from one sheet to another (src/bench.js tab)
           setMinimal: v => { minimal = !!v; rebuild(); }, minimal: () => minimal,
           selected: () => sel};
 })();

@@ -275,13 +275,32 @@ nothing pressed; and a link's wave is calmer, one slow swing at half the
 depth. **The ground:** under the region lies the map of where its eye
 is — the town's own tracing underlay, live Dark tiles — and the towns
 stand on it by the map's own mercator, so each diamond is on its town on
-the map; the map slides with the eye when a cluster opens, and comes at
-the zoom the screen wants. **And the region is built on** (build 284): a
+the map; the map slides with the eye when a cluster opens, comes at the
+zoom the screen wants, and is shown whole — its tiles land unseen and
+fade in together once the last has answered (build 298). **And the
+region is built on** (build 284): a
 region is an eye with a plate and a saved zoom of its own — the View
-block in the builder has Zoom −/+, Lock, Save and Forget; links are made
+block in the builder has Zoom −/+ and Lock; links are made
 town to town on the Links layer and removed with `Delete`; and the town's
 districts, structures and clearings can be laid on the region's plate.
 The region rests zoomed right out — the whole plate with a margin — and
+its zoom is the map's scale under a fixed boundary (build 302). **The
+glyph bench** (build 303, `G`): a plate of its own, off the town, ruled
+in walk tiles with the builder open — drop a print on it and size it,
+and the size it stands at is that glyph's default everywhere
+(`hq.sizes`). A row of tabs under the banner is the groups, a sheet
+each: a print standing on the Trees sheet is filed in trees
+(`hq.groups`), whatever sheet its glyph was sliced from, so a tree that
+turned up among the houses is put right by standing it there — drop it
+on that sheet, or select it and press the tab, and it is carried across;
+every asset row reads the groups as moved. Every sheet is grassed edge
+to edge, so a print is seen on ground and its clearing as a bare patch;
+**Lay out all** at the end of the tabs lays the whole group on the sheet
+at its sizes, rows a tile apart. A print's clearing is kept matched to
+it — centred, scaled with it — and its proportion is the glyph's own;
+**Save** writes every print on the sheet as its glyph's defaults: size,
+group and clearing (`hq.sizes`, `hq.groups`, `hq.clears`), which is how
+the glyph is placed from then on. What stands on each sheet is kept. And
 `0` comes back to that, or to the zoom saved for the eye; the compass
 sits in the window's very top-left corner at any zoom (build 285). An
 invisible **boundary** — a rectangle centred on the plate with a fifth of
@@ -325,6 +344,7 @@ each turned, filled, and roaded toward their links.
 | `+` `-`, `0` | zoom &nbsp;·&nbsp; `0` back to the distance the town is worked at (a pinch on a phone) |
 | `T` | tune panel &nbsp;·&nbsp; Glow, Towns, Sparks |
 | `B` | build mode |
+| `G` | the glyph bench — size a print on a grid, and that is its size everywhere |
 | arrows (build mode, something selected) | move it a step &nbsp;·&nbsp; `Shift` `↑` `↓` taller or shorter, `Shift` `←` `→` wider or narrower &nbsp;·&nbsp; a print steps its multiple, a road its width, a marker moves a tile |
 | `O` | the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it |
 | `V` | minimal &nbsp;·&nbsp; the plan down to its walls, and every room's eight places (inside) |
@@ -463,6 +483,7 @@ stale.
                          that follows a wall, the names drawn on the plan
     src/doors.js         the one part of a plan that moves: leaves that swing
     src/basemap.js       the tracing underlay, live tiles and frozen picture
+    src/bench.js         the glyph bench: a plate off the town where a print's default size is set
     src/hud.js           the four ways in, drawn on the plate out of diamonds
                          rather than in CSS: a hub that opens into four halftoned
                          diamonds, pinned to the screen and recomputed from
@@ -941,12 +962,12 @@ PNG: at stamp time every lit square becomes one diamond in the same instance
 stream as the roads and the grass — exactly what the typeface does with a
 letterform, and for the same reason. There is no sprite on the plate. A
 landmark is made of the town rather than printed on it, which is what keeps
-it and the ground it stands on reading as one material. The body is
-screened in a checker so it reads as tone rather than a cut-out, the rim is
-left solid so the building keeps a drawn edge, and the warm note is spent
-on a touch of trim along the roof line and a lit window now and then — the
-first cut screened a third of every building in window colour and it was
-the only thing on the screen.
+it and the ground it stands on reading as one material. Every lit square
+is one full diamond in the tone's wall colour and nothing else — the asset
+as drawn (build 311; until then the body was screened in a checker of dim
+cells so it read as tone rather than a cut-out, with trim along the roof
+line and a window now and then, which on the bench read as grey in the
+roof).
 
 The palette draws each building as its own chip, so you choose by sight:
 sixty words nobody can map back to a shape is a worse picker than none.
@@ -2096,6 +2117,31 @@ Google Maps key blanked, the traced picture, the locus pictures) and
 asks — the town here becomes the file — and reloads. A file from either
 side reads on the other (`src/snapshot.js`).
 
+**Cloud.** The same file, sealed, and a place for it that every device can
+reach (`src/cloud.js`, build 297). Under **Cloud** in the Town block:
+**Link Google Drive** signs in with Google's own popup and asks for the
+narrow `drive.file` scope — the game sees only files it made; **Save to
+Drive** asks for a passphrase (twice, the first time), seals the town with
+it and writes one file, `Bitmap town.json`, into a folder named Bitmap in
+My Drive; **Load from Drive** fetches it, asks for the passphrase, shows the
+counts against what is here, and the town here becomes the Drive copy.
+The label says when Drive was last written and whether the town has
+changed since. **Export locked** and **Import locked** are the same sealed
+file by hand, for any other drive or a stick.
+
+The seal is the version-3 file gzipped and shut with AES-256-GCM under a
+key drawn from the passphrase by PBKDF2 (SHA-256, 600,000 rounds, a fresh
+salt each time). The passphrase is kept in memory for the session and
+written nowhere; Drive holds ciphertext, and not even the counts are in the
+clear. A forgotten passphrase cannot be recovered. The link is remembered
+per player under `cloud`, not an `hq.` key, so no snapshot carries it.
+Google refuses a `file://` page, so the link is for the web page — the
+live site, or `python3 -m http.server 8000` in this folder and
+`http://localhost:8000/` — while the sealed file by hand works from the
+desk too. The OAuth client is Eden's, in the Google Cloud console
+(`CLIENT_ID` in cloud.js; it is not a secret, the two allowed origins are
+what protect it).
+
 ### On a phone
 
 Since V8.1 the page knows a phone — a coarse pointer, or a window under
@@ -2425,11 +2471,23 @@ plate; no markers, because a town on the region is a plate, and a plate
 is entered, not drawn. **A region is an eye:** the region seen from home
 and the region a cluster opens on each keep their own shapes
 (`hq.shapes.region`, `hq.shapes.region.<name>`) and their own zoom. The
-**View** block at the head of the palette, on the region only, has Zoom
-−/+, **Lock zoom** (holds `+` `−` `0` and the pinch while the region is
-up), **Save zoom** and **Forget saved zoom**; a saved zoom is put back
-whenever that eye is stood on again (`hq.region.zoom`), and the town's
-own zoom is never touched. Stand by a town and press `Enter` to stand on
+region's zoom is the **map's scale**, not the camera's: the plate, the
+diamonds and the boundary stay put on screen and the geography under
+them is drawn wider or closer, so a town that sat on the boundary as a
+cluster comes inside to where it truly lies as the map goes wider, and
+goes back out to the line as it comes closer. `+` `−` `0` and the pinch
+step it; with the builder open, a bar down the right of the screen slides
+it — widest at its foot, closest at its head, the boundary's width in
+kilometres read out under it — and **Lock** under that remembers the
+zoom as it stands for the eye you are on and holds it against the keys,
+the pinch and the bar; that zoom is put back whenever the eye is stood
+on again (`hq.region.zoom`, one per eye).
+Unlocking lifts the hold and keeps the zoom remembered; **Forget zoom**
+in the builder clears it, and an eye with nothing remembered rests
+zoomed right out. The **View** block at the head of the palette, on the
+region only, has Zoom −/+, the same lock, and Forget. The dotted
+boundary the outer towns sit on shows in the builder only (build 299). The town's own zoom is never touched. Stand by a town
+and press `Enter` to stand on
 its home plate. `Esc` leaves the region for wherever you were, walker and
 camera and all — it is a frame, as going inside a building is, never a
 plate of the atlas. The compass reads north while you are here.

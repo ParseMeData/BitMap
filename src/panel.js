@@ -193,6 +193,9 @@ function buildPanel(){
     rc.onclick = () => Snap.reset();
     rr.appendChild(rc);
     body.appendChild(rr);
+    /* the town sealed under a passphrase and kept in Google Drive, and the
+       same sealed file by hand (src/cloud.js) */
+    if (typeof Cloud !== 'undefined') Cloud.block(body);
   }
 
   const head = document.createElement('div');

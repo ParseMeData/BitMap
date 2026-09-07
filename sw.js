@@ -20,10 +20,10 @@ const FILES = [
   './src/glyphs.js', './src/kinds.js', './src/panel.js', './src/type.js', './src/title.js',
   './src/frame.js', './src/build.js', './src/morph.js', './src/markers.js', './src/history.js', './src/loci.js',
   './src/index.js', './src/palace.js', './src/doors.js', './src/interior.js', './src/trace.js',
-  './src/basemap.js', './src/hud.js', './src/atlas.js', './src/survey.js', './src/found.js', './src/region.js', './src/distract.js',
+  './src/basemap.js', './src/hud.js', './src/atlas.js', './src/survey.js', './src/found.js', './src/region.js', './src/bench.js', './src/distract.js',
   './src/country.js', './src/towns.js', './src/bag.js', './src/missions.js', './src/journal.js',
   './src/focus.js', './src/quest.js', './src/compass-art.js', './src/compass.js', './src/game.js',
-  './src/snapshot.js', './src/touch.js', './assets/australia.js', './assets/fonts/FleurDeLeah-Regular.ttf'
+  './src/snapshot.js', './src/cloud.js', './src/touch.js', './assets/australia.js', './assets/fonts/FleurDeLeah-Regular.ttf'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

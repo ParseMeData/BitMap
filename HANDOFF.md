@@ -76,8 +76,337 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 6 Sep 2026, build 296 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 7 Sep 2026, build 311 (tag **v8.8** at 280; **v8.9 open**)
 
+- **Build 311, 7 Sep 2026 — a print is its drawing, filled.** Eden, on
+  the stilled bench: "i think its the transparency in some of the darker
+  greys — example on the roof of the houses i see a grey in the roof
+  instead of it being transparent (only fill in the coloured areas of the
+  shape and remove/make other detail transparent in all assets)". Not
+  the slicer (the sheets are white art on near-black, thresholded at
+  grey 110, so a glyph is exactly the white) and not the lawn: the grey
+  was the generator's own screened body — `landmark` in kinds.js drew a
+  lit cell that had lit cells all round it as a dim checker (`T.dim` at
+  0.4–0.6 alpha, 0.88 size), the roof line as wall-and-trim, and a window
+  now and then by the noise; alive, those dim cells crossed to a soft
+  halo face and read as tone, and stilled they sat as grey diamonds in
+  the roof. Now every lit square is one full diamond in the tone's wall
+  colour (0.96 alpha, shaded ±3 % by the noise), both faces the same, and
+  nothing else is drawn. This reaches every print on every plate, not
+  the bench alone — the bench must show what the town shows — and
+  retires the 2026-08 halftone decision (README's landmark paragraph
+  updated). Decision for Eden: whether the roof-line trim and the
+  occasional window should come back as an option per tone.
+
+- **Build 310, 7 Sep 2026 — the bench stands still.** Eden, on the
+  bench: "there seems to be a strange artifact sitting on the assets
+  like a weird moving blob — pretty consistent but shows on different
+  areas of the assets". Found by capturing Eden's live window three
+  times a quarter second apart and diffing: the changes clustered on the
+  prints, and an enlarged print showed a dark band drifting across it;
+  on the rig, freezing `u_time` took the changed pixels from 15 176 to
+  0. It is the LIVING LATTICE (render.js: each cell crosses between its
+  two faces on its own clock and sways a tenth of a unit), which on a
+  dense asset on a dense lawn reads as a blob. New uniform `u_still`:
+  when 1 the living branch is skipped — a cell is its first face where
+  it was drawn, no sway, no burst — set from `R.still`, which the bench
+  turns on in `enter` and off in `leave`. The town breathes as it always
+  has; only the bench is still. STYLE.md's breathing is untouched as a
+  value — this is a workbench, not the plate.
+
+- **Build 309, 7 Sep 2026 — the clearing matched to the asset, and
+  Save.** Eden: "match the clearing to the asset — place a save which
+  then applies everything within that grid space so the asset size and
+  group location and clearing behind is saved". Three things. (1) A
+  clearing is tied to its print by SEED: `clearUnder` (build.js) makes
+  the demolish with `seed: s.seed`, `fill` gives each pair one seed, and
+  `clearingOf` finds by seed (falling back to the centre for clearings
+  laid earlier today). (2) On the bench `follow()` keeps each clearing to
+  its print every frame — moved to the print's centre when more than
+  half a cell off it (a touched shape is aligned to its own grid, a hair
+  off the print's, so an exact test touched it every frame on the rig),
+  scaled by whatever the print was scaled by since last frame (a memo
+  of sizes per print id; the warp's blob scaled with it, as `grow`
+  does), one touch a frame. (3) `hq.clears` (glyph → [kx, ky], width and
+  height as multiples of the print's, 0.5–3) is the clearing's
+  proportion, read by `clearUnder` through `Bench.clearOf` — **default
+  1 × 1, the asset's own footprint, where it had been MATE = 1.5 since
+  2026-08-30**; MATE is now only the fallback without the bench.
+  `save()` (the Save chip, before Lay out all) writes, for every print on
+  the sheet, its size to `hq.sizes`, its clearing's proportion to
+  `hq.clears`, and files its group; the live write of the selected
+  print's size (303) is gone, so the sheet is a worksheet until Save.
+  The banner reads the clearing's proportion too. Verified on the rig:
+  a01 to 1.5×, its clearing scaled with it and followed a move, grown
+  by hand to 1 × 1.14, Save wrote both, and a01 created on the town came
+  at 1.5× with a clearing of its own seed. Decision for Eden: the 1 × 1
+  default reaches every print placed from now on across the town, not
+  the bench alone.
+
+- **Build 308, 7 Sep 2026 — the lawn, and a group laid out whole.**
+  Eden: "make it so i can fill all the assets within that group on the
+  grid — give a grass terrain background so we can also allrigh the
+  backgrop". `Bench.lawn()`: `grass` in strips the plate's width
+  and twelve tiles deep (a generator fills at most `Kinds.MAX_CELLS`,
+  26 000, of a shape in a pass and the plate is ninety thousand cells —
+  one plate-sized grass stopped a third of the way down on the rig),
+  hard-edged so they abut, on any sheet less than nine tenths grassed,
+  the moment it is opened (`enter`, `tab`): `Build.lay([…strips, …plain
+  records of what is there])` so the lawn takes the LOWEST ids and every
+  clearing (a modifier weathers only shapes older than itself) cuts it.
+  The town's title (palace.js overlay and titleCells) steps aside for the
+  bench as it does for the region.
+  `Bench.fill()` ("Lay out all", the flare chip at the end of the tabs):
+  `Build.lay` of the lawn, then for each glyph `Bench.of(group)` offers,
+  its clearing (the clearUnder recipe: demolish warp, ×1.5, fall 0 out 1
+  feather 3 scatter 0.7 jitter 0.4, `Build.rectBlob` box; skipped for an
+  aesthetic kind such as patterns) and then the print at `sizeOf` —
+  EVERY clearing before EVERY print, since a modifier weathers only what
+  is older than itself and a clearing laid after its neighbour would eat
+  that neighbour's edge (seen on the rig's first lay); flowed left to
+  right, rows a tile apart, from two tiles in so the top row's clearings
+  stay on the plate, stopping at the foot with "N of M laid out". One restamp for the lot. Every set fits at 1× (patterns, the
+  biggest, 84 glyphs ≤ 30 cells, in four rows). `clearingOf` now matches
+  by centre and ×1.5 width, not `blobSeed`, which `make` does not keep.
+  Uncommitted, with 297–307.
+
+- **Build 307, 7 Sep 2026 — the bench's tabs.** Eden: "in the grid view
+  at the top give a category tabs so if we place the asset in this
+  category in them moves the asset so its saved within that category (if
+  there is a tree in the house group we can move it so its saved in trees
+  instead of house)". `src/bench.js` rewritten round SHEETS: one plate a
+  group (`hq.shapes.bench.<set>`, the kinds with `glyphs` in palette
+  order — Houses … Mountains), a `#benchtabs` row of chips under the
+  banner (the region banner's style, `top: 94px`), the open one kept in
+  `hq.bench.tab`. The rule: a print stands on the sheet of its group —
+  `overlay` files one stray print a frame (`file(s, set)`: the
+  `hq.groups` record, `s.kind` made the group's kind, `Build.touch`), so
+  dropping a glyph from any group's chips onto the Trees sheet moves it
+  into trees. `tab(set)` with a print selected carries it: its clearing
+  (the `demolish` box at its centre, `clearingOf`) and itself removed
+  from this sheet, the sheet switched, the print re-made from a
+  descriptor (`Build.add`, exact), its clearing laid (`Build.clear` =
+  clearUnder, exported with `remove` and `select` = sel2), selected and
+  filed. The Group chips of 304 are gone (markup and `.benchonly` CSS).
+  The single sheet of 303–306 (`hq.shapes.bench`) is orphaned, empty on
+  Eden's profile. Uncommitted, with 297–306.
+
+- **Build 306, 7 Sep 2026 — the grid seen.** Eden, on 305 live: "reload
+  as i dont see the grid view". It was drawn: at the bench's opening zoom
+  a cell is 3 px on Eden's window, the tile lines had thinned to a dot
+  every second cell, half-size 0.45 cell at 0.26 alpha — a pixel of grey
+  on the ground. Now two rules: the coarse lines (every four tiles) at a
+  dot a cell, 0.6 alpha, half-size 0.62 cell, always; the tile lines in
+  what the budget (28 000) leaves — a dot a cell close in, every second
+  cell further out, tile corners only with the whole plate on screen.
+
+- **Build 305, 7 Sep 2026 — the bench entered again.** 304 broke the
+  bench's entry: the groups' sheet map was named `home` inside the
+  module and shadowed game.js's `home()` zoom, so `G.camT[2] = home()`
+  threw after the frame was set and before the builder opened — the
+  bench came up with no banner and no palette and a "Script error"
+  note (a file:// page gives window.onerror no more than that; the
+  stack came from wrapping `Bench.toggle` on the rig). Renamed `sheet`.
+  The rule stands for a module's own top level as much as for
+  region.js: grep game.js's globals before naming anything in a script
+  that runs beside them.
+
+- **Build 304, 7 Sep 2026 — the bench's grid, and groups.** Eden: "show
+  the grid view — also allow to change categories so i can place an
+  asset within a group". The grid: `Bench.overlay` now lays a dot a cell
+  along every walk-tile edge across the plate (brighter every fourth
+  tile), thinning the dots by halves while the view would want more
+  than BUDGET (24 000) of the overlay's 32 768 instances — at `home()`
+  the view holds the whole plate and the dots fall to every second cell,
+  47 000 wanted; zoomed in they are every cell. The groups: `hq.groups` (glyph → set);
+  `Bench.of(set)` is a set's glyph list as moved (the sheet's own less
+  the moved-out plus the moved-in), and build.js `variantsOf` reads
+  through it, as do the founding's and the demo towns' houses
+  (found.js, region.js). A Group row of chips (`#kgroups`, `benchonly`,
+  built by `Bench.init` from every kind with `glyphs`) re-homes the
+  selected print's glyph: `regroup(set)` writes the record (a glyph put
+  back in its own sheet's set is deleted), turns the print into that
+  group's kind, and `Build.touch` (the `changed` path, newly exported)
+  restamps it. Uncommitted, with 297–303.
+- **Build 303, 7 Sep 2026 — the glyph bench.** Eden: "create a plate
+  outside of our gameplay that lets me place an asset within a grid so
+  we can set each assets default size". `src/bench.js` is a frame like
+  the interior's: `G` (or `Bench.toggle()`) commits and mounts
+  `hq.shapes.bench` under the town's kinds (`Build.mount('map', …)`),
+  no markers, the page blank, the underlay suspended, the walker spawned
+  and the camera at `home()`, the builder opened; Esc leaves and puts
+  everything back, the builder to whatever it was. `overlay` rules the
+  plate in walk tiles (the interior's register marks, at the tile always,
+  brighter every fourth) and, each frame, writes the SELECTED print's
+  multiple to `hq.sizes[glyph]` when it differs (1× is the default and
+  is deleted) — only the selected one, so two prints of a glyph never
+  fight. `build.js` births a print with `mult: sizeOf(variant)`
+  (`Bench.sizeOf`, 1 without the bench) and a glyph switch on a selected
+  print takes the new glyph's size. The banner (`#bench`, the region's
+  style) reads the selected print as glyph · multiple · cells · tiles.
+  Gated like the interior: the atlas's edge and doors, distractions, the
+  quest letter, the compass; the region refuses while the bench is up
+  and the bench leaves the region first. `hq.sizes` and the bench's
+  shapes are `hq.` keys, so a snapshot carries them. Two more in
+  build.js: `make(d)` births a descriptor with no `mult` at the glyph's
+  size (a restored shape always carries its own), and `create(kind,
+  type, wx, wy)` — the click-with-a-kind-armed path — is exported as
+  `Build.create` for the tools (`Build.add` takes a descriptor).
+  Verified on the rig: a21 placed at 1×, Shift+↑ to 1.5× and 2× wrote
+  `hq.sizes`, Esc, and a21 created on the town came at 1.5× (66 wide
+  against 44). Uncommitted, with 297–302.
+- **Build 302, 7 Sep 2026 — the region's zoom is the map's scale, not
+  the camera's.** Eden, on seeing 299–301: "this is not what we want —
+  the zoom is only moving the boundry not everything else — the boundry
+  sets the towns within so the actual background map is the only thing
+  zoom in and out then if another town falls in range then it falls out
+  of the rectangle then onto inside of the boundry". So: the camera on
+  the region rests at `far()` and stays there (`applyZoom`); `eye()`
+  returns `scale: p.scale / fac`, a per-eye factor on the founding scale
+  (`hq.region`.scale untouched), and since `toXY`, `bounds()`, `radius()`
+  and `ground()` all hang off that, the diamonds and the rectangle stay
+  put on screen while the towns and the tiles rescale under them — a
+  cluster on the line dissolves into towns inside as the map goes wider,
+  and gathers again as it comes closer, all through `layout` each frame.
+  `Region.zoomBy(k)` steps the factor, and game.js `zoomBy` routes to it
+  on the region (keys, View chips, pinch; `zoomHeld`/`zoomLocked` gone
+  from game.js); `zoomTo(f)` maps the bar on a log scale from 1/8 (OUT,
+  eight times wider) to 4 (IN, four times closer), the default at 0.6 of
+  the bar; `easeZoom()` in `overlay` glides `fac` to `facT` each frame
+  so keys, bar, pinch and restores all glide; `across()`/`km()` is the
+  boundary's width in kilometres (`G.W × 0.6 × scale × 111.2`), the
+  bar's readout and in the View note. `hq.region.zoom.at[eye]` is now
+  the factor (a 299–301 camera ratio under the same key reads as a
+  factor: a little closer than meant, rewritten by a press of Lock;
+  Eden's live profile has no record). Lock/unlock/forget as at 300. A
+  locked eye's `zoomBy` says so at most every 1.5 s, so a pinch does not
+  spam. Uncommitted, with 297–301.
+- **Build 301, 7 Sep 2026 — the zoom bar only in the builder.** Eden:
+  "make the scroll zoom only show in build mode". One rule in
+  index.html: `#rzoom` shows on `body.region.building` rather than
+  `body.region`, the same gate as the boundary; `syncSlider` still runs
+  each frame so the bar is right the moment the builder opens. The lock
+  itself is unchanged — a locked eye still holds `+ − 0` and the pinch
+  with the builder closed. Uncommitted, with 297–300.
+- **Build 300, 7 Sep 2026 — unlocking keeps the zoom remembered.**
+  Eden, on 299's parked decision: "keep the zoom remembered when
+  unlocked". `hq.region.zoom` is now `{at: {eye: ratio}, held: {eye:
+  1}}`: `setLock(true)` writes the ratio and the hold, `setLock(false)`
+  lifts the hold only, so the eye is free to zoom and still comes back
+  at the remembered zoom; `zoomLocked()` is saved-and-held.
+  `forgetZoom()` is back (exported, and a Forget zoom button beside
+  Lock in the View block, `off` while nothing is remembered) and clears
+  both, so the eye rests zoomed out again. A 299 record has no `held`
+  and reads as every remembered eye held. The View note says `locked at
+  2.52×`, `free, remembers 2.52×`, or `free`. Uncommitted, with 297–299.
+- **Build 299, 7 Sep 2026 — the boundary only in the builder; a zoom
+  bar at the right, with a lock per region.** Eden: "make the rectangle
+  boundry only show in the build mode — and give it a scroll bar on the
+  right side that zooms in out of the map and allows a lock function
+  that saves that zoom amount so we can be more specific on each area
+  and the plates within that zone — the lock saves it as an independent
+  map zoom for different regions (leave current amount as default)".
+  `frameLine` in src/region.js now draws the dotted rectangle only while
+  `Build.active()` (the Boundary chip still puts it away there). `#rzoom`
+  (index.html) is a vertical range down the right of the screen while
+  the region is up — `writing-mode: vertical-lr`, max at the head — with
+  the zoom read out and a Lock button under it; `Region.zoomTo(f)` maps
+  the bar's fraction to the camera on a log scale between the resting
+  zoom (`far()`, 1×) and the nearest (`fitW × 5`), and `syncSlider()` in
+  `overlay` moves the bar back under the keys and the pinch each frame
+  unless the hand is on it; letting go blurs the bar so the arrows go to
+  the walker again. The lock is now per eye: `hq.region.zoom` is
+  `{at: {eye: ratio}}` and an eye with a ratio IS locked — `setLock(true)`
+  writes the zoom as it stands, `setLock(false)` deletes it and the eye
+  rests zoomed out next time; `zoomLocked()` is `!!savedZoom()`, so
+  `+ − 0`, the pinch and the bar are held on a locked eye and free on
+  the others. Save/Forget zoom are gone from the View block and the API
+  (`saveZoom`/`forgetZoom` removed; `zoomTo` added). The bar hides under
+  the tune panel (`body.tuning`) and on the wall. Uncommitted, with 297
+  and 298. **Decision Eden may want to flip:** unlocking forgets the
+  zoom (the eye rests at the default again) rather than keeping it free
+  but remembered — one switch, as asked; a "remembered but free" state
+  would want Save back.
+- **Build 298, 7 Sep 2026 — the ground fades in whole.** Eden, with the
+  region up: "there is a delay in the map loading in the background of
+  the zoomed out map — can we instead have it fully load in the
+  background then it fades in once its completely loaded". A live tile
+  used to show the moment it landed, so the sheet filled in from its
+  top-left corner a tile at a time. Now `src/basemap.js` gives each tile
+  the class `tile` (born at opacity 0, index.html) and `reveal()`, run
+  on every tile's answer, turns the whole set to `.in` in one breath
+  once every tile the view asked for is `complete` — they fade in
+  together over 0.7 s, under the layer's own Fade. A cap (`REVEAL_MS`,
+  six seconds from the first unseen tile) shows what has landed if one
+  tile hangs, and from then each late tile fades in on its own until the
+  sheet is whole again; `clear()` forgets the cap. A pan that adds a row
+  lands that row unseen and fades it in as a set. The town's own tracing
+  tiles behave the same, since it is one sheet either way. Baking
+  (Freeze) is untouched — it draws the images, not their style.
+  Uncommitted, with 297.
+- **Build 297, later that night — the town sealed and kept in Google
+  Drive.** Eden asked for the safest way to keep the game on an online
+  drive and open it from a web link anywhere, with nothing inside it
+  readable by anyone else (a number on a stack was the example). The
+  answer built: `src/cloud.js` seals the version-3 town file with
+  AES-256-GCM under a key PBKDF2 draws from a passphrase (600k rounds,
+  fresh salt), gzipped first; the passphrase is asked in a panel of the
+  page's own (`#seal`, the found panel's shape), kept in memory for the
+  session, written nowhere. Google Identity Services is fetched on first
+  press and hands a `drive.file` token; one file per player, `Bitmap
+  town.json`, in a Bitmap folder in My Drive (visible, deletable, owned by
+  Eden); the link is remembered under `cloud` through the store — not an
+  `hq.` key, so no snapshot carries it. The Cloud block sits under Town:
+  Link Google Drive / Save to Drive / Load from Drive, then Export locked
+  / Import locked. Save and Load are `off` until linked; the label says
+  `saved <when>` or `changed since <when>` (any hq. write after boot's
+  first three seconds, bar the diagnostics). The OAuth client is Eden's,
+  made that night in the Google Cloud console in a project named
+  **Bitmap** (a first client made in an older half-configured project,
+  FluxScan, was refused at sign-in with 403 access_denied — its consent
+  screen could not be completed — and was abandoned; a fresh project's
+  Get-started wizard forces every field); the client ID is in cloud.js
+  and is not a secret (origins `https://parsemedata.github.io` and
+  `http://localhost:8000` are allowed; Testing mode with Eden as the test
+  user; the Drive API enabled). **Verified on the rig 9224:** the seal
+  round-trips the demo town (633 KB plain, 487 KB sealed, 113 ms each
+  way), a wrong passphrase is refused as such, nothing of the town shows
+  in the envelope; on file:// Link says on the banner that it needs the
+  web page. **Verified by Eden on `http://localhost:8000`** (a
+  `python3 -m http.server 8000 --bind 127.0.0.1` started in the folder,
+  still running at the close): Link Google Drive → Google's popup →
+  linked; Save to Drive twice — an empty town at 11:58 (3 KB) and the
+  demo town at 12:00 (486,839 bytes) — both confirmed from Drive's own
+  side through the claude.ai Drive connector: folder Bitmap
+  `1rPuXVS3eustQee-LXHKzBSHp2377desd`, file `Bitmap town.json`
+  `1tDXchs02ucJy1tAzBqpwTpfN9X08igHb`. **Not verified:** Load from Drive
+  (download → unseal → load) — Eden had not pressed it at the close; and
+  Export/Import locked through a real file picker. **What went wrong on
+  the way, so it is not repeated:** (1) the first OAuth client lived in an
+  old half-configured project (FluxScan): every sign-in gave 403
+  access_denied "has not completed the Google verification process" even
+  with the tester listed and Branding saved — a fresh project through the
+  Get-started wizard fixed it in three minutes; (2) the new project's
+  Audience page still says "OAuth configuration is incomplete" with
+  Publish greyed although Branding is complete and saved (name, support
+  email, contact, authorised domain parsemedata.github.io) — a stale
+  banner; sign-in works in Testing mode regardless; (3) after the client
+  ID changed the page kept running the old cloud.js — the HTTP cache
+  under the service worker; `Page.reload ignoreCache` did not clear it;
+  unregister the worker, delete the caches, `Network.clearBrowserCache`,
+  then reload; (4) T does nothing while the founding frame is up (a fresh
+  origin founds a home first) — press Later, then T; (5) the "changed
+  since" mark flipped on a distraction settling a moment after a save —
+  `hq.distract` is now in the quiet list (verified on the rig: a
+  distraction write leaves the mark, a town write sets it). **Test window
+  left open:** Brave, profile `~/.cache/mq-web`, CDP port 9225, signed in
+  as Eden, a tab on localhost:8000 holding the demo town and a console
+  tab. `.gitignore` now refuses `snapshots/live-*.json` and
+  `snapshots/rig-*.json`, because the repo is public and a capture is a
+  town. **Uncommitted at the close** — Eden asked for the log ("log
+  everything we have done this session ready to clear context"), not a
+  commit; `git status` shows the eight files, and the commit as Eden with
+  BUILD 297 waits on the word.
 - **Handoff, 6 Sep 2026, night — read this first.** Eden: *"create
   handoff and commit so we can close this conversation"*. Where things
   stand:
@@ -3054,9 +3383,11 @@ thing that was measured, and the mistake that was made on the way.
   boundary and title also predate their new defaults (a boundary is a
   shape on the plate; the title's Size/mat are tune keys the town may
   carry — `hq.title.*`).
-- **Remote sync was asked for and parked.** Eden wants the same town on
-  every device; that needs a server (Supabase was proposed, half a day's
-  work) — not started, browser storage for now.
+- **Remote sync, answered at 297 as a sealed file in Google Drive**
+  (Save and Load, pressed — not a sync). Still open: saving on a timer,
+  and the desk launcher, which runs from `file://` and cannot link Drive
+  (serve the folder on localhost, or play from the web link). The
+  earlier idea of a server (Supabase) is not needed for one player.
 - **The survey from a desk is slow** (~40 s on Mail.ru's mirror) and that
   mirror has refused once and answered the next moment; two passes over
   three instances cover it. From the web it is a second.

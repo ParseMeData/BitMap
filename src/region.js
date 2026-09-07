@@ -168,60 +168,175 @@ const Region = (() => {
     Build.mount('region', k);
   }
   /* ── the zoom, per eye ─────────────────────────────────────────────────
-     `hq.region.zoom`: {lock, at: {eye: ratio}}. A saved zoom is kept as a
-     ratio to the working zoom (game.js `home()`), so "two notches in"
-     is two notches in on a phone as well as on the desk, and is put back
-     whenever that eye is stood on — entering the region, opening a
-     cluster, the way home. The lock holds the zoom against + − 0 and a
-     pinch while the region is up (game.js zoomHeld); the chips in the
-     builder are its switches, and the town's own zoom is never touched:
-     the frame keeps it and gives it back on Esc. */
+     The region's zoom is the MAP'S SCALE, not the camera's. The plate,
+     the diamonds and the boundary stay where they are on screen, and the
+     geography under them is drawn wider or closer — so as the map goes
+     wider a town that sat on the boundary as a cluster comes to stand
+     inside it where it truly lies, and as it comes closer the outer
+     towns go back out to the line (Eden, 2026-09-07: "the boundary sets
+     the towns within so the actual background map is the only thing
+     zoom in and out — then if another town falls in range then it falls
+     out of the rectangle then onto inside of the boundary"). Until build
+     302 the bar and the lock moved the camera, which scaled everything
+     alike — not what was wanted. The camera on the region rests at
+     `far()`, the whole plate on screen, and stays there; + − 0, the
+     pinch and the View chips come to `zoomBy` here (game.js).
+
+     `hq.region.zoom`: {at: {eye: factor}, held: {eye: 1}} — a factor on
+     the projection's scale for that eye: 1 is the scale the region was
+     founded at (`hq.region`.scale, never touched), 2 twice as close,
+     0.5 twice as wide. Locking an eye writes the factor as it stands
+     under `at` and marks it `held`: it is put back whenever the eye is
+     stood on — entering the region, opening a cluster, the way home —
+     and held against the keys, the pinch and the bar. Unlocking only
+     lifts the hold: the eye is free to zoom and still comes back at the
+     remembered factor next time (Eden: "keep the zoom remembered when
+     unlocked"); Forget in the View block clears it and the eye rests at
+     the default again. The lock is the button under the bar at the right
+     of the screen (`#rzoom`, `wireSlider`, shown with the builder) and
+     the same one in the View block. The factor eases to its target each
+     frame (`easeZoom`), so a drag of the bar, a key, a pinch or a restore
+     glides rather than jumps. (A record from 299–301 held a camera
+     ratio under the same keys; read as a factor it is merely a little
+     closer than meant, and a press of Lock rewrites it.) */
   const ZKEY = 'hq.region.zoom';
+  const OUT = 8, IN = 4;               // the bar's reach: eight times wider than the default, four times closer
   let zc = null;
   function zoomCfg(){
     if (zc) return zc;
-    const z = Store.json(ZKEY, null);
-    zc = z && typeof z === 'object' ? {lock: !!z.lock, at: (z.at && typeof z.at === 'object') ? z.at : {}} : {lock: false, at: {}};
+    const z = Store.json(ZKEY, null), ok = o => o && typeof o === 'object';
+    const at = ok(z) && ok(z.at) ? z.at : {};
+    const held = ok(z) && ok(z.held) ? z.held : Object.fromEntries(Object.keys(at).map(k => [k, 1]));
+    zc = {at, held};
     return zc;
   }
   const zoomWrite = () => Store.save(ZKEY, zoomCfg(), 'the region');
-  /* the region's own resting zoom is the map zoomed right out — the far
-     end of the zoom keys, the whole plate with a margin round it — not
-     the town's working zoom (Eden, 2026-09-06: "always use the map zoom
-     out as default"); a saved zoom is a ratio to that, so 1× is the
-     default and 0 comes back to it */
+  /* the region's camera rests with the map zoomed right out — the whole
+     plate with a margin round it — not at the town's working zoom (Eden,
+     2026-09-06: "always use the map zoom out as default") */
   const far = () => (G.fitAll ? G.fitAll * 0.85 : 1) || 1;
-  const working = far;
-  const zoomNow = () => +((G.camT[2] || 1) / working()).toFixed(2);
+  let fac = 1, facT = 1, facAt = 0;    // the scale factor now, where it is going, and when it last eased
+  const clampF = f => Math.max(1 / OUT, Math.min(IN, isFinite(+f) && +f > 0 ? +f : 1));
+  const zoomNow = () => +facT.toFixed(2);
   const savedZoom = () => +zoomCfg().at[eyeKey()] || null;
+  /* the eye stood on: the camera at rest, and the eye's own scale —
+     remembered, or the default — taken up at once */
   function applyZoom(){
-    if (!G.fitW) return;
-    const z = savedZoom() || 1;
-    G.camT[2] = Math.max(G.fitAll * 0.85, Math.min(G.fitW * 5, working() * z));
+    if (G.fitW) G.camT[2] = far();
+    facT = clampF(savedZoom() || 1); fac = facT;
   }
   const rest = () => { if (frame) applyZoom(); return !!frame; };
-  function saveZoom(){
-    if (!frame) return false;
-    zoomCfg().at[eyeKey()] = +((G.camT[2] || 1) / working()).toFixed(4);
-    zoomWrite();
-    note('zoom saved for ' + eyeName() + ' · ' + zoomNow() + '×');
-    return true;
+  const zoomLocked = () => !!(savedZoom() && zoomCfg().held[eyeKey()]);
+  /* the boundary's width in kilometres at this zoom — what the bar reads
+     out, since that is what decides which towns fall inside it. The
+     projection is a kilometre the same length either way, so a world
+     unit is `scale` degrees of latitude across as well as up. */
+  function across(){
+    const p = eye(); if (!p) return 0;
+    return G.W * (1 - 2 * PAD) * p.scale * 111.2;
   }
+  const kmAcross = () => Math.round(across());   // not `km`: that is the great-circle helper by `bearing`
+  /* on: the zoom as it stands is remembered for this eye and held; off:
+     the hold is lifted and the zoom stays remembered */
+  function setLock(v){
+    if (!frame) return false;
+    const c = zoomCfg(), k = eyeKey();
+    if (v){ c.at[k] = +facT.toFixed(4); c.held[k] = 1; }
+    else delete c.held[k];
+    zoomWrite();
+    note(v ? 'zoom locked for ' + eyeName() + ' · ' + zoomNow() + '× · ' + kmAcross() + ' km across the boundary'
+           : 'the zoom is free for ' + eyeName() + (savedZoom() ? ' · ' + (+savedZoom()).toFixed(2) + '× is remembered' : ''));
+    syncSlider(true);
+    return zoomLocked();
+  }
+  /* the remembered zoom cleared: the eye rests at the default again */
   function forgetZoom(){
     if (!frame || !savedZoom()) return false;
-    delete zoomCfg().at[eyeKey()];
+    const c = zoomCfg(), k = eyeKey();
+    delete c.at[k]; delete c.held[k];
     zoomWrite();
-    note('the saved zoom for ' + eyeName() + ' is forgotten');
+    note('the zoom for ' + eyeName() + ' is forgotten · it rests at the default');
+    syncSlider(true);
     return true;
   }
-  const zoomLocked = () => zoomCfg().lock;
-  function setLock(v){
-    zoomCfg().lock = !!v;
-    zoomWrite();
-    note(v ? 'the zoom is locked · + − 0 and the pinch are held' : 'the zoom is free');
-    return zoomCfg().lock;
+  /* a step of the zoom — the keys, the View chips and the pinch all come
+     here (game.js zoomBy); a locked eye says so, but not on every move
+     of a pinch */
+  let lockSaid = 0;
+  function zoomBy(k){
+    if (!frame || !isFinite(k) || k <= 0) return false;
+    if (zoomLocked()){
+      const now = performance.now();
+      if (now - lockSaid > 1500){ lockSaid = now; note('the zoom is locked for ' + eyeName() + ' · the lock under the bar frees it'); }
+      return false;
+    }
+    facT = clampF(facT * k);
+    return true;
   }
-  const viewState = () => ({eye: eyeName(), key: eyeKey(), now: zoomNow(), saved: savedZoom(), lock: zoomLocked(),
+  /* the bar's zoom: the map at its widest at the foot, at its closest at
+     the head, on a log scale so a step of the bar is the same notch
+     anywhere on it; the default sits where the log puts it */
+  const lo = () => Math.log(1 / OUT), hi = () => Math.log(IN);
+  function zoomTo(f){
+    if (!frame) return false;
+    if (zoomLocked()){ syncSlider(true); return false; }   // the bar is put back where the lock holds it
+    const t = Math.max(0, Math.min(1, +f || 0));
+    facT = clampF(Math.exp(lo() + t * (hi() - lo())));
+    return true;
+  }
+  const zoomFrac = () => Math.max(0, Math.min(1, (Math.log(facT) - lo()) / (hi() - lo())));
+  /* the frame's easing: the scale glides to its target, as the camera
+     does, and lands exactly */
+  function easeZoom(){
+    const now = performance.now(), dt = facAt ? Math.min(0.1, (now - facAt) / 1000) : 0;
+    facAt = now;
+    if (fac === facT) return;
+    const d = facT - fac;
+    fac = Math.abs(d) < 2e-4 * facT ? facT : fac + d * (1 - Math.pow(0.02, dt));
+  }
+  /* ── the slider ────────────────────────────────────────────────────────
+     A bar down the right of the screen while the builder is open on the
+     region (`#rzoom`, index.html; the region alone showed it at 299 —
+     Eden, 2026-09-07: "make the scroll zoom only show in build mode"),
+     as the boundary is: the map at its widest at its foot, at its
+     closest at its head, the boundary's width in kilometres read out
+     under it, and the lock under that. Dragged, it moves the zoom's
+     target and the scale eases after it, as the keys do; the keys and
+     the pinch move it back each frame. While it is held the frame
+     leaves it alone, or it would fight the hand; let go, it also lets
+     go of the keyboard, since a focused bar would take the arrows the
+     walker needs. Locked, it is held still and dimmed. (Eden,
+     2026-09-07: "give it a scroll bar on the right side that zooms in
+     out of the map and allows a lock function that saves that zoom
+     amount".) */
+  let sliding = false, shownSlide = '';
+  const el = id => document.getElementById(id);
+  function wireSlider(){
+    const r = el('rzoomrange'), b = el('rzoomlock');
+    if (!r || !b) return;
+    r.addEventListener('input', () => { zoomTo(+r.value / 1000); });
+    r.addEventListener('pointerdown', () => { sliding = true; });
+    const done = () => { if (!sliding) return; sliding = false; r.blur(); syncSlider(true); };
+    r.addEventListener('pointerup', done); r.addEventListener('pointercancel', done);
+    addEventListener('pointerup', done);
+    b.onclick = () => { setLock(!zoomLocked()); b.blur(); };
+  }
+  function syncSlider(force){
+    const r = el('rzoomrange'), b = el('rzoomlock'), v = el('rzoomv');
+    if (!frame || !r) return;
+    const lock = zoomLocked(), s = lock + ':' + zoomNow() + ':' + eyeKey() + ':' + kmAcross();
+    if (!force && s === shownSlide) return;
+    shownSlide = s;
+    if (!sliding || force) r.value = Math.round(zoomFrac() * 1000);
+    r.disabled = lock;
+    if (b){
+      b.textContent = lock ? 'Locked' : 'Lock';
+      b.classList.toggle('sel', lock);
+      b.title = lock ? 'the zoom is kept for ' + eyeName() + ' · press to free it' : 'keep this zoom for ' + eyeName();
+    }
+    if (v) v.textContent = kmAcross() + ' km';
+  }
+  const viewState = () => ({eye: eyeName(), key: eyeKey(), now: zoomNow(), km: kmAcross(), saved: savedZoom(), lock: zoomLocked(),
                             linking: linking ? linking.name : null, selected: !!selLink, links: userLinks().length});
   /* the builder's View block is told when any of that changes */
   let shownView = '';
@@ -235,7 +350,7 @@ const Region = (() => {
   function eye(){
     const p = proj(); if (!p) return null;
     if (!view) view = {lat: p.lat0, lon: p.lon0};
-    return {lat: view.lat, lon: view.lon, scale: p.scale};
+    return {lat: view.lat, lon: view.lon, scale: p.scale / fac};   // the eye's zoom is a factor on the founding scale
   }
   /* ── the ground, and the projection that is the map's ───────────────
      Under the diamonds lies the map of where the eye is: the town's own
@@ -356,15 +471,18 @@ const Region = (() => {
      moved on along the side it came to. Enter on a cluster opens it —
      see `open`. */
   const PAD = 0.2;                     // of the plate's width and height, each side, to the boundary
-  /* drawn, for now: a thin dotted run of the plate's diamonds along the
-     rectangle, so it can be seen while it is being placed (Eden,
-     2026-09-06: "add a temporary rectangle shape showing the boundry so
-     we can visably see it"); the Boundary chip under Towns in the tune
-     panel puts it away (`hq.region.bounds`) */
+  /* drawn only in the builder: a thin dotted run of the plate's diamonds
+     along the rectangle, so it can be seen while towns are being laid
+     against it (Eden, 2026-09-06: "add a temporary rectangle shape
+     showing the boundry so we can visably see it"; 2026-09-07: "make the
+     rectangle boundry only show in the build mode"); the Boundary chip
+     under Towns in the tune panel puts it away there too
+     (`hq.region.bounds`) */
   const BKEY = 'hq.region.bounds';
   const showBounds = () => { try { return Store.get(BKEY) !== '0'; } catch (e){ return true; } };
+  const building = () => typeof Build !== 'undefined' && Build.active && Build.active();
   function frameLine(a, m, cap){
-    if (!showBounds() || !G.A) return m;
+    if (!building() || !showBounds() || !G.A) return m;
     const B = bounds(), cell = G.A.cell, step = cell * 1.5, al = 0.5;
     for (const [x0, y0, x1, y1] of [[B.x0, B.y0, B.x1, B.y0], [B.x1, B.y0, B.x1, B.y1], [B.x1, B.y1, B.x0, B.y1], [B.x0, B.y1, B.x0, B.y0]]){
       const L = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.round(L / step));
@@ -666,6 +784,7 @@ const Region = (() => {
   function overlay(a, m, cap){
     if (!frame || !G.terr) return m;
     settle();
+    easeZoom();
     let S = scene(), k = 1;
     if (trans){
       k = (performance.now() - trans.t0) / trans.dur;
@@ -680,6 +799,7 @@ const Region = (() => {
     if (linking && m < cap - 2)
       m = put(a, m, linking.x, linking.y, FLARE[0], FLARE[1], FLARE[2], 0.7 + 0.25 * Math.sin(performance.now() / 250), S.r * 1.4, 1, 0, 0, 1);
     syncView();
+    syncSlider();
     return m;
   }
 
@@ -1008,6 +1128,7 @@ const Region = (() => {
     if (frame) return true;
     if (!G.terr) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()){ note('the region is outside — leave the building first'); return false; }
+    if (typeof Bench !== 'undefined' && Bench.on()){ note('the region is outside — leave the bench first'); return false; }
     Build.commit(); Markers.commit();
     frame = {
       scope: Kinds.scope(), skey: Build.key(), mkey: Markers.key(), blank: BLANK,
@@ -1247,7 +1368,7 @@ const Region = (() => {
       }
     }
     /* the houses, the first the palace's */
-    const glyphs = typeof Glyphs !== 'undefined' ? (Glyphs.of('houses') || []) : [];
+    const glyphs = typeof Bench !== 'undefined' && Bench.of ? Bench.of('houses') : typeof Glyphs !== 'undefined' ? (Glyphs.of('houses') || []) : [];
     let palace = null;
     houses.forEach((h, j) => {
       if (!glyphs.length || !inside(h.x, h.y)) return;
@@ -1526,10 +1647,10 @@ const Region = (() => {
     const s = el.querySelector('span');
     if (s) s.textContent = f ? f.tab + ' · ' + f.sub + ' · ' + f.letters.join('') + ' · north is up' : 'north is up';
   }
-  function init(){ banner(); wireDrag(); wireKeys(); }
+  function init(){ banner(); wireDrag(); wireKeys(); wireSlider(); }
 
   const api = {init, enter, leave, toggle, go, press, target, prompt, overlay, towns, bow, hop, open, scene,
-               stamp, linkClick, removeLink, unlink, viewState, saveZoom, forgetZoom, setLock, zoomLocked, eyeKey, rest,
+               stamp, linkClick, removeLink, unlink, viewState, setLock, forgetZoom, zoomTo, zoomBy, zoomLocked, eyeKey, rest,
                grab, dragTo, drop, on, gate: null, foundSamples, relayDemo, wayOut, cross, demoPlate, endHere, nextLabel,
                held: () => !!held};
   return api;

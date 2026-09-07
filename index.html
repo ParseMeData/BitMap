@@ -49,6 +49,10 @@ body.locus #type,body.wall #type{display:none}
    window itself is the only clip. */
 #basemap{position:fixed;left:0;top:0;width:0;height:0;z-index:0;overflow:visible;pointer-events:none;
   transform-origin:0 0;display:none;will-change:transform}
+/* a live tile is born unseen and the sheet fades in whole once every tile
+   has landed (src/basemap.js reveal) */
+#basemap .tile{opacity:0;transition:opacity .7s ease}
+#basemap .tile.in{opacity:1}
 #mapbar{position:fixed;right:16px;top:14px;z-index:6;width:300px;
   display:flex;flex-direction:column;gap:8px;padding:10px 12px;font-size:9.5px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
@@ -153,7 +157,7 @@ body.mobile #keys{display:none!important}
 body.mobile #compass{transform:scale(.5);transform-origin:0 0;left:4px;top:8px}
 body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px}
 body.mobile #quest{top:112px;left:8px;right:8px;transform:none;font-size:8.5px}
-body.mobile #inside,body.mobile #region{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
+body.mobile #inside,body.mobile #region,body.mobile #bench{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
 body.mobile #kind{top:146px}
 body.mobile #enterhint{bottom:auto;top:180px;left:8px;right:8px;transform:none;justify-content:center}
 body.mobile #msg{top:214px}
@@ -203,6 +207,16 @@ body.mobile #pcopy,body.mobile #ctune,body.mobile #premix,body.mobile #pplayerla
 #found #foundq:focus{border-color:var(--flare)}
 #found .erow .btn{flex:1}
 #found #foundhouse{width:96px;height:96px;flex:0 0 96px;background:var(--well);border:1px solid rgba(237,234,227,.22)}
+/* the passphrase for a sealed town: the found panel's shape, two fields and a row (src/cloud.js) */
+#seal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:12;width:380px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:9px}
+#seal #sealwhy{color:var(--dim);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;line-height:1.6}
+#seal input{width:100%;box-sizing:border-box;background:var(--well);border:1px solid rgba(237,234,227,.22);color:var(--bone);
+  font:400 12px/1.4 var(--mono);padding:7px 10px;letter-spacing:.2em;outline:0}
+#seal input:focus{border-color:var(--flare)}
+body.mobile #seal{width:auto;left:8px;right:8px;top:8px;transform:none}
+/* Save and Load wait on the link, as the bag's tools wait on a card */
+#pcloud .chip.off{opacity:.35;pointer-events:none}
 /* while the frame is up the panel stands aside, top right, so the frame's middle is clear */
 body.founding #found{left:auto;right:16px;top:14px;transform:none}
 body.mobile #found{width:auto;left:8px;right:8px;top:8px;transform:none}
@@ -352,13 +366,36 @@ body.wall #quest,body.locus #quest,body.towns #quest,body.bag #quest,body.journa
 #kmitem,#kletter{width:100%;background:var(--well);border:1px solid rgba(237,234,227,.22);
   color:var(--bone);font:400 10px/1.4 var(--mono);padding:5px 7px;letter-spacing:.06em;margin-top:4px}
 /* the region's banner is the interior's, word for word in the stylesheet */
-#region{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
+#region,#bench{position:fixed;left:50%;top:52px;transform:translateX(-50%);z-index:6;
   padding:8px 13px;display:flex;gap:11px;align-items:center;font-size:9.5px;
   letter-spacing:.22em;text-transform:uppercase;color:var(--bone)}
-#region b{color:var(--flare);font-weight:400}
-#region em{color:var(--dim);font-style:normal}
+#region b,#bench b{color:var(--flare);font-weight:400}
+#region em,#bench em{color:var(--dim);font-style:normal}
+#benchnote{color:var(--bone);letter-spacing:.1em;text-transform:none;font-family:var(--mono)}
+/* the bench's tabs, one a group, under its banner (src/bench.js tabs) */
+#benchtabs{position:fixed;left:50%;top:94px;transform:translateX(-50%);z-index:6;display:flex;flex-wrap:wrap;
+  justify-content:center;gap:5px;padding:6px 8px;max-width:72vw}
+#benchtabs .chip{padding:5px 9px;font-size:8.5px;letter-spacing:.16em}
+#benchtabs .chip.act{color:var(--flare);border-color:rgba(255,95,162,.45);margin-left:8px}
+body.wall #benchtabs{display:none}
+body.mobile #benchtabs{top:188px;left:8px;right:8px;transform:none;max-width:none}
 body.region #msg{top:98px}
-body.wall #region{display:none}
+body.wall #region,body.wall #bench{display:none}
+/* the region's zoom — the map's scale under a fixed boundary — a bar down
+   the right of the screen while the builder is open there: widest at its
+   foot, closest at its head, the boundary's width in km and the lock
+   under it (src/region.js wireSlider; builder only since build 301) */
+#rzoom{position:fixed;right:16px;top:54%;transform:translateY(-50%);z-index:5;display:none;
+  flex-direction:column;align-items:center;gap:7px;padding:9px 7px 8px;font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--dim);user-select:none;-webkit-user-select:none}
+body.region.building #rzoom{display:flex}
+body.wall #rzoom,body.tuning #rzoom{display:none}   /* the tune panel stands where it does */
+#rzoom input[type=range]{writing-mode:vertical-lr;direction:rtl;width:16px;height:32vh;margin:0;
+  accent-color:var(--flare);cursor:pointer;background:none}
+#rzoom input[type=range]:disabled{opacity:.35;cursor:default}
+#rzoom .btn{min-width:0;padding:3px 7px;font-size:8.5px;letter-spacing:.14em}
+#rzoomv{color:var(--bone);letter-spacing:.08em;font-family:var(--mono);text-transform:none}
+body.mobile #rzoom{right:8px}
 /* no markers on the region: the palette's strip for them is not shown there */
 body.region #kmlabel,body.region #kmarkers,body.region #kmname{display:none!important}
 /* the region's view block in the palette — zoom, lock, saved zoom — is only for the region */
@@ -873,6 +910,9 @@ body.arming,body.arming #gl{cursor:copy}
 <div id="inside" class="glass" hidden></div>
 <div id="quest" class="glass" hidden></div>
 <div id="region" class="glass" hidden><b>The region</b><span>north is up</span><em>Esc leaves</em></div>
+<div id="bench" class="glass" hidden><b>The bench</b><span id="benchnote"></span><em>Esc leaves</em></div>
+<div id="benchtabs" class="glass" hidden></div>
+<div id="rzoom" class="glass"><span>+</span><input id="rzoomrange" type="range" min="0" max="1000" step="1" value="0"><span>&minus;</span><span id="rzoomv"></span><button class="btn" id="rzoomlock">Lock</button></div>
 <div id="enterhint" class="glass" hidden></div>
 <div id="locus" class="glass" hidden></div>
 <input id="lfile" type="file" accept="image/*" hidden>
@@ -919,6 +959,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>Wheel / + −</td><td>zoom &nbsp;·&nbsp; 0 resets</td></tr>
     <tr><td>T</td><td>tune panel</td></tr>
     <tr><td>B</td><td>build mode &nbsp;·&nbsp; drag a kind onto the map</td></tr>
+    <tr><td>G</td><td>the glyph bench &nbsp;·&nbsp; size a print on a grid, and that is its size everywhere</td></tr>
     <tr><td>M</td><td>map underlay &nbsp;·&nbsp; search a town and trace over it</td></tr>
     <tr><td>Freeze</td><td>bake the tiles to one picture &nbsp;·&nbsp; or drop an image on the window</td></tr>
     <tr><td>Drag</td><td>move the picture &nbsp;·&nbsp; Shift turns it, Ctrl holds 15°</td></tr>
@@ -1102,7 +1143,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 296, cb = '?cb=' + BUILD +
+  var BUILD = 311, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */
@@ -1157,7 +1198,7 @@ var Users = (function(){
    'src/panel.js','src/type.js','src/title.js','src/frame.js','src/build.js','src/morph.js','src/markers.js','src/history.js',
    'src/loci.js','src/index.js','src/palace.js',
    'src/doors.js',
-   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/survey.js','src/found.js','src/region.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/touch.js','src/game.js']
+   'src/interior.js','src/trace.js','src/basemap.js','src/hud.js','src/atlas.js','src/survey.js','src/found.js','src/region.js','src/bench.js','src/distract.js','src/country.js','src/towns.js','src/bag.js','src/missions.js','src/journal.js','src/focus.js','src/quest.js','src/compass-art.js','src/compass.js','src/snapshot.js','src/cloud.js','src/touch.js','src/game.js']
     .forEach(function(src){
       var el = document.createElement('script');
       el.src = src + cb;

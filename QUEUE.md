@@ -35,6 +35,69 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **A print is its drawing, filled** — 2026-09-07, build 311. Every
+  lit square one full diamond in the wall colour; the screened body, the
+  noise-picked windows and the roof trim retired (kinds.js landmark).
+- [x] **The bench stands still** — 2026-09-07, build 310. `u_still` in
+  the renderer: on the bench every cell is its first face, no crossing,
+  no sway, no burst — the living lattice read as a dark blob drifting
+  over dense assets. The town breathes as before.
+- [x] **The clearing matched to the asset, and Save** — 2026-09-07,
+  build 309. A clearing carries its print's seed and follows it on the
+  bench (centre and scale); its proportion is per glyph (`hq.clears`,
+  default 1 × 1, laid by clearUnder); Save writes sizes, groups and
+  clearings for the whole sheet; the live size write is gone.
+- [x] **The lawn, and a group laid out whole** — 2026-09-07, build 308.
+  A plate-sized grass under every sheet, laid first so clearings cut it;
+  "Lay out all" replaces the sheet with the lawn and every glyph of the
+  group at its size with its clearing, flowed in rows (`Build.lay`).
+- [x] **The bench's tabs: a sheet a group, and a print is filed where
+  it stands** — 2026-09-07, build 307. `hq.shapes.bench.<set>` per group,
+  `hq.bench.tab` remembered; each frame a print on a sheet whose glyph is
+  filed elsewhere is moved there (`hq.groups`) and made that kind; a
+  selected print is carried to the tab pressed, clearing and all
+  (`Build.remove/select/clear` exported). The Group chips are gone.
+- [x] **The grid seen** — 2026-09-07, build 306. Coarse lines every four
+  tiles at a dot a cell always; the tile lines in what the budget leaves.
+- [x] **The bench entered again** — 2026-09-07, build 305. A module
+  variable named `home` shadowed game.js's `home()`; renamed.
+- [x] **The bench's grid, and groups** — 2026-09-07, build 304. A dot
+  a cell along every tile edge, brighter every fourth, thinned to the
+  overlay's budget; a Group row in the palette re-homes the selected
+  print's glyph into another set (`hq.groups`), read by every asset row.
+- [x] **The glyph bench** — 2026-09-07, build 303. `src/bench.js`: `G`
+  opens a plate off the town (`hq.shapes.bench`), blank, ruled in walk
+  tiles, builder open; the selected print's multiple is written as its
+  glyph's default (`hq.sizes`), and a print is born at that size
+  everywhere (build.js sizeOf), a glyph switch taking it too.
+- [x] **The region's zoom is the map's scale** — 2026-09-07, build 302.
+  The camera rests at `far()`; the bar, `+ − 0`, the pinch and the View
+  chips drive a per-eye factor on the projection's scale (eased each
+  frame), so the boundary and the diamonds stay put and towns fall
+  inside or go out to the line as the map is drawn wider or closer;
+  the bar reads the boundary's width in km; the lock keeps the factor.
+- [x] **The zoom bar only in the builder** — 2026-09-07, build 301.
+  `#rzoom` shows on `body.region.building`, as the boundary does.
+- [x] **Unlocking keeps the zoom remembered** — 2026-09-07, build 300.
+  `hq.region.zoom` is `{at, held}` per eye: the lock writes and holds,
+  unlock lifts the hold only, Forget zoom (back in the View block)
+  clears it; a 299 record without `held` reads as held.
+- [x] **The boundary only in the builder; a zoom bar at the right with
+  a lock per region** — 2026-09-07, build 299. The dotted rectangle is
+  drawn only while the builder is open; `#rzoom` slides the region's
+  zoom on a log scale from zoomed right out to the nearest; Lock keeps
+  that zoom for the eye stood on (`hq.region.zoom.at[eye]`) and holds
+  it, unlock frees it and the eye rests zoomed out; Save/Forget folded
+  into the lock, in the View block too.
+- [x] **The ground fades in whole** — 2026-09-07, build 298. A live
+  tile is born unseen and the sheet is shown together, fading in over
+  0.7 s, once every tile the view asked for has answered; a six-second
+  cap shows what has landed if a tile hangs (src/basemap.js reveal).
+- [x] **The town sealed and kept in Google Drive** — 2026-09-06, build
+  297. `src/cloud.js`: AES-256-GCM under a PBKDF2 passphrase, one sealed
+  file per player in a Bitmap folder in My Drive by the `drive.file`
+  scope, Link/Save/Load under Town, Export locked/Import locked by hand;
+  live and rig captures under `snapshots/` gitignored.
 - [x] **The label on screen, above or below the sprite; the morph
   sweeps against the way walked** — 2026-09-06, build 296.
 - [x] **Demo towns turned, filled and roaded toward their links; the

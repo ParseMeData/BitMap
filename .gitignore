@@ -5,6 +5,10 @@ __pycache__/
 # town, not a version of it, and belongs to the machine it was taken on
 snapshots/.pre-restore-*.json
 snapshots/.pre-sweep-*.json
+# a capture of a live profile or a rig is a town, never a version of the
+# game, and the repo is public: it does not go up (2026-09-06)
+snapshots/live-*.json
+snapshots/rig-*.json
 
 # the session tooling's own directory: worktrees and scratch, never the game
 .claude/

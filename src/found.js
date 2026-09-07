@@ -83,7 +83,7 @@ const Found = (() => {
   /* the house the first palace stands on: one of the sheet's, chosen
      here, before anything is drawn (Eden, 2026-08-29) */
   let houseAt = 0;
-  const houses = () => (typeof Glyphs !== 'undefined' && Glyphs.of('houses')) || [];
+  const houses = () => (typeof Bench !== 'undefined' && Bench.of ? Bench.of('houses') : typeof Glyphs !== 'undefined' && Glyphs.of('houses')) || [];
   function housePick(d){
     const list = houses(); if (!list.length) return null;
     houseAt = ((houseAt + (d || 0)) % list.length + list.length) % list.length;
@@ -234,7 +234,7 @@ const Found = (() => {
       let houseW = 0;
       if (at && typeof Glyphs !== 'undefined'){
         try {
-          const kinds = Glyphs.of('houses') || [];
+          const kinds = (typeof Bench !== 'undefined' && Bench.of ? Bench.of('houses') : Glyphs.of('houses')) || [];
           if (kinds.length){
             const pick = kinds[houseAt % kinds.length];
             const rows = Glyphs.rows(pick); houseW = rows && rows[0] ? rows[0].length * G.A.cell : 0;

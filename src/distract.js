@@ -49,6 +49,7 @@ const Distract = (() => {
     if (typeof Kinds === 'undefined' || Kinds.scope() !== 'map') return null;
     if (typeof Interior !== 'undefined' && Interior.inside()) return null;
     if (typeof Region !== 'undefined' && Region.on()) return null;
+    if (typeof Bench !== 'undefined' && Bench.on()) return null;
     return Atlas.current();
   }
   const list = id => (D.plates[id] || []);

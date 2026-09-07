@@ -636,6 +636,7 @@ const Compass = (() => {
     if (!ON_PLATE || !G.terr || !G.A) return m;
     if (typeof Title === 'undefined' || !Title.stencil || !Title.emit) return m;
     if (typeof Interior !== 'undefined' && Interior.inside()) return m;
+    if (typeof Bench !== 'undefined' && Bench.on()) return m;      // the bench is not a town
     /* not while a plate is being founded: the compass is part of the town,
        and there is no town until Generate (Eden, 2026-08-29) */
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return m;
@@ -712,6 +713,7 @@ const Compass = (() => {
   function may(){
     if (!ON_PLATE || !G.terr || !hitFace() || G.paused || WALL || onRegion()) return false;
     if (typeof Interior !== 'undefined' && Interior.inside()) return false;
+    if (typeof Bench !== 'undefined' && Bench.on()) return false;
     if (typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) return false;
     if (typeof Found !== 'undefined' && Found.state && Found.state()) return false;
     return true;

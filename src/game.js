@@ -388,7 +388,7 @@ function tryStep(dx, dy){
      most one road neighbour, and pressing on is pressing away from that
      neighbour — so a sideways bump mid-road never asks, and a road that
      ends at the plate edge asks the same as one that ends in a field. */
-  if (typeof Atlas !== 'undefined' && !(typeof Region !== 'undefined' && Region.on()) &&
+  if (typeof Atlas !== 'undefined' && !(typeof Region !== 'undefined' && Region.on()) && !(typeof Bench !== 'undefined' && Bench.on()) &&
       wAt(G.x, G.y) && !(sx && sy) && !wAt(nx, ny)){
     let nb = 0, vx = 0, vy = 0;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
@@ -531,6 +531,7 @@ addEventListener('keydown', e => {
       else if (typeof Trace !== 'undefined' && Trace.editing()) Trace.closeEdit();
       else if (Palace.opened()) Palace.close();
       else if (panelOpen) setPanel(false);
+      else if (typeof Bench !== 'undefined' && Bench.on()) Bench.leave();
       else if (Interior.inside()) Interior.leave();
       else if (typeof Region !== 'undefined' && Region.on()) Region.leave();
       /* On the desktop plate #pause is display:none, and the only way out of
@@ -541,6 +542,8 @@ addEventListener('keydown', e => {
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
     case 'KeyT': setPanel(!panelOpen); break;
+    /* G is the glyph bench: a print's default size (src/bench.js) */
+    case 'KeyG': if (typeof Bench !== 'undefined') Bench.toggle(); break;
     /* O is the order: the list of rooms this palace is laid out from */
     /* V is the minimal view, and the trace that runs in it (src/trace.js) */
     case 'KeyV':
@@ -601,11 +604,11 @@ addEventListener('keydown', e => {
       break;
     case 'KeyF': case 'F11': e.preventDefault(); toggleFull(); break;
     case 'Tab': e.preventDefault(); break;
-    case 'Equal': case 'NumpadAdd': if (!zoomHeld()) zoomBy(ZSTEP); break;
-    case 'Minus': case 'NumpadSubtract': if (!zoomHeld()) zoomBy(1 / ZSTEP); break;
+    case 'Equal': case 'NumpadAdd': zoomBy(ZSTEP); break;
+    case 'Minus': case 'NumpadSubtract': zoomBy(1 / ZSTEP); break;
     /* on the region 0 is the region's own rest — zoomed right out, or
        the zoom saved for that eye (src/region.js) */
-    case 'Digit0': if (!zoomHeld()){ if (typeof Region !== 'undefined' && Region.on() && Region.rest) Region.rest(); else G.camT[2] = home(); } break;
+    case 'Digit0': if (typeof Region !== 'undefined' && Region.on() && Region.rest) Region.rest(); else G.camT[2] = home(); break;
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
@@ -662,16 +665,13 @@ function drowse(){
   G.wake = false; G.drift = null;
   document.body.classList.add('drifting');
 }
-/* the region's zoom lock (src/region.js, build 282) holds the zoom
-   against the keys, the chips and the pinch while the region is up; the
-   keys say so once, the pinch is simply held */
-const zoomLocked = () => typeof Region !== 'undefined' && Region.on() && Region.zoomLocked && Region.zoomLocked();
-function zoomHeld(){
-  if (!zoomLocked()) return false;
-  if (typeof hqNote === 'function') hqNote('the zoom is locked · Lock zoom in the builder frees it', false);
-  return true;
+/* on the region the zoom is the map's scale, not the camera's, and the
+   region's own lock may hold it (src/region.js zoomBy, build 302): the
+   keys, the View chips and the pinch all come through here */
+function zoomBy(f){
+  if (typeof Region !== 'undefined' && Region.on() && Region.zoomBy){ Region.zoomBy(f); return; }
+  G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5);
 }
-function zoomBy(f){ if (zoomLocked()) return; G.camT[2] = clamp(G.camT[2] * f, G.fitAll * 0.85, G.fitW * 5); }
 /* ── the distance the town is worked at ─────────────────────────────────
    `fitW` puts the plate's width across the viewport, which is close enough
    that a district fills the screen and you cannot see what you are drawing
@@ -901,6 +901,7 @@ function frame(now){
   if (typeof Trace !== 'undefined') m = Trace.overlay(ENT, m, ENTMAX);
   if (typeof Distract !== 'undefined'){ m = Distract.overlay(ENT, m, ENTMAX); if (live) Distract.step(dt); }
   if (typeof Region !== 'undefined') m = Region.overlay(ENT, m, ENTMAX);
+  if (typeof Bench !== 'undefined') m = Bench.overlay(ENT, m, ENTMAX);
   m = Palace.overlay(ENT, m, ENTMAX);
   if (typeof Compass !== 'undefined' && Compass.overlay) m = Compass.overlay(ENT, m, ENTMAX);
   m = Build.overlay(ENT, m, ENTMAX);
@@ -1017,6 +1018,7 @@ function boot(img){
   if (typeof Atlas !== 'undefined') Atlas.init();
   /* the region: our towns drawn flat, north up, in place of the country */
   if (typeof Region !== 'undefined') Region.init();
+  if (typeof Bench !== 'undefined') Bench.init();
   /* the distractions: what eats the road, and what gates a jump */
   if (typeof Distract !== 'undefined') Distract.init();
   /* the compass's fourth diamond opens the towns map, in place of the

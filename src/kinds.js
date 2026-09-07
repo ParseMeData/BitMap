@@ -1261,39 +1261,20 @@ const Kinds = (() => {
          clearing and will show grass through its windows until one is put
          there — Clear, in Modify, is that shape. (Eden, 2026-08-30.) */
       if (!on) return;
-      /* how much of the building's own outline this cell sits on. Taken
-         from the block's rim rather than from one square, so an edge
-         survives being resampled down alongside the thing it edges. */
-      if (!lit(gx0 - 1, gy0)) open++;
-      if (!lit(gx1 + 1, gy0)) open++;
-      if (!lit(gx0, gy0 - 1)) open++;
-      if (!lit(gx0, gy1 + 1)) open++;
+      /* ── the drawing, filled ────────────────────────────────────────
+         Every lit square is one full diamond in the wall colour, and that
+         is all: no screened body, no window picked by the noise, no trim
+         along the top edge. The asset as drawn, and only that (Eden,
+         2026-09-07: "only fill in the coloured areas of the shape and
+         remove/make other detail transparent in all assets" — on the
+         bench, stilled, the screened body read as grey in the roof). The
+         halftone of 2026-08 — a checker of dim cells so a building read
+         as tone rather than a cut-out — is retired with it; both faces
+         are the one face, so the print does not flicker in the living
+         lattice either. */
       const r = hash(u, v, s.seed + 81);
-      const roof = !lit(gx0, gy0 - 1);            // nothing above: the lit top edge
-      /* ── the halftone ────────────────────────────────────────────────
-         A filled glyph stamped solid would be a silhouette, and a
-         silhouette is the one thing on this plate that reads as a
-         cut-out. So the inside is screened: a checker sets the pitch and
-         the noise breaks it up, and what comes out is tone rather than
-         ink — the same trick the printed map uses to say "built" without
-         saying "black". The rim is left solid, so the building keeps a
-         drawn edge and only its body is screened. */
-      const screen = (u + v) & 1;
-      let col, a, sz;
-      /* The warm note is spent sparingly and in that order: a touch of trim
-         along the top edge, plain wall down the sides, and a lit window
-         only now and then. A landmark that spent it everywhere would come
-         out gold, and the plate palette is muted on purpose — the town has
-         to read as a printed map at night. The first cut of this screened
-         a third of every building in window colour and the result was the
-         only thing on the screen, which is exactly what STYLE.md warns a
-         saturated kind will do. */
-      if (roof){ col = mixc(T.wall, T.trim, 0.16 + r * 0.18); a = 0.92; sz = 1.0; }
-      else if (open){ col = shade(T.wall, 0.86 + r * 0.26); a = 0.8 + r * 0.16; sz = 0.96; }
-      else if (screen && r > 0.74){ col = mixc(T.win, T.wall, 0.4 + r * 0.3); a = 0.62 + r * 0.26; sz = 0.58; }
-      else { col = shade(T.dim, 1.02 + r * 0.34); a = 0.4 + r * 0.22; sz = 0.88; }
-      buf.cell(x, y, col, a * fade, sz, 0, a * 0.8 * fade, sz * (screen ? 1.4 : 1.06),
-               screen && !open && !roof ? 1 : 0, 0.02 + r * 0.02, hash(u, v, s.seed + 83));
+      const col = shade(T.wall, 0.97 + r * 0.06);
+      buf.cell(x, y, col, 0.96 * fade, 1.0, 0, 0.96 * fade, 1.0, 0, 0.02 + r * 0.02, hash(u, v, s.seed + 83));
     });
   }
 

@@ -967,7 +967,7 @@ body.arming,body.arming #gl{cursor:copy}
     <tr><td>arrows</td><td>move the selection a step &nbsp;·&nbsp; Shift ↑↓ taller or shorter, Shift ←→ wider or narrower</td></tr>
     <tr><td>Shift+Tab</td><td>next layer &nbsp;·&nbsp; Shift+click bends a road</td></tr>
     <tr><td>O</td><td>the room order &nbsp;·&nbsp; type a list, and the plan is laid out from it</td></tr>
-    <tr><td>Rooms / Fit-out</td><td>move rooms and the furniture follows &nbsp;·&nbsp; or arrange what is inside them</td></tr>
+    <tr><td>Rooms / Fit-out / Grid</td><td>move rooms and the furniture follows &nbsp;·&nbsp; or arrange what is inside them &nbsp;·&nbsp; or size the assets on the bench</td></tr>
     <tr><td>Enter</td><td>open the marker you are standing by &nbsp;·&nbsp; a room, or a locus</td></tr>
     <tr><td>P</td><td>play the route in the platformer</td></tr>
     <tr><td>R</td><td>new round &nbsp;·&nbsp; replaces the picture while a locus is open</td></tr>
@@ -1143,7 +1143,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 311, cb = '?cb=' + BUILD +
+  var BUILD = 312, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

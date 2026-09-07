@@ -285,8 +285,11 @@ town to town on the Links layer and removed with `Delete`; and the town's
 districts, structures and clearings can be laid on the region's plate.
 The region rests zoomed right out — the whole plate with a margin — and
 its zoom is the map's scale under a fixed boundary (build 302). **The
-glyph bench** (build 303, `G`): a plate of its own, off the town, ruled
-in walk tiles with the builder open — drop a print on it and size it,
+glyph bench** (build 303, `G`; from 312 also the **Grid** chip beside
+Rooms and Fit-out at the top of the builder, and Rooms or Fit-out
+pressed on the bench comes back off it): a plate of its own, off the
+town, ruled in walk tiles with the builder open — drop a print on it
+and size it,
 and the size it stands at is that glyph's default everywhere
 (`hq.sizes`). A row of tabs under the banner is the groups, a sheet
 each: a print standing on the Trees sheet is filed in trees
@@ -449,7 +452,8 @@ stale.
     src/panel.js         the tune panel, the Map/Blank plate switch, and the
                          Sparks switch
     src/build.js         build mode: shapes, dragging, walk-grid stamping,
-                         and the two exclusive edit layers, Rooms and Fit-out
+                         and the two exclusive edit layers, Rooms and Fit-out,
+                         with the Grid chip beside them that goes to the bench
     src/markers.js       glyph markers, baked to one texture atlas
     src/interior.js      going inside a marker: the stack, and the swap
     src/trace.js         minimal — a plan down to its walls — the eight

@@ -1941,7 +1941,7 @@ const Build = (() => {
     const el = $('#palette');
     if (!el || el.childElementCount) return;
     el.innerHTML =
-      '<div class="plabel">Edit</div><div id="kmode" class="chips two"></div>' +
+      '<div class="plabel">Edit</div><div id="kmode" class="chips three"></div>' +
       '<div class="plabel roomonly">Walls</div>' +
       '<div class="kfoot roomonly"><button class="btn" id="kdoor">Door</button>' +
       '<button class="btn" id="kgap">Remove wall</button></div>' +
@@ -2035,10 +2035,28 @@ const Build = (() => {
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
 
-    for (const [id, label] of [['rooms', 'Rooms'], ['fit', 'Fit-out']]){
+    /* Three chips, one switch: the two edit layers of the plate you are
+       on, and the grid — the glyph bench (src/bench.js), which is where
+       an asset is edited rather than a layer it is edited on, but sits
+       here because it is the third place the builder can be pointed
+       (Eden, 2026-09-07: "add this grid view as an option at the top
+       left next to fit out and rooms"). Grid goes to the bench, as G
+       does; Rooms or Fit-out pressed on the bench comes back off it to
+       the plate the bench was entered from, with the builder left open
+       on that layer, whether or not it was open before — the chip was
+       pressed for a layer, and a layer with no builder is nothing. The
+       bench refuses from inside a building and says so, and then the
+       chips stay as they were. */
+    const onBench = () => typeof Bench !== 'undefined' && Bench.on();
+    for (const [id, label] of [['rooms', 'Rooms'], ['fit', 'Fit-out'], ['bench', 'Grid']]){
       const c = document.createElement('div');
       c.className = 'chip'; c.textContent = label; c.dataset.mode = id;
-      c.onclick = () => setMode(id);
+      c.onclick = () => {
+        if (id === 'bench'){ if (typeof Bench !== 'undefined') Bench.enter(); return; }
+        if (onBench()) Bench.leave();
+        if (!on) setOn(true);
+        setMode(id);
+      };
       $('#kmode').appendChild(c);
     }
     /* the view block's switches all go to the region; the zoom ones
@@ -2705,8 +2723,11 @@ const Build = (() => {
     const h0 = hist();
     if (h0) h0.sync();
     if (!$('#palette') || !$('#kmode')) return;
+    /* on the bench the lit chip is Grid, whatever layer the builder is
+       on underneath it (the bench mounts on the fit-out) */
+    const lit = typeof Bench !== 'undefined' && Bench.on() ? 'bench' : mode;
     document.querySelectorAll('#kmode .chip').forEach(c =>
-      c.classList.toggle('sel', c.dataset.mode === mode));
+      c.classList.toggle('sel', c.dataset.mode === lit));
     const gp2 = $('#kgap'), dr2 = $('#kdoor');
     if (gp2) gp2.classList.toggle('sel', !!(armed && armed.band && armed.kind === 'gap'));
     if (dr2) dr2.classList.toggle('sel', !!(armed && armed.band && armed.kind === 'door'));

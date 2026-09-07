@@ -76,11 +76,28 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 7 Sep 2026, build 311 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 7 Sep 2026, build 312 (tag **v8.8** at 280; **v8.9 open**)
 
 - **Builds 297–311 committed on `work` as one commit, cce87bd, 7 Sep
-  2026** (Eden: "much better lock it in commit") — not pushed; `git push`
-  (push.default upstream) takes it to origin/main and the live site.
+  2026** (Eden: "much better lock it in commit"), and pushed with the
+  HANDOFF note as d391a12: `work` is level with origin/main and the live
+  site at 311. Build 312 is committed on `work` (not pushed).
+
+- **Build 312, 7 Sep 2026 — the bench is the third chip.** Eden: "we
+  just added a grid view mode to edit our assets please add this grid
+  view as an option at the top left next to fit out and rooms". The
+  Edit row of the builder is three chips now — Rooms, Fit-out, Grid —
+  and Grid is the bench (build.js ui): it enters as G does, and lights
+  while the bench is on whatever layer the builder is mounted on
+  underneath (the bench mounts on the fit-out, so without that the
+  Fit-out chip would light on the bench). Rooms or Fit-out pressed on
+  the bench leaves it to the plate it was entered from, and leaves the
+  builder OPEN on that layer even when it was closed before G was
+  pressed — the chip was pressed for a layer, and a layer with no
+  builder is nothing. The bench's own refusal from inside a building
+  stands and is said in the note; the chips stay as they were. Verified
+  on a throwaway headless profile with v8.8 restored, every transition
+  and both directions; committed on `work` the same day.
 
 - **Build 311, 7 Sep 2026 — a print is its drawing, filled.** Eden, on
   the stilled bench: "i think its the transparency in some of the darker

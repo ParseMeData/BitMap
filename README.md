@@ -544,6 +544,12 @@ stale.
     tools/snapshot.py    the town, out to a file and back in again; and
                          the sweep — what nothing points at, shown, and
                          removed only with --yes after a backup
+    tools/cloudtest/     the cloud end to end with Google stood in for:
+                         Save to Drive from one headless profile, Load from
+                         Drive on a second, the two towns compared key by
+                         key (drivetest.py; fakedrive.py is the Drive API
+                         on 127.0.0.1:8765; composite.py a town with
+                         everything the seal carries)
     tools/country.py     the ABS SA3 boundaries in tools/country-data/ →
                          assets/australia.js: rasterised on a window that
                          is an exact refinement of the loci bitmap's grid,

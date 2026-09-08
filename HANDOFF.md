@@ -76,12 +76,39 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 7 Sep 2026, build 312 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 8 Sep 2026, build 312 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 312 pushed and live, 8 Sep 2026** (Eden: "can we upload this
+  to a live working site so i can access it from another computer with
+  it saving the assets as requested (so new plates regions cards added
+  are saved)"): `work` → origin/main at 9a4e529, Pages built it, the
+  page serves 312. **Load from Drive verified the same day**, the one
+  leg of the cloud that had never been pressed: `tools/cloudtest/`
+  (below, and in README's layout) runs the page from this folder on
+  http://127.0.0.1:8000 in two throwaway headless profiles with Google
+  stood in for — `fakedrive.py` answers the four Drive calls cloud.js
+  makes on 127.0.0.1:8765, and a shim on the page hands back a token in
+  place of the popup and routes googleapis.com to it — so everything
+  but Google's own servers is the page's own code. Profile A restored
+  from a composite town (the live 311 snapshot with v8.3's five
+  interiors, fourteen locus pictures and deck laid in: plates, region,
+  bench, rooms, cards, the traced map — 40 keys, 1.6 MB plain, 1.5 MB
+  sealed), linked, saved twice (the second a PATCH of the same file, not
+  a second file); profile B fresh, linked (found the file, `saved` set,
+  not dirty), refused `not-the-passphrase` as "wrong passphrase", then
+  loaded: confirm shown with both counts, reload, and every one of the
+  40 keys and 14 pictures the same hash as A, `hq.index` aside (the
+  store's own index, in QUIET). Screenshot of B after the load in the
+  run's out dir. What is still not exercised against real Google is the
+  `alt=media` download itself; Save's upload was Eden's on 6 Sep, and the
+  file is still there (`Bitmap town.json`, 486,839 bytes, modified 6 Sep
+  12:00). **Save is a press, not a sync** — the label under Cloud says
+  "changed since" when the town here has moved past Drive.
 
 - **Builds 297–311 committed on `work` as one commit, cce87bd, 7 Sep
   2026** (Eden: "much better lock it in commit"), and pushed with the
-  HANDOFF note as d391a12: `work` is level with origin/main and the live
-  site at 311. Build 312 is committed on `work` (not pushed).
+  HANDOFF note as d391a12; the live site sat at 311 until 312 went up
+  the next morning.
 
 - **Build 312, 7 Sep 2026 — the bench is the third chip.** Eden: "we
   just added a grid view mode to edit our assets please add this grid
@@ -399,9 +426,12 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   demo town at 12:00 (486,839 bytes) — both confirmed from Drive's own
   side through the claude.ai Drive connector: folder Bitmap
   `1rPuXVS3eustQee-LXHKzBSHp2377desd`, file `Bitmap town.json`
-  `1tDXchs02ucJy1tAzBqpwTpfN9X08igHb`. **Not verified:** Load from Drive
-  (download → unseal → load) — Eden had not pressed it at the close; and
-  Export/Import locked through a real file picker. **What went wrong on
+  `1tDXchs02ucJy1tAzBqpwTpfN9X08igHb`. **Load from Drive verified 8 Sep
+  2026** against a stand-in for Google (`tools/cloudtest/`, see *Where we
+  are*): download → unseal → confirm → load → reload, the second profile
+  the same as the first key for key. **Not verified:** the `alt=media`
+  download against Google itself (Eden had not pressed Load at the close
+  of 6 Sep); and Export/Import locked through a real file picker. **What went wrong on
   the way, so it is not repeated:** (1) the first OAuth client lived in an
   old half-configured project (FluxScan): every sign-in gave 403
   access_denied "has not completed the Google verification process" even

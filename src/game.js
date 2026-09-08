@@ -12,8 +12,9 @@ const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 
 /* ?wallpaper=1 turns the game into a live desktop plate: no HUD, no
-   pause-on-blur (a background window is never focused), a slow drift over
-   the map, and a frame cap so it costs the iGPU almost nothing. Press a
+   pause at all (a background window is never focused, and Esc is not
+   its key), a slow drift over the map, and a frame cap so it costs the
+   iGPU almost nothing. Press a
    movement key and the walker wakes up — which is the whole point of an
    overlay window over a Plasma wallpaper, since a wallpaper takes no input. */
 const Q = new URLSearchParams(location.search);
@@ -519,11 +520,12 @@ addEventListener('keydown', e => {
       else Interior.enter();
       break;
     /* Esc is BACK, and only back. It used to close the pause as well, which
-       meant that pausing while inside a palace — and you pause by clicking
-       away, so this is the common case — left every press of it walking you
-       up a level behind a screen you could not see past. You came out at the
-       town before the menu went. A screen that owns the view has to be the
-       thing dismissed first, and it is dismissed by clicking it. */
+       meant that pausing while inside a palace — and until build 313 you
+       paused by clicking away, so it was the common case — left every press
+       of it walking you up a level behind a screen you could not see past.
+       You came out at the town before the menu went. A screen that owns the
+       view has to be the thing dismissed first, and it is dismissed by
+       clicking it. */
     case 'Escape':
       if (G.paused) break;                    // the pause owns the screen; click it
       if (typeof Distract !== 'undefined' && Distract.opened()) Distract.close();
@@ -536,8 +538,8 @@ addEventListener('keydown', e => {
       else if (typeof Region !== 'undefined' && Region.on()) Region.leave();
       /* On the desktop plate #pause is display:none, and the only way out of
          a pause is a pointerdown on that hidden element — so pausing there
-         is a door that locks behind you. Same guard, same reason, as the
-         blur handler below. */
+         is a door that locks behind you. Same guard on a phone, whose card
+         sat under the touch layer. */
       else if (!WALL && !MOBILE_UI()) togglePause(true);      // nothing to go back from: the reference
       break;
     case 'Space': e.preventDefault(); recrystallise(); break;
@@ -612,11 +614,15 @@ addEventListener('keydown', e => {
   }
 });
 addEventListener('keyup', e => keys.delete(e.code));
-/* a phone blurs for the address bar, a notification, a switch of apps —
-   and its pause card sat under the touch layer, so every button then did
-   nothing (Eden, 2026-08-28): no pause on blur there, as on the wall */
+/* Losing focus drops the held keys, and that is all. The game paused on
+   blur from the start, so clicking away paused it; a phone's blur — the
+   address bar, a notification, a switch of apps — put its pause card
+   under the touch layer where every button then did nothing, so no pause
+   on blur there since 2026-08-28, as on the wall; and since build 313
+   nowhere (Eden, 2026-09-08: "disable the pause function when we click
+   away"). The pause is Esc with nothing to go back from, or the card. */
 const MOBILE_UI = () => document.body.classList.contains('mobile');
-addEventListener('blur', () => { keys.clear(); if (!WALL && !MOBILE_UI() && !G.paused) togglePause(true); });
+addEventListener('blur', () => { keys.clear(); });
 /* ── the wheel walks ─────────────────────────────────────────────────────
    Since 2026-08-29 the wheel does not zoom (that is + − 0, and a pinch on a
    phone): it moves the walker along its road — down is onward, up is back

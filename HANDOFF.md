@@ -76,7 +76,30 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 8 Sep 2026, build 312 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 8 Sep 2026, build 313 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 313, 8 Sep 2026 — no pause on click-away, the key hints gone,
+  the strip leans.** Eden: "disable the pause function when we click away
+  - remove the bottom right short key list - make the spark grains blocks
+  dialog box slanted and have the blocks slid to the left and sparks to
+  the right". (1) game.js's blur listener only drops held keys now; the
+  pause is Esc with nothing left to go back from, or the card — README
+  *Pausing* rewritten, the wallpaper note and the Esc comment with it.
+  (2) `#keys` — the markup, its CSS, and its name in the wall / journal /
+  bag / towns / locus / mobile hide-lists — is gone; the reference on the
+  pause screen still lists every key. (3) `#hud` wears `skewX(-24deg)`
+  from its bottom-left corner (`transform-origin:0 100%`), so Blocks
+  stays where it stood and Sparks slides right, Grains half way; each
+  row wears `skewX(24deg)` back so the type and the bars stand upright
+  in the leaning box; on a phone the origin is the top-right corner, the
+  corner the strip sits in there. Verified on a throwaway headless (port
+  9333, v8.8 restored): the page comes up unpaused (under a terminal it
+  always came up paused before), a synthetic blur leaves `G.paused`
+  false and clears the held keys, Esc pauses, a pointerdown on the card
+  resumes; row lefts Sparks 230 / Grains 222 / Blocks 215 at 1600 × 1000,
+  picture taken. STYLE's greps as before, bar the founding rim's
+  `border-radius:50%` (`#frame i`), which predates this. Committed on
+  `work`, not pushed — the live site is on 312 until it is.
 
 - **Build 312 pushed and live, 8 Sep 2026** (Eden: "can we upload this
   to a live working site so i can access it from another computer with
@@ -3305,11 +3328,12 @@ instances proves geometry; only a picture proves it looks right. The camera
 follows the walker, so setting `G.camT[0]`/`[1]` does nothing — move
 `G.x`/`G.y` instead; the third component is the zoom target and is *not*
 overwritten, so `G.camT[2]` is how a shot is framed wider or tighter
-(`G.fitAll` the whole plate, `G.fitW` the reset). The game pauses on blur, so a
-page driven from a terminal is usually paused — come out of it through
-`togglePause()`, which hides `#pause` as well; clearing `G.paused` by hand
-restarts the frame loop and leaves the pause card over the whole viewport and
-in the shot. On the desktop plate neither blur nor `Esc` pauses, so a wallpaper
+(`G.fitAll` the whole plate, `G.fitW` the reset). Until build 313 the game
+paused on blur, so a page driven from a terminal was usually paused; now it
+is not, and only `Esc` with nothing to go back from pauses it — come out of
+that through `togglePause()`, which hides `#pause` as well; clearing
+`G.paused` by hand restarts the frame loop and leaves the pause card over
+the whole viewport and in the shot. On the desktop plate neither blur nor `Esc` pauses, so a wallpaper
 page is never the paused case.
 
 **The sweep shows before it takes.** `tools/snapshot.py sweep` asks the

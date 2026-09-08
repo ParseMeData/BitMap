@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **No pause on click-away, the key hints gone, the strip leans** —
+  2026-09-08, build 313. game.js's blur only drops held keys; `#keys`
+  removed; `#hud` skewed 24° from its bottom-left corner, rows skewed
+  back upright, Sparks right and Blocks left.
 - [x] **A print is its drawing, filled** — 2026-09-07, build 311. Every
   lit square one full diamond in the wall colour; the screened body, the
   noise-picked windows and the roof trim retired (kinds.js landmark).

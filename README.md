@@ -198,7 +198,9 @@ file and back, players at a door on the desk and none on a phone. The
 region plate, the trace, grains and blocks, distractions, the quest —
 the acronym is the region, a letter a plate, an item a palace. The
 printed sheet never shown; Esri's dark canvas; the map dialog top
-right; the star compass locked to the map; the strip of three meters;
+right; the star compass locked to the map; the strip of three meters
+(leaning since build 313, Blocks at the foot and Sparks slid right; the
+key hints that sat at the bottom right went the same day);
 and the phone: the keys drawn on the screen, every panel a sheet.
 
 **v8.2** — 2026-08-30 — and **v8.3** — 2026-08-31: the compass cut in
@@ -2163,16 +2165,19 @@ key the keyboard would, so everything answers as it does at the desk; a
 held arrow keeps the walker walking, and two fingers on the plate pinch
 the zoom. Every panel becomes a sheet that fits the screen — the tune,
 the route, the map dialog and the palette at the top or the bottom, full
-width, scrolling inside themselves. The keys hint, the lattice sliders
-and inks, Variations, Copy settings, the compass tune and the Player
-rows are not shown there; the compass is half size, the strip sits top
-right, and the quest line and prompts stand under it. Build mode works
+width, scrolling inside themselves. The lattice sliders and inks,
+Variations, Copy settings, the compass tune and the Player rows are not
+shown there; the compass is half size, the strip sits top right, leaning
+from that corner, and the quest line and prompts stand under it. Build mode works
 by touch but is a desk's job.
 
 ## Pausing
 
-The game pauses when the window loses focus, which means you pause it by
-clicking away — and that is the common case, not `Esc`.
+Clicking away does not pause the game (build 313; it did from the start,
+and Eden asked for that to go on 2026-09-08 — "disable the pause function
+when we click away"). Losing focus drops any held key and nothing else,
+so the town keeps moving behind whatever window is in front. The pause
+is `Esc` with nothing left to go back from, which opens the reference.
 
 **A click anywhere resumes it.** The click that brings the window back to the
 front is the same click that should put you back in the game; asking for a
@@ -2181,8 +2186,8 @@ asked for.
 
 `Esc` is **back** and only back: the locus preview, then the room list, then
 the tune panel, then out of the interior — and in the platformer, out of the
-run and into the builder. It used to close the pause as well, and because you
-pause by clicking away that mattered: paused inside a palace, every press of
+run and into the builder. It used to close the pause as well, and while you
+paused by clicking away that mattered: paused inside a palace, every press of
 `Esc` walked you up a level behind a screen you could not see past, and you
 arrived at the town before the menu went. A screen that owns the view has to
 be the thing dismissed first.
@@ -2214,8 +2219,9 @@ you build in the plate reaches the town you play, and nothing snapshots it.
 
 Four query parameters shape it, all read in `src/game.js`:
 
-    ?wallpaper   the mode itself: no HUD, no pause-on-blur (a background
-                 window is never focused), and the drift
+    ?wallpaper   the mode itself: no HUD, no pause at all (a background
+                 window is never focused, and Esc is not its key), and
+                 the drift
     ?fps=N       frame cap. 30 under ?wallpaper, uncapped without it; 0 is
                  uncapped either way
     ?dpr=X       render scale cap. 1.25 under ?wallpaper against 2 without —

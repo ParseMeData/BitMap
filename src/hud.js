@@ -253,7 +253,7 @@ const Hud = (() => {
     /* the anchor written the long way round — screen pixel → world — so it
        is the same mapping as `toWorld` below and can be checked against it */
     /* Bottom-left, because it is the one corner nothing permanent claims:
-       #hud is top-left, #tune and #route top-right, #keys bottom-right.
+       #hud is top-left, #tune and #route top-right.
        #palette takes this corner in build mode, where a HUD is not what
        you are looking at anyway. The lift clears #toast, which shares it. */
     /* The corner is the cluster's on desk and phone alike, low; on a desk

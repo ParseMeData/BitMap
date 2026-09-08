@@ -83,10 +83,15 @@ body.locus #type,body.wall #type{display:none}
 #pjson::-webkit-scrollbar-thumb,.kgl::-webkit-scrollbar-thumb{background:var(--thumb)}
 /* the strip: three meters stacked in the bottom-left corner, under the
    hub — sparks, grains, blocks — each a label, a bar and its number.
-   Eden asked for it there, and for round and steps to go (2026-08-28). */
+   Eden asked for it there, and for round and steps to go (2026-08-28);
+   and for the box to lean (2026-09-08): a skew from the bottom-left
+   corner, so Blocks stays where it stood and Sparks slides right, Grains
+   half way, and each row skewed back by the same angle so the type and
+   the bars stand upright inside the leaning box. */
 #hud{position:fixed;left:196px;bottom:10px;padding:6px 12px;display:flex;flex-direction:column;gap:3px;
-  font-size:9px;letter-spacing:.22em;text-transform:uppercase;z-index:3}
-#hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums}
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;z-index:3;
+  transform:skewX(-24deg);transform-origin:0 100%}
+#hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums;transform:skewX(24deg)}
 #hud b{color:var(--dim);font-weight:400;width:54px}
 #hud>span>span{min-width:24px;text-align:right}
 #hsparks{color:var(--gold)}
@@ -137,25 +142,21 @@ body.mapping #hud{display:none}
 #msg{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:3;
   font-size:12px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase;
   text-shadow:0 0 18px rgba(242,193,78,.5);pointer-events:none}
-#keys{position:fixed;right:16px;bottom:14px;padding:9px 12px;z-index:3;font-size:9.5px;
-  letter-spacing:.16em;color:var(--dim);text-transform:uppercase;line-height:1.9;text-align:right}
-#keys em{color:var(--bone);font-style:normal}
 #boot,#fatal,#pause{position:fixed;inset:0;display:grid;place-content:center;gap:10px;
   text-align:center;z-index:5;background:rgba(8,8,11,.86);letter-spacing:.28em;
   text-transform:uppercase;font-size:11px}
 #fatal{color:var(--flare);z-index:9;background:var(--ground)}
 /* ── mobile ─────────────────────────────────────────────────────────────
    Every fixed panel becomes a sheet that fits the phone: full width, at
-   the top or the bottom, scrolling inside itself. The keys hint, the
-   lattice sliders, Variations, Copy settings and the compass tune are not
-   shown — there is no keyboard to hint at and no room to tune. The
-   compass is half size; the strip moves to the top right; the prompts
-   step up clear of the touch layer (src/touch.js). */
+   the top or the bottom, scrolling inside itself. The lattice sliders,
+   Variations, Copy settings and the compass tune are not shown — there
+   is no room to tune. The compass is half size; the strip moves to the
+   top right, leaning from that corner instead; the prompts step up clear
+   of the touch layer (src/touch.js). */
 body.mobile{overscroll-behavior:none}
 body.mobile #gl{touch-action:none}
-body.mobile #keys{display:none!important}
 body.mobile #compass{transform:scale(.5);transform-origin:0 0;left:4px;top:8px}
-body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px}
+body.mobile #hud{left:auto;right:8px;top:8px;bottom:auto;padding:5px 9px;transform-origin:100% 0}
 body.mobile #quest{top:112px;left:8px;right:8px;transform:none;font-size:8.5px}
 body.mobile #inside,body.mobile #region,body.mobile #bench{top:146px;left:8px;right:8px;transform:none;font-size:8.5px}
 body.mobile #kind{top:146px}
@@ -276,7 +277,7 @@ body.mobile #found{width:auto;left:8px;right:8px;top:8px;transform:none}
 .chip.sel,.btn.sel{background:var(--bone);color:var(--ground)}
 .pfoot{display:grid;grid-template-columns:1fr 1.4fr;gap:6px}
 /* wallpaper duty: no chrome at all, and a hint that only shows while drifting */
-body.wall #hud,body.wall #keys,body.wall #pause,body.wall #msg{display:none}
+body.wall #hud,body.wall #pause,body.wall #msg{display:none}
 body.wall #wallhint{display:block}
 #wallhint{display:none;position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
   z-index:3;font-size:9px;letter-spacing:.26em;color:var(--faint);text-transform:uppercase;
@@ -760,9 +761,9 @@ body.mapping #focus,body.wall #focus{display:none}
 #journal #jword::placeholder,#journal #jnote::placeholder{color:var(--faint)}
 #journal .jfrom{color:var(--dim);font-size:9px;letter-spacing:.18em;text-transform:uppercase;margin-top:5px}
 #journal .jempty{color:var(--dim);text-align:center;margin:30px 0;font-size:9px;letter-spacing:.22em;text-transform:uppercase}
-body.journal #hud,body.journal #keys,body.journal #palette,body.journal #inside,body.journal #enterhint,
+body.journal #hud,body.journal #palette,body.journal #inside,body.journal #enterhint,
 body.journal #msg,body.journal #mapbar,body.journal #route,body.journal #palace,body.journal #tune{display:none}
-body.bag #hud,body.bag #keys,body.bag #palette,body.bag #inside,body.bag #enterhint,
+body.bag #hud,body.bag #palette,body.bag #inside,body.bag #enterhint,
 body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{display:none}
 /* the towns map: the country in diamonds, a canvas of chrome, every plate
    with an anchor a dot on it; the same page shape as the bag */
@@ -816,7 +817,7 @@ body.bag #msg,body.bag #mapbar,body.bag #route,body.bag #palace,body.bag #tune{d
 #tread{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tread b{color:var(--aqua);font-weight:inherit}
 #tread i{color:var(--gold);font-style:normal}
-body.towns #hud,body.towns #keys,body.towns #palette,body.towns #inside,body.towns #enterhint,
+body.towns #hud,body.towns #palette,body.towns #inside,body.towns #enterhint,
 body.towns #msg,body.towns #mapbar,body.towns #route,body.towns #palace,body.towns #tune{display:none}
 #locus{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:8;
   padding:9px 15px;display:flex;gap:13px;align-items:center;font-size:9.5px;
@@ -825,7 +826,7 @@ body.towns #msg,body.towns #mapbar,body.towns #route,body.towns #palace,body.tow
   font-variant-numeric:tabular-nums}
 #locus span{text-transform:none;letter-spacing:.06em;font-size:11px}
 #locus em{color:var(--dim);font-style:normal}
-body.locus #hud,body.locus #keys,body.locus #palette,body.locus #inside,
+body.locus #hud,body.locus #palette,body.locus #inside,
 body.locus #enterhint,body.locus #msg,body.locus #mapbar,body.locus #route,
 body.locus #place{display:none}
 /* one place on the grid, opened by clicking its square in the minimal view:
@@ -899,13 +900,6 @@ body.arming,body.arming #gl{cursor:copy}
   <span><b>Blocks</b><i class="bar"><i id="hblocks"></i></i><span id="hblocksv">0</span></span>
 </div>
 <div id="msg"></div>
-
-<div id="keys" class="glass">
-  <em>WASD</em> move &nbsp; <em>Shift</em> sprint<br>
-  <em>Space</em> recrystallise &nbsp; <em>Tab</em> overview<br>
-  <em>Wheel</em> walk the road &nbsp; <em>+ &minus; 0</em> zoom &nbsp; <em>T</em> tune &nbsp; <em>F</em> fullscreen<br>
-  <em>B</em> build &nbsp; <em>O</em> rooms &nbsp; <em>V</em> minimal &nbsp; <em>Enter</em> open &nbsp; <em>P</em> play
-</div>
 
 <div id="inside" class="glass" hidden></div>
 <div id="quest" class="glass" hidden></div>
@@ -1143,7 +1137,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 312, cb = '?cb=' + BUILD +
+  var BUILD = 313, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

@@ -623,6 +623,31 @@ addEventListener('keyup', e => keys.delete(e.code));
    away"). The pause is Esc with nothing to go back from, or the card. */
 const MOBILE_UI = () => document.body.classList.contains('mobile');
 addEventListener('blur', () => { keys.clear(); });
+/* A slider dragged or a button pressed keeps the focus, and every key
+   after it went to that control, not the game — the walk's handler and
+   the builder's both step aside for a focused input, so after a slider
+   in the palette had been touched, B did not close the builder (Eden,
+   2026-09-08: "when i press b again it is not closing the build view").
+   The keys are the game's: a slider or a button lets the focus go as the
+   pointer lets go of it. A text field keeps its focus — typing is
+   typing — and a select keeps it too, since it opens on the release. */
+addEventListener('pointerup', () => setTimeout(() => {
+  const a = document.activeElement;
+  if (a && (a.tagName === 'BUTTON' || (a.tagName === 'INPUT' && a.type === 'range'))) a.blur();
+}, 0));
+/* And a text field lets go when the pointer lands anywhere but in it —
+   which is what a browser does on its own, except that a chip's
+   pointerdown prevents its default (so a drag off a chip is not a text
+   selection), and that default is the moving of the focus. So a marker
+   named and then a chip pressed left the name field holding the keys,
+   and B wrote a b into the name. Taken in the capture phase, before the
+   chip's own handler. */
+addEventListener('pointerdown', e => {
+  const a = document.activeElement;
+  if (!a || a === document.body) return;
+  const typing = a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !/^(range|checkbox|radio|button|submit|color|file)$/.test(a.type)) || a.isContentEditable;
+  if (typing && !(e.target === a || a.contains(e.target))) a.blur();
+}, true);
 /* ── the wheel walks ─────────────────────────────────────────────────────
    Since 2026-08-29 the wheel does not zoom (that is + − 0, and a pinch on a
    phone): it moves the walker along its road — down is onward, up is back
@@ -1020,7 +1045,7 @@ function boot(img){
   /* the aqua diamond beside the hub opens the journal */
   if (typeof Journal !== 'undefined') Hud.onJournal = () => Journal.open();
   /* the bone diamond is the B key: build on, or off again */
-  Hud.onBuild = () => Build.setOn(!Build.active());
+  Hud.onBuild = () => Build.toggle();
   if (typeof Atlas !== 'undefined') Atlas.init();
   /* the region: our towns drawn flat, north up, in place of the country */
   if (typeof Region !== 'undefined') Region.init();

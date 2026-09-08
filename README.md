@@ -586,7 +586,19 @@ says so), and one on the map, where it lands — nothing appears until you
 have pointed at where. You can also drag straight from the chip and drop
 it. `Esc` disarms.
 
-`B` opens the palette. Work is organised in layers, the way a plan is —
+`B` opens the palette, and `B` closes it — on the bench it leaves the
+bench too, since a sheet with no palette is nothing to be on. A slider or
+a button lets the focus go the moment the pointer lets go, and a text
+field lets go when the pointer lands anywhere else, so the key is always
+the game's (build 315; before it a chip pressed after a marker was named
+left the name field holding the keys, and B wrote a b into the name).
+The palette is one column when the screen is tall enough for it, and when
+it is not — the fit-out's blocks stand half again as tall as a 944-pixel
+screen — the panel takes the whole height and its blocks wrap into a
+second column, a label never parted from its rows, so everything is in
+sight and nothing is scrolled to (build 315; Eden: "cut out and need to
+slide the panel to see the missing details"). The strip stands clear of
+it whatever its width. Work is organised in layers, the way a plan is —
 the road network first and set apart, because it is the thing everything else
 gets arranged around, and it is the layer you land on when build mode opens:
 

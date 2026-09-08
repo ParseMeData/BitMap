@@ -76,7 +76,46 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 8 Sep 2026, build 314 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 8 Sep 2026, build 315 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 315, 8 Sep 2026 — the palette in columns, and B closes.** Eden:
+  "having issues with the build mode side bar on left - cut out and need
+  to slide the panel to see the missing details - extend or lock an
+  extended panel so all information is showing - also when i press b
+  again it is not closing the build view". (1) The palette's fit-out
+  blocks stand 1457px tall in one column against an 860px panel at
+  1600 × 944, so it scrolled. Now each label with its rows is a
+  `.pblock` (grouped in build.js ui() after the innerHTML, wearing the
+  label's mode class so it hides with it; a block whose every row is
+  `[hidden]` hides by `:has`), and when the one column overflows,
+  build.js fit() puts `#palette.wide` on — the whole height, flex-wrap
+  into columns — and reads back the width the columns took (a
+  column-wrapped flex box does not widen itself), writing `--palette-w`
+  on the body so the strip stands clear (`body.building #hud`). Asked
+  from setOn, reui, every syncUI and resize, coalesced to a frame. At
+  888px of viewport the fit-out is three columns (the blocks pack in
+  order, and the last one misses two columns by 23px), rooms mode one;
+  a taller window is one. (2) Found on the way: every slider row in the
+  palette ran 241px across a 188px panel, because a range input's least
+  width is 129px and a flex item will not go under it — the values were
+  clipped off the right edge, unseen, with a horizontal scrollbar; now
+  `min-width:0` on `.prow input[type=range]` and every value shows.
+  `.pblock` is 188px, the panel's content width (214 − 24 − 2). (3) B:
+  the builder's and the walk's key handlers step aside for a focused
+  INPUT, and focus stuck in two ways — a chip's pointerdown prevents its
+  default, which is the focus moving, so a marker named and a chip
+  pressed left the name field holding the keys (B wrote a b into the
+  name); and a slider dragged or a button pressed keeps focus in a real
+  browser. game.js now releases a text field on any pointerdown outside
+  it (capture) and a button or range on pointerup. And on the bench B
+  hid the palette and left the sheet standing, which reads as nothing
+  happening: `Build.toggle()` (B, and the hub's diamond) leaves the bench
+  and closes there. Verified on the throwaway (port 9333, v8.8, focus
+  emulation on, trusted mouse and keys): three columns, no row past its
+  block, rooms one column with no horizontal overflow; name field
+  focused → chip pressed → focus on body, B closes, name unchanged; G →
+  B → bench off and builder off. In headless a range or button never
+  takes focus from a mouse press, so that leg is by construction.
 
 - **Build 314, 8 Sep 2026 — the strip at 45°.** Eden, on 313's lean:
   "more slanted - so 45 degree angle - this is to match the angle of

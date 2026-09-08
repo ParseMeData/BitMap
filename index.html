@@ -268,7 +268,11 @@ body.mobile #found{width:auto;left:8px;right:8px;top:8px;transform:none}
 .prow{display:flex;align-items:center;gap:10px}
 .prow label{width:74px;flex:none;color:var(--dim);font-size:9px;letter-spacing:.18em;
   text-transform:uppercase}
-.prow input[type=range]{flex:1;accent-color:var(--flare);height:18px;background:none;cursor:pointer}
+/* min-width:0 — a range's own least width is 129px, and a flex item will
+   not go under its content's least width unless told; without it every
+   slider row in the palette ran 241px across a 188px panel and its value
+   was clipped off the right edge, unseen (found 2026-09-08) */
+.prow input[type=range]{flex:1;min-width:0;accent-color:var(--flare);height:18px;background:none;cursor:pointer}
 .prow .pv{width:48px;flex:none;text-align:right;font-size:10px;font-variant-numeric:tabular-nums}
 .plabel{color:var(--dim);font-size:9px;letter-spacing:.26em;text-transform:uppercase;margin-top:2px}
 .chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -289,7 +293,22 @@ body.wall #wallhint{display:block}
 body.wall:not(.drifting) #wallhint{opacity:0}
 /* build mode: layers, the kind palette, and the map cursor that goes with it */
 #palette{position:fixed;left:16px;bottom:14px;z-index:4;width:214px;padding:12px;
-  display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 28px);overflow-y:auto}
+  display:flex;flex-direction:column;gap:5px 16px;max-height:calc(100vh - 28px);overflow-y:auto}
+/* the palette in columns: when its blocks stand taller than the screen
+   the panel takes the whole height and the blocks wrap into a second
+   column (a third on a short screen) instead of scrolling out of sight —
+   Eden, 2026-09-08: "cut out and need to slide the panel to see the
+   missing details". The wrapping is this rule; build.js fit() decides
+   whether it is wanted and reads back the width the columns took, since
+   a column-wrapped flex box does not widen itself. A block is a label
+   with its rows (.pblock, built in build.js ui()), so a label is never
+   left at the foot of one column with its rows at the head of the next;
+   a block whose every row is hidden is hidden with them. In build mode
+   the strip stands clear of the panel, whatever its width. */
+#palette.wide{flex-wrap:wrap;align-content:flex-start;height:calc(100vh - 28px)}
+.pblock{display:flex;flex-direction:column;gap:5px;width:188px;flex-shrink:0}
+.pblock:not(:has(> :not([hidden]))),body.region .pblock:has(> #kmlabel){display:none}
+body.building #hud{left:calc(32px + var(--palette-w,214px))}
 /* the room list opens in the same corner and is taller than what is left of
    the palette below it, so the two overlap; the list is what you are working
    in while it is open */
@@ -1141,7 +1160,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 314, cb = '?cb=' + BUILD +
+  var BUILD = 315, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

@@ -1839,7 +1839,7 @@ const Build = (() => {
 
     addEventListener('keydown', e => {
       if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
-      if (e.code === 'KeyB' && !e.ctrlKey && !e.metaKey){ setOn(!on); return; }
+      if (e.code === 'KeyB' && !e.ctrlKey && !e.metaKey){ toggle(); return; }
       if (!on) return;
       if (e.code === 'Delete' || e.code === 'Backspace'){
         e.preventDefault();
@@ -2035,6 +2035,22 @@ const Build = (() => {
       '<div class="kstate" id="kstate"></div>' +
       '<div class="knote" id="kstat"></div>';
 
+    /* ── blocks ──────────────────────────────────────────────────────────
+       A label and what follows it, to the next label, is one block; the
+       blocks are what wrap into columns when the screen is shorter than
+       the palette (fit(), and #palette.wide in index.html), so a label
+       never parts from its rows. A block wears its label's mode class
+       (roomonly, fitonly, regiononly) and so hides with it. */
+    let blk = null;
+    for (const c of Array.from(el.children)){
+      if (!blk || c.classList.contains('plabel')){
+        blk = document.createElement('div');
+        blk.className = 'pblock ' + Array.from(c.classList).filter(k => /only$/.test(k)).join(' ');
+        el.appendChild(blk);
+      }
+      blk.appendChild(c);
+    }
+
     /* Three chips, one switch: the two edit layers of the plate you are
        on, and the grid — the glyph bench (src/bench.js), which is where
        an asset is edited rather than a layer it is edited on, but sits
@@ -2216,7 +2232,40 @@ const Build = (() => {
     const el = $('#palette');
     if (el) el.innerHTML = '';
     ui();
+    queueFit();
   }
+  /* ── the palette's columns ───────────────────────────────────────────
+     One column when it fits the screen, as it always was; when it does
+     not, the panel takes the whole height and the blocks wrap (CSS,
+     #palette.wide) — and since a column-wrapped flex box does not widen
+     to hold its columns, the width the blocks took is read back and set.
+     The strip in build mode stands off the panel by the same number
+     (--palette-w). Measured once a frame at most: every syncUI asks. */
+  function fit(){
+    const el = $('#palette');
+    if (!el || el.hidden) return;
+    el.classList.remove('wide'); el.style.width = '';
+    if (!document.body.classList.contains('mobile') && el.scrollHeight > el.clientHeight + 1){
+      el.classList.add('wide');
+      let right = 0;
+      for (const b of el.querySelectorAll(':scope>.pblock')){
+        if (!b.offsetWidth) continue;                         // hidden with its mode
+        right = Math.max(right, b.offsetLeft + b.offsetWidth);
+      }
+      if (right){
+        const cs = getComputedStyle(el);
+        el.style.width = (right + parseFloat(cs.paddingRight) + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth)) + 'px';
+      }
+    }
+    document.body.style.setProperty('--palette-w', el.offsetWidth + 'px');
+  }
+  let fitQ = false;
+  function queueFit(){
+    if (fitQ) return;
+    fitQ = true;
+    requestAnimationFrame(() => { fitQ = false; fit(); });
+  }
+  addEventListener('resize', () => { if (on) queueFit(); });
 
   function slider(key, label, min, max, step){
     const row = document.createElement('div');
@@ -2723,6 +2772,7 @@ const Build = (() => {
     const h0 = hist();
     if (h0) h0.sync();
     if (!$('#palette') || !$('#kmode')) return;
+    queueFit();                                            // after this pass's toggles, next frame
     /* on the bench the lit chip is Grid, whatever layer the builder is
        on underneath it (the bench mounts on the fit-out) */
     const lit = typeof Bench !== 'undefined' && Bench.on() ? 'bench' : mode;
@@ -2826,6 +2876,15 @@ const Build = (() => {
     }
     syncUI();
   }
+  /* B, and the hub's build diamond. On the bench the builder IS the bench
+     — a sheet with no palette is nothing to be on — so B there leaves the
+     bench and closes, rather than hiding the palette and leaving the
+     sheet standing, which read as B doing nothing (Eden, 2026-09-08:
+     "when i press b again it is not closing the build view"). */
+  function toggle(){
+    if (on && typeof Bench !== 'undefined' && Bench.on()){ Bench.leave(); setOn(false); return; }
+    setOn(!on);
+  }
   function setOn(v){
     on = v;
     if (!on) sel = null;
@@ -2843,6 +2902,7 @@ const Build = (() => {
     if (on && typeof Basemap !== 'undefined' && Basemap.placing && Basemap.placing()) Basemap.setPlacing(false);
     const el = $('#palette');
     if (el) el.hidden = !on;
+    if (on) queueFit();
     /* Opening the builder is what "before we opened the builder" means, so
        that is the moment the restore point is stamped, without being asked
        for — see history.js. */
@@ -3074,7 +3134,7 @@ const Build = (() => {
     document.body.classList.toggle('rooms', mode === 'rooms');
     syncUI();
   }
-  return {init, rebuild, stamp, overlay, setOn, mount, reload, lay, add, refill, setMode, rectBlob,
+  return {init, rebuild, stamp, overlay, setOn, toggle, mount, reload, lay, add, refill, setMode, rectBlob,
           mode: () => mode, active: () => on,
           /* a tool that is being aimed wants a grid fine enough to aim at */
           aiming: () => !!(band || (armed && armed.band)),

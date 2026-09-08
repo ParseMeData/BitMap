@@ -35,6 +35,10 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The palette in columns, and B closes** — 2026-09-08, build 315.
+  Blocks wrap into columns when the screen is short (fit()); slider rows
+  fit the panel (range min-width:0, the values were clipped); focus lets
+  go on a press elsewhere / a release; B leaves the bench.
 - [x] **The strip at 45°** — 2026-09-08, build 314. `#hud` skewed 45°
   to run with the hub's diamonds; side padding 18px so the type clears
   the slanted sides.

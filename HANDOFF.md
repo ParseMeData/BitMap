@@ -99,7 +99,8 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
   resumes; row lefts Sparks 230 / Grains 222 / Blocks 215 at 1600 × 1000,
   picture taken. STYLE's greps as before, bar the founding rim's
   `border-radius:50%` (`#frame i`), which predates this. Committed on
-  `work`, not pushed — the live site is on 312 until it is.
+  `work` as 7c3f1ee and pushed to origin/main at Eden's word ("push it
+  live"); Pages built it and the page serves 313.
 
 - **Build 312 pushed and live, 8 Sep 2026** (Eden: "can we upload this
   to a live working site so i can access it from another computer with

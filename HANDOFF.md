@@ -76,7 +76,17 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ---
 
-## Where we are — 8 Sep 2026, build 313 (tag **v8.8** at 280; **v8.9 open**)
+## Where we are — 8 Sep 2026, build 314 (tag **v8.8** at 280; **v8.9 open**)
+
+- **Build 314, 8 Sep 2026 — the strip at 45°.** Eden, on 313's lean:
+  "more slanted - so 45 degree angle - this is to match the angle of
+  the diamonds to the left". `#hud` skews 45° now, so its sides run on
+  the hub diamonds' own diagonal; the rows skew back 45°; the side
+  padding is 18px, not the panels' 12px, because at 45° a row's corners
+  reach toward the slanted sides by half the row's height and the type
+  was going to touch the border. Verified on the throwaway (port 9333,
+  v8.8): row lefts Sparks 262 / Grains 245 / Blocks 229, the box 196 to
+  449 wide at the foot and the head. Pushed at Eden's word.
 
 - **Build 313, 8 Sep 2026 — no pause on click-away, the key hints gone,
   the strip leans.** Eden: "disable the pause function when we click away

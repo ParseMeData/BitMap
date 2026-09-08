@@ -87,11 +87,15 @@ body.locus #type,body.wall #type{display:none}
    and for the box to lean (2026-09-08): a skew from the bottom-left
    corner, so Blocks stays where it stood and Sparks slides right, Grains
    half way, and each row skewed back by the same angle so the type and
-   the bars stand upright inside the leaning box. */
-#hud{position:fixed;left:196px;bottom:10px;padding:6px 12px;display:flex;flex-direction:column;gap:3px;
+   the bars stand upright inside the leaning box. 45°, so its sides run
+   on the hub's diamonds' own diagonal (Eden: "to match the angle of the
+   diamonds to the left"; 24° first). The side padding is wider than
+   the other panels' 12px because a row's corners reach toward the
+   slanted sides by half the row's height. */
+#hud{position:fixed;left:196px;bottom:10px;padding:6px 18px;display:flex;flex-direction:column;gap:3px;
   font-size:9px;letter-spacing:.22em;text-transform:uppercase;z-index:3;
-  transform:skewX(-24deg);transform-origin:0 100%}
-#hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums;transform:skewX(24deg)}
+  transform:skewX(-45deg);transform-origin:0 100%}
+#hud>span{display:flex;align-items:center;font-variant-numeric:tabular-nums;transform:skewX(45deg)}
 #hud b{color:var(--dim);font-weight:400;width:54px}
 #hud>span>span{min-width:24px;text-align:right}
 #hsparks{color:var(--gold)}
@@ -1137,7 +1141,7 @@ var Users = (function(){
    and sitting at the end of <body> means the DOM they query is already
    parsed. */
 (function(){
-  var BUILD = 313, cb = '?cb=' + BUILD +
+  var BUILD = 314, cb = '?cb=' + BUILD +
     (location.protocol === 'file:' ? '.' + Date.now() : '');
   window.HQ_BUILD = BUILD;
   /* ── the door, then the game ─────────────────────────────────────────── */

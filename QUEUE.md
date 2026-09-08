@@ -35,6 +35,9 @@ claim is about speed.)
 
 (ticked items move here with the date)
 
+- [x] **The strip at 45°** — 2026-09-08, build 314. `#hud` skewed 45°
+  to run with the hub's diamonds; side padding 18px so the type clears
+  the slanted sides.
 - [x] **No pause on click-away, the key hints gone, the strip leans** —
   2026-09-08, build 313. game.js's blur only drops held keys; `#keys`
   removed; `#hud` skewed 24° from its bottom-left corner, rows skewed

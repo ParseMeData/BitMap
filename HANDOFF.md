@@ -78,6 +78,69 @@ Run it with `./play.sh`. Add `--remote-debugging-port=9222` to drive it (see
 
 ## Where we are — 8 Sep 2026, build 315 (tag **v8.8** at 280; **v8.9 open**)
 
+- **Handoff, 8 Sep 2026 — read this first.** Eden: *"lets just commit
+  and create a handoff for now"*. Where things stand:
+  - **The tree.** `work` is at build **315**, commit `b7fece9`, clean,
+    and every commit of the day is **pushed** to origin/main — Pages has
+    built it and parsemedata.github.io/BitMap serves 315. The day's
+    commits, oldest first: 9a4e529 build 312 (yesterday's, pushed this
+    morning), 45b7b3e + a1eecdd the cloud test, 7c3f1ee build 313,
+    46b908c a note, 3636e2f build 314, b7fece9 build 315. Every push was
+    at Eden's word ("push it live") or in its flow. Git on this host
+    could not auto-detect an author (the hostname changed), so
+    `user.name Eden` / `user.email edenjstone@gmail.com` are set in
+    this clone's config — the env-var recipe in QUEUE.md is no longer
+    needed here. v8.9 is still open; index.html says 315. The worktree
+    `.claude/worktrees/region-cluster-lines` still stands at 283.
+  - **What the day built**, newest first: 315 the build palette wraps
+    into columns when taller than the screen, its slider values in
+    sight for the first time (they had been clipped), focus let go of
+    by a press elsewhere or a release, B leaving the bench; 314 the
+    strip at 45° on the hub diamonds' diagonal; 313 no pause on
+    click-away, the bottom-right key hints gone, the strip leaning;
+    312 the Grid chip pushed live; and **Load from Drive verified** by
+    `tools/cloudtest/` with Google stood in for. Each entry below says
+    how it was verified.
+  - **The live town.** Eden plays on the live site now, from more than
+    one computer, with the town carried by **Save to Drive / Load from
+    Drive** under Town in the tune panel — a press, not a sync; the
+    label says "changed since" when the town here has moved past
+    Drive. The only leg never pressed against Google itself is Load's
+    `alt=media` download; the rest is the same request path Save
+    proved on 6 Sep, and the sealed file from that day is still in
+    Drive. The desk profile on 9222 was not touched today.
+  - **The rig.** Every check today ran on a throwaway headless Brave on
+    port **9333**: `XDG_CACHE_HOME=<scratch>/cache setsid ./play.sh
+    --remote-debugging-port=9333 --headless=new --window-size=1600,944
+    --use-angle=gl --enable-gpu --ignore-gpu-blocklist`, then
+    `MQ_PORT=9333 tools/snapshot.py restore snapshots/v8.8.json --port
+    9333 --yes`, driven with `tools/cdp.py` (`attach(port=9333)`), closed
+    with `Browser.close`. Three things about it: (1) `element.focus()`
+    moves nothing until `Emulation.setFocusEmulationEnabled` is on; (2)
+    even then a range or a button never takes focus from a devtools
+    mouse press, though a text field does — so the slider/button focus
+    release of 315 is by construction, the text-field one by test; (3)
+    `brave-browser` is a wrapper, and a TERM to it leaves the browser
+    standing — kill by the profile path with a bracket
+    (`pkill -9 -f 'scratchpad/t31[5]/cache'`), as cloudtest does by
+    session. `tools/cloudtest/drivetest.py` is the cloud end to end
+    (README's layout says how).
+  - **Decisions parked on Eden.** (1) From 311: whether the roof-line
+    trim and the occasional window come back as an option per tone,
+    now that a print is its drawing, filled. (2) The fit-out palette
+    packs into THREE columns at an 888px viewport (the blocks pack in
+    order and the last misses two columns by 23px); at a taller window
+    it is two, then one — if three is too wide, the Letter/Clear/state
+    block could move up beside Modify, or the panel's 12px vertical
+    margins could give. (3) The strip's "blocks left, sparks right" was
+    read as the stagger of a leaning stack, not three meters side by
+    side. (4) Save to Drive is a press; an auto-save after each change
+    (the passphrase is already held for the session) is a build if
+    wanted. (5) The founding rim (`#frame i`) wears `border-radius:50%`,
+    the one exception to STYLE's rule, from before today. (6) On a
+    phone the palette is a sheet and never wraps (fit() skips
+    `body.mobile`).
+
 - **Build 315, 8 Sep 2026 — the palette in columns, and B closes.** Eden:
   "having issues with the build mode side bar on left - cut out and need
   to slide the panel to see the missing details - extend or lock an

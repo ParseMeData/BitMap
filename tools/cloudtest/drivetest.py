@@ -75,7 +75,7 @@ def launch(name, port):
     p = subprocess.Popen(['brave-browser', '--app=http://127.0.0.1:%d/index.html' % STATIC, '--user-data-dir=' + prof,
         '--remote-debugging-port=%d' % port, '--headless=new', '--window-size=1600,1000', '--use-angle=gl', '--enable-gpu',
         '--ignore-gpu-blocklist', '--no-first-run', '--no-default-browser-check', '--disable-features=Translate,BraveRewards'],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
     wait_http('http://127.0.0.1:%d/json' % port)
     time.sleep(1.5)
     pg = cdp.attach(match='127.0.0.1:%d' % STATIC, port=port)
@@ -102,16 +102,31 @@ def diff(a, b):
     if a['picture'] != b['picture']: out.append('traced picture differs')
     return out
 
+PAGES = []
+def close_all(procs):
+    # brave-browser is a wrapper: a TERM to it leaves the browser standing,
+    # so the browser is asked to close over CDP first, then the whole
+    # process group of every launch is killed
+    for pg in PAGES:
+        try: pg.call('Browser.close')
+        except Exception: pass
+    time.sleep(1)
+    for p in procs:
+        try: os.killpg(os.getpgid(p.pid), 9)
+        except Exception: pass
+        try: p.wait(timeout=5)
+        except Exception: pass
+
 def main():
     report = {}
     procs = []
     try:
-        procs.append(subprocess.Popen(['python3', '-m', 'http.server', str(STATIC), '--bind', '127.0.0.1'], cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
-        procs.append(subprocess.Popen(['python3', HERE + '/fakedrive.py', str(DRIVE)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        procs.append(subprocess.Popen(['python3', '-m', 'http.server', str(STATIC), '--bind', '127.0.0.1'], cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True))
+        procs.append(subprocess.Popen(['python3', HERE + '/fakedrive.py', str(DRIVE)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True))
         wait_http('http://127.0.0.1:%d/index.html' % STATIC); wait_http('http://127.0.0.1:%d/_dump' % DRIVE)
 
         # ── A: a town, linked, saved ──
-        pA, A = launch('A', 9301); procs.append(pA)
+        pA, A = launch('A', 9301); procs.append(pA); PAGES.append(A)
         snap = open(os.environ.get('SNAP', REPO + '/snapshots/v8.8.json')).read()
         t0 = origin(A)
         assert A.js('Snap.load(' + snap + ', false)') is True
@@ -132,7 +147,7 @@ def main():
         report['A_label'] = A.js("(document.getElementById('pcloudlabel')||{}).textContent")
 
         # ── B: a fresh profile, linked, loaded ──
-        pB, B = launch('B', 9302); procs.append(pB)
+        pB, B = launch('B', 9302); procs.append(pB); PAGES.append(B)
         dB0 = B.js(DIGEST); report['B_before'] = dB0['counts']
         report['B_linked'] = B.js('Cloud.link().then(function(){ return Cloud.linked(); })')
         # a wrong passphrase first
@@ -157,11 +172,7 @@ def main():
                         and not report['diff_A_vs_B'] and 'wrong passphrase' in (report['B_wrong_pass']['err'] or '')
                         and len(report['drive_after_second_save']) == 2)
     finally:
-        for p in procs:
-            try: p.terminate(); p.wait(timeout=10)
-            except Exception:
-                try: p.kill()
-                except Exception: pass
+        close_all(procs)
     json.dump(report, open(S + '/report.json', 'w'), indent=1)
     print(json.dumps(report, indent=1))
     print('written to', S)
